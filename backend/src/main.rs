@@ -937,10 +937,16 @@ async fn get_job_stats(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     .await
     .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
 
-    let stats_map: std::collections::HashMap<String, i64> = stats
+    let mut stats_map: std::collections::HashMap<String, i64> = stats
         .into_iter()
         .filter_map(|row| row.status.map(|status| (status, row.count.unwrap_or(0))))
         .collect();
+
+    // Ensure all expected statuses are present with default value of 0
+    stats_map.entry("new".to_string()).or_insert(0);
+    stats_map.entry("approved".to_string()).or_insert(0);
+    stats_map.entry("applied".to_string()).or_insert(0);
+    stats_map.entry("filtered".to_string()).or_insert(0);
 
     Ok(HttpResponse::Ok().json(stats_map))
 }

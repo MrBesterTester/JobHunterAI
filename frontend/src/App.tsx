@@ -229,6 +229,7 @@ const JobHunterDashboard: React.FC = () => {
 
   useEffect(() => {
     fetchJobs();
+    fetchStats();
   }, []);
 
   const meetsMinSalary = (job: Job): boolean => job.salary ? job.salary >= 130000 : false;
@@ -236,50 +237,55 @@ const JobHunterDashboard: React.FC = () => {
   const withinCommute = (job: Job): boolean => !job.commute_time || job.commute_time <= 45;
 
   const JobCard: React.FC<{ job: Job }> = ({ job }) => (
-    <div 
+    <div
       className="bg-white border rounded-lg p-4 mb-3 hover:shadow-md transition-shadow cursor-pointer"
       onClick={() => setSelectedJob(job)}
       style={{ border: '1px solid #e5e7eb' }}
+      data-testid="job-card"
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
         <div style={{ flex: 1 }}>
-          <h3 style={{ fontWeight: 600, fontSize: '18px', color: '#111827' }}>{job.title}</h3>
-          <p style={{ color: '#6b7280' }}>{job.company}</p>
+          <h3 style={{ fontWeight: 600, fontSize: '18px', color: '#111827' }} data-testid="job-title">{job.title}</h3>
+          <p style={{ color: '#6b7280' }} data-testid="job-company">{job.company}</p>
         </div>
         {getStatusIcon(job.status)}
       </div>
       
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '12px', fontSize: '14px' }}>
         {job.salary && (
-          <span style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '4px',
-            padding: '4px 8px',
-            borderRadius: '4px',
-            backgroundColor: meetsMinSalary(job) ? '#d1fae5' : '#fee2e2',
-            color: meetsMinSalary(job) ? '#065f46' : '#991b1b'
-          }}>
+          <span
+            data-testid="job-salary"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              backgroundColor: meetsMinSalary(job) ? '#d1fae5' : '#fee2e2',
+              color: meetsMinSalary(job) ? '#065f46' : '#991b1b'
+            }}>
             <DollarSign style={{ width: '16px', height: '16px' }} />
             ${(job.salary / 1000).toFixed(0)}K
           </span>
         )}
-        
+
         {job.location && (
-          <span style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '4px',
-            padding: '4px 8px',
-            borderRadius: '4px',
-            backgroundColor: isRemote(job) ? '#dbeafe' : '#f3f4f6',
-            color: isRemote(job) ? '#1e40af' : '#374151'
-          }}>
+          <span
+            data-testid="job-location"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              backgroundColor: isRemote(job) ? '#dbeafe' : '#f3f4f6',
+              color: isRemote(job) ? '#1e40af' : '#374151'
+            }}>
             <MapPin style={{ width: '16px', height: '16px' }} />
             {job.location}
           </span>
         )}
-        
+
         {job.commute_time && (
           <span style={{
             padding: '4px 8px',
@@ -290,20 +296,22 @@ const JobHunterDashboard: React.FC = () => {
             {job.commute_time} min commute
           </span>
         )}
-        
-        <span style={{ padding: '4px 8px', borderRadius: '4px', backgroundColor: '#f3f4f6', color: '#374151' }}>
+
+        <span data-testid="job-source" style={{ padding: '4px 8px', borderRadius: '4px', backgroundColor: '#f3f4f6', color: '#374151' }}>
           {job.source}
         </span>
       </div>
 
       {job.filter_reason && (
-        <div style={{
-          marginTop: '8px',
-          padding: '8px',
-          backgroundColor: '#fef2f2',
-          borderRadius: '4px',
-          borderLeft: '4px solid #ef4444'
-        }}>
+        <div
+          data-testid="filtered-reasons"
+          style={{
+            marginTop: '8px',
+            padding: '8px',
+            backgroundColor: '#fef2f2',
+            borderRadius: '4px',
+            borderLeft: '4px solid #ef4444'
+          }}>
           <div style={{ fontSize: '12px', fontWeight: '500', color: '#dc2626', marginBottom: '4px' }}>
             Filtered Reasons:
           </div>
@@ -387,20 +395,22 @@ const JobHunterDashboard: React.FC = () => {
       justifyContent: 'center',
       padding: '16px',
       zIndex: 50
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        maxWidth: '672px',
-        width: '100%',
-        maxHeight: '90vh',
-        overflowY: 'auto'
-      }}>
+    }} data-testid="modal-overlay">
+      <div
+        role="dialog"
+        style={{
+          backgroundColor: 'white',
+          borderRadius: '8px',
+          maxWidth: '672px',
+          width: '100%',
+          maxHeight: '90vh',
+          overflowY: 'auto'
+        }}>
         <div style={{ padding: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
             <div>
-              <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827' }}>{job.title}</h2>
-              <p style={{ fontSize: '20px', color: '#6b7280' }}>{job.company}</p>
+              <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827' }} data-testid="modal-job-title">{job.title}</h2>
+              <p style={{ fontSize: '20px', color: '#6b7280' }} data-testid="modal-company">{job.company}</p>
             </div>
             <button
               onClick={onClose}
@@ -553,15 +563,15 @@ const JobHunterDashboard: React.FC = () => {
       <div style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '16px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '16px' }}>
-            <div style={{ textAlign: 'center' }}>
+            <div style={{ textAlign: 'center' }} data-testid="stat-new">
               <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#3b82f6' }}>{stats.new || 0}</p>
               <p style={{ fontSize: '14px', color: '#6b7280' }}>New Jobs</p>
             </div>
-            <div style={{ textAlign: 'center' }}>
+            <div style={{ textAlign: 'center' }} data-testid="stat-approved">
               <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#10b981' }}>{stats.approved || 0}</p>
               <p style={{ fontSize: '14px', color: '#6b7280' }}>Approved</p>
             </div>
-            <div style={{ textAlign: 'center' }}>
+            <div style={{ textAlign: 'center' }} data-testid="stat-applied">
               <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#f59e0b' }}>{stats.applied || 0}</p>
               <p style={{ fontSize: '14px', color: '#6b7280' }}>Applied</p>
             </div>
@@ -569,7 +579,7 @@ const JobHunterDashboard: React.FC = () => {
               <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#ef4444' }}>{stats.rejected || 0}</p>
               <p style={{ fontSize: '14px', color: '#6b7280' }}>Rejected</p>
             </div>
-            <div style={{ textAlign: 'center' }}>
+            <div style={{ textAlign: 'center' }} data-testid="stat-filtered">
               <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#f97316' }}>{stats.filtered || 0}</p>
               <p style={{ fontSize: '14px', color: '#6b7280' }}>Filtered</p>
             </div>
@@ -644,17 +654,19 @@ const JobHunterDashboard: React.FC = () => {
           alignItems: 'center',
           justifyContent: 'center',
           padding: '20px'
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '8px',
-            maxWidth: '1000px',
-            width: '100%',
-            maxHeight: '90vh',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
+        }} data-testid="modal-overlay">
+          <div
+            role="dialog"
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '8px',
+              maxWidth: '1000px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column'
+            }}>
             <div style={{
               padding: '20px',
               borderBottom: '1px solid #e5e7eb',
@@ -679,43 +691,47 @@ const JobHunterDashboard: React.FC = () => {
 
             <div style={{ flex: 1, overflow: 'auto', padding: '20px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', height: '100%' }}>
-                <div>
+                <div data-testid="resume-panel">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                     <FileText style={{ width: '20px', height: '20px', color: '#3b82f6' }} />
                     <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Resume</h3>
                   </div>
-                  <div style={{
-                    backgroundColor: '#f9fafb',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '4px',
-                    padding: '16px',
-                    fontSize: '12px',
-                    fontFamily: 'monospace',
-                    lineHeight: '1.5',
-                    height: '500px',
-                    overflow: 'auto',
-                    whiteSpace: 'pre-wrap'
-                  }}>
+                  <div
+                    data-testid="resume-content"
+                    style={{
+                      backgroundColor: '#f9fafb',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '4px',
+                      padding: '16px',
+                      fontSize: '12px',
+                      fontFamily: 'monospace',
+                      lineHeight: '1.5',
+                      height: '500px',
+                      overflow: 'auto',
+                      whiteSpace: 'pre-wrap'
+                    }}>
                     {generatedContent.resume}
                   </div>
                 </div>
 
-                <div>
+                <div data-testid="cover-letter-panel">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                     <Mail style={{ width: '20px', height: '20px', color: '#10b981' }} />
                     <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Cover Letter</h3>
                   </div>
-                  <div style={{
-                    backgroundColor: '#f9fafb',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '4px',
-                    padding: '16px',
-                    fontSize: '14px',
-                    lineHeight: '1.6',
-                    height: '500px',
-                    overflow: 'auto',
-                    whiteSpace: 'pre-wrap'
-                  }}>
+                  <div
+                    data-testid="cover-letter-content"
+                    style={{
+                      backgroundColor: '#f9fafb',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '4px',
+                      padding: '16px',
+                      fontSize: '14px',
+                      lineHeight: '1.6',
+                      height: '500px',
+                      overflow: 'auto',
+                      whiteSpace: 'pre-wrap'
+                    }}>
                     {generatedContent.cover_letter}
                   </div>
                 </div>

@@ -39,7 +39,7 @@ export class DashboardPage {
     this.page = page;
 
     // Header
-    this.pageTitle = page.getByRole('heading', { name: /JobHunter Dashboard/i });
+    this.pageTitle = page.getByRole('heading', { name: /^JobHunter$/i });
 
     // Statistics - using text patterns to locate specific stat cards
     this.newJobsCount = page.locator('[data-testid="stat-new"], .stat-card').filter({ hasText: /new/i }).first();
@@ -49,7 +49,7 @@ export class DashboardPage {
 
     // Tabs - look for buttons or clickable elements with these labels
     this.allTab = page.getByRole('button', { name: /^all$/i }).or(page.locator('[data-tab="all"]'));
-    this.inboxTab = page.getByRole('button', { name: /^inbox$/i }).or(page.locator('[data-tab="inbox"]'));
+    this.inboxTab = page.getByRole('button', { name: /^new jobs$/i }).or(page.locator('[data-tab="inbox"]'));
     this.approvedTab = page.getByRole('button', { name: /^approved$/i }).or(page.locator('[data-tab="approved"]'));
     this.appliedTab = page.getByRole('button', { name: /^applied$/i }).or(page.locator('[data-tab="applied"]'));
     this.filteredTab = page.getByRole('button', { name: /^filtered$/i }).or(page.locator('[data-tab="filtered"]'));

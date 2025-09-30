@@ -321,7 +321,233 @@ npm run test:e2e:ci
 npm run test:e2e:chromium
 npm run test:e2e:firefox
 npm run test:e2e:webkit
+
+# Run specific test suite
+npm run test:e2e:chromium -- e2e/tests/01-setup-load.spec.ts
+npm run test:e2e:chromium -- e2e/tests/02-tab-navigation.spec.ts
 ```
+
+### Phase 5 Validation Status (September 30, 2025)
+
+**Current Test Execution Status: 12/189 tests validated (6.3% complete)**
+
+✅ **Completed Test Suite:**
+- **01-setup-load.spec.ts**: 12/12 tests passing (100%)
+  - Section 1: Page Load Test (4 tests) - ✅ All passing
+  - Section 2: Network Connectivity Test (6 tests) - ✅ All passing
+  - Performance Validation (2 tests) - ✅ All passing
+  - Execution time: 5.7 seconds
+  - Browser: Chromium (Playwright 1.55.1)
+
+🎯 **Remaining Test Suites (177 tests):**
+
+| Test Suite | Tests | Status | Priority | Dependencies |
+|-----------|-------|--------|----------|--------------|
+| 02-tab-navigation.spec.ts | 15 | 🎯 Next | P1 - High | DashboardPage, tab state management |
+| 03-job-status-updates.spec.ts | 15 | 🎯 Next | P1 - High | JobCardComponent, status update API |
+| 04-content-generation.spec.ts | 20 | 🔄 Pending | P2 - Medium | ModalComponent, content generation API |
+| 05-job-details.spec.ts | 23 | 🔄 Pending | P2 - Medium | ModalComponent, job details display |
+| 06-statistics.spec.ts | 21 | 🔄 Pending | P2 - Medium | Real-time stats updates, API polling |
+| 07-filtered-jobs.spec.ts | 10 | 🔄 Pending | P3 - Low | Filtered reasons display |
+| 08-responsive-design.spec.ts | 18 | 🔄 Pending | P3 - Low | Viewport handling, mobile layouts |
+| 09-error-handling.spec.ts | 20 | 🔄 Pending | P3 - Low | Network error simulation |
+| 10-performance.spec.ts | 14 | 🔄 Pending | P4 - Nice-to-have | Performance metrics, profiling |
+| 11-accessibility.spec.ts | 21 | 🔄 Pending | P4 - Nice-to-have | ARIA, keyboard navigation, screen readers |
+
+**Infrastructure Validation Results:**
+
+✅ **Working Infrastructure:**
+- Page Object Model: DashboardPage.ts fully functional with 20+ methods
+- Test Helpers: waitForApiCall(), checkConsoleErrors(), measurePageLoad() working
+- Test Data Fixtures: Sample job data structures defined in test-data.ts
+- Playwright Configuration: Multi-browser setup (Chromium, Firefox, WebKit) ready
+- Backend API Integration: /api/jobs and /api/jobs/stats endpoints validated
+- Frontend Stats API: App.tsx now calls fetchStats() on mount
+
+✅ **UI Test Infrastructure Added:**
+- 19 data-testid attributes added to App.tsx:
+  - Statistics cards: data-testid="stat-new/approved/applied/filtered"
+  - Job cards: data-testid="job-card", "job-title", "job-company", "job-salary", "job-location", "job-source"
+  - Modals: role="dialog", data-testid="modal-overlay", "modal-job-title", "modal-company"
+  - Content generation: data-testid="resume-panel", "cover-letter-panel", "resume-content", "cover-letter-content"
+  - Filtered reasons: data-testid="filtered-reasons"
+
+✅ **Bug Fixes Applied (12/12 tests passing):**
+1. Fixed response.timing() API call (changed to property access: response.timing)
+2. Fixed URL matching regex for /api/jobs to avoid matching /api/jobs/stats
+3. Added fetchStats() call to useEffect in App.tsx (frontend was never calling stats API)
+4. Updated backend get_job_stats() to always return all 4 status fields with default value 0
+5. Updated test selectors to match actual UI text ("JobHunter" vs "JobHunter Dashboard")
+6. Updated tab label from "Inbox" to "New Jobs" in selectors
+
+**Known Infrastructure Gaps (To Address in Next Phases):**
+
+🔍 **Additional Test IDs Needed:**
+- Approve/Reject buttons on job cards (for 03-job-status-updates tests)
+- Generate Content button (for 04-content-generation tests)
+- Job details modal elements (for 05-job-details tests)
+- Tab navigation buttons (may need data-tab attributes)
+- Statistics refresh indicators (for 06-statistics tests)
+
+🔍 **API Endpoints to Validate:**
+- PUT /api/jobs/{id}/status (for status update tests)
+- GET /api/jobs/{id}/generate-content (for content generation tests)
+- GET /api/jobs/{id} (for job details tests)
+
+🔍 **Component Behavior to Verify:**
+- Modal opening/closing animations
+- Button enable/disable states
+- Loading indicators during API calls
+- Error message display
+
+### Incremental Test Validation Strategy
+
+**Approach:** Validate test suites incrementally in small batches (15-30 tests), fixing issues as we go. This provides faster debugging, pattern recognition across similar failures, and confidence building with each passing suite.
+
+**Phase 1: Core Interaction Tests (30 tests) - NEXT**
+- **Priority**: P1 - High (Critical user workflows)
+- **Timeline**: 1-2 sessions
+- **Focus**: Tab switching and job status management
+
+**Tests to Run:**
+1. **02-tab-navigation.spec.ts** (15 tests)
+   - Section 3: Tab Switching Test
+     - Display only "new" jobs in Inbox tab
+     - Display only "approved" jobs in Approved tab
+     - Display only "applied" jobs in Applied tab
+     - Display only "filtered" jobs in Filtered tab
+     - All tab navigation
+   - Section 4: Job Card Display Test
+     - Job card visibility in each tab
+     - Job card content accuracy
+     - Job count matches statistics
+
+2. **03-job-status-updates.spec.ts** (15 tests)
+   - Section 5: Status Update Actions
+     - Approve button functionality
+     - Reject button functionality
+     - Status change persistence
+     - Statistics update after status change
+   - Section 6: Status Update Validation
+     - UI updates reflect status changes
+     - Job moves to correct tab after status update
+     - Approve/Reject buttons show correct state
+
+**Expected Issues:**
+- May need data-testid="approve-button" and data-testid="reject-button" on job card buttons
+- API endpoint PUT /api/jobs/{id}/status needs validation
+- Button visibility and enable/disable states may need adjustment
+- Tab active state detection may need CSS class or aria-selected attribute
+
+**Success Criteria:**
+- ✅ All 30 tests passing
+- ✅ Tab navigation working correctly
+- ✅ Status updates persisting to database
+- ✅ UI updating in real-time after status changes
+
+**Phase 2: Content Generation Tests (20 tests)**
+- **Priority**: P2 - Medium (Important but not critical path)
+- **Timeline**: 1-2 sessions
+- **Focus**: Resume and cover letter generation
+
+**Tests to Run:**
+3. **04-content-generation.spec.ts** (20 tests)
+   - Section 7: Content Generation Modal
+     - Modal opens on "Generate" button click
+     - Modal displays loading state
+     - Modal shows generated resume
+     - Modal shows generated cover letter
+   - Section 8: Content Generation Validation
+     - Resume contains job-specific highlighting
+     - Cover letter includes job details
+     - Content generation completes within 2 seconds
+     - Error handling for generation failures
+
+**Expected Issues:**
+- Need data-testid="generate-button" on job cards
+- Modal component selectors may need updates
+- Content generation API endpoint validation
+- Loading states and error messages need test IDs
+
+**Success Criteria:**
+- ✅ 20/20 content generation tests passing
+- ✅ Modal opens/closes correctly
+- ✅ Content generation API working
+- ✅ Generated content displays properly
+
+**Phase 3: Details & Statistics (44 tests)**
+- **Priority**: P2 - Medium
+- **Timeline**: 2-3 sessions
+- **Focus**: Job details modal and real-time statistics
+
+**Tests to Run:**
+4. **05-job-details.spec.ts** (23 tests)
+   - Job details modal opening
+   - Job information display
+   - Modal interactions (close, scroll, etc.)
+
+5. **06-statistics.spec.ts** (21 tests)
+   - Real-time statistics updates
+   - Statistics accuracy
+   - Multiple status counts
+
+**Expected Issues:**
+- Modal component architecture needs full Page Object Model
+- Real-time updates may need WebSocket or polling validation
+- Statistics refresh timing and consistency
+
+**Phase 4: Edge Cases & Quality (73 tests)**
+- **Priority**: P3-P4 (Nice-to-have, non-critical)
+- **Timeline**: 3-4 sessions
+- **Focus**: Comprehensive coverage of edge cases, responsive design, errors, performance, accessibility
+
+**Tests to Run:**
+6. **07-filtered-jobs.spec.ts** (10 tests) - Filtered reasons display
+7. **08-responsive-design.spec.ts** (18 tests) - Mobile/tablet layouts
+8. **09-error-handling.spec.ts** (20 tests) - Network errors, edge cases
+9. **10-performance.spec.ts** (14 tests) - Load times, rendering benchmarks
+10. **11-accessibility.spec.ts** (21 tests) - ARIA, keyboard navigation, screen readers
+
+**Expected Issues:**
+- Responsive design may require viewport testing
+- Error simulation needs network mocking
+- Performance tests need baseline metrics
+- Accessibility tests need ARIA attributes and keyboard event handlers
+
+**Phase 5: CI/CD Integration**
+- Set up GitHub Actions workflow
+- Multi-browser testing (Chromium, Firefox, WebKit)
+- Automated test runs on pull requests
+- Test result reporting and coverage metrics
+
+**Overall Timeline Estimate:**
+- Phase 1 (Core): 1-2 sessions (2-4 hours)
+- Phase 2 (Content): 1-2 sessions (2-4 hours)
+- Phase 3 (Details): 2-3 sessions (4-6 hours)
+- Phase 4 (Quality): 3-4 sessions (6-8 hours)
+- Phase 5 (CI/CD): 1 session (1-2 hours)
+- **Total**: 9-12 sessions (15-24 hours)
+
+**Alternative Approach: Run All Tests Now**
+
+If you prefer to see the complete picture immediately, we could:
+1. Run all 189 tests in one batch
+2. Analyze all failures and group by type
+3. Create comprehensive fix list
+4. Apply fixes in one or two large updates
+
+**Pros:**
+- Complete visibility into all test failures
+- Single comprehensive fix pass
+- May discover tests already passing due to fallback selectors
+
+**Cons:**
+- Overwhelming output (likely 150+ failures)
+- Harder to debug specific issues
+- Risk of missing subtle edge cases
+- More time-consuming single session
+
+**Recommendation:** Stick with incremental approach for better control, faster debugging, and steady progress.
 
 ## Test Infrastructure & Dependencies
 

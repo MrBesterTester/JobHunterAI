@@ -46,7 +46,7 @@ test.describe('Setup & Initial Load', () => {
 
       // Verify header text
       const headerText = await dashboardPage.pageTitle.textContent();
-      expect(headerText).toMatch(/JobHunter Dashboard/i);
+      expect(headerText).toMatch(/^JobHunter$/i);
     });
 
     test('should display statistics cards at top', async ({ page }) => {
@@ -101,11 +101,19 @@ test.describe('Setup & Initial Load', () => {
 
   test.describe('Section 2: Network Connectivity Test', () => {
     test('should make successful API calls on page load', async ({ page }) => {
-      // Set up response listeners before navigation
-      const jobsPromise = waitForApiCall(page, '/api/jobs', 'GET');
-      const statsPromise = waitForApiCall(page, '/api/jobs/stats', 'GET');
+      // Set up response listeners before navigation with exact URL matching
+      const jobsPromise = page.waitForResponse(
+        (response) => response.url().match(/\/api\/jobs(\?|$)/) && response.request().method() === 'GET',
+        { timeout: 10000 }
+      );
+      const statsPromise = page.waitForResponse(
+        (response) => response.url().includes('/api/jobs/stats') && response.request().method() === 'GET',
+        { timeout: 10000 }
+      );
 
-      await dashboardPage.goto();
+      // Navigate using page.goto directly to ensure fresh load
+      await page.goto('http://localhost:3000');
+      await dashboardPage.waitForLoad();
 
       // Wait for API calls to complete
       const jobsResponse = await jobsPromise;
@@ -117,7 +125,11 @@ test.describe('Setup & Initial Load', () => {
     });
 
     test('should make GET /api/jobs request', async ({ page }) => {
-      const responsePromise = waitForApiCall(page, '/api/jobs', 'GET');
+      // Use exact URL matching to avoid matching /api/jobs/stats
+      const responsePromise = page.waitForResponse(
+        (response) => response.url().match(/\/api\/jobs(\?|$)/) && response.request().method() === 'GET',
+        { timeout: 5000 }
+      );
 
       await dashboardPage.goto();
 
@@ -132,9 +144,14 @@ test.describe('Setup & Initial Load', () => {
     });
 
     test('should make GET /api/jobs/stats request', async ({ page }) => {
-      const responsePromise = waitForApiCall(page, '/api/jobs/stats', 'GET');
+      const responsePromise = page.waitForResponse(
+        (response) => response.url().includes('/api/jobs/stats') && response.request().method() === 'GET',
+        { timeout: 10000 }
+      );
 
-      await dashboardPage.goto();
+      // Navigate using page.goto directly to ensure fresh load
+      await page.goto('http://localhost:3000');
+      await dashboardPage.waitForLoad();
 
       const response = await responsePromise;
 
@@ -155,8 +172,8 @@ test.describe('Setup & Initial Load', () => {
       // Capture response times
       page.on('response', (response) => {
         if (response.url().includes('/api/')) {
-          const timing = response.timing();
-          if (timing.responseEnd) {
+          const timing = response.timing;
+          if (timing && timing.responseEnd) {
             measurements.push(timing.responseEnd);
           }
         }
