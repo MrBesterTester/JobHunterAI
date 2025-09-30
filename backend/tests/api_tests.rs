@@ -1,25 +1,23 @@
-use actix_web::{test, web, App};
-use sqlx::{PgPool, Pool, Postgres};
+use sqlx::{Pool, Postgres};
 use uuid::Uuid;
-use serde_json::json;
 
 // Import the main application components
 // Note: This would need to be adjusted based on the actual module structure
 // For now, we'll create test stubs that demonstrate the testing approach
 
+// Test helper to create a test database pool
+async fn create_test_pool() -> Pool<Postgres> {
+    let database_url = std::env::var("TEST_DATABASE_URL")
+        .unwrap_or_else(|_| "postgresql://jobhunter_user:jobhunter_dev_password@localhost/jobhunter_test".to_string());
+
+    sqlx::postgres::PgPool::connect(&database_url)
+        .await
+        .expect("Failed to connect to test database")
+}
+
 #[cfg(test)]
 mod api_tests {
     use super::*;
-
-    // Test helper to create a test database pool
-    async fn create_test_pool() -> Pool<Postgres> {
-        let database_url = std::env::var("TEST_DATABASE_URL")
-            .unwrap_or_else(|_| "postgresql://jobhunter_user:jobhunter_dev_password@localhost/jobhunter_test".to_string());
-
-        sqlx::postgres::PgPool::connect(&database_url)
-            .await
-            .expect("Failed to connect to test database")
-    }
 
     #[tokio::test]
     async fn test_get_jobs_endpoint() {
@@ -46,14 +44,6 @@ mod api_tests {
         let pool = create_test_pool().await;
 
         // Test job creation with filtering logic
-        let job_data = json!({
-            "title": "Senior Test Engineer",
-            "company": "TechCorp",
-            "salary": 150000,
-            "location": "Remote",
-            "source": "manual"
-        });
-
         // Verify database can handle job insertion
         let job_id = Uuid::new_v4();
         let result = sqlx::query!(
@@ -81,8 +71,6 @@ mod api_tests {
 
     #[tokio::test]
     async fn test_job_filtering_logic() {
-        let pool = create_test_pool().await;
-
         // Test salary filtering criteria
         struct JobFilterTest {
             title: String,
@@ -171,8 +159,20 @@ mod api_tests {
         assert_eq!(hash, hash2, "Hash should be consistent for same input");
         assert_eq!(hash.len(), 64, "SHA256 hash should be 64 characters");
 
-        // Test deduplication table insertion
+        // Create job first (required by foreign key constraint)
         let job_id = Uuid::new_v4();
+        sqlx::query!(
+            "INSERT INTO jobs (job_id, title, company, source) VALUES ($1, $2, $3, $4)",
+            job_id,
+            title,
+            company,
+            "manual"
+        )
+        .execute(&pool)
+        .await
+        .expect("Failed to create test job");
+
+        // Test deduplication table insertion
         let result = sqlx::query!(
             "INSERT INTO job_deduplication (job_id, company_title_hash) VALUES ($1, $2)",
             job_id,
@@ -183,8 +183,20 @@ mod api_tests {
 
         assert!(result.is_ok(), "Deduplication entry should be created");
 
-        // Test duplicate hash rejection
+        // Create second job for duplicate hash test
         let job_id2 = Uuid::new_v4();
+        sqlx::query!(
+            "INSERT INTO jobs (job_id, title, company, source) VALUES ($1, $2, $3, $4)",
+            job_id2,
+            title,
+            company,
+            "manual"
+        )
+        .execute(&pool)
+        .await
+        .expect("Failed to create second test job");
+
+        // Test duplicate hash rejection
         let result = sqlx::query!(
             "INSERT INTO job_deduplication (job_id, company_title_hash) VALUES ($1, $2)",
             job_id2,
@@ -195,16 +207,23 @@ mod api_tests {
 
         assert!(result.is_err(), "Duplicate hash should be rejected");
 
-        // Cleanup
-        sqlx::query!("DELETE FROM job_deduplication WHERE job_id = $1", job_id)
+        // Cleanup (deleting jobs will cascade to job_deduplication)
+        sqlx::query!("DELETE FROM jobs WHERE job_id = $1", job_id)
             .execute(&pool)
             .await
-            .expect("Failed to cleanup test deduplication entry");
+            .expect("Failed to cleanup first test job");
+        sqlx::query!("DELETE FROM jobs WHERE job_id = $1", job_id2)
+            .execute(&pool)
+            .await
+            .expect("Failed to cleanup second test job");
     }
 
     #[tokio::test]
     async fn test_job_statistics() {
         let pool = create_test_pool().await;
+
+        // Use unique company name for test isolation
+        let test_company = format!("TestCorp_{}", Uuid::new_v4());
 
         // Insert test jobs with different statuses
         let job_ids: Vec<Uuid> = (0..3).map(|_| Uuid::new_v4()).collect();
@@ -215,7 +234,7 @@ mod api_tests {
                 "INSERT INTO jobs (job_id, title, company, source, status) VALUES ($1, $2, $3, $4, $5)",
                 job_id,
                 format!("Test Job {}", i + 1),
-                "TestCorp",
+                &test_company,
                 "manual",
                 statuses[i]
             )
@@ -226,7 +245,8 @@ mod api_tests {
 
         // Test statistics query
         let stats = sqlx::query!(
-            "SELECT status, COUNT(*) as count FROM jobs WHERE company = 'TestCorp' GROUP BY status"
+            "SELECT status, COUNT(*) as count FROM jobs WHERE company = $1 GROUP BY status",
+            &test_company
         )
         .fetch_all(&pool)
         .await
@@ -251,8 +271,8 @@ mod api_tests {
     async fn test_error_handling() {
         let pool = create_test_pool().await;
 
-        // Test handling of invalid UUID
-        let result = sqlx::query!("SELECT * FROM jobs WHERE job_id = 'invalid-uuid'")
+        // Test handling of invalid UUID (using runtime query to avoid compile-time check)
+        let result = sqlx::query("SELECT * FROM jobs WHERE job_id = 'invalid-uuid'")
             .fetch_optional(&pool)
             .await;
 
