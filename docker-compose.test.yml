@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  test-db:
+    image: postgres:14
+    environment:
+      POSTGRES_DB: jobhunter_test
+      POSTGRES_USER: jobhunter_user
+      POSTGRES_PASSWORD: jobhunter_test_password
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./database/test-fixtures.sql:/docker-entrypoint-initdb.d/02-fixtures.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jobhunter_user -d jobhunter_test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  test-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.test
+    environment:
+      TEST_DATABASE_URL: postgresql://jobhunter_user:jobhunter_test_password@test-db:5432/jobhunter_test
+      RUST_LOG: debug
+    depends_on:
+      test-db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: cargo test --verbose
+
+  test-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.test
+    environment:
+      NODE_ENV: test
+      CI: true
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run test:coverage
+    depends_on:
+      - test-db
+
+  test-integration:
+    build:
+      context: .
+      dockerfile: Dockerfile.integration
+    environment:
+      DATABASE_URL: postgresql://jobhunter_user:jobhunter_test_password@test-db:5432/jobhunter_test
+      BACKEND_URL: http://test-backend:8080
+      FRONTEND_URL: http://test-frontend:3000
+    depends_on:
+      test-db:
+        condition: service_healthy
+      test-backend:
+        condition: service_started
+      test-frontend:
+        condition: service_started
+    volumes:
+      - ./tests:/app/tests
+    command: npm run test:integration
+
+networks:
+  default:
+    name: jobhunter-test

@@ -368,6 +368,10 @@ JobHuntAI/
 - **Multi-source Processing**: Unified intake system with comprehensive error handling and logging
 - **Zero Runtime Errors**: Comprehensive error handling and validation across all systems
 
+## Testing & Quality Assurance
+
+JobHunter maintains the highest standards of quality through comprehensive automated testing across all system components - see **[Testing Guide](README_auto-test.md)** for developers.
+
 ## Contributing
 
 This project is built to your specific job search requirements. Customize as needed!
