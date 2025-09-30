@@ -77,8 +77,8 @@ class MockHttpClient {
     this.responses.set('GET:/api/jobs/123e4567-e89b-12d3-a456-426614174000/generate-content', {
       status: 200,
       data: {
-        resume: '# Samuel Kirk\n\n## Experience\n- **Senior Test Engineer** at TechCorp',
-        cover_letter: 'Dear Hiring Manager,\n\nI am excited to apply for the Senior AI Test Engineer position...',
+        resume: '# Test Engineer Professional\n**Email**: MrBestTester@gmail.com\n\n## Experience\n- **Senior Test Engineer** at TechCorp',
+        cover_letter: 'Dear Hiring Manager,\n\nI am excited to apply for the Senior AI Test Engineer position...\n\nBest regards,\nTest Engineer Professional\nMrBestTester@gmail.com',
         resume_format: 'markdown',
         generated_at: new Date().toISOString()
       }

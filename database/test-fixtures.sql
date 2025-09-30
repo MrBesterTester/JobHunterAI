@@ -93,7 +93,9 @@ INSERT INTO communications (communication_id, application_id, message_content, m
 -- Insert master resume version for testing
 INSERT INTO resume_versions (version_id, version_name, content, format, is_master) VALUES
 ('rrrrrrrr-rrrr-rrrr-rrrr-rrrrrrrrrrrr', 'master_v1.0',
-'# Samuel Kirk
+'# Test Engineer Professional
+**Email**: MrBestTester@gmail.com
+
 ## Professional Summary
 Senior Test Engineer with 10+ years of experience in software testing, test automation, and AI-powered testing solutions.
 
@@ -132,7 +134,8 @@ My experience with {{job_title}} roles has prepared me well for the challenges a
 Thank you for considering my application.
 
 Best regards,
-Samuel Kirk'),
+Test Engineer Professional
+MrBestTester@gmail.com'),
 
 ('uuuuuuuu-uuuu-uuuu-uuuu-uuuuuuuuuuuu', 'leadership_template_v1.0',
 'Dear {{hiring_manager_name}},
@@ -147,7 +150,8 @@ My leadership experience includes:
 The {{job_title}} role at {{company_name}} represents exactly the type of technical leadership opportunity I am seeking. I would welcome the chance to discuss how my experience can help drive your testing initiatives forward.
 
 Best regards,
-Samuel Kirk');
+Test Engineer Professional
+MrBestTester@gmail.com');
 
 -- Insert job sources for Phase 4 testing
 INSERT INTO job_sources (source_id, source_name, source_type, auth_required, auth_type, is_active, sync_interval_minutes, configuration, last_sync) VALUES
