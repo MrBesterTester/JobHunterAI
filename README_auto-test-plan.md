@@ -609,6 +609,246 @@ jobs:
 - **Cross-browser Compatibility** (Chrome, Firefox, Safari, Edge)
 - **Mobile Responsiveness** (iOS/Android)
 
+## Manual Frontend Testing Checklist
+
+**Purpose**: This checklist provides a systematic procedure for QA testers and developers to manually verify frontend functionality until automated browser testing is implemented (Playwright/Cypress).
+
+**Prerequisites**:
+- Backend server running on `http://localhost:8080`
+- Frontend dev server running on `http://localhost:3000`
+- Test database populated with sample job data
+- Browser: Chrome, Firefox, Safari, or Edge
+
+### Test Procedure
+
+#### Setup & Initial Load
+1. **Page Load Test**
+   - [ ] Open `http://localhost:3000` in browser
+   - [ ] Verify page loads within 3 seconds
+   - [ ] Confirm no console errors in browser DevTools
+   - [ ] Check that JobHunter Dashboard header is visible
+   - [ ] Verify statistics cards display at top (New, Approved, Applied, Filtered counts)
+
+2. **Network Connectivity Test**
+   - [ ] Open browser Network tab (F12 → Network)
+   - [ ] Refresh page
+   - [ ] Verify `GET /api/jobs` request returns 200 OK
+   - [ ] Verify `GET /api/criteria` request returns 200 OK
+   - [ ] Verify `GET /api/jobs/stats` request returns 200 OK
+   - [ ] Check that response times are <100ms for API calls
+
+#### Tab Navigation & Filtering
+3. **Tab Switching Test**
+   - [ ] Click "Inbox" tab → Verify only jobs with status="new" are displayed
+   - [ ] Click "Approved" tab → Verify only jobs with status="approved" are displayed
+   - [ ] Click "Applied" tab → Verify only jobs with status="applied" are displayed
+   - [ ] Click "Filtered" tab → Verify only jobs with status="filtered" are displayed
+   - [ ] Click "All" tab → Verify all jobs are displayed regardless of status
+   - [ ] Verify tab active state (blue background) changes correctly
+   - [ ] Verify job count badges on tabs match displayed jobs
+
+4. **Job Card Display Test**
+   - [ ] Verify each job card displays: Title, Company, Salary (if available), Location, Source
+   - [ ] Check salary badge color: Green if ≥$130K, Red if <$130K
+   - [ ] Check location badge color: Blue for "Remote", Gray for other locations
+   - [ ] Verify commute time badge shows correct color (Green ≤45min, Orange >45min)
+   - [ ] For filtered jobs: Verify "Filtered Reasons" section displays in red box
+   - [ ] Verify status icons appear correctly (AlertCircle for "new", CheckCircle for "approved", etc.)
+
+#### Job Status Updates
+5. **Approve/Reject Workflow Test**
+   - [ ] Navigate to "Inbox" tab
+   - [ ] Click "Approve" button on a job card
+   - [ ] Verify job disappears from Inbox
+   - [ ] Navigate to "Approved" tab
+   - [ ] Verify job now appears in Approved tab
+   - [ ] Navigate back to "Inbox" tab
+   - [ ] Click "Reject" button on a different job card
+   - [ ] Verify job disappears from Inbox
+   - [ ] Check statistics cards update correctly (New count decreased, Approved/Rejected count increased)
+
+6. **Status Update API Validation**
+   - [ ] Open Network tab while approving/rejecting
+   - [ ] Verify `PUT /api/jobs/{id}/status` request is sent
+   - [ ] Verify request body contains correct status: "approved" or "rejected"
+   - [ ] Verify response returns 200 OK
+   - [ ] Verify job list refreshes automatically after status update
+
+#### Content Generation
+7. **Generate Resume & Cover Letter Test**
+   - [ ] Navigate to "Approved" tab
+   - [ ] Click "Generate Resume & Cover Letter" button on an approved job
+   - [ ] Verify button changes to "Generating..." with disabled state
+   - [ ] Wait for content generation (should complete within 2 seconds)
+   - [ ] Verify modal appears with side-by-side resume and cover letter display
+   - [ ] Check resume content displays in left panel with proper formatting
+   - [ ] Check cover letter displays in right panel with job-specific personalization
+   - [ ] Verify company name and job title appear in cover letter
+   - [ ] Check for domain-specific keywords highlighted in resume (e.g., "Test Automation", "AI", "Firmware")
+
+8. **Content Generation Modal Test**
+   - [ ] Verify modal has close button (✕) in top-right corner
+   - [ ] Click close button → Verify modal closes
+   - [ ] Re-open modal by generating content again
+   - [ ] Click outside modal (on dark overlay) → Verify modal closes
+   - [ ] Verify modal is scrollable if content exceeds viewport height
+
+#### Job Details View
+9. **Job Details Modal Test**
+   - [ ] Click on any job card (not on Approve/Reject buttons)
+   - [ ] Verify job details modal opens
+   - [ ] Check modal displays: Title, Company, Status badge, Salary, Location, Source
+   - [ ] Verify job URL link is displayed and clickable (if available)
+   - [ ] Verify job description displays (if available)
+   - [ ] Verify "Date Collected" shows formatted date
+   - [ ] Click close button (✕) → Verify modal closes
+   - [ ] Re-open modal and click outside on overlay → Verify modal closes
+
+10. **Job Details Action Buttons**
+    - [ ] Open job details for a "new" status job
+    - [ ] Verify "Approve" and "Reject" buttons appear at bottom
+    - [ ] Click "Approve" → Verify modal closes and job moves to Approved tab
+    - [ ] Open job details for an "approved" status job
+    - [ ] Verify "Generate Resume & Cover Letter" button appears
+    - [ ] Click button → Verify content generation modal opens
+
+#### Statistics & Real-time Updates
+11. **Statistics Display Test**
+    - [ ] Verify statistics cards at top show correct counts:
+      - New: Count of jobs with status="new"
+      - Approved: Count of jobs with status="approved"
+      - Applied: Count of jobs with status="applied"
+      - Filtered: Count of jobs with status="filtered"
+    - [ ] Perform status update (approve a job)
+    - [ ] Verify statistics update immediately without page refresh
+
+12. **Criteria Configuration Test**
+    - [ ] Click "Configure Criteria" button (if available in UI)
+    - [ ] Verify criteria modal/panel opens
+    - [ ] Check current criteria displays: Min Salary ($130,000), Max Commute (45 min), Domains (Testing, AI, Firmware)
+    - [ ] If editable: Modify a criterion and save
+    - [ ] Verify `PUT /api/criteria` request is sent
+    - [ ] Verify criteria updates reflected in job filtering logic
+
+#### Filtered Jobs Display
+13. **Filtered Jobs Validation Test**
+    - [ ] Navigate to "Filtered" tab
+    - [ ] Verify filtered jobs display with orange/red "Filter" icon
+    - [ ] Check each filtered job shows "Filtered Reasons" section
+    - [ ] Verify reasons are specific and accurate:
+      - "Salary below minimum ($130,000)" for low-salary jobs
+      - "Commute time exceeds 45 minutes" for long-commute jobs
+      - "Domain does not match preferred domains" for non-matching jobs
+    - [ ] Verify multiple reasons listed if job fails multiple criteria
+
+#### Responsive Design & Layout
+14. **Desktop Layout Test** (1920x1080)
+    - [ ] Verify page layout uses full width appropriately
+    - [ ] Check job cards display in grid or list format
+    - [ ] Verify statistics cards display horizontally at top
+    - [ ] Check modals are centered and properly sized
+    - [ ] Verify no horizontal scrolling required
+
+15. **Tablet Layout Test** (768px width)
+    - [ ] Resize browser window to 768px width
+    - [ ] Verify layout remains functional
+    - [ ] Check job cards stack appropriately
+    - [ ] Verify modals resize to fit screen
+    - [ ] Check tab navigation remains accessible
+
+16. **Mobile Layout Test** (375px width)
+    - [ ] Resize browser window to 375px width
+    - [ ] Verify all content is accessible without horizontal scroll
+    - [ ] Check buttons are large enough for touch targets (minimum 44x44px)
+    - [ ] Verify modals occupy full screen on mobile
+    - [ ] Test tab navigation on mobile view
+
+#### Error Handling & Edge Cases
+17. **API Failure Simulation Test**
+    - [ ] Stop backend server
+    - [ ] Refresh frontend page
+    - [ ] Verify graceful error handling (sample data displayed or error message)
+    - [ ] Check console for error messages
+    - [ ] Restart backend server
+    - [ ] Verify page recovers and loads real data
+
+18. **Empty State Test**
+    - [ ] Clear all jobs from a specific status (e.g., empty Inbox)
+    - [ ] Navigate to that tab
+    - [ ] Verify appropriate empty state message displays
+    - [ ] Check that page doesn't break with zero jobs
+
+19. **Long Content Test**
+    - [ ] Test job with very long title (>100 characters)
+    - [ ] Verify title displays without breaking layout
+    - [ ] Test job with very long description
+    - [ ] Verify description is scrollable in modal
+    - [ ] Test job with very long company name
+    - [ ] Verify company name truncates or wraps appropriately
+
+20. **Special Characters Test**
+    - [ ] Test job with special characters in title (e.g., "Sr. Test Engineer & QA Lead (Remote)")
+    - [ ] Verify special characters display correctly
+    - [ ] Test job with Unicode characters (e.g., company name with accents)
+    - [ ] Check that filtering and sorting work correctly
+
+#### Performance & Browser Compatibility
+21. **Performance Validation**
+    - [ ] Open browser Performance tab (F12 → Performance)
+    - [ ] Record page load
+    - [ ] Verify First Contentful Paint <3 seconds
+    - [ ] Check Time to Interactive <5 seconds
+    - [ ] Verify no memory leaks during navigation between tabs
+    - [ ] Monitor Network tab: Verify no unnecessary duplicate API calls
+
+22. **Cross-browser Testing**
+    - [ ] **Chrome**: Repeat critical tests (tab navigation, status updates, content generation)
+    - [ ] **Firefox**: Repeat critical tests
+    - [ ] **Safari**: Repeat critical tests (macOS/iOS)
+    - [ ] **Edge**: Repeat critical tests
+    - [ ] Document any browser-specific issues
+
+#### Accessibility Testing
+23. **Keyboard Navigation Test**
+    - [ ] Use Tab key to navigate through page
+    - [ ] Verify all interactive elements receive focus indicator
+    - [ ] Press Enter on focused buttons → Verify actions trigger
+    - [ ] Use Shift+Tab to navigate backwards
+    - [ ] Verify modal traps focus (Tab cycles within modal)
+    - [ ] Press Escape key on modal → Verify modal closes
+
+24. **Screen Reader Test** (Optional but Recommended)
+    - [ ] Enable VoiceOver (macOS) or NVDA/JAWS (Windows)
+    - [ ] Navigate page with screen reader
+    - [ ] Verify job cards announce title, company, and status
+    - [ ] Check that buttons announce their purpose
+    - [ ] Verify form inputs have appropriate labels
+
+### Test Completion Checklist
+- [ ] All tests passing in at least 2 major browsers
+- [ ] No critical console errors observed
+- [ ] All user workflows functional (view jobs, approve/reject, generate content)
+- [ ] Performance targets met (<3s page load, <2s content generation)
+- [ ] Responsive design verified on desktop, tablet, mobile
+- [ ] Documented any issues found in test execution log
+
+### Issue Reporting Format
+When issues are found, document using this format:
+```
+Issue ID: FE-YYYYMMDD-###
+Test Section: [Section number and name]
+Browser: [Chrome/Firefox/Safari/Edge + version]
+Steps to Reproduce:
+1. [Step 1]
+2. [Step 2]
+Expected Result: [What should happen]
+Actual Result: [What actually happened]
+Severity: [Critical/High/Medium/Low]
+Screenshot: [Attach if applicable]
+```
+
+---
+
 ## Maintenance & Evolution
 
 ### Test Suite Maintenance
