@@ -46,11 +46,10 @@ The implementation stack is:
 ## 4. Workflow
 
 ### 4.1 Intake Sources
-- Gmail inbox (primary)  
-- Consulting inbox (`sam@samkirk.com`)  
-- Personal inbox (`samuelakirk@me.com`)  
-- SMS/text messages  
-- Job sites (LinkedIn, Dice, Indeed, etc.)  
+- Gmail inbox (primary)
+- Consulting inbox (`sam@samkirk.com`)
+- SMS/text messages
+- Job sites (LinkedIn, Dice, Indeed, etc.)
 - Manual entry  
 
 ### 4.2 Processing Pipeline

@@ -82,12 +82,12 @@ INSERT INTO applications (application_id, job_id, resume_version, cover_letter_v
 INSERT INTO communications (communication_id, application_id, message_content, message_date, channel, direction, from_contact, to_contact, subject) VALUES
 ('cccccccc-cccc-cccc-cccc-cccccccccccc', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
  'Thank you for your application. We have received it and will review shortly.',
- NOW() - INTERVAL '12 hours', 'email', 'inbound', 'hr@hardwarecorp.com', 'samuelakirk@me.com',
+ NOW() - INTERVAL '12 hours', 'email', 'inbound', 'hr@hardwarecorp.com', 'sam@samkirk.com',
  'Application Received - Firmware Test Engineer'),
 
 ('dddddddd-dddd-dddd-dddd-dddddddddddd', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
  'Hi, I wanted to follow up on my application for the Test Automation Lead position.',
- NOW() - INTERVAL '3 days', 'linkedin', 'outbound', 'samuelakirk@me.com', 'recruiter@autocorp.com',
+ NOW() - INTERVAL '3 days', 'linkedin', 'outbound', 'sam@samkirk.com', 'recruiter@autocorp.com',
  'Follow up on Test Automation Lead Application');
 
 -- Insert master resume version for testing

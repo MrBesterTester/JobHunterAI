@@ -452,5 +452,4 @@ Proprietary - Samuel Kirk
 
 ## Contact
 
-- Email: samuelakirk@me.com
-- Consulting: sam@samkirk.com
+- Email: sam@samkirk.com
