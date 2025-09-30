@@ -1,0 +1,262 @@
+name: Frontend E2E Tests
+
+on:
+  push:
+    branches: [main, samkirk]
+  pull_request:
+    branches: [main]
+
+jobs:
+  e2e-chromium:
+    name: E2E Tests (Chromium)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: jobhunter_user
+          POSTGRES_PASSWORD: jobhunter_dev_password
+          POSTGRES_DB: jobhunter
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            backend/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Initialize database schema
+        run: |
+          PGPASSWORD=jobhunter_dev_password psql -h localhost -U jobhunter_user -d jobhunter -f database/schema.sql
+        working-directory: ${{ github.workspace }}
+
+      - name: Build and start backend
+        run: |
+          cargo build --release
+          cargo run --release &
+          echo $! > backend.pid
+          sleep 10
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql://jobhunter_user:jobhunter_dev_password@localhost:5432/jobhunter
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium
+        working-directory: frontend
+
+      - name: Run E2E tests (Chromium only)
+        run: npm run test:e2e:chromium
+        working-directory: frontend
+        env:
+          CI: true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-chromium
+          path: frontend/playwright-report/
+          retention-days: 30
+
+      - name: Upload screenshots and videos
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-failures-chromium
+          path: frontend/test-results/
+          retention-days: 7
+
+      - name: Stop backend
+        if: always()
+        run: |
+          if [ -f backend.pid ]; then
+            kill $(cat backend.pid) || true
+          fi
+        working-directory: backend
+
+  e2e-multi-browser:
+    name: E2E Tests (All Browsers)
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        browser: [chromium, firefox, webkit]
+        exclude:
+          # WebKit only on macOS for Safari-equivalent testing
+          - os: ubuntu-latest
+            browser: webkit
+
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: jobhunter_user
+          POSTGRES_PASSWORD: jobhunter_dev_password
+          POSTGRES_DB: jobhunter
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            backend/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Initialize database schema (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          PGPASSWORD=jobhunter_dev_password psql -h localhost -U jobhunter_user -d jobhunter -f database/schema.sql
+        working-directory: ${{ github.workspace }}
+
+      - name: Install PostgreSQL (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install postgresql@14
+          brew services start postgresql@14
+          sleep 5
+          createdb jobhunter
+          psql -d jobhunter -f database/schema.sql
+        working-directory: ${{ github.workspace }}
+
+      - name: Build and start backend
+        run: |
+          cargo build --release
+          cargo run --release &
+          echo $! > backend.pid
+          sleep 10
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ matrix.os == 'ubuntu-latest' && 'postgresql://jobhunter_user:jobhunter_dev_password@localhost:5432/jobhunter' || 'postgresql://localhost/jobhunter' }}
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Install Playwright browsers
+        run: npx playwright install ${{ matrix.browser }}
+        working-directory: frontend
+
+      - name: Run E2E tests (${{ matrix.browser }})
+        run: npm run test:e2e -- --project=${{ matrix.browser }}
+        working-directory: frontend
+        env:
+          CI: true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.os }}-${{ matrix.browser }}
+          path: frontend/playwright-report/
+          retention-days: 30
+
+      - name: Upload screenshots and videos
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-failures-${{ matrix.os }}-${{ matrix.browser }}
+          path: frontend/test-results/
+          retention-days: 7
+
+      - name: Stop backend
+        if: always()
+        run: |
+          if [ -f backend.pid ]; then
+            kill $(cat backend.pid) || true
+          fi
+        working-directory: backend
+
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [e2e-chromium, e2e-multi-browser]
+    if: always()
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Create test summary
+        run: |
+          echo "# 🎭 Playwright E2E Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Test Execution Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Date**: $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Browser Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Chromium** - Primary target (Every commit)" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Firefox** - Cross-browser validation (CI/CD)" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **WebKit** - Safari-equivalent (macOS CI/CD)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Test Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📊 Test reports and failure artifacts available in Actions artifacts" >> $GITHUB_STEP_SUMMARY
+
+      - name: Report test results
+        run: |
+          if [ "${{ needs.e2e-chromium.result }}" == "success" ] && [ "${{ needs.e2e-multi-browser.result }}" == "success" ]; then
+            echo "✅ All E2E tests passed!"
+            exit 0
+          else
+            echo "❌ Some E2E tests failed. Check artifacts for details."
+            exit 1
+          fi
