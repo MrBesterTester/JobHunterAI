@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(brew services start:*)",
+      "Bash(sudo xcodebuild:*)",
+      "Bash(cargo:*)",
+      "Bash(createdb:*)",
+      "Bash(psql:*)",
+      "Bash(curl:*)",
+      "Bash(npm start)",
+      "Bash(timeout 10s cargo run)",
+      "Bash(gtimeout:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

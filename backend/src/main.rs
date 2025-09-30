@@ -1,0 +1,2166 @@
+use actix_web::{web, App, HttpResponse, HttpServer, Result};
+use actix_cors::Cors;
+use serde::{Deserialize, Serialize};
+use sqlx::{PgPool, FromRow};
+use uuid::Uuid;
+use chrono::{DateTime, Utc};
+use sha2::{Sha256, Digest};
+use handlebars::Handlebars;
+use base64::{Engine as _, engine::general_purpose};
+use bigdecimal::{BigDecimal, ToPrimitive};
+
+// ============================================================================
+// Database Models
+// ============================================================================
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct Job {
+    pub job_id: Uuid,
+    pub title: String,
+    pub company: String,
+    pub location: Option<String>,
+    pub source: String,
+    pub salary: Option<i32>,
+    pub commute_time: Option<i32>,
+    pub status: String,
+    pub date_collected: DateTime<Utc>,
+    pub description: Option<String>,
+    pub url: Option<String>,
+    pub filter_reason: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct Application {
+    pub application_id: Uuid,
+    pub job_id: Uuid,
+    pub resume_version: Option<String>,
+    pub cover_letter_version: Option<String>,
+    pub application_status: String,
+    pub date_applied: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct Communication {
+    pub communication_id: Uuid,
+    pub application_id: Uuid,
+    pub message_content: String,
+    pub message_date: DateTime<Utc>,
+    pub channel: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct JobCriteria {
+    pub criteria_id: Uuid,
+    pub min_salary: Option<i32>,
+    pub max_commute_time: Option<i32>,
+    pub max_commute_days_per_week: Option<i32>,
+    pub preferred_domains: Option<Vec<String>>,
+    pub remote_preference: String,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct FilterResult {
+    pub passed: bool,
+    pub reasons: Vec<String>,
+    pub status: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct JobDeduplication {
+    pub dedup_id: Uuid,
+    pub job_id: Uuid,
+    pub company_title_hash: String,
+    pub url_hash: Option<String>,
+    pub created_at: DateTime<Utc>,
+}
+
+// ============================================================================
+// Phase 4: Automated Job Intake Models
+// ============================================================================
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct JobSource {
+    pub source_id: Uuid,
+    pub source_name: String,
+    pub source_type: String,
+    pub base_url: Option<String>,
+    pub api_endpoint: Option<String>,
+    pub auth_required: bool,
+    pub auth_type: Option<String>,
+    pub is_active: bool,
+    pub rate_limit_requests: i32,
+    pub rate_limit_window_minutes: i32,
+    pub last_sync: Option<DateTime<Utc>>,
+    pub sync_interval_minutes: i32,
+    pub configuration: serde_json::Value,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct OAuthCredential {
+    pub credential_id: Uuid,
+    pub source_id: Uuid,
+    pub client_id: String,
+    pub client_secret: String,
+    pub access_token: Option<String>,
+    pub refresh_token: Option<String>,
+    pub token_expires_at: Option<DateTime<Utc>>,
+    pub scope: Option<Vec<String>>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct JobIntakeLog {
+    pub log_id: Uuid,
+    pub source_id: Uuid,
+    pub sync_started_at: DateTime<Utc>,
+    pub sync_completed_at: Option<DateTime<Utc>>,
+    pub jobs_discovered: i32,
+    pub jobs_filtered: i32,
+    pub jobs_deduplicated: i32,
+    pub jobs_approved: i32,
+    pub errors_count: i32,
+    pub error_details: Option<serde_json::Value>,
+    pub sync_status: String,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct EmailJob {
+    pub email_job_id: Uuid,
+    pub message_id: String,
+    pub thread_id: Option<String>,
+    pub sender_email: String,
+    pub sender_name: Option<String>,
+    pub subject: Option<String>,
+    pub received_date: DateTime<Utc>,
+    pub body_text: Option<String>,
+    pub body_html: Option<String>,
+    pub attachments: Option<serde_json::Value>,
+    pub processed: bool,
+    pub job_id: Option<Uuid>,
+    pub extraction_confidence: Option<f64>,
+    pub extracted_data: Option<serde_json::Value>,
+    pub processing_errors: Option<serde_json::Value>,
+    pub created_at: DateTime<Utc>,
+    pub processed_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GmailMessage {
+    pub id: String,
+    pub thread_id: String,
+    pub payload: GmailPayload,
+    pub internal_date: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GmailPayload {
+    pub headers: Vec<GmailHeader>,
+    pub body: Option<GmailBody>,
+    pub parts: Option<Vec<GmailPart>>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GmailHeader {
+    pub name: String,
+    pub value: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GmailBody {
+    pub data: Option<String>,
+    pub size: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GmailPart {
+    pub body: Option<GmailBody>,
+    #[serde(rename = "mimeType")]
+    pub mime_type: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GmailListResponse {
+    pub messages: Option<Vec<GmailMessageRef>>,
+    #[serde(rename = "nextPageToken")]
+    pub next_page_token: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GmailMessageRef {
+    pub id: String,
+    #[serde(rename = "threadId")]
+    pub thread_id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct OAuthTokenResponse {
+    pub access_token: String,
+    pub refresh_token: Option<String>,
+    pub expires_in: i64,
+    pub token_type: String,
+    pub scope: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct JobExtractionResult {
+    pub title: Option<String>,
+    pub company: Option<String>,
+    pub location: Option<String>,
+    pub salary: Option<i32>,
+    pub description: Option<String>,
+    pub url: Option<String>,
+    pub confidence: f64,
+    pub extraction_method: String,
+}
+
+// ============================================================================
+// Request/Response DTOs
+// ============================================================================
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreateJobRequest {
+    pub title: String,
+    pub company: String,
+    pub location: Option<String>,
+    pub source: String,
+    pub salary: Option<i32>,
+    pub commute_time: Option<i32>,
+    pub description: Option<String>,
+    pub url: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateJobStatusRequest {
+    pub status: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateApplicationRequest {
+    pub job_id: Uuid,
+    pub resume_version: Option<String>,
+    pub cover_letter_version: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateCriteriaRequest {
+    pub min_salary: Option<i32>,
+    pub max_commute_time: Option<i32>,
+    pub max_commute_days_per_week: Option<i32>,
+    pub preferred_domains: Option<Vec<String>>,
+    pub remote_preference: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct ResumeVersion {
+    pub version_id: Uuid,
+    pub version_name: String,
+    pub content: String,
+    pub format: String,
+    pub file_path: Option<String>,
+    pub is_master: bool,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct CoverLetterTemplate {
+    pub template_id: Uuid,
+    pub template_name: String,
+    pub content: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GenerateContentRequest {
+    pub job_id: Uuid,
+    pub resume_template: Option<String>,
+    pub cover_letter_template: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GeneratedContent {
+    pub resume: String,
+    pub cover_letter: String,
+    pub resume_format: String,
+    pub generated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ContentContext {
+    pub job_title: String,
+    pub company_name: String,
+    pub job_description: String,
+    pub salary: Option<i32>,
+    pub location: String,
+    pub source: String,
+    pub hiring_manager: String,
+    pub current_title: String,
+    pub years_experience: String,
+    pub relevant_domains: String,
+    pub technical_skills: String,
+    pub specialization_area: String,
+    pub key_achievement_1: String,
+    pub specific_accomplishment: String,
+    pub company_research: String,
+    pub qualification_bullets: String,
+    pub job_specific_paragraph: String,
+    pub specific_goals: String,
+    pub personalized_opening: String,
+    pub job_id: String,
+    pub application_date: String,
+}
+
+// ============================================================================
+// Filtering and Deduplication Logic
+// ============================================================================
+
+fn generate_hash(input: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(input.to_lowercase());
+    hex::encode(hasher.finalize())
+}
+
+fn is_remote_job(location: &Option<String>) -> bool {
+    if let Some(loc) = location {
+        let remote_patterns = ["remote", "work from home", "wfh", "anywhere", "distributed"];
+        let location_lower = loc.to_lowercase();
+        remote_patterns.iter().any(|pattern| location_lower.contains(pattern))
+    } else {
+        false
+    }
+}
+
+fn matches_domain(title: &str, description: &Option<String>, domains: &[String]) -> bool {
+    let text = format!("{} {}", title, description.as_deref().unwrap_or("")).to_lowercase();
+
+    let domain_keywords = [
+        ("testing", &["test", "testing", "qa", "quality assurance", "validation", "verification"] as &[&str]),
+        ("test automation", &["automation", "automated testing", "test automation", "selenium", "cypress", "playwright"] as &[&str]),
+        ("firmware", &["firmware", "embedded", "hardware", "microcontroller", "fpga"] as &[&str]),
+        ("ai", &["ai", "artificial intelligence", "machine learning", "ml", "generative ai", "llm"] as &[&str]),
+        ("prompt engineering", &["prompt", "prompt engineering", "llm", "chatgpt", "gpt"] as &[&str])
+    ];
+
+    for domain in domains {
+        let domain_lower = domain.to_lowercase();
+        if let Some((_, keywords)) = domain_keywords.iter().find(|(name, _)| domain_lower.contains(name)) {
+            if keywords.iter().any(|keyword| text.contains(keyword)) {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+async fn get_job_criteria(pool: &PgPool) -> Result<JobCriteria, sqlx::Error> {
+    sqlx::query_as::<_, JobCriteria>(
+        "SELECT * FROM job_criteria ORDER BY updated_at DESC LIMIT 1"
+    )
+    .fetch_one(pool)
+    .await
+}
+
+async fn filter_job(job_req: &CreateJobRequest, pool: &PgPool) -> FilterResult {
+    let mut reasons = Vec::new();
+
+    // Get current job criteria
+    let criteria = match get_job_criteria(pool).await {
+        Ok(criteria) => criteria,
+        Err(_) => {
+            reasons.push("Unable to load job criteria".to_string());
+            return FilterResult {
+                passed: false,
+                reasons,
+                status: "filtered".to_string(),
+            };
+        }
+    };
+
+    // Check minimum salary
+    if let Some(salary) = job_req.salary {
+        if let Some(min_salary) = criteria.min_salary {
+            if salary < min_salary {
+                reasons.push(format!("Salary ${} below minimum ${}", salary, min_salary));
+            }
+        }
+    } else {
+        reasons.push("No salary information provided".to_string());
+    }
+
+    // Check if remote (preferred)
+    let is_remote = is_remote_job(&job_req.location);
+    if !is_remote {
+        // Check commute time if not remote
+        if let Some(commute) = job_req.commute_time {
+            if let Some(max_commute) = criteria.max_commute_time {
+                if commute > max_commute {
+                    reasons.push(format!("Commute time {} min exceeds maximum {} min", commute, max_commute));
+                }
+            }
+        } else if job_req.location.is_some() {
+            reasons.push("Non-remote position with unknown commute time".to_string());
+        }
+    }
+
+    // Check domain match
+    if let Some(ref domains) = criteria.preferred_domains {
+        if !matches_domain(&job_req.title, &job_req.description, domains) {
+            reasons.push("Job doesn't match preferred domains (Testing, AI, Firmware)".to_string());
+        }
+    }
+
+    let passed = reasons.is_empty();
+    let status = if passed { "new".to_string() } else { "filtered".to_string() };
+
+    FilterResult { passed, reasons, status }
+}
+
+async fn check_duplicate(job_req: &CreateJobRequest, pool: &PgPool) -> Result<Option<Uuid>, sqlx::Error> {
+    let company_title_hash = generate_hash(&format!("{}{}", job_req.company, job_req.title));
+
+    let existing = sqlx::query_as::<_, JobDeduplication>(
+        "SELECT * FROM job_deduplication WHERE company_title_hash = $1"
+    )
+    .bind(&company_title_hash)
+    .fetch_optional(pool)
+    .await?;
+
+    if let Some(dedup) = existing {
+        return Ok(Some(dedup.job_id));
+    }
+
+    // Check URL hash if URL provided
+    if let Some(ref url) = job_req.url {
+        let url_hash = generate_hash(url);
+        let url_existing = sqlx::query_as::<_, JobDeduplication>(
+            "SELECT * FROM job_deduplication WHERE url_hash = $1"
+        )
+        .bind(&url_hash)
+        .fetch_optional(pool)
+        .await?;
+
+        if let Some(dedup) = url_existing {
+            return Ok(Some(dedup.job_id));
+        }
+    }
+
+    Ok(None)
+}
+
+async fn create_deduplication_entry(job_id: Uuid, job_req: &CreateJobRequest, pool: &PgPool) -> Result<(), sqlx::Error> {
+    let company_title_hash = generate_hash(&format!("{}{}", job_req.company, job_req.title));
+    let url_hash = job_req.url.as_ref().map(|url| generate_hash(url));
+
+    sqlx::query(
+        r#"
+        INSERT INTO job_deduplication (dedup_id, job_id, company_title_hash, url_hash)
+        VALUES ($1, $2, $3, $4)
+        "#
+    )
+    .bind(Uuid::new_v4())
+    .bind(job_id)
+    .bind(&company_title_hash)
+    .bind(&url_hash)
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}
+
+// ============================================================================
+// Content Generation Engine
+// ============================================================================
+
+async fn get_master_resume(pool: &PgPool) -> Result<ResumeVersion, sqlx::Error> {
+    sqlx::query_as::<_, ResumeVersion>(
+        "SELECT version_id, version_name, content, format, file_path, is_master, created_at, updated_at FROM resume_versions WHERE is_master = true ORDER BY created_at DESC LIMIT 1"
+    )
+    .fetch_one(pool)
+    .await
+}
+
+async fn get_cover_letter_template(pool: &PgPool, template_name: Option<String>) -> Result<CoverLetterTemplate, sqlx::Error> {
+    if let Some(name) = template_name {
+        sqlx::query_as::<_, CoverLetterTemplate>(
+            "SELECT template_id, template_name, content, created_at, updated_at FROM cover_letter_templates WHERE template_name = $1"
+        )
+        .bind(name)
+        .fetch_one(pool)
+        .await
+    } else {
+        sqlx::query_as::<_, CoverLetterTemplate>(
+            "SELECT template_id, template_name, content, created_at, updated_at FROM cover_letter_templates ORDER BY created_at DESC LIMIT 1"
+        )
+        .fetch_one(pool)
+        .await
+    }
+}
+
+fn extract_relevant_resume_sections(master_resume: &str, job: &Job) -> String {
+    let mut customized_resume = master_resume.to_string();
+
+    // Determine relevant domains based on job
+    let job_lower = format!("{} {}", job.title.to_lowercase(), job.description.as_ref().unwrap_or(&String::new()).to_lowercase());
+
+    // Add emphasis based on job requirements
+    if job_lower.contains("test") || job_lower.contains("qa") || job_lower.contains("quality") {
+        customized_resume = highlight_testing_experience(customized_resume);
+    }
+
+    if job_lower.contains("ai") || job_lower.contains("ml") || job_lower.contains("machine learning") || job_lower.contains("prompt") {
+        customized_resume = highlight_ai_experience(customized_resume);
+    }
+
+    if job_lower.contains("firmware") || job_lower.contains("hardware") || job_lower.contains("embedded") {
+        customized_resume = highlight_firmware_experience(customized_resume);
+    }
+
+    customized_resume
+}
+
+fn highlight_testing_experience(resume: String) -> String {
+    // Move testing-related experience to the front and emphasize
+    let highlighted = resume.replace("Test Automation", "**Test Automation**")
+        .replace("Quality Engineering", "**Quality Engineering**")
+        .replace("testing frameworks", "**testing frameworks**")
+        .replace("CI/CD", "**CI/CD**");
+    highlighted
+}
+
+fn highlight_ai_experience(resume: String) -> String {
+    let highlighted = resume.replace("AI-powered", "**AI-powered**")
+        .replace("LLM", "**LLM**")
+        .replace("Generative AI", "**Generative AI**")
+        .replace("Prompt Engineering", "**Prompt Engineering**")
+        .replace("OpenAI", "**OpenAI**");
+    highlighted
+}
+
+fn highlight_firmware_experience(resume: String) -> String {
+    let highlighted = resume.replace("firmware", "**firmware**")
+        .replace("hardware", "**hardware**")
+        .replace("embedded", "**embedded**")
+        .replace("validation", "**validation**");
+    highlighted
+}
+
+fn build_content_context(job: &Job) -> ContentContext {
+    let hiring_manager = extract_hiring_manager(&job.description);
+    let company_research = generate_company_research(&job.company);
+    let relevant_domains = determine_relevant_domains(job);
+    let job_specific_content = generate_job_specific_content(job);
+
+    ContentContext {
+        job_title: job.title.clone(),
+        company_name: job.company.clone(),
+        job_description: job.description.as_ref().unwrap_or(&String::new()).clone(),
+        salary: job.salary,
+        location: job.location.as_ref().unwrap_or(&String::from("Not specified")).clone(),
+        source: job.source.clone(),
+        hiring_manager,
+        current_title: "Senior Test Automation Engineer".to_string(),
+        years_experience: "10+".to_string(),
+        relevant_domains,
+        technical_skills: "test automation, AI/ML, quality engineering".to_string(),
+        specialization_area: "test automation and AI-driven development".to_string(),
+        key_achievement_1: "reduced production defects by 85% through advanced automation".to_string(),
+        specific_accomplishment: "architect scalable testing solutions for distributed systems".to_string(),
+        company_research,
+        qualification_bullets: generate_qualification_bullets(job),
+        job_specific_paragraph: job_specific_content,
+        specific_goals: "innovation in testing and quality assurance".to_string(),
+        personalized_opening: generate_personalized_opening(job),
+        job_id: job.job_id.to_string(),
+        application_date: Utc::now().format("%Y-%m-%d").to_string(),
+    }
+}
+
+fn extract_hiring_manager(description: &Option<String>) -> String {
+    if let Some(desc) = description {
+        // Simple extraction - in real world, this would be more sophisticated
+        if desc.contains("team lead") || desc.contains("manager") {
+            "Hiring Manager".to_string()
+        } else {
+            "Dear Hiring Team".to_string()
+        }
+    } else {
+        "Dear Hiring Team".to_string()
+    }
+}
+
+fn generate_company_research(company: &str) -> String {
+    format!("{} has a strong reputation for technological innovation and engineering excellence", company)
+}
+
+fn determine_relevant_domains(job: &Job) -> String {
+    let job_text = format!("{} {}", job.title.to_lowercase(), job.description.as_ref().unwrap_or(&String::new()).to_lowercase());
+    let mut domains = Vec::new();
+
+    if job_text.contains("test") || job_text.contains("qa") {
+        domains.push("test automation");
+    }
+    if job_text.contains("ai") || job_text.contains("ml") {
+        domains.push("AI/ML");
+    }
+    if job_text.contains("firmware") || job_text.contains("hardware") {
+        domains.push("firmware testing");
+    }
+
+    if domains.is_empty() {
+        "software engineering".to_string()
+    } else {
+        domains.join(" and ")
+    }
+}
+
+fn generate_qualification_bullets(job: &Job) -> String {
+    let job_text = format!("{} {}", job.title.to_lowercase(), job.description.as_ref().unwrap_or(&String::new()).to_lowercase());
+    let mut bullets = Vec::new();
+
+    bullets.push("• 10+ years of experience in test automation and quality engineering");
+
+    if job_text.contains("ai") || job_text.contains("ml") || job_text.contains("prompt") {
+        bullets.push("• Expertise in AI-driven testing and prompt engineering for LLM applications");
+    }
+
+    if job_text.contains("framework") || job_text.contains("architecture") {
+        bullets.push("• Proven track record of architecting scalable testing frameworks");
+    }
+
+    if job_text.contains("leadership") || job_text.contains("lead") || job_text.contains("senior") {
+        bullets.push("• Strong leadership experience mentoring engineering teams");
+    }
+
+    bullets.push("• Deep knowledge of modern testing tools and CI/CD best practices");
+
+    bullets.join("\n")
+}
+
+fn generate_job_specific_content(job: &Job) -> String {
+    let job_text = format!("{} {}", job.title.to_lowercase(), job.description.as_ref().unwrap_or(&String::new()).to_lowercase());
+
+    if job_text.contains("ai") || job_text.contains("ml") {
+        format!("I am particularly excited about {}'s work in AI and machine learning. My recent experience building AI-powered test generation systems and intelligent test failure analysis aligns perfectly with your needs for innovative testing solutions.", job.company)
+    } else if job_text.contains("firmware") || job_text.contains("hardware") {
+        format!("My experience in firmware validation and hardware testing frameworks would be valuable for {}'s embedded systems development.", job.company)
+    } else {
+        format!("I am impressed by {}'s commitment to quality and would bring my expertise in comprehensive test automation to help maintain your high standards.", job.company)
+    }
+}
+
+fn generate_personalized_opening(job: &Job) -> String {
+    let salary_note = if let Some(salary) = job.salary {
+        if salary >= 150000 {
+            "The opportunity to work on cutting-edge technology at a competitive compensation level makes this role particularly appealing."
+        } else {
+            "This role offers an excellent opportunity to contribute to meaningful technical challenges."
+        }
+    } else {
+        "This role represents an exciting opportunity to apply my expertise in a new environment."
+    };
+
+    format!("{} Your focus on {} aligns perfectly with my career goals.", salary_note, determine_relevant_domains(job))
+}
+
+async fn generate_content_for_job(job: &Job, pool: &PgPool) -> Result<GeneratedContent, Box<dyn std::error::Error>> {
+    // Get master resume
+    let master_resume = get_master_resume(pool).await?;
+
+    // Get cover letter template
+    let cover_letter_template = get_cover_letter_template(pool, None).await?;
+
+    // Generate customized resume
+    let customized_resume = extract_relevant_resume_sections(&master_resume.content, job);
+
+    // Build context for template rendering
+    let context = build_content_context(job);
+
+    // Render cover letter template
+    let handlebars = Handlebars::new();
+    let cover_letter = handlebars.render_template(&cover_letter_template.content, &context)?;
+
+    Ok(GeneratedContent {
+        resume: customized_resume,
+        cover_letter,
+        resume_format: master_resume.format,
+        generated_at: Utc::now(),
+    })
+}
+
+// ============================================================================
+// Job Handlers
+// ============================================================================
+
+async fn get_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    let jobs = sqlx::query_as::<_, Job>(
+        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_collected, description, url, filter_reason FROM jobs ORDER BY date_collected DESC"
+    )
+    .fetch_all(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    Ok(HttpResponse::Ok().json(jobs))
+}
+
+async fn get_job(
+    pool: web::Data<PgPool>,
+    job_id: web::Path<Uuid>,
+) -> Result<HttpResponse> {
+    let job = sqlx::query_as::<_, Job>(
+        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_collected, description, url, filter_reason FROM jobs WHERE job_id = $1"
+    )
+    .bind(*job_id)
+    .fetch_optional(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    match job {
+        Some(job) => Ok(HttpResponse::Ok().json(job)),
+        None => Ok(HttpResponse::NotFound().json("Job not found")),
+    }
+}
+
+async fn create_job(
+    pool: web::Data<PgPool>,
+    job_req: web::Json<CreateJobRequest>,
+) -> Result<HttpResponse> {
+    // Check for duplicates first
+    match check_duplicate(&job_req, pool.get_ref()).await {
+        Ok(Some(existing_job_id)) => {
+            return Ok(HttpResponse::Conflict().json(serde_json::json!({
+                "error": "Duplicate job detected",
+                "existing_job_id": existing_job_id
+            })));
+        }
+        Ok(None) => {}, // No duplicate, continue
+        Err(e) => {
+            eprintln!("Error checking duplicates: {}", e);
+            // Continue anyway, don't fail on deduplication errors
+        }
+    }
+
+    // Filter the job against criteria
+    let filter_result = filter_job(&job_req, pool.get_ref()).await;
+    let job_id = Uuid::new_v4();
+
+    // Store the filter reason in the database
+    let filter_reason = if filter_result.reasons.is_empty() {
+        None
+    } else {
+        Some(filter_result.reasons.join("; "))
+    };
+
+    let job = sqlx::query_as::<_, Job>(
+        r#"
+        INSERT INTO jobs (job_id, title, company, location, source, salary,
+                         commute_time, status, date_collected, description, url, filter_reason)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9, $10, $11)
+        RETURNING *
+        "#
+    )
+    .bind(job_id)
+    .bind(&job_req.title)
+    .bind(&job_req.company)
+    .bind(&job_req.location)
+    .bind(&job_req.source)
+    .bind(job_req.salary)
+    .bind(job_req.commute_time)
+    .bind(&filter_result.status)
+    .bind(&job_req.description)
+    .bind(&job_req.url)
+    .bind(&filter_reason)
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    // Create deduplication entry if job was created successfully
+    if let Err(e) = create_deduplication_entry(job_id, &job_req, pool.get_ref()).await {
+        eprintln!("Error creating deduplication entry: {}", e);
+        // Don't fail the request, just log the error
+    }
+
+    Ok(HttpResponse::Created().json(job))
+}
+
+async fn update_job_status(
+    pool: web::Data<PgPool>,
+    job_id: web::Path<Uuid>,
+    status_req: web::Json<UpdateJobStatusRequest>,
+) -> Result<HttpResponse> {
+    let job = sqlx::query_as::<_, Job>(
+        "UPDATE jobs SET status = $1 WHERE job_id = $2 RETURNING job_id, title, company, location, source, salary, commute_time, status, date_collected, description, url, filter_reason"
+    )
+    .bind(&status_req.status)
+    .bind(*job_id)
+    .fetch_optional(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    match job {
+        Some(job) => Ok(HttpResponse::Ok().json(job)),
+        None => Ok(HttpResponse::NotFound().json("Job not found")),
+    }
+}
+
+async fn get_jobs_by_status(
+    pool: web::Data<PgPool>,
+    status: web::Path<String>,
+) -> Result<HttpResponse> {
+    let jobs = sqlx::query_as::<_, Job>(
+        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_collected, description, url, filter_reason FROM jobs WHERE status = $1 ORDER BY date_collected DESC"
+    )
+    .bind(status.as_str())
+    .fetch_all(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    Ok(HttpResponse::Ok().json(jobs))
+}
+
+// ============================================================================
+// Application Handlers
+// ============================================================================
+
+async fn create_application(
+    pool: web::Data<PgPool>,
+    app_req: web::Json<CreateApplicationRequest>,
+) -> Result<HttpResponse> {
+    let application_id = Uuid::new_v4();
+    
+    let application = sqlx::query_as::<_, Application>(
+        r#"
+        INSERT INTO applications (application_id, job_id, resume_version, 
+                                 cover_letter_version, application_status, date_applied)
+        VALUES ($1, $2, $3, $4, 'pending', NOW())
+        RETURNING *
+        "#
+    )
+    .bind(application_id)
+    .bind(app_req.job_id)
+    .bind(&app_req.resume_version)
+    .bind(&app_req.cover_letter_version)
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    Ok(HttpResponse::Created().json(application))
+}
+
+async fn get_applications(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    let applications = sqlx::query_as::<_, Application>(
+        "SELECT * FROM applications ORDER BY date_applied DESC"
+    )
+    .fetch_all(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    Ok(HttpResponse::Ok().json(applications))
+}
+
+// ============================================================================
+// Job Criteria Handlers
+// ============================================================================
+
+async fn get_criteria(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    let criteria = sqlx::query_as::<_, JobCriteria>(
+        "SELECT * FROM job_criteria ORDER BY updated_at DESC LIMIT 1"
+    )
+    .fetch_optional(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    match criteria {
+        Some(criteria) => Ok(HttpResponse::Ok().json(criteria)),
+        None => Ok(HttpResponse::NotFound().json("No job criteria configured")),
+    }
+}
+
+async fn update_criteria(
+    pool: web::Data<PgPool>,
+    criteria_req: web::Json<UpdateCriteriaRequest>,
+) -> Result<HttpResponse> {
+    let criteria_id = Uuid::new_v4();
+
+    let criteria = sqlx::query_as::<_, JobCriteria>(
+        r#"
+        INSERT INTO job_criteria (criteria_id, min_salary, max_commute_time, max_commute_days_per_week,
+                                 preferred_domains, remote_preference, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, NOW())
+        RETURNING *
+        "#
+    )
+    .bind(criteria_id)
+    .bind(criteria_req.min_salary)
+    .bind(criteria_req.max_commute_time)
+    .bind(criteria_req.max_commute_days_per_week)
+    .bind(&criteria_req.preferred_domains)
+    .bind(&criteria_req.remote_preference)
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    Ok(HttpResponse::Ok().json(criteria))
+}
+
+// ============================================================================
+// Filtering and Stats Handlers
+// ============================================================================
+
+async fn get_filtered_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    let jobs = sqlx::query_as::<_, Job>(
+        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_collected, description, url, filter_reason FROM jobs WHERE status = 'filtered' ORDER BY date_collected DESC"
+    )
+    .fetch_all(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    Ok(HttpResponse::Ok().json(jobs))
+}
+
+async fn get_job_stats(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    let stats = sqlx::query!(
+        r#"
+        SELECT
+            status,
+            COUNT(*) as count
+        FROM jobs
+        GROUP BY status
+        "#
+    )
+    .fetch_all(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    let stats_map: std::collections::HashMap<String, i64> = stats
+        .into_iter()
+        .filter_map(|row| row.status.map(|status| (status, row.count.unwrap_or(0))))
+        .collect();
+
+    Ok(HttpResponse::Ok().json(stats_map))
+}
+
+// ============================================================================
+// Content Generation Handlers
+// ============================================================================
+
+async fn get_resumes(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    let resumes = sqlx::query_as::<_, ResumeVersion>(
+        "SELECT version_id, version_name, content, format, file_path, is_master, created_at, updated_at FROM resume_versions ORDER BY created_at DESC"
+    )
+    .fetch_all(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    Ok(HttpResponse::Ok().json(resumes))
+}
+
+async fn get_cover_letter_templates_handler(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    let templates = sqlx::query_as::<_, CoverLetterTemplate>(
+        "SELECT template_id, template_name, content, created_at, updated_at FROM cover_letter_templates ORDER BY created_at DESC"
+    )
+    .fetch_all(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    Ok(HttpResponse::Ok().json(templates))
+}
+
+async fn generate_content_handler(
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse> {
+    let job_id = path.into_inner();
+
+    // Get job details
+    let job = sqlx::query_as::<_, Job>(
+        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_collected, description, url, filter_reason FROM jobs WHERE job_id = $1"
+    )
+    .bind(job_id)
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Job not found: {}", e)))?;
+
+    // Generate content
+    match generate_content_for_job(&job, pool.get_ref()).await {
+        Ok(content) => Ok(HttpResponse::Ok().json(content)),
+        Err(e) => Ok(HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": format!("Failed to generate content: {}", e)
+        })))
+    }
+}
+
+async fn generate_content_with_options_handler(
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+    req: web::Json<GenerateContentRequest>,
+) -> Result<HttpResponse> {
+    let job_id = path.into_inner();
+
+    // Validate the job ID matches
+    if req.job_id != job_id {
+        return Ok(HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "Job ID in path doesn't match request body"
+        })));
+    }
+
+    // Get job details
+    let job = sqlx::query_as::<_, Job>(
+        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_collected, description, url, filter_reason FROM jobs WHERE job_id = $1"
+    )
+    .bind(job_id)
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Job not found: {}", e)))?;
+
+    // For now, use the basic generation (could extend to use custom templates)
+    match generate_content_for_job(&job, pool.get_ref()).await {
+        Ok(content) => Ok(HttpResponse::Ok().json(content)),
+        Err(e) => Ok(HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": format!("Failed to generate content: {}", e)
+        })))
+    }
+}
+
+// ============================================================================
+// Phase 4: Gmail API Integration
+// ============================================================================
+
+async fn get_gmail_oauth_url() -> Result<HttpResponse> {
+    let client_id = std::env::var("GMAIL_CLIENT_ID")
+        .map_err(|_| actix_web::error::ErrorInternalServerError("GMAIL_CLIENT_ID not set"))?;
+
+    let redirect_uri = std::env::var("GMAIL_REDIRECT_URI")
+        .unwrap_or_else(|_| "http://localhost:8080/auth/gmail/callback".to_string());
+
+    let scope = "https://www.googleapis.com/auth/gmail.readonly";
+    let auth_url = format!(
+        "https://accounts.google.com/o/oauth2/v2/auth?client_id={}&redirect_uri={}&scope={}&response_type=code&access_type=offline&prompt=consent",
+        urlencoding::encode(&client_id),
+        urlencoding::encode(&redirect_uri),
+        urlencoding::encode(scope)
+    );
+
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "auth_url": auth_url
+    })))
+}
+
+async fn handle_gmail_oauth_callback(
+    pool: web::Data<PgPool>,
+    query: web::Query<std::collections::HashMap<String, String>>
+) -> Result<HttpResponse> {
+    let code = query.get("code")
+        .ok_or_else(|| actix_web::error::ErrorBadRequest("Missing authorization code"))?;
+
+    let client_id = std::env::var("GMAIL_CLIENT_ID")
+        .map_err(|_| actix_web::error::ErrorInternalServerError("GMAIL_CLIENT_ID not set"))?;
+
+    let client_secret = std::env::var("GMAIL_CLIENT_SECRET")
+        .map_err(|_| actix_web::error::ErrorInternalServerError("GMAIL_CLIENT_SECRET not set"))?;
+
+    let redirect_uri = std::env::var("GMAIL_REDIRECT_URI")
+        .unwrap_or_else(|_| "http://localhost:8080/auth/gmail/callback".to_string());
+
+    // Exchange code for tokens
+    let client = reqwest::Client::new();
+    let token_response = client
+        .post("https://oauth2.googleapis.com/token")
+        .form(&[
+            ("code", code),
+            ("client_id", &client_id),
+            ("client_secret", &client_secret),
+            ("redirect_uri", &redirect_uri),
+            ("grant_type", &"authorization_code".to_string()),
+        ])
+        .send()
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Token request failed: {}", e)))?;
+
+    let token_data: OAuthTokenResponse = token_response
+        .json()
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to parse token response: {}", e)))?;
+
+    // Get Gmail source ID
+    let source = sqlx::query_as::<_, JobSource>(
+        "SELECT * FROM job_sources WHERE source_name = 'gmail' LIMIT 1"
+    )
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|_| actix_web::error::ErrorInternalServerError("Gmail source not found"))?;
+
+    // Store or update OAuth credentials
+    let expires_at = chrono::Utc::now() + chrono::Duration::seconds(token_data.expires_in);
+
+    sqlx::query!(
+        r#"
+        INSERT INTO oauth_credentials (credential_id, source_id, client_id, client_secret, access_token, refresh_token, token_expires_at, scope)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        ON CONFLICT (source_id) DO UPDATE SET
+            access_token = EXCLUDED.access_token,
+            refresh_token = EXCLUDED.refresh_token,
+            token_expires_at = EXCLUDED.token_expires_at,
+            updated_at = NOW()
+        "#,
+        Uuid::new_v4(),
+        source.source_id,
+        client_id,
+        client_secret,
+        token_data.access_token,
+        token_data.refresh_token,
+        expires_at,
+        &vec![token_data.scope.unwrap_or_default()]
+    )
+    .execute(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to store credentials: {}", e)))?;
+
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "message": "Gmail integration configured successfully",
+        "expires_at": expires_at
+    })))
+}
+
+async fn sync_gmail_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    let log_id = Uuid::new_v4();
+
+    // Get Gmail source
+    let source = sqlx::query_as::<_, JobSource>(
+        "SELECT * FROM job_sources WHERE source_name = 'gmail' AND is_active = true LIMIT 1"
+    )
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|_| actix_web::error::ErrorNotFound("Gmail source not found or inactive"))?;
+
+    // Create intake log
+    sqlx::query!(
+        "INSERT INTO job_intake_logs (log_id, source_id, sync_status) VALUES ($1, $2, 'running')",
+        log_id,
+        source.source_id
+    )
+    .execute(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to create log: {}", e)))?;
+
+    // Get OAuth credentials
+    let credentials = sqlx::query_as::<_, OAuthCredential>(
+        "SELECT * FROM oauth_credentials WHERE source_id = $1 LIMIT 1"
+    )
+    .bind(source.source_id)
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|_| actix_web::error::ErrorNotFound("Gmail credentials not found"))?;
+
+    let access_token = credentials.access_token.as_ref()
+        .ok_or_else(|| actix_web::error::ErrorUnauthorized("No access token available"))?.clone();
+
+    // Check if token is expired and refresh if needed
+    let token = if let Some(expires_at) = credentials.token_expires_at {
+        if chrono::Utc::now() > expires_at {
+            refresh_gmail_token(&credentials, pool.get_ref()).await?
+        } else {
+            access_token
+        }
+    } else {
+        access_token
+    };
+
+    match process_gmail_messages(&token, &source, pool.get_ref(), log_id).await {
+        Ok((discovered, processed)) => {
+            // Update log as completed
+            sqlx::query!(
+                r#"
+                UPDATE job_intake_logs
+                SET sync_completed_at = NOW(), jobs_discovered = $1, jobs_approved = $2, sync_status = 'completed'
+                WHERE log_id = $3
+                "#,
+                discovered,
+                processed,
+                log_id
+            )
+            .execute(pool.get_ref())
+            .await
+            .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to update log: {}", e)))?;
+
+            Ok(HttpResponse::Ok().json(serde_json::json!({
+                "message": "Gmail sync completed successfully",
+                "jobs_discovered": discovered,
+                "jobs_processed": processed
+            })))
+        }
+        Err(e) => {
+            // Update log as failed
+            sqlx::query!(
+                r#"
+                UPDATE job_intake_logs
+                SET sync_completed_at = NOW(), sync_status = 'failed', errors_count = 1,
+                    error_details = $1
+                WHERE log_id = $2
+                "#,
+                serde_json::json!({"error": e.to_string()}),
+                log_id
+            )
+            .execute(pool.get_ref())
+            .await
+            .ok();
+
+            Err(actix_web::error::ErrorInternalServerError(format!("Gmail sync failed: {}", e)))
+        }
+    }
+}
+
+async fn refresh_gmail_token(credentials: &OAuthCredential, pool: &PgPool) -> actix_web::Result<String> {
+    let refresh_token = credentials.refresh_token.as_ref()
+        .ok_or_else(|| actix_web::error::ErrorUnauthorized("No refresh token available"))?;
+
+    let client = reqwest::Client::new();
+    let response = client
+        .post("https://oauth2.googleapis.com/token")
+        .form(&[
+            ("refresh_token", refresh_token),
+            ("client_id", &credentials.client_id),
+            ("client_secret", &credentials.client_secret),
+            ("grant_type", &"refresh_token".to_string()),
+        ])
+        .send()
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Token refresh failed: {}", e)))?;
+
+    let token_data: OAuthTokenResponse = response
+        .json()
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to parse refresh response: {}", e)))?;
+
+    let expires_at = chrono::Utc::now() + chrono::Duration::seconds(token_data.expires_in);
+
+    // Update stored credentials
+    sqlx::query!(
+        "UPDATE oauth_credentials SET access_token = $1, token_expires_at = $2, updated_at = NOW() WHERE credential_id = $3",
+        token_data.access_token,
+        expires_at,
+        credentials.credential_id
+    )
+    .execute(pool)
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to update credentials: {}", e)))?;
+
+    Ok(token_data.access_token)
+}
+
+async fn process_gmail_messages(
+    access_token: &str,
+    source: &JobSource,
+    pool: &PgPool,
+    _log_id: Uuid,
+) -> std::result::Result<(i32, i32), Box<dyn std::error::Error + Send + Sync>> {
+    let client = reqwest::Client::new();
+    let mut discovered_count = 0;
+    let mut processed_count = 0;
+
+    // Search for job-related emails
+    let query = "subject:(job OR position OR opportunity OR career OR hiring OR opening)";
+    let url = format!(
+        "https://gmail.googleapis.com/gmail/v1/users/me/messages?q={}",
+        urlencoding::encode(query)
+    );
+
+    let response = client
+        .get(&url)
+        .bearer_auth(access_token)
+        .send()
+        .await?;
+
+    let list_response: GmailListResponse = response.json().await?;
+
+    if let Some(messages) = list_response.messages {
+        for message_ref in messages.iter().take(50) { // Process up to 50 messages per sync
+            discovered_count += 1;
+
+            // Get full message details
+            let message_url = format!(
+                "https://gmail.googleapis.com/gmail/v1/users/me/messages/{}",
+                message_ref.id
+            );
+
+            let message_response = client
+                .get(&message_url)
+                .bearer_auth(access_token)
+                .send()
+                .await?;
+
+            let message: GmailMessage = message_response.json().await?;
+
+            // Check if we've already processed this message
+            let existing = sqlx::query!(
+                "SELECT email_job_id FROM email_jobs WHERE message_id = $1",
+                message.id
+            )
+            .fetch_optional(pool)
+            .await?;
+
+            if existing.is_some() {
+                continue; // Skip already processed messages
+            }
+
+            // Extract email details
+            let mut sender_email = String::new();
+            let mut sender_name = None;
+            let mut subject = None;
+
+            for header in &message.payload.headers {
+                match header.name.as_str() {
+                    "From" => {
+                        if let Some(captures) = regex::Regex::new(r"(.+?)\s*<(.+?)>").unwrap().captures(&header.value) {
+                            sender_name = Some(captures.get(1).unwrap().as_str().trim().to_string());
+                            sender_email = captures.get(2).unwrap().as_str().to_string();
+                        } else {
+                            sender_email = header.value.clone();
+                        }
+                    }
+                    "Subject" => subject = Some(header.value.clone()),
+                    _ => {}
+                }
+            }
+
+            let received_date = chrono::DateTime::from_timestamp_millis(
+                message.internal_date.parse::<i64>().unwrap_or(0)
+            ).unwrap_or_else(|| chrono::Utc::now());
+
+            // Extract email body
+            let body_text = extract_email_body(&message.payload);
+
+            // Store email job for processing
+            let email_job_id = Uuid::new_v4();
+            sqlx::query!(
+                r#"
+                INSERT INTO email_jobs (
+                    email_job_id, message_id, thread_id, sender_email, sender_name,
+                    subject, received_date, body_text, processed
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, false)
+                "#,
+                email_job_id,
+                message.id,
+                message.thread_id,
+                sender_email,
+                sender_name,
+                subject,
+                received_date,
+                body_text
+            )
+            .execute(pool)
+            .await?;
+
+            // Extract job information
+            if let Some(job_data) = extract_job_from_email(&subject, &body_text) {
+                if job_data.confidence > 0.5 { // Only process high-confidence extractions
+                    match create_job_from_extraction(&job_data, source, pool).await {
+                        Ok(_) => {
+                            processed_count += 1;
+
+                            // Mark email as processed
+                            sqlx::query!(
+                                "UPDATE email_jobs SET processed = true, processed_at = NOW(), extraction_confidence = $1, extracted_data = $2 WHERE email_job_id = $3",
+                                BigDecimal::try_from(job_data.confidence).unwrap_or_default(),
+                                serde_json::to_value(&job_data).unwrap(),
+                                email_job_id
+                            )
+                            .execute(pool)
+                            .await?;
+                        }
+                        Err(e) => {
+                            println!("Failed to create job from email: {}", e);
+
+                            // Store processing error
+                            sqlx::query!(
+                                "UPDATE email_jobs SET processing_errors = $1 WHERE email_job_id = $2",
+                                serde_json::json!({"error": e.to_string()}),
+                                email_job_id
+                            )
+                            .execute(pool)
+                            .await?;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Ok((discovered_count, processed_count))
+}
+
+fn extract_email_body(payload: &GmailPayload) -> Option<String> {
+    // Try to extract from direct body first
+    if let Some(body) = &payload.body {
+        if let Some(data) = &body.data {
+            if let Ok(decoded) = general_purpose::URL_SAFE_NO_PAD.decode(data) {
+                if let Ok(text) = String::from_utf8(decoded) {
+                    return Some(text);
+                }
+            }
+        }
+    }
+
+    // Try to extract from parts
+    if let Some(parts) = &payload.parts {
+        for part in parts {
+            if part.mime_type.starts_with("text/") {
+                if let Some(body) = &part.body {
+                    if let Some(data) = &body.data {
+                        if let Ok(decoded) = general_purpose::URL_SAFE_NO_PAD.decode(data) {
+                            if let Ok(text) = String::from_utf8(decoded) {
+                                return Some(text);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    None
+}
+
+fn extract_job_from_email(subject: &Option<String>, body: &Option<String>) -> Option<JobExtractionResult> {
+    let combined_text = format!(
+        "{} {}",
+        subject.as_deref().unwrap_or(""),
+        body.as_deref().unwrap_or("")
+    );
+
+    let mut extraction = JobExtractionResult {
+        title: None,
+        company: None,
+        location: None,
+        salary: None,
+        description: body.clone(),
+        url: None,
+        confidence: 0.0,
+        extraction_method: "regex".to_string(),
+    };
+
+    // Extract job title from subject
+    if let Some(subj) = subject {
+        let title_patterns = [
+            r"(?i)(software|test|qa|quality|automation|engineer|developer|architect|manager|lead|senior|principal|staff)\s+(engineer|developer|tester|analyst|manager|lead|architect)",
+            r"(?i)(job|position|opening|opportunity|role):\s*(.+?)(?:\s+at\s+|\s+@\s+|$)",
+        ];
+
+        for pattern in &title_patterns {
+            if let Ok(re) = regex::Regex::new(pattern) {
+                if let Some(captures) = re.captures(subj) {
+                    if let Some(title_match) = captures.get(0) {
+                        extraction.title = Some(title_match.as_str().trim().to_string());
+                        extraction.confidence += 0.3;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    // Extract company name
+    let company_patterns = [
+        r"(?i)at\s+([A-Z][a-zA-Z\s&]+)(?:\s|,|$)",
+        r"(?i)@\s+([A-Z][a-zA-Z\s&]+)(?:\s|,|$)",
+        r"(?i)from\s+([A-Z][a-zA-Z\s&]+)(?:\s|,|$)",
+    ];
+
+    for pattern in &company_patterns {
+        if let Ok(re) = regex::Regex::new(pattern) {
+            if let Some(captures) = re.captures(&combined_text) {
+                if let Some(company_match) = captures.get(1) {
+                    extraction.company = Some(company_match.as_str().trim().to_string());
+                    extraction.confidence += 0.2;
+                    break;
+                }
+            }
+        }
+    }
+
+    // Extract salary
+    let salary_patterns = [
+        r"(?i)\$(\d+),?(\d+)k?",
+        r"(?i)salary:?\s*\$?(\d+),?(\d+)",
+        r"(?i)(\d+)k?\s*-\s*(\d+)k?",
+    ];
+
+    for pattern in &salary_patterns {
+        if let Ok(re) = regex::Regex::new(pattern) {
+            if let Some(captures) = re.captures(&combined_text) {
+                if let Some(salary_match) = captures.get(1) {
+                    if let Ok(salary) = salary_match.as_str().replace(",", "").parse::<i32>() {
+                        extraction.salary = Some(if salary < 1000 { salary * 1000 } else { salary });
+                        extraction.confidence += 0.2;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    // Extract location
+    let location_patterns = [
+        r"(?i)(remote|san francisco|bay area|california|ca|fremont|hayward|menlo park|newark|union city|milpitas)",
+        r"(?i)location:?\s*([a-zA-Z\s,]+)",
+    ];
+
+    for pattern in &location_patterns {
+        if let Ok(re) = regex::Regex::new(pattern) {
+            if let Some(captures) = re.captures(&combined_text) {
+                if let Some(location_match) = captures.get(1) {
+                    extraction.location = Some(location_match.as_str().trim().to_string());
+                    extraction.confidence += 0.15;
+                    break;
+                }
+            }
+        }
+    }
+
+    // Extract URLs
+    if let Ok(re) = regex::Regex::new(r"https?://[^\s]+") {
+        if let Some(url_match) = re.find(&combined_text) {
+            extraction.url = Some(url_match.as_str().to_string());
+            extraction.confidence += 0.15;
+        }
+    }
+
+    if extraction.confidence > 0.3 {
+        Some(extraction)
+    } else {
+        None
+    }
+}
+
+async fn create_job_from_extraction(
+    extraction: &JobExtractionResult,
+    source: &JobSource,
+    pool: &PgPool,
+) -> std::result::Result<Uuid, sqlx::Error> {
+    let job_req = CreateJobRequest {
+        title: extraction.title.clone().unwrap_or_else(|| "Extracted Job".to_string()),
+        company: extraction.company.clone().unwrap_or_else(|| "Unknown Company".to_string()),
+        location: extraction.location.clone(),
+        source: source.source_name.clone(),
+        salary: extraction.salary,
+        commute_time: None,
+        description: extraction.description.clone(),
+        url: extraction.url.clone(),
+    };
+
+    // Use existing job creation logic
+    create_job_internal(&job_req, pool).await
+}
+
+async fn create_job_internal(job_req: &CreateJobRequest, pool: &PgPool) -> std::result::Result<Uuid, sqlx::Error> {
+    let job_id = Uuid::new_v4();
+
+    // Apply filtering
+    let filter_result = match filter_job(job_req, pool).await {
+        result => result,
+    };
+
+    // Check for duplicates
+    if let Ok(Some(existing_job_id)) = check_duplicate(job_req, pool).await {
+        return Ok(existing_job_id);
+    }
+
+    // Create job with appropriate status
+    let raw_data = serde_json::to_value(job_req).unwrap();
+
+    sqlx::query!(
+        r#"
+        INSERT INTO jobs (job_id, title, company, location, source, salary, commute_time,
+                         status, description, url, raw_data, filter_reason)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        "#,
+        job_id,
+        job_req.title,
+        job_req.company,
+        job_req.location,
+        job_req.source,
+        job_req.salary,
+        job_req.commute_time,
+        filter_result.status,
+        job_req.description,
+        job_req.url,
+        raw_data,
+        if filter_result.reasons.is_empty() { None } else { Some(filter_result.reasons.join("; ")) }
+    )
+    .execute(pool)
+    .await?;
+
+    // Store deduplication hash
+    create_deduplication_entry(job_id, job_req, pool).await?;
+
+    Ok(job_id)
+}
+
+async fn get_job_sources(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    let sources = sqlx::query_as::<_, JobSource>(
+        "SELECT * FROM job_sources ORDER BY source_name"
+    )
+    .fetch_all(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    Ok(HttpResponse::Ok().json(sources))
+}
+
+async fn get_intake_logs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    let logs = sqlx::query_as::<_, JobIntakeLog>(
+        "SELECT * FROM job_intake_logs ORDER BY sync_started_at DESC LIMIT 100"
+    )
+    .fetch_all(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    Ok(HttpResponse::Ok().json(logs))
+}
+
+// ============================================================================
+// Phase 4: LinkedIn API Integration
+// ============================================================================
+
+async fn sync_linkedin_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    let log_id = Uuid::new_v4();
+
+    // Get LinkedIn source
+    let source = sqlx::query_as::<_, JobSource>(
+        "SELECT * FROM job_sources WHERE source_name = 'linkedin' AND is_active = true LIMIT 1"
+    )
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|_| actix_web::error::ErrorNotFound("LinkedIn source not found or inactive"))?;
+
+    // Create intake log
+    sqlx::query!(
+        "INSERT INTO job_intake_logs (log_id, source_id, sync_status) VALUES ($1, $2, 'running')",
+        log_id,
+        source.source_id
+    )
+    .execute(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to create log: {}", e)))?;
+
+    match process_linkedin_jobs(&source, pool.get_ref(), log_id).await {
+        Ok((discovered, processed)) => {
+            // Update log as completed
+            sqlx::query!(
+                r#"
+                UPDATE job_intake_logs
+                SET sync_completed_at = NOW(), jobs_discovered = $1, jobs_approved = $2, sync_status = 'completed'
+                WHERE log_id = $3
+                "#,
+                discovered,
+                processed,
+                log_id
+            )
+            .execute(pool.get_ref())
+            .await
+            .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to update log: {}", e)))?;
+
+            Ok(HttpResponse::Ok().json(serde_json::json!({
+                "message": "LinkedIn sync completed successfully",
+                "jobs_discovered": discovered,
+                "jobs_processed": processed
+            })))
+        }
+        Err(e) => {
+            // Update log as failed
+            sqlx::query!(
+                r#"
+                UPDATE job_intake_logs
+                SET sync_completed_at = NOW(), sync_status = 'failed', errors_count = 1,
+                    error_details = $1
+                WHERE log_id = $2
+                "#,
+                serde_json::json!({"error": e.to_string()}),
+                log_id
+            )
+            .execute(pool.get_ref())
+            .await
+            .ok();
+
+            Err(actix_web::error::ErrorInternalServerError(format!("LinkedIn sync failed: {}", e)))
+        }
+    }
+}
+
+async fn process_linkedin_jobs(
+    source: &JobSource,
+    pool: &PgPool,
+    _log_id: Uuid,
+) -> std::result::Result<(i32, i32), Box<dyn std::error::Error + Send + Sync>> {
+    let _client = reqwest::Client::new();
+    let mut discovered_count = 0;
+    let mut processed_count = 0;
+
+    // LinkedIn Jobs API endpoint (placeholder - would need actual LinkedIn API integration)
+    let _api_url = source.base_url.as_deref().unwrap_or("https://api.linkedin.com/v2/jobSearch");
+
+    // Example query parameters from source configuration
+    let config = &source.configuration;
+    let _location = config["search_params"]["locationNames"][0].as_str().unwrap_or("San Francisco Bay Area");
+    let salary = config["search_params"]["salary"].as_i64().unwrap_or(130000);
+
+    // Build search query (this would need LinkedIn API key and proper authentication)
+    let _search_params = vec![
+        ("keywords", "software test automation qa engineer"),
+        ("location", _location),
+        ("sortBy", "DD"), // Date descending
+        ("start", "0"),
+        ("count", "50"),
+    ];
+
+    // For now, simulate LinkedIn API response with mock data
+    // In real implementation, this would make actual LinkedIn API calls
+    let mock_linkedin_jobs = create_mock_linkedin_jobs(salary);
+
+    for job_data in mock_linkedin_jobs {
+        discovered_count += 1;
+
+        // Check if we've already processed this job
+        let existing = sqlx::query!(
+            "SELECT api_job_id FROM api_job_sources WHERE source_id = $1 AND external_job_id = $2",
+            source.source_id,
+            job_data["id"].as_str().unwrap_or("unknown")
+        )
+        .fetch_optional(pool)
+        .await?;
+
+        if existing.is_some() {
+            continue; // Skip already processed jobs
+        }
+
+        // Store API job for processing
+        let api_job_id = Uuid::new_v4();
+        sqlx::query!(
+            r#"
+            INSERT INTO api_job_sources (
+                api_job_id, source_id, external_job_id, external_url, raw_response, processed
+            ) VALUES ($1, $2, $3, $4, $5, false)
+            "#,
+            api_job_id,
+            source.source_id,
+            job_data["id"].as_str().unwrap_or("unknown"),
+            job_data["url"].as_str(),
+            job_data
+        )
+        .execute(pool)
+        .await?;
+
+        // Extract job information from LinkedIn response
+        if let Some(job_extraction) = extract_job_from_linkedin(&job_data) {
+            if job_extraction.confidence > 0.7 { // Higher confidence threshold for API data
+                match create_job_from_extraction(&job_extraction, source, pool).await {
+                    Ok(job_id) => {
+                        processed_count += 1;
+
+                        // Mark API job as processed and link to created job
+                        sqlx::query!(
+                            "UPDATE api_job_sources SET processed = true, processed_at = NOW(), job_id = $1, extraction_confidence = $2, extracted_data = $3 WHERE api_job_id = $4",
+                            job_id,
+                            BigDecimal::try_from(job_extraction.confidence).unwrap_or_default(),
+                            serde_json::to_value(&job_extraction).unwrap(),
+                            api_job_id
+                        )
+                        .execute(pool)
+                        .await?;
+                    }
+                    Err(e) => {
+                        println!("Failed to create job from LinkedIn data: {}", e);
+
+                        // Store processing error
+                        sqlx::query!(
+                            "UPDATE api_job_sources SET processing_errors = $1 WHERE api_job_id = $2",
+                            serde_json::json!({"error": e.to_string()}),
+                            api_job_id
+                        )
+                        .execute(pool)
+                        .await?;
+                    }
+                }
+            }
+        }
+    }
+
+    Ok((discovered_count, processed_count))
+}
+
+fn create_mock_linkedin_jobs(min_salary: i64) -> Vec<serde_json::Value> {
+    vec![
+        serde_json::json!({
+            "id": "123456789",
+            "title": "Senior Test Automation Engineer",
+            "company": {
+                "name": "TechCorp Inc",
+                "industry": "Software"
+            },
+            "location": {
+                "name": "San Francisco, CA",
+                "country": "US"
+            },
+            "description": "We are looking for a Senior Test Automation Engineer to join our QA team. Experience with Selenium, CI/CD, and API testing required.",
+            "salary": {
+                "min": min_salary,
+                "max": min_salary + 50000,
+                "currency": "USD"
+            },
+            "url": "https://www.linkedin.com/jobs/view/123456789",
+            "postedDate": "2025-09-29",
+            "workplaceTypes": ["Remote"],
+            "skills": ["Test Automation", "Selenium", "Python", "CI/CD", "API Testing"]
+        }),
+        serde_json::json!({
+            "id": "987654321",
+            "title": "AI/ML Test Engineer",
+            "company": {
+                "name": "AI Innovations",
+                "industry": "Artificial Intelligence"
+            },
+            "location": {
+                "name": "Remote",
+                "country": "US"
+            },
+            "description": "Looking for an AI/ML Test Engineer with experience in prompt engineering and LLM testing. Must have experience with testing AI-powered applications.",
+            "salary": {
+                "min": min_salary + 20000,
+                "max": min_salary + 80000,
+                "currency": "USD"
+            },
+            "url": "https://www.linkedin.com/jobs/view/987654321",
+            "postedDate": "2025-09-28",
+            "workplaceTypes": ["Remote"],
+            "skills": ["AI Testing", "Prompt Engineering", "LLM", "Machine Learning", "Python"]
+        })
+    ]
+}
+
+fn extract_job_from_linkedin(job_data: &serde_json::Value) -> Option<JobExtractionResult> {
+    let title = job_data["title"].as_str()?.to_string();
+    let company = job_data["company"]["name"].as_str()?.to_string();
+    let location = job_data["location"]["name"].as_str().map(|s| s.to_string());
+    let description = job_data["description"].as_str().map(|s| s.to_string());
+    let url = job_data["url"].as_str().map(|s| s.to_string());
+
+    // Extract salary
+    let salary = if let Some(salary_obj) = job_data["salary"].as_object() {
+        salary_obj["min"].as_i64().map(|s| s as i32)
+    } else {
+        None
+    };
+
+    // High confidence for structured LinkedIn API data
+    let mut confidence: f64 = 0.9;
+
+    // Check if it's remote
+    if let Some(workplace_types) = job_data["workplaceTypes"].as_array() {
+        if workplace_types.iter().any(|wt| wt.as_str() == Some("Remote")) {
+            confidence += 0.1;
+        }
+    }
+
+    Some(JobExtractionResult {
+        title: Some(title),
+        company: Some(company),
+        location,
+        salary,
+        description,
+        url,
+        confidence: confidence.min(1.0),
+        extraction_method: "linkedin_api".to_string(),
+    })
+}
+
+// ============================================================================
+// Phase 4: Multi-Source Job Aggregation & Scheduling
+// ============================================================================
+
+async fn sync_all_sources(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    let mut results = Vec::new();
+    let mut total_discovered = 0;
+    let mut total_processed = 0;
+
+    // Get all active job sources
+    let sources = sqlx::query_as::<_, JobSource>(
+        "SELECT * FROM job_sources WHERE is_active = true ORDER BY source_name"
+    )
+    .fetch_all(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to get sources: {}", e)))?;
+
+    for source in sources {
+        let sync_result = match source.source_name.as_str() {
+            "gmail" => {
+                match sync_single_gmail_source(&source, pool.get_ref()).await {
+                    Ok((discovered, processed)) => {
+                        total_discovered += discovered;
+                        total_processed += processed;
+                        serde_json::json!({
+                            "source": "gmail",
+                            "status": "success",
+                            "discovered": discovered,
+                            "processed": processed
+                        })
+                    }
+                    Err(e) => {
+                        serde_json::json!({
+                            "source": "gmail",
+                            "status": "error",
+                            "error": e.to_string()
+                        })
+                    }
+                }
+            }
+            "linkedin" => {
+                match sync_single_linkedin_source(&source, pool.get_ref()).await {
+                    Ok((discovered, processed)) => {
+                        total_discovered += discovered;
+                        total_processed += processed;
+                        serde_json::json!({
+                            "source": "linkedin",
+                            "status": "success",
+                            "discovered": discovered,
+                            "processed": processed
+                        })
+                    }
+                    Err(e) => {
+                        serde_json::json!({
+                            "source": "linkedin",
+                            "status": "error",
+                            "error": e.to_string()
+                        })
+                    }
+                }
+            }
+            "indeed" => {
+                // Placeholder for Indeed integration
+                serde_json::json!({
+                    "source": "indeed",
+                    "status": "not_implemented",
+                    "discovered": 0,
+                    "processed": 0
+                })
+            }
+            _ => {
+                serde_json::json!({
+                    "source": source.source_name,
+                    "status": "unknown_source",
+                    "discovered": 0,
+                    "processed": 0
+                })
+            }
+        };
+
+        results.push(sync_result);
+
+        // Update last_sync time for this source
+        sqlx::query!(
+            "UPDATE job_sources SET last_sync = NOW() WHERE source_id = $1",
+            source.source_id
+        )
+        .execute(pool.get_ref())
+        .await
+        .ok();
+    }
+
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "message": "Multi-source sync completed",
+        "total_discovered": total_discovered,
+        "total_processed": total_processed,
+        "sources_synced": results.len(),
+        "results": results
+    })))
+}
+
+async fn sync_single_gmail_source(
+    source: &JobSource,
+    pool: &PgPool,
+) -> std::result::Result<(i32, i32), Box<dyn std::error::Error + Send + Sync>> {
+    // Get OAuth credentials
+    let credentials = sqlx::query_as::<_, OAuthCredential>(
+        "SELECT * FROM oauth_credentials WHERE source_id = $1 LIMIT 1"
+    )
+    .bind(source.source_id)
+    .fetch_one(pool)
+    .await?;
+
+    let access_token = credentials.access_token.as_ref()
+        .ok_or("No access token available")?.clone();
+
+    // Check if token is expired and refresh if needed
+    let token = if let Some(expires_at) = credentials.token_expires_at {
+        if chrono::Utc::now() > expires_at {
+            match refresh_gmail_token(&credentials, pool).await {
+                Ok(new_token) => new_token,
+                Err(_) => return Err("Failed to refresh token".into()),
+            }
+        } else {
+            access_token
+        }
+    } else {
+        access_token
+    };
+
+    process_gmail_messages(&token, source, pool, Uuid::new_v4()).await
+}
+
+async fn sync_single_linkedin_source(
+    source: &JobSource,
+    pool: &PgPool,
+) -> std::result::Result<(i32, i32), Box<dyn std::error::Error + Send + Sync>> {
+    process_linkedin_jobs(source, pool, Uuid::new_v4()).await
+}
+
+async fn schedule_job_sync(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    // Check which sources need syncing based on their sync interval
+    let sources_needing_sync = sqlx::query_as::<_, JobSource>(
+        r#"
+        SELECT * FROM job_sources
+        WHERE is_active = true
+        AND (
+            last_sync IS NULL
+            OR last_sync < NOW() - INTERVAL '1 minute' * sync_interval_minutes
+        )
+        ORDER BY last_sync ASC NULLS FIRST
+        "#
+    )
+    .fetch_all(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to get sources for sync: {}", e)))?;
+
+    let mut sync_scheduled = Vec::new();
+
+    for source in sources_needing_sync {
+        let time_since_sync = if let Some(last_sync) = source.last_sync {
+            chrono::Utc::now().signed_duration_since(last_sync).num_minutes()
+        } else {
+            999999 // Never synced
+        };
+
+        if time_since_sync >= source.sync_interval_minutes.into() {
+            sync_scheduled.push(serde_json::json!({
+                "source_name": source.source_name,
+                "last_sync": source.last_sync,
+                "interval_minutes": source.sync_interval_minutes,
+                "time_since_sync": time_since_sync
+            }));
+        }
+    }
+
+    if sync_scheduled.is_empty() {
+        Ok(HttpResponse::Ok().json(serde_json::json!({
+            "message": "No sources need syncing at this time",
+            "scheduled": []
+        })))
+    } else {
+        // In a real implementation, this would trigger background sync jobs
+        // For now, just return what would be scheduled
+        Ok(HttpResponse::Ok().json(serde_json::json!({
+            "message": format!("{} sources scheduled for sync", sync_scheduled.len()),
+            "scheduled": sync_scheduled
+        })))
+    }
+}
+
+async fn get_job_intake_summary(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    let summary_data = sqlx::query!(
+        r#"
+        SELECT
+            js.source_name,
+            js.source_type,
+            js.is_active,
+            js.last_sync,
+            COALESCE(SUM(jil.jobs_discovered), 0) as total_discovered,
+            COALESCE(SUM(jil.jobs_approved), 0) as total_approved,
+            COALESCE(AVG(jil.jobs_discovered), 0) as avg_per_sync,
+            COUNT(jil.log_id) as sync_count,
+            MAX(jil.sync_started_at) as last_sync_attempt
+        FROM job_sources js
+        LEFT JOIN job_intake_logs jil ON js.source_id = jil.source_id
+            AND jil.sync_completed_at IS NOT NULL
+        GROUP BY js.source_id, js.source_name, js.source_type, js.is_active, js.last_sync
+        ORDER BY js.source_name
+        "#
+    )
+    .fetch_all(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    // Convert to a serializable format
+    let summary = summary_data.into_iter().map(|record| {
+        serde_json::json!({
+            "source_name": record.source_name,
+            "source_type": record.source_type,
+            "is_active": record.is_active,
+            "last_sync": record.last_sync,
+            "total_discovered": record.total_discovered.unwrap_or(0),
+            "total_approved": record.total_approved.unwrap_or(0),
+            "avg_per_sync": record.avg_per_sync.as_ref().map(|bd| bd.to_f64().unwrap_or(0.0)).unwrap_or(0.0),
+            "sync_count": record.sync_count.unwrap_or(0),
+            "last_sync_attempt": record.last_sync_attempt
+        })
+    }).collect::<Vec<_>>();
+
+    Ok(HttpResponse::Ok().json(summary))
+}
+
+// ============================================================================
+// Main Server
+// ============================================================================
+
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    dotenv::dotenv().ok();
+    
+    let database_url = std::env::var("DATABASE_URL")
+        .expect("DATABASE_URL must be set");
+    
+    let pool = PgPool::connect(&database_url)
+        .await
+        .expect("Failed to connect to Postgres");
+
+    println!("🚀 JobHunter Backend starting on http://localhost:8080");
+
+    HttpServer::new(move || {
+        let cors = Cors::permissive();
+
+        App::new()
+            .wrap(cors)
+            .app_data(web::Data::new(pool.clone()))
+            .route("/api/jobs", web::get().to(get_jobs))
+            .route("/api/jobs", web::post().to(create_job))
+            .route("/api/jobs/filtered", web::get().to(get_filtered_jobs))
+            .route("/api/jobs/stats", web::get().to(get_job_stats))
+            .route("/api/jobs/{id}", web::get().to(get_job))
+            .route("/api/jobs/{id}/status", web::put().to(update_job_status))
+            .route("/api/jobs/status/{status}", web::get().to(get_jobs_by_status))
+            .route("/api/applications", web::get().to(get_applications))
+            .route("/api/applications", web::post().to(create_application))
+            .route("/api/criteria", web::get().to(get_criteria))
+            .route("/api/criteria", web::put().to(update_criteria))
+            .route("/api/resumes", web::get().to(get_resumes))
+            .route("/api/templates/cover-letters", web::get().to(get_cover_letter_templates_handler))
+            .route("/api/jobs/{id}/generate-content", web::get().to(generate_content_handler))
+            .route("/api/jobs/{id}/generate-content", web::post().to(generate_content_with_options_handler))
+            // Phase 4: Automated Job Intake APIs
+            .route("/api/auth/gmail/url", web::get().to(get_gmail_oauth_url))
+            .route("/auth/gmail/callback", web::get().to(handle_gmail_oauth_callback))
+            .route("/api/intake/gmail/sync", web::post().to(sync_gmail_jobs))
+            .route("/api/intake/linkedin/sync", web::post().to(sync_linkedin_jobs))
+            .route("/api/intake/sync-all", web::post().to(sync_all_sources))
+            .route("/api/intake/schedule", web::get().to(schedule_job_sync))
+            .route("/api/intake/summary", web::get().to(get_job_intake_summary))
+            .route("/api/job-sources", web::get().to(get_job_sources))
+            .route("/api/intake/logs", web::get().to(get_intake_logs))
+    })
+    .bind(("127.0.0.1", 8080))?
+    .run()
+    .await
+}
