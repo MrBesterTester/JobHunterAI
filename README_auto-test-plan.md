@@ -150,6 +150,136 @@ JobHuntAI/
 - ✅ **Audit Trail**: Complete logging of discovery, processing, and error states
 - ✅ **Performance Monitoring**: Detailed statistics on discovery rates
 
+### Phase 5 - Frontend Automated Testing ⏳ PLANNED
+**Target Coverage: 95%+ | Status: Architecture Designed, Implementation Pending**
+
+#### Browser Testing Strategy: Chrome + Playwright
+
+**Strategic Decision**: Chrome/Chromium for Development AND Testing
+
+JobHunter's frontend testing uses **Playwright with Chromium (Chrome-equivalent)** as the primary test target for maximum accuracy, reliability, and developer productivity.
+
+**Rationale for Chrome-First Strategy:**
+
+1. **Perfect Testing Accuracy** (Critical)
+   - Playwright Chromium = Google Chrome (identical rendering engine)
+   - Zero gap between "works in daily use" and "passes in tests"
+   - What the developer sees = What the tests validate = What users experience
+   - Eliminates "works on my machine" problems
+
+2. **Best Developer Experience**
+   - Chrome DevTools: Industry-leading debugging, profiling, React integration
+   - Fastest feedback loops (Chromium tests run 2-3x faster than Firefox/WebKit)
+   - Superior network inspector, performance profiler, memory leak detection
+   - Largest developer community, most Stack Overflow solutions
+
+3. **Market Reality**
+   - Chrome/Chromium: ~65% global browser market share
+   - Testing Chrome = validating experience for 2/3 of internet users
+   - Chromium-based browsers (Edge, Brave) use same engine = automatically covered
+
+4. **Technical Excellence**
+   - Playwright's primary target (most stable, most features, best maintained)
+   - Microsoft develops both Playwright and Edge (Chromium-based)
+   - Fewer edge cases and quirks than Safari/WebKit
+   - Fastest execution times = tests run more frequently = bugs caught earlier
+
+5. **Simplicity Principle**
+   - Software is complicated enough - reduce unnecessary complexity
+   - One browser for development + testing = simpler, more predictable
+   - Cross-browser testing in CI/CD catches edge cases without daily friction
+
+**Multi-Browser Testing Approach:**
+
+| Browser | Coverage | When | Purpose |
+|---------|----------|------|---------|
+| **Chromium** | 100% | Every test run, every commit | Primary validation, daily development |
+| **Firefox** | 100% | CI/CD only (before releases) | Cross-browser validation, Gecko engine coverage |
+| **WebKit** | 100% | CI/CD only (macOS runners) | Safari-equivalent testing (~90% Safari accuracy) |
+
+**Cross-Browser Test Execution:**
+- **Local Development**: Chromium only (fast feedback)
+- **Pull Requests**: Chromium + Firefox + WebKit (comprehensive validation)
+- **Production Releases**: Full multi-browser suite with visual regression testing
+
+#### Playwright Test Architecture
+
+**Test Structure:**
+```
+frontend/e2e/
+├── tests/
+│   ├── 01-setup-load.spec.ts           # Setup & Initial Load (2 sections)
+│   ├── 02-tab-navigation.spec.ts       # Tab Navigation & Filtering (2 sections)
+│   ├── 03-job-status-updates.spec.ts   # Job Status Updates (2 sections)
+│   ├── 04-content-generation.spec.ts   # Content Generation (2 sections)
+│   ├── 05-job-details.spec.ts          # Job Details View (2 sections)
+│   ├── 06-statistics.spec.ts           # Statistics & Real-time Updates (2 sections)
+│   ├── 07-filtered-jobs.spec.ts        # Filtered Jobs Display (1 section)
+│   ├── 08-responsive-design.spec.ts    # Responsive Design (3 sections)
+│   ├── 09-error-handling.spec.ts       # Error Handling & Edge Cases (4 sections)
+│   ├── 10-performance.spec.ts          # Performance Validation (1 section)
+│   └── 11-accessibility.spec.ts        # Accessibility Testing (2 sections)
+├── pages/
+│   ├── DashboardPage.ts                # Page Object Model for dashboard
+│   ├── JobCardComponent.ts             # Job card interactions
+│   └── ModalComponent.ts               # Modal interactions
+├── fixtures/
+│   ├── test-data.ts                    # Sample job data
+│   └── test-helpers.ts                 # Utility functions
+└── playwright.config.ts                # Multi-browser configuration
+```
+
+**Test Coverage Mapping:**
+Each of the 24 sections from the Manual Frontend Testing Checklist (below) maps to automated Playwright tests:
+- 24 manual test sections → 11 Playwright spec files
+- 150+ manual checkpoints → 144+ automated assertions
+- 100% critical path coverage: Tab navigation, status updates, content generation
+- 100% feature coverage: Job details, statistics, filtered jobs
+- 100% quality coverage: Responsive design, error handling, accessibility
+
+**Page Object Model Architecture:**
+- **Maintainability**: UI changes only require updating Page Objects, not individual tests
+- **Reusability**: Common interactions (click job card, approve job) defined once
+- **Readability**: Tests read like user stories, technical details abstracted
+
+**Test Execution Strategy:**
+- **Parallel Execution**: 4 workers (tests run simultaneously)
+- **Automatic Retries**: Flaky tests retry 2x before failing
+- **Visual Regression**: Screenshot comparison for critical pages
+- **Performance Monitoring**: Page load (<3s), API calls (<100ms), content gen (<2s)
+
+**CI/CD Integration:**
+```yaml
+GitHub Actions Workflow:
+- Trigger: On push to main, all pull requests
+- Matrix: ubuntu-latest (Chromium, Firefox), macos-latest (WebKit)
+- Parallel: 4 test shards for speed
+- Artifacts: Screenshots, videos, HTML reports (30-day retention)
+- Quality Gates: 100% pass required to merge
+```
+
+**Why NOT Cypress or Selenium?**
+- **Cypress**: WebKit support is experimental, uses Playwright WebKit internally (why not use Playwright directly?)
+- **Selenium**: Legacy architecture, slower, more flaky tests, weaker TypeScript support
+- **Playwright**: Modern, fast, reliable, excellent TypeScript support, best Chrome/Chromium integration
+
+**Implementation Timeline:** 4-5 weeks (part-time) or 2-3 weeks (full-time)
+
+**Success Metrics:**
+- ✅ 144+ automated assertions (100% manual checklist coverage)
+- ✅ <5 minute full test suite execution (parallelized)
+- ✅ <1% flaky test rate
+- ✅ 100% critical path coverage
+- ✅ Multi-browser validation in CI/CD
+
+**Next Steps:**
+1. Install Playwright: `npm init playwright@latest`
+2. Configure multi-browser projects (Chromium primary, Firefox/WebKit secondary)
+3. Create Page Object Models
+4. Implement tests in priority order (critical paths first)
+5. Set up GitHub Actions CI/CD
+6. Achieve 100% automation of manual testing checklist
+
 ## Test Infrastructure & Dependencies
 
 ### TAP-Based TypeScript Testing Architecture
@@ -611,13 +741,15 @@ jobs:
 
 ## Manual Frontend Testing Checklist
 
-**Purpose**: This checklist provides a systematic procedure for QA testers and developers to manually verify frontend functionality until automated browser testing is implemented (Playwright/Cypress).
+**Purpose**: This checklist provides a systematic procedure for QA testers and developers to manually verify frontend functionality until automated browser testing is implemented (Playwright). Once Playwright tests are complete, this checklist serves as the specification that automated tests implement.
+
+**Browser Recommendation**: Use **Chrome** for manual testing to match the automated Playwright Chromium tests (ensures consistency between manual and automated validation).
 
 **Prerequisites**:
 - Backend server running on `http://localhost:8080`
 - Frontend dev server running on `http://localhost:3000`
 - Test database populated with sample job data
-- Browser: Chrome, Firefox, Safari, or Edge
+- Browser: **Chrome** (recommended), or Firefox/Safari/Edge for cross-browser validation
 
 ### Test Procedure
 

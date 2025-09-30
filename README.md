@@ -390,6 +390,11 @@ JobHunter maintains high standards of quality through comprehensive automated ba
 - ✅ Multi-source job aggregation and failure isolation
 - ✅ Performance benchmarks (<100ms API, <2s content generation, <2min sync)
 
+**Browser Testing Strategy:**
+- ✅ Primary: Playwright Chromium (Chrome-equivalent) automated testing
+- ✅ Secondary: Firefox + WebKit cross-browser validation in CI/CD
+- ✅ Frontend: 144+ automated test assertions planned (based on manual checklist)
+
 ### Frontend Testing (Requires Manual Validation)
 - ⚠️ **Test Infrastructure Created**: JobCard.test.ts and jobs-api.test.ts exist with TAP framework
 - ⚠️ **Tests Cannot Execute**: ES Module cycle errors prevent automated test execution
@@ -401,6 +406,41 @@ JobHunter maintains high standards of quality through comprehensive automated ba
 - Visual regression testing for UI consistency
 
 See **[Testing Guide](README_auto-test.md)** for developer documentation, **[Test Plan](README_auto-test-plan.md)** for detailed test specifications, and **[Test Results](README_auto-test-results.md)** for live test dashboard.
+
+## Browser & Testing Strategy
+
+### Development & Testing Browser: Chrome
+
+JobHunter is developed and tested primarily using **Chrome/Chromium** for the following strategic reasons:
+
+**Why Chrome?**
+- ✅ **1:1 Testing Accuracy**: Playwright Chromium = Chrome (exact same engine, zero gap)
+- ✅ **Best Developer Tools**: Superior DevTools for React, Network, Performance debugging
+- ✅ **Fastest Testing**: Chromium tests run 2-3x faster than other browsers
+- ✅ **Most Reliable**: Chromium is Playwright's primary target (Microsoft develops both)
+- ✅ **Market Leader**: ~65% global browser market share
+- ✅ **Consistency**: Same browser for daily use and automated testing eliminates surprises
+
+**Development Workflow**:
+- **Daily Use**: Chrome browser
+- **Local Testing**: Playwright Chromium (instant, accurate feedback)
+- **CI/CD**: Playwright tests Chromium + Firefox + WebKit (comprehensive coverage)
+
+### Cross-Browser Compatibility
+
+**Tested Browsers** (via Playwright automated tests):
+- ✅ **Chrome/Chromium** (Primary - 100% test coverage, daily validation)
+- ✅ **Firefox** (Secondary - CI/CD validation before releases)
+- ✅ **Safari/WebKit** (Secondary - CI/CD validation on macOS runners)
+
+**End User Browser Support**:
+JobHunter should work in any modern browser (Chrome, Firefox, Safari, Edge) as it uses standard web technologies. However:
+- **Recommended for best experience**: Chrome or Chromium-based browsers (Chrome, Edge, Brave)
+- **Supported**: Firefox, Safari (latest versions)
+- **Note**: The application is developed and tested primarily in Chrome, so Chrome users get the most validated experience
+
+**Why This Strategy?**
+Software is complicated enough. By aligning development, personal use, and primary testing on a single browser (Chrome), we reduce complexity, increase accuracy, and get faster feedback loops. Cross-browser testing happens automatically in CI/CD to ensure broad compatibility without slowing down daily development.
 
 ## Contributing
 
