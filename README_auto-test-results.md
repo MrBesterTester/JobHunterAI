@@ -67,9 +67,16 @@
 
 | Test Category | Tests Planned | Tests Implemented | Status | Notes |
 |--------------|---------------|-------------------|---------|-------|
+| Resume Management | 15+ scenarios | ✅ Feature Complete | 🎯 **Tests Pending** | File upload, database CRUD, UI modal, master designation, deletion protection |
 | Resume Customization | 20+ scenarios | 7 tests | ✅ **7/7 Passing** | Domain-aware highlighting (Testing, AI, Firmware), database storage, version control |
 | Cover Letter Generation | 15+ scenarios | 6 tests | ✅ **6/6 Passing** | Handlebars rendering, complex variables, domain-specific content, template storage |
 | Content Quality | 10+ validators | 3 tests | ✅ **3/3 Passing** | Performance benchmarks (<2s), markdown preservation, template integrity |
+
+**Resume Management Feature (October 2025)**:
+- ✅ **Backend APIs**: 4 new endpoints (POST, PUT, DELETE, load-from-file)
+- ✅ **Frontend UI**: Complete modal with upload, display, manage functionality
+- ✅ **File Storage**: data/resumes/master_resume.md template created
+- 🎯 **Testing**: Automated tests pending (Phase 6)
 
 ### Phase 4 - Automated Job Intake Testing ✅ COMPLETE
 **Target Coverage: 92%+ | Current: 100% (18/18 tests passing)**
@@ -401,8 +408,32 @@ Real-time Analytics Tests (backend/tests/analytics_tests.rs): 10/10 ✅
 ---
 
 **Last Updated:** September 30, 2025 (Full Rebuild & Test Run)
-**Next Scheduled Update:** Upon Phase 5 implementation or CI/CD integration
+**Next Scheduled Update:** Upon Phase 6 resume management testing or CI/CD integration
 **Dashboard Refresh:** Manual
+
+## Recent Feature Additions (October 2025)
+
+### Resume Management System ✅
+**Status**: Feature complete, automated testing pending
+
+**Backend Implementation** (backend/src/main.rs):
+- ✅ POST /api/resumes - Create new resume version
+- ✅ POST /api/resumes/load-from-file - Load from data/resumes/master_resume.md
+- ✅ PUT /api/resumes/{id}/set-master - Set resume as master
+- ✅ DELETE /api/resumes/{id} - Delete non-master resume
+- ✅ Master resume enforcement (single master, prevent master deletion)
+
+**Frontend Implementation**:
+- ✅ ResumeManagement.tsx - Complete modal UI (540 lines)
+- ✅ Three upload methods: paste text, upload file, load from disk
+- ✅ Resume list display with master indicator
+- ✅ Set master and delete functionality
+- ✅ Success/error notifications
+
+**Files Created**:
+- data/resumes/master_resume.md - Sample resume template
+
+**Testing Status**: Feature ready for Phase 6 automated testing
 
 ## API & Core Tests Implementation Summary
 

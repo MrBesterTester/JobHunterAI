@@ -10,6 +10,7 @@ JobHunter is a comprehensive job application management system that automates an
 - **Intelligent Job Filtering**: Automatically filters jobs based on salary ($130K+), location (remote/≤45min commute), and domain (Testing, AI, Firmware)
 - **Advanced Deduplication**: Uses SHA256 hashing to prevent processing duplicate job postings
 - **Automated Content Generation**: Creates customized resumes and cover letters for each approved job
+- **Resume Management System**: Upload, manage, and version multiple resumes with master resume selection
 - **Real-time Dashboard**: Track job statuses with filtering, statistics, and detailed job information
 - **Professional UI**: Clean, responsive TypeScript React interface with comprehensive job management
 - **Comprehensive Testing**: 244 automated tests (100% backend, 92.1% frontend E2E) with large-scale performance validation
@@ -101,8 +102,12 @@ Based on your requirements:
 - `GET /api/criteria` - Get current job filtering criteria
 - `PUT /api/criteria` - Update job filtering criteria
 
-### Content Generation
+### Content Generation & Resume Management
 - `GET /api/resumes` - List resume versions
+- `POST /api/resumes` - Create new resume version
+- `POST /api/resumes/load-from-file` - Load master resume from data/resumes/master_resume.md
+- `PUT /api/resumes/{id}/set-master` - Set resume as master version
+- `DELETE /api/resumes/{id}` - Delete resume version (prevents master deletion)
 - `GET /api/templates/cover-letters` - List cover letter templates
 - `GET /api/jobs/{id}/generate-content` - Generate customized resume and cover letter
 - `POST /api/jobs/{id}/generate-content` - Generate content with custom options
@@ -162,10 +167,14 @@ Based on your requirements:
 
 ### Phase 3 - Content Generation ✅ **COMPLETE**
 
-**Master Resume Management**
-- Comprehensive resume storage for Sam Kirk with 10+ years testing/AI experience
-- Structured markdown format with sections for experience, skills, projects
-- Version control system for multiple resume variations
+**Resume Management System**
+- **File-based Storage**: Master resume stored in `data/resumes/master_resume.md` for easy editing
+- **Database Integration**: Resume versions stored in PostgreSQL with full CRUD operations
+- **UI Management**: Complete modal interface for uploading, viewing, and managing resumes
+- **Three Upload Methods**: Paste text, upload file, or load from filesystem
+- **Version Control**: Support for multiple resume versions with master designation
+- **Master Resume Enforcement**: Single master resume with database-level validation
+- **Deletion Protection**: Cannot delete master resume without setting another as master first
 
 **Intelligent Resume Customization**
 - **Domain-aware Highlighting**: Emphasizes relevant keywords based on job requirements
@@ -310,16 +319,20 @@ Gmail/LinkedIn/API Sources → Intelligent Extraction → Automatic Filtering �
 JobHuntAI/
 ├── backend/                    # Rust Backend (Actix-web + SQLx)
 │   ├── src/
-│   │   └── main.rs            # 900+ lines: API endpoints, filtering, content generation
+│   │   └── main.rs            # 2,200+ lines: API endpoints, filtering, content generation
 │   ├── Cargo.toml             # Dependencies: actix-web, sqlx, handlebars, sha2
 │   └── .env                   # Database connection and config
 ├── frontend/                   # TypeScript React Frontend
 │   ├── src/
-│   │   └── App.tsx            # 780+ lines: Dashboard, job cards, content modal
+│   │   ├── App.tsx            # 920+ lines: Dashboard, job cards, content modal
+│   │   └── ResumeManagement.tsx  # 540 lines: Resume management modal UI
 │   ├── package.json           # React, TypeScript, Lucide icons
 │   └── tsconfig.json          # Strict TypeScript configuration
 ├── database/                   # PostgreSQL Schema
-│   └── schema.sql             # 7 tables: jobs, deduplication, resume, templates
+│   └── schema.sql             # 12 tables: jobs, deduplication, resume, templates, intake
+├── data/                      # User Data
+│   └── resumes/
+│       └── master_resume.md   # Master resume template (markdown format)
 ├── docs/                      # Documentation
 │   ├── PRD.md                 # Original product requirements
 │   └── CLAUDE.md              # Development guide for Claude Code
@@ -327,10 +340,11 @@ JobHuntAI/
 ```
 
 **Core Components:**
-- **Backend**: 2,100+ lines of Rust with automated job intake, filtering, deduplication, and content generation
-- **Frontend**: 780+ lines of TypeScript React with professional UI and content management
+- **Backend**: 2,200+ lines of Rust with automated job intake, filtering, deduplication, and content generation
+- **Frontend**: 1,460+ lines of TypeScript React with professional UI and content management
 - **Database**: Fully normalized schema with 12 tables supporting complete automated job lifecycle
 - **Content Engine**: Handlebars templating with intelligent resume/cover letter generation
+- **Resume Management**: File-based storage with database integration and complete UI management
 - **Automated Intake**: Multi-source job discovery with Gmail/LinkedIn integration and intelligent extraction
 
 ## Technical Achievements

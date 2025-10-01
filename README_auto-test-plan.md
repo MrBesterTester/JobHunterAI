@@ -97,6 +97,15 @@ JobHuntAI/
 ### Phase 3 - Content Generation Testing ✅ COMPLETE
 **Target Coverage: 95%+ | Status: ✅ COMPLETE - 16/16 Tests Passing (100%)**
 
+#### Resume Management System ✅
+- ✅ **File-based Storage**: Master resume stored in `data/resumes/master_resume.md`
+- ✅ **Database Integration**: Resume versions stored in PostgreSQL with CRUD operations
+- ✅ **UI Management**: Modal interface for uploading, viewing, and managing resumes
+- ✅ **Three Upload Methods**: Paste text, upload file, load from filesystem
+- ✅ **Version Control**: Support for multiple resume versions
+- ✅ **Master Resume Logic**: Single master resume with enforcement
+- ✅ **Deletion Protection**: Cannot delete master resume without setting another first
+
 #### Resume Customization Engine ✅
 - ✅ **Domain-aware Highlighting**: Context-specific keyword emphasis
   - ✅ Testing roles: "Test Automation", "Quality Engineering", "CI/CD"
@@ -152,9 +161,35 @@ JobHuntAI/
 - ✅ **Performance Monitoring**: Detailed statistics on discovery rates
 
 ### Phase 5 - Frontend Automated Testing ✅ COMPLETE
-**Target Coverage: 100% | Status: All 163 Tests Implemented and Passing**
+**Target Coverage: 100% | Status: All 189 Tests Implemented and Passing (92.1%)**
 
 📚 **[Complete E2E Testing Documentation →](frontend/e2e/README.md)**
+
+### Phase 6 - Resume Management Testing 🎯 FUTURE
+**Target Coverage: 95%+ | Status: Feature Complete, Tests Pending**
+
+#### Backend API Testing
+- ⏳ **POST /api/resumes**: Create new resume version with validation
+- ⏳ **POST /api/resumes/load-from-file**: Load from data/resumes/master_resume.md
+- ⏳ **PUT /api/resumes/{id}/set-master**: Set resume as master (unset previous)
+- ⏳ **DELETE /api/resumes/{id}**: Delete non-master resume (prevent master deletion)
+- ⏳ **Master Resume Logic**: Test single master resume enforcement
+- ⏳ **Version Conflicts**: Test concurrent updates and race conditions
+
+#### Frontend E2E Testing
+- ⏳ **Resume Modal**: Open/close resume management modal
+- ⏳ **Upload Methods**: Test paste text, upload file, load from disk
+- ⏳ **Resume Display**: List all resumes with master indicator
+- ⏳ **Set Master**: Change master resume designation
+- ⏳ **Delete Resume**: Delete non-master resumes
+- ⏳ **Validation**: Test empty fields, missing content
+- ⏳ **Error Handling**: Test API failures, file read errors
+- ⏳ **Success Messages**: Verify upload/delete/set-master notifications
+
+#### Integration Testing
+- ⏳ **File System Integration**: Verify data/resumes/master_resume.md loading
+- ⏳ **Database Consistency**: Verify resume data integrity
+- ⏳ **Content Generation**: Test using uploaded resumes for job applications
 
 #### Browser Testing Strategy: Chrome + Playwright
 
