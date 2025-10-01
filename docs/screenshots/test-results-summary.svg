@@ -1,0 +1,64 @@
+<svg width="800" height="400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="800" height="400" fill="#0d1117"/>
+
+  <!-- Title -->
+  <text x="400" y="40" font-family="'SF Mono', Monaco, 'Courier New', monospace" font-size="24" fill="#58a6ff" text-anchor="middle" font-weight="bold">
+    JobHunter Test Results
+  </text>
+
+  <!-- Backend Tests -->
+  <g>
+    <rect x="50" y="80" width="340" height="280" fill="#161b22" stroke="#30363d" stroke-width="2" rx="6"/>
+    <text x="220" y="110" font-family="'SF Mono', Monaco, 'Courier New', monospace" font-size="18" fill="#58a6ff" text-anchor="middle" font-weight="bold">
+      Backend Tests
+    </text>
+
+    <!-- Checkmark -->
+    <circle cx="220" y="180" r="40" fill="#238636" opacity="0.2"/>
+    <path d="M 200 180 L 215 195 L 240 165" stroke="#2ea043" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <text x="220" y="250" font-family="'SF Mono', Monaco, 'Courier New', monospace" font-size="32" fill="#2ea043" text-anchor="middle" font-weight="bold">
+      70/70
+    </text>
+    <text x="220" y="280" font-family="'SF Mono', Monaco, 'Courier New', monospace" font-size="16" fill="#7d8590" text-anchor="middle">
+      100% Passing
+    </text>
+    <text x="220" y="310" font-family="'SF Mono', Monaco, 'Courier New', monospace" font-size="14" fill="#7d8590" text-anchor="middle">
+      ~2s execution
+    </text>
+    <text x="220" y="340" font-family="'SF Mono', Monaco, 'Courier New', monospace" font-size="12" fill="#58a6ff" text-anchor="middle">
+      cargo test
+    </text>
+  </g>
+
+  <!-- Frontend Tests -->
+  <g>
+    <rect x="410" y="80" width="340" height="280" fill="#161b22" stroke="#30363d" stroke-width="2" rx="6"/>
+    <text x="580" y="110" font-family="'SF Mono', Monaco, 'Courier New', monospace" font-size="18" fill="#58a6ff" text-anchor="middle" font-weight="bold">
+      Frontend E2E Tests
+    </text>
+
+    <!-- Progress Circle -->
+    <circle cx="580" y="180" r="40" fill="none" stroke="#30363d" stroke-width="8"/>
+    <circle cx="580" y="180" r="40" fill="none" stroke="#2ea043" stroke-width="8"
+            stroke-dasharray="231" stroke-dashoffset="18"
+            transform="rotate(-90 580 180)" stroke-linecap="round"/>
+    <text x="580" y="190" font-family="'SF Mono', Monaco, 'Courier New', monospace" font-size="20" fill="#2ea043" text-anchor="middle" font-weight="bold">
+      92%
+    </text>
+
+    <text x="580" y="250" font-family="'SF Mono', Monaco, 'Courier New', monospace" font-size="32" fill="#2ea043" text-anchor="middle" font-weight="bold">
+      174/189
+    </text>
+    <text x="580" y="280" font-family="'SF Mono', Monaco, 'Courier New', monospace" font-size="16" fill="#7d8590" text-anchor="middle">
+      92.1% Passing
+    </text>
+    <text x="580" y="310" font-family="'SF Mono', Monaco, 'Courier New', monospace" font-size="14" fill="#7d8590" text-anchor="middle">
+      ~2.3min execution
+    </text>
+    <text x="580" y="340" font-family="'SF Mono', Monaco, 'Courier New', monospace" font-size="12" fill="#58a6ff" text-anchor="middle">
+      Playwright Chromium
+    </text>
+  </g>
+</svg>
