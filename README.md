@@ -242,11 +242,124 @@ Based on your requirements:
 - **Performance Monitoring**: Detailed statistics on discovery and processing rates
 - **Source Management**: Active/inactive source control with last sync tracking
 
-### Phase 5+ - Advanced Features (Future Road Map)
-- Interview scheduling and calendar integration
-- Automated follow-up email sequences
-- Advanced analytics and success metrics
-- Mobile app for on-the-go management
+### Phase 5.1 - Calendar Integration & Follow-ups 🎯 **IN PLANNING**
+**Estimated Time**: 2-3 weeks
+**Status**: Development plan approved, implementation pending
+
+#### Features to Implement
+
+**1. Google Calendar Integration** (Week 1)
+- OAuth 2.0 with Google Calendar API (using `google_calendar` Rust crate)
+- Automatic interview event creation with job details
+- Calendar invites sent when interviews scheduled
+- Interview tracking in database with calendar_event_id
+- Configurable reminders (1 day before, 1 hour before)
+- Sync with MrBesterTester@gmail.com Google Calendar
+
+**2. Automated Email Follow-up System** (Week 1-2)
+- Extend existing Gmail OAuth integration for sending emails
+- Intelligent follow-up schedule:
+  - **Day 0**: Application submitted (auto-tracked)
+  - **Day 10-14**: First follow-up if no response
+  - **Day 21-28**: Second follow-up if still no response
+  - **Stop after 2 follow-ups** (avoid being pushy)
+- Job-specific email templates with personalization (company, title, date)
+- Manual approval workflow before each follow-up sends (safety mechanism)
+- Follow-up queue dashboard for approve/edit/skip actions
+
+**3. Application Status & Tracking Enhancements** (Week 2)
+- Extended status transitions: `applied` → `responded` → `interview_scheduled` → `offered` / `rejected`
+- Communication history tracking (all emails per application)
+- Last contact date monitoring
+- Next action reminder system
+
+**4. Dashboard Improvements** (Week 3)
+- Timeline view showing full application lifecycle
+- Upcoming interviews widget (next 7 days)
+- Follow-up queue (pending follow-ups awaiting approval)
+- Response rate analytics (% of applications getting responses)
+- Communication history panel per application
+
+#### Technical Implementation
+- **Backend**: Add `google_calendar` crate, extend Gmail sending capabilities
+- **Database**: New tables: `interviews`, `follow_up_schedule`, `communication_log`
+- **API Endpoints**:
+  - `POST /api/applications/{id}/schedule-interview`
+  - `POST /api/applications/{id}/send-follow-up`
+  - `GET /api/applications/{id}/communication-history`
+  - `GET /api/interviews/upcoming`
+- **Frontend**: New "Calendar" and "Follow-ups" tabs, timeline visualization
+- **Testing**: 20-25 new automated tests (backend + E2E)
+
+#### Why These Features
+- **High Value**: Automates manual follow-up and scheduling work
+- **Builds on Success**: Extends existing Gmail OAuth integration
+- **Professional Standard**: Email + Google Calendar is industry norm for job applications
+- **Single-User Optimized**: No multi-user complexity
+
+---
+
+### What NOT to Build (For Now)
+
+#### ❌ Apple Mail Integration
+**Why Skip**:
+- No official API - Apple keeps Mail.app APIs private
+- Unofficial workarounds (AppleScript, .emlx parsing) break with macOS updates
+- Gmail OAuth integration already working and far more reliable
+- Maintenance nightmare with every macOS update
+
+#### ❌ Apple Messages/iMessage Integration
+**Why Skip**:
+- No official API - protocol not documented for third-party developers
+- Apple actively discourages automated iMessage usage
+- Text messages rarely used for professional job communications
+- Email is the professional standard for job applications
+- AppleScript solutions unsupported and unreliable
+
+#### ❌ Apple Calendar (EventKit) Integration
+**Why Skip**:
+- Requires Swift/Objective-C native code with complex Rust FFI
+- Google Calendar API has superior Rust library support (`google_calendar` crate)
+- EventKit adds platform dependency (macOS only)
+- Google Calendar can sync with Apple Calendar anyway
+
+#### ❌ Mobile Native App
+**Why Skip**:
+- Current web app works on mobile browsers
+- Native development adds 8-12 weeks for iOS + Android
+- Single user doesn't justify mobile development cost
+- Web-first approach more maintainable
+
+#### ❌ Multi-User SaaS Transformation
+**Why Skip**:
+- Sole user for foreseeable future - premature optimization
+- Adds 6-8 weeks: authentication, billing, multi-tenancy, user isolation
+- Better to validate single-user value first
+- Can revisit when 5+ interested users identified
+- See `README_multi-user-saas-plan.md` for future implementation
+
+#### ❌ Advanced Analytics Dashboard
+**Why Defer**:
+- Lower priority than workflow automation
+- Need more data first (apply to 50+ jobs before analytics meaningful)
+- Basic statistics already implemented in Phase 2
+- Can add later as Phase 5.3
+
+#### ❌ AI-Powered Interview Prep
+**Why Defer**:
+- Interesting but not core workflow automation
+- Lower ROI than calendar/follow-up features
+- Multiple commercial solutions already exist
+- Consider as Phase 6 if needed
+
+---
+
+### Phase 5.2+ - Future Considerations (Not Currently Planned)
+- Advanced success metrics (time-to-interview, offer rates by source)
+- Job market trend analysis and salary benchmarking
+- Salary negotiation tracking and offer comparison
+- Company research integration (Glassdoor, Blind)
+- Professional network mapping
 
 ## Current Workflow
 
