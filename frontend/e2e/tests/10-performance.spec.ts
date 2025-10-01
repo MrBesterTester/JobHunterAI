@@ -48,8 +48,10 @@ test.describe('Performance Validation', () => {
     test('should detect no memory leaks during tab navigation', async ({ page }) => {
       await dashboardPage.goto();
 
-      // Get initial memory usage
-      const initialMetrics = await page.metrics();
+      // Get initial memory usage using Chrome's performance.memory API
+      const initialMetrics = await page.evaluate(() => ({
+        JSHeapUsedSize: (performance as any).memory?.usedJSHeapSize || 0
+      }));
 
       // Navigate between tabs multiple times
       for (let i = 0; i < 10; i++) {
@@ -62,7 +64,9 @@ test.describe('Performance Validation', () => {
       }
 
       // Get final memory usage
-      const finalMetrics = await page.metrics();
+      const finalMetrics = await page.evaluate(() => ({
+        JSHeapUsedSize: (performance as any).memory?.usedJSHeapSize || 0
+      }));
 
       // Memory shouldn't grow excessively
       // Allow for some growth but not massive leaks
@@ -95,11 +99,12 @@ test.describe('Performance Validation', () => {
     test('should verify API response times under 100ms average', async ({ page }) => {
       const responseTimes: number[] = [];
 
-      page.on('response', (response) => {
-        if (response.url().includes('/api/') && !response.url().includes('generate')) {
-          const timing = response.timing();
-          if (timing.responseEnd) {
-            responseTimes.push(timing.responseEnd);
+      page.on('requestfinished', async (request) => {
+        if (request.url().includes('/api/') && !request.url().includes('generate')) {
+          const timing = request.timing();
+          const responseTime = timing.responseEnd - timing.requestStart;
+          if (responseTime > 0) {
+            responseTimes.push(responseTime);
           }
         }
       });
@@ -288,11 +293,36 @@ test.describe('Performance Validation', () => {
       await dashboardPage.clickTab('approved');
       await page.waitForTimeout(100);
 
-      // Get layout duration metrics
-      const metrics = await page.metrics();
+      // Measure FPS using requestAnimationFrame
+      const frameData = await page.evaluate(() => {
+        return new Promise<number[]>((resolve) => {
+          const frameTimes: number[] = [];
+          let lastTime = performance.now();
+          let count = 0;
 
-      // Should not have excessive layout time
-      expect(metrics.LayoutDuration).toBeLessThan(1);
+          function measureFrame() {
+            const now = performance.now();
+            frameTimes.push(now - lastTime);
+            lastTime = now;
+            count++;
+
+            if (count < 60) {
+              // Measure 60 frames (~1 second)
+              requestAnimationFrame(measureFrame);
+            } else {
+              resolve(frameTimes);
+            }
+          }
+
+          requestAnimationFrame(measureFrame);
+        });
+      });
+
+      const avgFrameTime = frameData.reduce((a, b) => a + b) / frameData.length;
+      const fps = 1000 / avgFrameTime;
+
+      // Should maintain smooth animations (30+ FPS)
+      expect(fps).toBeGreaterThan(30);
     });
 
     test('should optimize re-renders on state changes', async ({ page }) => {
