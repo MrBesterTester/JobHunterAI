@@ -414,7 +414,7 @@ Real-time Analytics Tests (backend/tests/analytics_tests.rs): 10/10 ✅
 ## Recent Feature Additions (October 2025)
 
 ### Resume Management System ✅
-**Status**: Feature complete, automated testing pending
+**Status**: Feature complete, backend API tested via automated scripts ✅
 
 **Backend Implementation** (backend/src/main.rs):
 - ✅ POST /api/resumes - Create new resume version
@@ -433,7 +433,16 @@ Real-time Analytics Tests (backend/tests/analytics_tests.rs): 10/10 ✅
 **Files Created**:
 - data/resumes/master_resume.md - Sample resume template
 
-**Testing Status**: Feature ready for Phase 6 automated testing
+**Automated API Testing Results** (October 1, 2025):
+- ✅ **4/4 Backend API endpoints tested** - All passing
+- ✅ **Load from file**: Successfully loads 5911 char resume
+- ✅ **Create resume**: Correctly creates versions with master flag
+- ✅ **Set master**: Properly enforces single master designation
+- ✅ **Delete protection**: Prevents master deletion (400 Bad Request)
+- ✅ **Delete non-master**: Successfully removes non-master resumes (204 No Content)
+- 🔧 **Bug fixed**: Corrected relative path issue (data/ → ../data/)
+
+**Testing Status**: Backend APIs verified working, frontend UI E2E tests pending (Phase 6)
 
 ## API & Core Tests Implementation Summary
 

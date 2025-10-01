@@ -1057,8 +1057,8 @@ async fn delete_resume(
 async fn load_master_resume_from_file(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     use std::fs;
 
-    // Read the master resume file
-    let file_path = "data/resumes/master_resume.md";
+    // Read the master resume file (path relative to project root, not backend/)
+    let file_path = "../data/resumes/master_resume.md";
     let content = fs::read_to_string(file_path)
         .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to read resume file: {}", e)))?;
 

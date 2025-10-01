@@ -165,16 +165,32 @@ JobHuntAI/
 
 📚 **[Complete E2E Testing Documentation →](frontend/e2e/README.md)**
 
-### Phase 6 - Resume Management Testing 🎯 FUTURE
-**Target Coverage: 95%+ | Status: Feature Complete, Tests Pending**
+### Phase 6 - Resume Management Testing 🎯 PARTIAL
+**Target Coverage: 95%+ | Status: Backend APIs Tested via Automated Scripts ✅, Frontend E2E Pending**
 
-#### Backend API Testing
-- ⏳ **POST /api/resumes**: Create new resume version with validation
-- ⏳ **POST /api/resumes/load-from-file**: Load from data/resumes/master_resume.md
-- ⏳ **PUT /api/resumes/{id}/set-master**: Set resume as master (unset previous)
-- ⏳ **DELETE /api/resumes/{id}**: Delete non-master resume (prevent master deletion)
-- ⏳ **Master Resume Logic**: Test single master resume enforcement
-- ⏳ **Version Conflicts**: Test concurrent updates and race conditions
+#### Backend API Testing ✅ COMPLETE (Automated curl/bash Testing)
+- ✅ **POST /api/resumes**: Create new resume version with validation - **PASSED**
+  - Tested with markdown content, version name, format parameters
+  - Correctly handles is_master flag
+  - Returns 201 Created with version_id
+- ✅ **POST /api/resumes/load-from-file**: Load from data/resumes/master_resume.md - **PASSED**
+  - Successfully loads 5911 character resume
+  - Creates database record with master designation
+  - Returns 200 OK with complete resume data
+  - **Bug fixed**: Corrected relative path (../data/resumes/master_resume.md)
+- ✅ **PUT /api/resumes/{id}/set-master**: Set resume as master (unset previous) - **PASSED**
+  - Successfully changes master designation
+  - Unsets previous master (verified single master)
+  - Returns 200 OK with updated resume
+- ✅ **DELETE /api/resumes/{id}**: Delete non-master resume (prevent master deletion) - **PASSED**
+  - Protection working: Returns 400 Bad Request for master deletion
+  - Deletion working: Returns 204 No Content for non-master deletion
+  - Error message: "Cannot delete master resume. Set another resume as master first."
+- ✅ **Master Resume Logic**: Test single master resume enforcement - **PASSED**
+  - Verified only one resume has is_master=true after set-master operation
+  - Previous master correctly unset when new master designated
+- ⏳ **Version Conflicts**: Test concurrent updates and race conditions - **NOT TESTED**
+  - Requires automated testing with concurrent requests
 
 #### Frontend E2E Testing
 - ⏳ **Resume Modal**: Open/close resume management modal

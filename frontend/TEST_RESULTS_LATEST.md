@@ -413,7 +413,7 @@ Total: 78 jobs
 
 ### New Feature: Resume Management (October 2025)
 
-**Status**: ✅ Feature implemented, 🎯 tests pending
+**Status**: ✅ Feature implemented, ✅ Backend API tested (automated)
 
 **Implementation Complete**:
 - ✅ Backend: 4 new API endpoints (POST, PUT, DELETE, load-from-file)
@@ -422,11 +422,39 @@ Total: 78 jobs
 - ✅ Three upload methods: paste, file upload, load from disk
 - ✅ Master resume designation and deletion protection
 
-**Testing Needed** (Phase 6):
-- API endpoint testing (create, load, set-master, delete)
-- UI modal testing (open, upload, display, manage)
+**Automated Backend API Testing Results** (October 1, 2025):
+
+**1. ✅ POST /api/resumes/load-from-file** - PASSED
+- Successfully loads resume from `data/resumes/master_resume.md`
+- Creates database record with correct master designation
+- Response: 200 OK, 5911 characters loaded
+- **Issue fixed**: Corrected relative path from `data/` to `../data/` (backend runs from backend/ directory)
+
+**2. ✅ POST /api/resumes** - PASSED
+- Successfully creates new resume version
+- Accepts markdown content, version name, format
+- Correctly sets is_master flag based on input
+- Response: 201 Created with version_id
+
+**3. ✅ PUT /api/resumes/{id}/set-master** - PASSED
+- Successfully changes master designation
+- Unsets previous master (only one master at a time)
+- Response: 200 OK with updated resume data
+- Verified single master enforcement working
+
+**4. ✅ DELETE /api/resumes/{id}** - PASSED
+- **Protection working**: Returns 400 Bad Request when attempting to delete master resume
+- **Deletion working**: Returns 204 No Content when deleting non-master resume
+- Error message: "Cannot delete master resume. Set another resume as master first."
+
+**Files Modified During Testing**:
+- `backend/src/main.rs` line 1061: Fixed file path from `"data/resumes/master_resume.md"` to `"../data/resumes/master_resume.md"`
+
+**Automated Testing Needed** (Phase 6):
+- Frontend UI E2E testing with Playwright (open modal, upload, display, manage)
 - Integration testing (file system, database, content generation)
-- Estimated: 15+ new tests
+- Error handling scenarios (missing file, API failures)
+- Estimated: 15+ new Playwright tests
 
 ### Future Work (Optional - Not Required for Production)
 
