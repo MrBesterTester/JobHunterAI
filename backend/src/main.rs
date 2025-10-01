@@ -276,6 +276,102 @@ pub struct CoverLetterTemplate {
     pub updated_at: DateTime<Utc>,
 }
 
+// ============================================================================
+// Phase 5.1: Calendar Integration & Follow-ups Models
+// ============================================================================
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct Interview {
+    pub interview_id: Uuid,
+    pub application_id: Uuid,
+    pub calendar_event_id: Option<String>,
+    pub interview_type: String,
+    pub scheduled_date: DateTime<Utc>,
+    pub duration_minutes: i32,
+    pub location: Option<String>,
+    pub interviewer_name: Option<String>,
+    pub interviewer_email: Option<String>,
+    pub interviewer_phone: Option<String>,
+    pub notes: Option<String>,
+    pub status: String,
+    pub reminder_sent: bool,
+    pub calendar_invite_sent: bool,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateInterviewRequest {
+    pub application_id: Uuid,
+    pub interview_type: String,
+    pub scheduled_date: DateTime<Utc>,
+    pub duration_minutes: Option<i32>,
+    pub location: Option<String>,
+    pub interviewer_name: Option<String>,
+    pub interviewer_email: Option<String>,
+    pub interviewer_phone: Option<String>,
+    pub notes: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct FollowUpSchedule {
+    pub follow_up_id: Uuid,
+    pub application_id: Uuid,
+    pub scheduled_date: DateTime<Utc>,
+    pub attempt_number: i32,
+    pub follow_up_type: String,
+    pub status: String,
+    pub template_used: Option<String>,
+    pub subject: Option<String>,
+    pub body: Option<String>,
+    pub approved_by: Option<String>,
+    pub approved_at: Option<DateTime<Utc>>,
+    pub sent_at: Option<DateTime<Utc>>,
+    pub error_message: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateFollowUpRequest {
+    pub application_id: Uuid,
+    pub scheduled_date: Option<DateTime<Utc>>,
+    pub attempt_number: Option<i32>,
+    pub template_name: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ApproveFollowUpRequest {
+    pub subject: Option<String>,
+    pub body: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct FollowUpTemplate {
+    pub template_id: Uuid,
+    pub template_name: String,
+    pub template_type: String,
+    pub subject_template: String,
+    pub body_template: String,
+    pub variables: Option<serde_json::Value>,
+    pub is_active: bool,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct ApplicationTimeline {
+    pub application_id: Uuid,
+    pub job_id: Uuid,
+    pub job_title: String,
+    pub company: String,
+    pub date_applied: Option<DateTime<Utc>>,
+    pub event_type: String,
+    pub event_date: DateTime<Utc>,
+    pub event_description: String,
+    pub related_id: Option<Uuid>,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GenerateContentRequest {
     pub job_id: Uuid,
@@ -2255,6 +2351,355 @@ async fn get_job_intake_summary(pool: web::Data<PgPool>) -> Result<HttpResponse>
 }
 
 // ============================================================================
+// Phase 5.1: Calendar Integration & Follow-ups API Handlers
+// ============================================================================
+
+async fn create_interview(
+    pool: web::Data<PgPool>,
+    request: web::Json<CreateInterviewRequest>,
+) -> Result<HttpResponse> {
+    let duration = request.duration_minutes.unwrap_or(60);
+
+    let interview = sqlx::query_as::<_, Interview>(
+        r#"
+        INSERT INTO interviews (
+            application_id, interview_type, scheduled_date, duration_minutes,
+            location, interviewer_name, interviewer_email, interviewer_phone,
+            notes, status
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'scheduled')
+        RETURNING *
+        "#
+    )
+    .bind(&request.application_id)
+    .bind(&request.interview_type)
+    .bind(&request.scheduled_date)
+    .bind(duration)
+    .bind(&request.location)
+    .bind(&request.interviewer_name)
+    .bind(&request.interviewer_email)
+    .bind(&request.interviewer_phone)
+    .bind(&request.notes)
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    Ok(HttpResponse::Created().json(interview))
+}
+
+async fn get_upcoming_interviews(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    let interviews = sqlx::query_as::<_, ApplicationTimeline>(
+        r#"
+        SELECT
+            i.*,
+            a.job_id,
+            a.date_applied,
+            j.title as job_title,
+            j.company,
+            j.location as job_location
+        FROM interviews i
+        JOIN applications a ON i.application_id = a.application_id
+        JOIN jobs j ON a.job_id = j.job_id
+        WHERE i.status = 'scheduled'
+            AND i.scheduled_date >= NOW()
+            AND i.scheduled_date <= NOW() + INTERVAL '30 days'
+        ORDER BY i.scheduled_date ASC
+        "#
+    )
+    .fetch_all(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    Ok(HttpResponse::Ok().json(interviews))
+}
+
+async fn get_interview(
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse> {
+    let interview_id = path.into_inner();
+
+    let interview = sqlx::query_as::<_, Interview>(
+        "SELECT * FROM interviews WHERE interview_id = $1"
+    )
+    .bind(interview_id)
+    .fetch_optional(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    match interview {
+        Some(i) => Ok(HttpResponse::Ok().json(i)),
+        None => Ok(HttpResponse::NotFound().json(serde_json::json!({
+            "error": "Interview not found"
+        })))
+    }
+}
+
+async fn update_interview(
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+    request: web::Json<CreateInterviewRequest>,
+) -> Result<HttpResponse> {
+    let interview_id = path.into_inner();
+    let duration = request.duration_minutes.unwrap_or(60);
+
+    let interview = sqlx::query_as::<_, Interview>(
+        r#"
+        UPDATE interviews
+        SET interview_type = $1, scheduled_date = $2, duration_minutes = $3,
+            location = $4, interviewer_name = $5, interviewer_email = $6,
+            interviewer_phone = $7, notes = $8
+        WHERE interview_id = $9
+        RETURNING *
+        "#
+    )
+    .bind(&request.interview_type)
+    .bind(&request.scheduled_date)
+    .bind(duration)
+    .bind(&request.location)
+    .bind(&request.interviewer_name)
+    .bind(&request.interviewer_email)
+    .bind(&request.interviewer_phone)
+    .bind(&request.notes)
+    .bind(interview_id)
+    .fetch_optional(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    match interview {
+        Some(i) => Ok(HttpResponse::Ok().json(i)),
+        None => Ok(HttpResponse::NotFound().json(serde_json::json!({
+            "error": "Interview not found"
+        })))
+    }
+}
+
+async fn delete_interview(
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse> {
+    let interview_id = path.into_inner();
+
+    let result = sqlx::query!(
+        "DELETE FROM interviews WHERE interview_id = $1",
+        interview_id
+    )
+    .execute(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    if result.rows_affected() > 0 {
+        Ok(HttpResponse::NoContent().finish())
+    } else {
+        Ok(HttpResponse::NotFound().json(serde_json::json!({
+            "error": "Interview not found"
+        })))
+    }
+}
+
+async fn create_follow_up(
+    pool: web::Data<PgPool>,
+    request: web::Json<CreateFollowUpRequest>,
+) -> Result<HttpResponse> {
+    // Get application details for default scheduling
+    let app = sqlx::query!(
+        "SELECT date_applied FROM applications WHERE application_id = $1",
+        request.application_id
+    )
+    .fetch_optional(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    let date_applied = app.and_then(|a| a.date_applied).unwrap_or_else(|| Utc::now());
+
+    // Calculate default scheduled date (10-14 days after application)
+    let scheduled_date = request.scheduled_date.unwrap_or_else(|| {
+        date_applied + chrono::Duration::days(12)
+    });
+
+    let attempt_number = request.attempt_number.unwrap_or(1);
+    let template_name = request.template_name.as_deref().unwrap_or("First Follow-up - Application Status");
+
+    // Get template
+    let template = sqlx::query_as::<_, FollowUpTemplate>(
+        "SELECT * FROM follow_up_templates WHERE template_name = $1"
+    )
+    .bind(template_name)
+    .fetch_optional(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    let (subject, body) = if let Some(t) = template {
+        (Some(t.subject_template), Some(t.body_template))
+    } else {
+        (None, None)
+    };
+
+    let follow_up = sqlx::query_as::<_, FollowUpSchedule>(
+        r#"
+        INSERT INTO follow_up_schedule (
+            application_id, scheduled_date, attempt_number,
+            follow_up_type, status, template_used, subject, body
+        )
+        VALUES ($1, $2, $3, 'application', 'pending', $4, $5, $6)
+        RETURNING *
+        "#
+    )
+    .bind(&request.application_id)
+    .bind(scheduled_date)
+    .bind(attempt_number)
+    .bind(template_name)
+    .bind(subject)
+    .bind(body)
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    Ok(HttpResponse::Created().json(follow_up))
+}
+
+async fn get_pending_follow_ups(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    let follow_ups = sqlx::query!(
+        r#"
+        SELECT
+            f.*,
+            a.job_id,
+            a.date_applied,
+            j.title as job_title,
+            j.company,
+            EXTRACT(DAY FROM (NOW() - a.date_applied)) as days_since_application
+        FROM follow_up_schedule f
+        JOIN applications a ON f.application_id = a.application_id
+        JOIN jobs j ON a.job_id = j.job_id
+        WHERE f.status = 'pending'
+            AND f.scheduled_date <= NOW() + INTERVAL '7 days'
+        ORDER BY f.scheduled_date ASC
+        "#
+    )
+    .fetch_all(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    let result = follow_ups.into_iter().map(|f| {
+        serde_json::json!({
+            "follow_up_id": f.follow_up_id,
+            "application_id": f.application_id,
+            "job_id": f.job_id,
+            "job_title": f.job_title,
+            "company": f.company,
+            "scheduled_date": f.scheduled_date,
+            "attempt_number": f.attempt_number,
+            "subject": f.subject,
+            "body": f.body,
+            "days_since_application": f.days_since_application.as_ref().map(|bd| bd.to_f64().unwrap_or(0.0)),
+            "created_at": f.created_at
+        })
+    }).collect::<Vec<_>>();
+
+    Ok(HttpResponse::Ok().json(result))
+}
+
+async fn approve_follow_up(
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+    request: web::Json<ApproveFollowUpRequest>,
+) -> Result<HttpResponse> {
+    let follow_up_id = path.into_inner();
+
+    let follow_up = sqlx::query_as::<_, FollowUpSchedule>(
+        r#"
+        UPDATE follow_up_schedule
+        SET status = 'approved',
+            approved_at = NOW(),
+            approved_by = 'user',
+            subject = COALESCE($1, subject),
+            body = COALESCE($2, body)
+        WHERE follow_up_id = $3
+        RETURNING *
+        "#
+    )
+    .bind(&request.subject)
+    .bind(&request.body)
+    .bind(follow_up_id)
+    .fetch_optional(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    match follow_up {
+        Some(f) => Ok(HttpResponse::Ok().json(f)),
+        None => Ok(HttpResponse::NotFound().json(serde_json::json!({
+            "error": "Follow-up not found"
+        })))
+    }
+}
+
+async fn send_follow_up(
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse> {
+    let follow_up_id = path.into_inner();
+
+    // Get follow-up details
+    let follow_up = sqlx::query_as::<_, FollowUpSchedule>(
+        "SELECT * FROM follow_up_schedule WHERE follow_up_id = $1"
+    )
+    .bind(follow_up_id)
+    .fetch_optional(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    let follow_up = match follow_up {
+        Some(f) => f,
+        None => return Ok(HttpResponse::NotFound().json(serde_json::json!({
+            "error": "Follow-up not found"
+        })))
+    };
+
+    if follow_up.status != "approved" {
+        return Ok(HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "Follow-up must be approved before sending"
+        })));
+    }
+
+    // TODO: Implement actual Gmail sending here
+    // For now, just mark as sent
+
+    sqlx::query!(
+        r#"
+        UPDATE follow_up_schedule
+        SET status = 'sent', sent_at = NOW()
+        WHERE follow_up_id = $1
+        "#,
+        follow_up_id
+    )
+    .execute(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "message": "Follow-up sent successfully",
+        "follow_up_id": follow_up_id
+    })))
+}
+
+async fn get_application_timeline(
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse> {
+    let application_id = path.into_inner();
+
+    let timeline = sqlx::query_as::<_, ApplicationTimeline>(
+        "SELECT * FROM application_timeline WHERE application_id = $1 ORDER BY event_date DESC"
+    )
+    .bind(application_id)
+    .fetch_all(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    Ok(HttpResponse::Ok().json(timeline))
+}
+
+// ============================================================================
 // Main Server
 // ============================================================================
 
@@ -2306,6 +2751,17 @@ async fn main() -> std::io::Result<()> {
             .route("/api/intake/summary", web::get().to(get_job_intake_summary))
             .route("/api/job-sources", web::get().to(get_job_sources))
             .route("/api/intake/logs", web::get().to(get_intake_logs))
+            // Phase 5.1: Calendar & Follow-ups APIs
+            .route("/api/interviews", web::post().to(create_interview))
+            .route("/api/interviews/upcoming", web::get().to(get_upcoming_interviews))
+            .route("/api/interviews/{id}", web::get().to(get_interview))
+            .route("/api/interviews/{id}", web::put().to(update_interview))
+            .route("/api/interviews/{id}", web::delete().to(delete_interview))
+            .route("/api/follow-ups", web::post().to(create_follow_up))
+            .route("/api/follow-ups/pending", web::get().to(get_pending_follow_ups))
+            .route("/api/follow-ups/{id}/approve", web::put().to(approve_follow_up))
+            .route("/api/follow-ups/{id}/send", web::post().to(send_follow_up))
+            .route("/api/applications/{id}/timeline", web::get().to(get_application_timeline))
     })
     .bind(("127.0.0.1", 8080))?
     .run()
