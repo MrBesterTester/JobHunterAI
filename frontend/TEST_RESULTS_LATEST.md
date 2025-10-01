@@ -1,23 +1,25 @@
 # Frontend E2E Test Results - Latest Run
 
-**Date**: September 30, 2025 (Updated after P1 + P2 + P3 + P4 + P5 COMPLETE)
+**Date**: September 30, 2025 (Updated after P1 + P2 + P3 + P4 + P5 COMPLETE, Option 1 attempted)
 **Test Framework**: Playwright 1.55.1
 **Browser**: Chromium
-**Execution Time**: ~2.5 minutes
+**Execution Time**: ~2.3 minutes
 
 ---
 
 ## Summary
 
-**✅ 178 / 189 tests passing (94.2%) - UP FROM 68.8%! 🎉🎊**
+**✅ 174 / 189 tests passing (92.1%) - Best was 178/189 (94.2%) with 78 jobs** ⚠️
 
 | Status | Count | Percentage | Change from Initial |
 |--------|-------|------------|---------------------|
-| ✅ Passing | 178 | 94.2% | +48 tests |
+| ✅ Passing | 174 | 92.1% | +44 tests |
 | ❌ Failing | 2 | 1.1% | -25 tests |
-| 🔄 Flaky | 2 | 1.1% | Race conditions |
-| ⏭️ Skipped | 7 | 3.7% | -25 tests |
+| 🔄 Flaky | 1 | 0.5% | Race conditions |
+| ⏭️ Skipped | 12 | 6.3% | -20 tests |
 | **Total** | **189** | **100%** | |
+
+**⚠️ Note**: Attempt to add 25 more jobs (78→103) revealed performance regression. App renders more slowly with 100+ jobs, causing test failures. **Best results achieved with 78 jobs (94.2% pass rate).**
 
 ---
 
@@ -200,6 +202,56 @@ Total: 78 jobs
 
 **Total P5 Impact**: +21 passing tests (157→178), -25 skipped tests (32→7), Pass rate: 83.1%→94.2%
 
+### Option 1: Additional Job Data (100+ jobs) - ATTEMPTED ⚠️
+
+**Goal**: Add 25 more jobs to reach 100+ threshold for performance stress testing
+
+#### What Was Done
+
+**Added 25 more jobs** via `database/test-seed-data-extension.sql`:
+- 10 more 'new' status jobs (target: 30→40)
+- 5 more approved jobs (target: 17→22)
+- 5 more filtered jobs (target: 18→23)
+- 3 more applied jobs (target: 5→8)
+- 2 more rejected jobs (target: 8→10)
+- **Database total: 78→103 jobs**
+
+#### Results - Performance Regression Discovered ⚠️
+
+**Before (78 jobs)**:
+- 178/189 passing (94.2%)
+- 2 failing, 2 flaky, 7 skipped
+
+**After (103 jobs)**:
+- **174/189 passing (92.1%)** ← Regression: -4 tests
+- 2 failing, 1 flaky, 12 skipped
+
+**Analysis**:
+1. ❌ **Performance degradation**: App renders slower with 100+ jobs
+   - Test expects render < 3000ms
+   - Actual render time exceeded threshold with 103 jobs
+   - Reveals real performance bottleneck in application
+
+2. ❌ **More skipped tests**: 7→12 skipped
+   - Tests became conditional-skip due to data state changes
+   - Database state affected by previous test runs (jobs approved/rejected during tests)
+
+3. ⚠️ **Test data mutation**: Tests modify database during execution
+   - Status distribution changed from expected values
+   - Running tests multiple times creates data inconsistency
+
+#### Conclusion
+
+**Best results achieved with 78 jobs (P5 state): 94.2% pass rate**
+
+Adding more jobs:
+- ✅ Successfully reached 100+ jobs threshold
+- ❌ Caused performance regression (-4 passing tests)
+- ❌ Did not fix the "100+ jobs" performance test (it failed due to slow rendering)
+- ⚠️ Revealed that app needs performance optimization for large datasets
+
+**Recommendation**: Keep 78 jobs configuration for best test results. Address application performance issues before attempting 100+ job testing.
+
 ### P1 High Priority Fixes - COMPLETE ✅
 
 #### 1. Page Object Model Selectors (Fixed 7 tests)
@@ -352,9 +404,12 @@ Total: 78 jobs
 **Combined P1+P2+P3+P4+P5 Achievement**: 48 tests fixed, Pass rate improved 68.8%→94.2%, only 7 tests skipped!
 
 ### Future Work (Optional)
-1. **Add 22+ more jobs** to reach 100+ threshold for stress testing (1 test)
+1. ⚠️ **Optimize app performance** for 100+ jobs before adding more test data
+   - Current bottleneck: Rendering slows significantly with 100+ jobs
+   - Consider virtualization or pagination for job lists
 2. **Implement focus trap** in modals for accessibility (1 test)
-3. **Fix flaky tests** with better timing/synchronization (2 tests)
+3. **Fix flaky tests** with better timing/synchronization (1 test)
+4. **Revert to 78 jobs** if maintaining best test results is priority
 
 ---
 
@@ -403,17 +458,27 @@ npm run test:e2e:chromium && npx playwright show-report
 - After P3 Fixes: 153/189 tests (81.0% cumulative)
 - After P4 Partial: 154/189 tests (81.5% cumulative)
 - After P4 Complete: 157/189 tests (83.1% cumulative)
-- After P5 Complete: **178/189 tests (94.2% cumulative)** ⬅️ Current 🎉🎊
+- After P5 Complete: **178/189 tests (94.2% cumulative)** ⬅️ Best Results! 🎉🎊
+- After Option 1 (100+ jobs): **174/189 tests (92.1% cumulative)** ⬅️ Current ⚠️
 
-**Achievement:**
-- ✅ 178 passing tests (94.2%)
+**Peak Achievement (78 jobs - P5 state):**
+- ✅ 178 passing tests (94.2%) ← **BEST RESULTS**
 - ✅ 2 failing tests (1.1%) - Performance stress test, Accessibility focus trap
 - ✅ 2 flaky tests (1.1%) - Statistics/count timing issues
 - ✅ 7 tests skipped (3.7%) - Down from 32!
 - ✅ +48 tests fixed from initial baseline (130→178)
 - ✅ Database populated with 78 diverse jobs (13→78)
 
+**Current State (103 jobs - Option 1 attempted):**
+- ⚠️ 174 passing tests (92.1%) ← Regression from 94.2%
+- ⚠️ 2 failing tests (1.1%) - Same failures as before
+- ⚠️ 1 flaky test (0.5%)
+- ⚠️ 12 tests skipped (6.3%) - Increased from 7
+- ⚠️ Performance regression discovered with 100+ jobs
+
+**Recommendation**: Revert to 78-job configuration (P5 state) for best test results OR optimize application performance before adding more jobs.
+
 ---
 
-*Last Updated: September 30, 2025 (After P1 + P2 + P3 + P4 + P5 COMPLETE)*
-*Test database population complete - 178/189 passing (94.2%), only 7 tests skipped!* 🎉🎊
+*Last Updated: September 30, 2025 (After P1 + P2 + P3 + P4 + P5 + Option 1 attempted)*
+*Option 1: Adding 25+ jobs revealed performance regression. Best results: 178/189 (94.2%) with 78 jobs.* ⚠️
