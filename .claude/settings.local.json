@@ -51,7 +51,10 @@
       "Bash(lsof:*)",
       "WebFetch(domain:playwright.dev)",
       "WebSearch",
-      "WebFetch(domain:www.shuttle.dev)"
+      "WebFetch(domain:www.shuttle.dev)",
+      "Bash(python3:*)",
+      "Bash(kill:*)",
+      "WebFetch(domain:docs.claude.com)"
     ],
     "deny": [],
     "ask": [
