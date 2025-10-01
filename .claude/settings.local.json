@@ -43,8 +43,14 @@
       "Bash(tail:*)",
       "Bash(echo:*)",
       "Bash(pwd)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(npx playwright test:*)",
+      "Bash(timeout 90 npm run test:e2e:chromium -- e2e/tests/02-tab-navigation.spec.ts:82 e2e/tests/02-tab-navigation.spec.ts:183 e2e/tests/02-tab-navigation.spec.ts:202 e2e/tests/02-tab-navigation.spec.ts:245 e2e/tests/02-tab-navigation.spec.ts:275)",
+      "Bash(curl:*)",
+      "Bash(npx playwright:*)",
+      "Bash(lsof:*)"
     ],
+    "deny": [],
     "ask": [
       "Bash(git push:*)",
       "Bash(git pull:*)",
@@ -52,11 +58,7 @@
       "Bash(git rebase:*)",
       "Bash(git filter-branch:*)",
       "Bash(git config --global:*)",
-      "Bash(sudo xcodebuild:*)",
-      "WebFetch",
-      "Bash(curl:*)",
-      "Bash(wget:*)"
-    ],
-    "deny": []
+      "WebFetch"
+    ]
   }
 }

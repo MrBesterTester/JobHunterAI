@@ -21,9 +21,12 @@ export class ModalComponent {
     // Modal container - flexible selectors
     this.modal = page.locator('[data-testid="modal"], [role="dialog"], .modal').first();
     this.overlay = page.locator('[data-testid="modal-overlay"], .modal-overlay, .overlay').first();
-    this.closeButton = this.modal.getByRole('button', { name: /close/i }).or(
-      this.modal.locator('button').filter({ hasText: /×|✕|close/i })
+
+    // Close button - use specific test IDs to avoid ambiguity
+    this.closeButton = this.modal.locator('[data-testid="modal-close-x"]').or(
+      this.modal.locator('[data-testid="modal-close-button"]')
     );
+
     this.title = this.modal.locator('[data-testid="modal-title"], .modal-title, h2, h3').first();
   }
 

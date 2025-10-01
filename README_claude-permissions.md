@@ -270,35 +270,102 @@ Claude Code provides these protections **automatically**:
 
 ## Current Configuration (JobHunter Project)
 
-As of September 30, 2025, this project uses a **hybrid approach** that has evolved organically during development:
+As of September 30, 2025, this project uses **Configuration 1 (Full Development Freedom)** with careful controls on remote operations:
 
 ```json
 {
   "permissions": {
     "allow": [
-      "Bash(brew services start:*)",
-      "Bash(sudo xcodebuild:*)",
-      "Bash(cargo:*)",
-      "Bash(createdb:*)",
-      "Bash(psql:*)",
-      "Bash(curl:*)",
-      "Bash(npm start)",
-      "Bash(timeout 10s cargo run)",
-      "Bash(gtimeout:*)",
+      // All file operations (automatically restricted to project folder)
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep",
+      "NotebookEdit",
+
+      // Local git operations
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
       "Bash(git log:*)",
+      "Bash(git stash:*)",
+      "Bash(git restore:*)",
+      "Bash(git checkout:*)",
+      "Bash(git branch:*)",
       "Bash(git for-each-ref:*)",
       "Bash(git update-ref:*)",
       "Bash(git reflog:*)",
       "Bash(git gc:*)",
-      "Bash(git config:*)"
+
+      // Development commands
+      "Bash(cargo build:*)",
+      "Bash(cargo test:*)",
+      "Bash(cargo run:*)",
+      "Bash(cargo check:*)",
+      "Bash(cargo add:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(npm test:*)",
+      "Bash(npm start)",
+
+      // Database operations (local)
+      "Bash(psql:*)",
+      "Bash(createdb:*)",
+
+      // System services
+      "Bash(brew services start:*)",
+      "Bash(timeout 10s cargo run)",
+      "Bash(gtimeout:*)",
+
+      // Testing frameworks
+      "Bash(npx playwright test:*)",
+      "Bash(npx playwright:*)",
+
+      // Safe shell commands
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(wc:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(echo:*)",
+      "Bash(pwd)",
+      "Bash(cd:*)",
+
+      // Network tools (allowed for development)
+      "Bash(curl:*)",
+      "Bash(lsof:*)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [
+      // Remote git operations (require approval)
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git fetch:*)",
+
+      // History rewriting (require approval)
+      "Bash(git rebase:*)",
+      "Bash(git filter-branch:*)",
+
+      // Global configuration (require approval)
+      "Bash(git config --global:*)",
+
+      // Web content fetching (require approval)
+      "WebFetch"
+    ]
   }
 }
 ```
 
-**Note**: This configuration grew through approving commands as needed. Consider upgrading to **Configuration 1 (Full Development Freedom)** for better productivity.
+**Benefits**:
+- ✅ No interruptions for routine development tasks (build, test, commit)
+- ✅ File operations never prompt (automatically scoped to project)
+- ✅ Local git operations are fast and friction-free
+- ✅ Remote operations (push, pull) still require approval for safety
+- ✅ WebFetch requires approval for conscious network decisions
 
 ## Common Scenarios
 

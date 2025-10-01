@@ -464,22 +464,24 @@ const JobHunterDashboard: React.FC = () => {
           </div>
 
           <div style={{ marginBottom: '16px' }}>
-            <span style={{
-              padding: '4px 12px',
-              borderRadius: '4px',
-              fontSize: '14px',
-              fontWeight: 500,
-              ...(() => {
-                const color = getStatusColor(job.status);
-                const bgColor = color.includes('blue') ? '#dbeafe' : 
-                               color.includes('green') ? '#d1fae5' :
-                               color.includes('red') ? '#fee2e2' : '#fef3c7';
-                const textColor = color.includes('blue') ? '#1e40af' :
-                                 color.includes('green') ? '#065f46' :
-                                 color.includes('red') ? '#991b1b' : '#92400e';
-                return { backgroundColor: bgColor, color: textColor };
-              })()
-            }}>
+            <span
+              data-testid="modal-status"
+              style={{
+                padding: '4px 12px',
+                borderRadius: '4px',
+                fontSize: '14px',
+                fontWeight: 500,
+                ...(() => {
+                  const color = getStatusColor(job.status);
+                  const bgColor = color.includes('blue') ? '#dbeafe' :
+                                 color.includes('green') ? '#d1fae5' :
+                                 color.includes('red') ? '#fee2e2' : '#fef3c7';
+                  const textColor = color.includes('blue') ? '#1e40af' :
+                                   color.includes('green') ? '#065f46' :
+                                   color.includes('red') ? '#991b1b' : '#92400e';
+                  return { backgroundColor: bgColor, color: textColor };
+                })()
+              }}>
               {job.status}
             </span>
           </div>
@@ -488,13 +490,13 @@ const JobHunterDashboard: React.FC = () => {
             {job.salary && (
               <div>
                 <p style={{ fontSize: '14px', color: '#6b7280' }}>Salary</p>
-                <p style={{ fontWeight: 600 }}>${job.salary.toLocaleString()}</p>
+                <p style={{ fontWeight: 600 }} data-testid="modal-salary">${job.salary.toLocaleString()}</p>
               </div>
             )}
             {job.location && (
               <div>
                 <p style={{ fontSize: '14px', color: '#6b7280' }}>Location</p>
-                <p style={{ fontWeight: 600 }}>{job.location}</p>
+                <p style={{ fontWeight: 600 }} data-testid="modal-location">{job.location}</p>
               </div>
             )}
             {job.commute_time && (
@@ -505,14 +507,33 @@ const JobHunterDashboard: React.FC = () => {
             )}
             <div>
               <p style={{ fontSize: '14px', color: '#6b7280' }}>Source</p>
-              <p style={{ fontWeight: 600 }}>{job.source}</p>
+              <p style={{ fontWeight: 600 }} data-testid="modal-source">{job.source}</p>
+            </div>
+            <div>
+              <p style={{ fontSize: '14px', color: '#6b7280' }}>Date Collected</p>
+              <p style={{ fontWeight: 600 }} data-testid="date-collected">{new Date(job.date_collected).toLocaleDateString()}</p>
             </div>
           </div>
+
+          {job.url && (
+            <div style={{ marginBottom: '24px' }}>
+              <h3 style={{ fontWeight: 600, marginBottom: '8px' }}>Job Link</h3>
+              <a
+                href={job.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-testid="job-url"
+                style={{ color: '#3b82f6', textDecoration: 'underline' }}
+              >
+                {job.url}
+              </a>
+            </div>
+          )}
 
           {job.description && (
             <div style={{ marginBottom: '24px' }}>
               <h3 style={{ fontWeight: 600, marginBottom: '8px' }}>Description</h3>
-              <p style={{ color: '#374151', whiteSpace: 'pre-wrap' }}>{job.description}</p>
+              <p style={{ color: '#374151', whiteSpace: 'pre-wrap' }} data-testid="job-description">{job.description}</p>
             </div>
           )}
 
@@ -550,20 +571,39 @@ const JobHunterDashboard: React.FC = () => {
               </>
             )}
             {job.status === 'approved' && (
-              <button
-                onClick={() => { updateJobStatus(job.job_id, 'applied'); onClose(); }}
-                style={{
-                  flex: 1,
-                  backgroundColor: '#3b82f6',
-                  color: 'white',
-                  padding: '8px 16px',
-                  borderRadius: '4px',
-                  border: 'none',
-                  cursor: 'pointer'
-                }}
-              >
-                Mark as Applied
-              </button>
+              <>
+                <button
+                  onClick={async () => {
+                    await generateContent(job.job_id);
+                    onClose();
+                  }}
+                  style={{
+                    flex: 1,
+                    backgroundColor: '#8b5cf6',
+                    color: 'white',
+                    padding: '8px 16px',
+                    borderRadius: '4px',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Generate Resume & Cover Letter
+                </button>
+                <button
+                  onClick={() => { updateJobStatus(job.job_id, 'applied'); onClose(); }}
+                  style={{
+                    flex: 1,
+                    backgroundColor: '#3b82f6',
+                    color: 'white',
+                    padding: '8px 16px',
+                    borderRadius: '4px',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Mark as Applied
+                </button>
+              </>
             )}
           </div>
         </div>
