@@ -676,8 +676,8 @@ const JobHunterDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 16px', boxSizing: 'border-box', width: '100%' }}>
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid #e5e7eb', overflowX: 'auto' }}>
+      <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 16px', boxSizing: 'border-box', width: '100%' }}>
+        <nav style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid #e5e7eb', overflowX: 'auto' }}>
           {(['inbox', 'approved', 'applied', 'filtered', 'all'] as TabType[]).map(tab => (
             <button
               key={tab}
@@ -698,7 +698,7 @@ const JobHunterDashboard: React.FC = () => {
               {tab === 'inbox' ? 'New Jobs' : tab}
             </button>
           ))}
-        </div>
+        </nav>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))', gap: '16px', width: '100%' }}>
           {(activeTab === 'inbox' ? filterJobs('new') :
@@ -722,7 +722,7 @@ const JobHunterDashboard: React.FC = () => {
             <p style={{ color: '#6b7280' }}>No jobs in this category yet</p>
           </div>
         )}
-      </div>
+      </main>
 
       {selectedJob && (
         <JobDetails job={selectedJob} onClose={() => setSelectedJob(null)} />
