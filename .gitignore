@@ -23,6 +23,11 @@
 *.db
 *.sqlite
 
+# User data (keep structure, ignore content)
+# To track the directory structure but not content, add:
+# /data/resumes/*
+# !/data/resumes/.gitkeep
+
 # IDE
 .vscode/
 .idea/

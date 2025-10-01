@@ -966,6 +966,143 @@ async fn get_resumes(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     Ok(HttpResponse::Ok().json(resumes))
 }
 
+#[derive(Debug, Deserialize)]
+struct CreateResumeRequest {
+    version_name: String,
+    content: String,
+    format: Option<String>,
+    is_master: Option<bool>,
+}
+
+async fn create_resume(
+    pool: web::Data<PgPool>,
+    resume_data: web::Json<CreateResumeRequest>,
+) -> Result<HttpResponse> {
+    let format = resume_data.format.clone().unwrap_or_else(|| "markdown".to_string());
+    let is_master = resume_data.is_master.unwrap_or(false);
+
+    // If this is being set as master, unset all other master resumes
+    if is_master {
+        sqlx::query!("UPDATE resume_versions SET is_master = false WHERE is_master = true")
+            .execute(pool.get_ref())
+            .await
+            .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    }
+
+    let resume = sqlx::query_as::<_, ResumeVersion>(
+        "INSERT INTO resume_versions (version_name, content, format, is_master) VALUES ($1, $2, $3, $4) RETURNING version_id, version_name, content, format, file_path, is_master, created_at, updated_at"
+    )
+    .bind(&resume_data.version_name)
+    .bind(&resume_data.content)
+    .bind(&format)
+    .bind(is_master)
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    Ok(HttpResponse::Created().json(resume))
+}
+
+async fn set_master_resume(
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse> {
+    let version_id = path.into_inner();
+
+    // First, unset all other master resumes
+    sqlx::query!("UPDATE resume_versions SET is_master = false WHERE is_master = true")
+        .execute(pool.get_ref())
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    // Set this resume as master
+    let resume = sqlx::query_as::<_, ResumeVersion>(
+        "UPDATE resume_versions SET is_master = true WHERE version_id = $1 RETURNING version_id, version_name, content, format, file_path, is_master, created_at, updated_at"
+    )
+    .bind(version_id)
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    Ok(HttpResponse::Ok().json(resume))
+}
+
+async fn delete_resume(
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse> {
+    let version_id = path.into_inner();
+
+    // Check if this is the master resume
+    let is_master = sqlx::query_scalar::<_, bool>(
+        "SELECT is_master FROM resume_versions WHERE version_id = $1"
+    )
+    .bind(version_id)
+    .fetch_optional(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    if is_master == Some(true) {
+        return Err(actix_web::error::ErrorBadRequest("Cannot delete master resume. Set another resume as master first."));
+    }
+
+    sqlx::query!("DELETE FROM resume_versions WHERE version_id = $1", version_id)
+        .execute(pool.get_ref())
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    Ok(HttpResponse::NoContent().finish())
+}
+
+async fn load_master_resume_from_file(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    use std::fs;
+
+    // Read the master resume file
+    let file_path = "data/resumes/master_resume.md";
+    let content = fs::read_to_string(file_path)
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to read resume file: {}", e)))?;
+
+    // Unset all other master resumes
+    sqlx::query!("UPDATE resume_versions SET is_master = false WHERE is_master = true")
+        .execute(pool.get_ref())
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    // Check if a master resume already exists with this content
+    let existing = sqlx::query_scalar::<_, Uuid>(
+        "SELECT version_id FROM resume_versions WHERE content = $1 LIMIT 1"
+    )
+    .bind(&content)
+    .fetch_optional(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    let resume = if let Some(existing_id) = existing {
+        // Update existing resume to be master
+        sqlx::query_as::<_, ResumeVersion>(
+            "UPDATE resume_versions SET is_master = true WHERE version_id = $1 RETURNING version_id, version_name, content, format, file_path, is_master, created_at, updated_at"
+        )
+        .bind(existing_id)
+        .fetch_one(pool.get_ref())
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?
+    } else {
+        // Create new master resume
+        let version_name = format!("master_v{}", chrono::Utc::now().format("%Y%m%d_%H%M%S"));
+        sqlx::query_as::<_, ResumeVersion>(
+            "INSERT INTO resume_versions (version_name, content, format, file_path, is_master) VALUES ($1, $2, 'markdown', $3, true) RETURNING version_id, version_name, content, format, file_path, is_master, created_at, updated_at"
+        )
+        .bind(&version_name)
+        .bind(&content)
+        .bind(file_path)
+        .fetch_one(pool.get_ref())
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?
+    };
+
+    Ok(HttpResponse::Ok().json(resume))
+}
+
 async fn get_cover_letter_templates_handler(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     let templates = sqlx::query_as::<_, CoverLetterTemplate>(
         "SELECT template_id, template_name, content, created_at, updated_at FROM cover_letter_templates ORDER BY created_at DESC"
@@ -2152,6 +2289,10 @@ async fn main() -> std::io::Result<()> {
             .route("/api/criteria", web::get().to(get_criteria))
             .route("/api/criteria", web::put().to(update_criteria))
             .route("/api/resumes", web::get().to(get_resumes))
+            .route("/api/resumes", web::post().to(create_resume))
+            .route("/api/resumes/load-from-file", web::post().to(load_master_resume_from_file))
+            .route("/api/resumes/{id}/set-master", web::put().to(set_master_resume))
+            .route("/api/resumes/{id}", web::delete().to(delete_resume))
             .route("/api/templates/cover-letters", web::get().to(get_cover_letter_templates_handler))
             .route("/api/jobs/{id}/generate-content", web::get().to(generate_content_handler))
             .route("/api/jobs/{id}/generate-content", web::post().to(generate_content_with_options_handler))

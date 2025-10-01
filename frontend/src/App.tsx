@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, CheckCircle, XCircle, Clock, Briefcase, DollarSign, MapPin, Filter, FileText, Mail } from 'lucide-react';
+import ResumeManagement from './ResumeManagement';
 
 const API_URL = 'http://localhost:8080/api';
 
@@ -85,6 +86,10 @@ const JobHunterDashboard: React.FC = () => {
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
   const [showContentGeneration, setShowContentGeneration] = useState<boolean>(false);
   const [generatingContent, setGeneratingContent] = useState<boolean>(false);
+  const [showResumeManagement, setShowResumeManagement] = useState<boolean>(false);
+  const [resumes, setResumes] = useState<ResumeVersion[]>([]);
+  const [isUploadingResume, setIsUploadingResume] = useState<boolean>(false);
+  const [resumeUploadError, setResumeUploadError] = useState<string | null>(null);
 
 
   const fetchJobs = async (): Promise<void> => {
@@ -639,9 +644,30 @@ const JobHunterDashboard: React.FC = () => {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', overflowX: 'hidden', width: '100%' }}>
       <header style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb', width: '100%' }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '16px', boxSizing: 'border-box' }}>
-          <h1 style={{ fontSize: '30px', fontWeight: 'bold', color: '#111827' }}>JobHunter</h1>
-          <p style={{ color: '#6b7280' }}>Streamline your job search workflow</p>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '16px', boxSizing: 'border-box', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h1 style={{ fontSize: '30px', fontWeight: 'bold', color: '#111827' }}>JobHunter</h1>
+            <p style={{ color: '#6b7280' }}>Streamline your job search workflow</p>
+          </div>
+          <button
+            onClick={() => setShowResumeManagement(true)}
+            style={{
+              padding: '10px 20px',
+              borderRadius: '6px',
+              border: '1px solid #3b82f6',
+              backgroundColor: '#3b82f6',
+              color: 'white',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '14px'
+            }}
+          >
+            <FileText style={{ width: '18px', height: '18px' }} />
+            Manage Resume
+          </button>
         </div>
       </header>
 
@@ -886,6 +912,10 @@ const JobHunterDashboard: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {showResumeManagement && (
+        <ResumeManagement onClose={() => setShowResumeManagement(false)} />
       )}
     </div>
   );
