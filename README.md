@@ -23,13 +23,29 @@ JobHunter is a comprehensive job application management system that automates an
 
 ## Quick Start
 
-### Prerequisites
+### 🚀 One-Command Startup (Easiest)
 
+If you've already completed the initial setup, just run:
+
+```bash
+./start.sh
+```
+
+This script will:
+- ✅ Check if PostgreSQL is running (start it if needed)
+- ✅ Start the backend server (http://localhost:8080)
+- ✅ Start the frontend app (http://localhost:3000)
+
+---
+
+### 📋 Initial Setup (First Time Only)
+
+**Prerequisites:**
 - Rust (latest stable) - [Install from rustup.rs](https://rustup.rs/)
 - Node.js 18+ and npm
 - PostgreSQL 14+
 
-### 1. Database Setup
+**1. Database Setup**
 
 ```bash
 # Install PostgreSQL (macOS)
@@ -47,7 +63,7 @@ GRANT ALL PRIVILEGES ON DATABASE jobhunter TO jobhunter_user;
 psql -U jobhunter_user -d jobhunter -f database/schema.sql
 ```
 
-### 2. Backend Setup
+**2. Backend Setup**
 
 ```bash
 cd backend
@@ -57,7 +73,7 @@ cargo run
 
 Backend will run on http://localhost:8080
 
-### 3. Frontend Setup
+**3. Frontend Setup**
 
 ```bash
 cd frontend
@@ -66,6 +82,8 @@ npm start
 ```
 
 Frontend will open at http://localhost:3000
+
+**4. Done! Use `./start.sh` for subsequent runs**
 
 ## Job Criteria
 

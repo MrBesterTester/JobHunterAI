@@ -54,7 +54,10 @@
       "WebFetch(domain:www.shuttle.dev)",
       "Bash(python3:*)",
       "Bash(kill:*)",
-      "WebFetch(domain:docs.claude.com)"
+      "WebFetch(domain:docs.claude.com)",
+      "Bash(chmod:*)",
+      "Bash(brew services:*)",
+      "Bash(bash:*)"
     ],
     "deny": [],
     "ask": [
