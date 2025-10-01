@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, CheckCircle, XCircle, Clock, Briefcase, DollarSign, MapPin, Filter, FileText, Mail } from 'lucide-react';
+import { AlertCircle, CheckCircle, XCircle, Clock, Briefcase, DollarSign, MapPin, Filter, FileText, Mail, Calendar as CalendarIcon } from 'lucide-react';
 import ResumeManagement from './ResumeManagement';
+import CalendarTab from './CalendarTab';
+import FollowupsTab from './FollowupsTab';
 
 const API_URL = 'http://localhost:8080/api';
 
@@ -72,7 +74,7 @@ interface CoverLetterTemplate {
   updated_at: string;
 }
 
-type TabType = 'inbox' | 'approved' | 'applied' | 'filtered' | 'all';
+type TabType = 'inbox' | 'approved' | 'applied' | 'filtered' | 'all' | 'calendar' | 'follow-ups';
 
 const JobHunterDashboard: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -704,7 +706,7 @@ const JobHunterDashboard: React.FC = () => {
 
       <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 16px', boxSizing: 'border-box', width: '100%' }}>
         <nav style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid #e5e7eb', overflowX: 'auto' }}>
-          {(['inbox', 'approved', 'applied', 'filtered', 'all'] as TabType[]).map(tab => (
+          {(['inbox', 'approved', 'applied', 'filtered', 'all', 'calendar', 'follow-ups'] as TabType[]).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -718,35 +720,48 @@ const JobHunterDashboard: React.FC = () => {
                 border: 'none',
                 borderBottom: activeTab === tab ? '2px solid #3b82f6' : 'none',
                 color: activeTab === tab ? '#3b82f6' : '#6b7280',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
               }}
             >
+              {tab === 'calendar' && <CalendarIcon style={{ width: '16px', height: '16px' }} />}
+              {tab === 'follow-ups' && <Mail style={{ width: '16px', height: '16px' }} />}
               {tab === 'inbox' ? 'New Jobs' : tab}
             </button>
           ))}
         </nav>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))', gap: '16px', width: '100%' }}>
-          {(activeTab === 'inbox' ? filterJobs('new') :
-            activeTab === 'approved' ? filterJobs('approved') :
-            activeTab === 'applied' ? filterJobs('applied') :
-            activeTab === 'filtered' ? filterJobs('filtered') :
-            getAllActiveJobs()
-          ).map(job => (
-            <JobCard key={job.job_id} job={job} />
-          ))}
-        </div>
+        {activeTab === 'calendar' ? (
+          <CalendarTab />
+        ) : activeTab === 'follow-ups' ? (
+          <FollowupsTab />
+        ) : (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))', gap: '16px', width: '100%' }}>
+              {(activeTab === 'inbox' ? filterJobs('new') :
+                activeTab === 'approved' ? filterJobs('approved') :
+                activeTab === 'applied' ? filterJobs('applied') :
+                activeTab === 'filtered' ? filterJobs('filtered') :
+                getAllActiveJobs()
+              ).map(job => (
+                <JobCard key={job.job_id} job={job} />
+              ))}
+            </div>
 
-        {(activeTab === 'inbox' ? filterJobs('new') :
-          activeTab === 'approved' ? filterJobs('approved') :
-          activeTab === 'applied' ? filterJobs('applied') :
-          activeTab === 'filtered' ? filterJobs('filtered') :
-          getAllActiveJobs()
-        ).length === 0 && (
-          <div style={{ textAlign: 'center', padding: '48px 0' }}>
-            <Filter style={{ width: '64px', height: '64px', color: '#d1d5db', margin: '0 auto 16px' }} />
-            <p style={{ color: '#6b7280' }}>No jobs in this category yet</p>
-          </div>
+            {(activeTab === 'inbox' ? filterJobs('new') :
+              activeTab === 'approved' ? filterJobs('approved') :
+              activeTab === 'applied' ? filterJobs('applied') :
+              activeTab === 'filtered' ? filterJobs('filtered') :
+              getAllActiveJobs()
+            ).length === 0 && (
+              <div style={{ textAlign: 'center', padding: '48px 0' }}>
+                <Filter style={{ width: '64px', height: '64px', color: '#d1d5db', margin: '0 auto 16px' }} />
+                <p style={{ color: '#6b7280' }}>No jobs in this category yet</p>
+              </div>
+            )}
+          </>
         )}
       </main>
 
