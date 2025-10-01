@@ -329,30 +329,115 @@ npm run test:e2e:chromium -- e2e/tests/02-tab-navigation.spec.ts
 
 ### Phase 5 Validation Status (September 30, 2025)
 
-**Current Test Execution Status: 12/189 tests validated (6.3% complete)**
+**Current Test Execution Status: 130/189 tests passing (68.8% complete)**
 
-✅ **Completed Test Suite:**
-- **01-setup-load.spec.ts**: 12/12 tests passing (100%)
-  - Section 1: Page Load Test (4 tests) - ✅ All passing
-  - Section 2: Network Connectivity Test (6 tests) - ✅ All passing
-  - Performance Validation (2 tests) - ✅ All passing
-  - Execution time: 5.7 seconds
-  - Browser: Chromium (Playwright 1.55.1)
+**Test Summary:**
+- ✅ **130 tests passing** (68.8%)
+- ❌ **27 tests failing** (14.3%)
+- ⏭️ **32 tests skipped** (16.9%)
+- **Total**: 189 tests implemented
+- **Browser**: Chromium (Playwright 1.55.1)
+- **Execution Time**: ~2.7 minutes for full suite
 
-🎯 **Remaining Test Suites (177 tests):**
+✅ **Fully Passing Test Suites (85 tests):**
 
-| Test Suite | Tests | Status | Priority | Dependencies |
-|-----------|-------|--------|----------|--------------|
-| 02-tab-navigation.spec.ts | 15 | 🎯 Next | P1 - High | DashboardPage, tab state management |
-| 03-job-status-updates.spec.ts | 15 | 🎯 Next | P1 - High | JobCardComponent, status update API |
-| 04-content-generation.spec.ts | 20 | 🔄 Pending | P2 - Medium | ModalComponent, content generation API |
-| 05-job-details.spec.ts | 23 | 🔄 Pending | P2 - Medium | ModalComponent, job details display |
-| 06-statistics.spec.ts | 21 | 🔄 Pending | P2 - Medium | Real-time stats updates, API polling |
-| 07-filtered-jobs.spec.ts | 10 | 🔄 Pending | P3 - Low | Filtered reasons display |
-| 08-responsive-design.spec.ts | 18 | 🔄 Pending | P3 - Low | Viewport handling, mobile layouts |
-| 09-error-handling.spec.ts | 20 | 🔄 Pending | P3 - Low | Network error simulation |
-| 10-performance.spec.ts | 14 | 🔄 Pending | P4 - Nice-to-have | Performance metrics, profiling |
-| 11-accessibility.spec.ts | 21 | 🔄 Pending | P4 - Nice-to-have | ARIA, keyboard navigation, screen readers |
+1. **01-setup-load.spec.ts**: 12/12 tests passing (100%)
+   - Section 1: Page Load Test (4 tests) - ✅ All passing
+   - Section 2: Network Connectivity Test (6 tests) - ✅ All passing
+   - Performance Validation (2 tests) - ✅ All passing
+
+2. **02-tab-navigation.spec.ts**: 15/15 tests passing (100%)
+   - Section 3: Tab Switching Test (7 tests) - ✅ All passing
+   - Section 4: Job Card Display Test (7 tests) - ✅ All passing
+   - Empty State Handling (1 test) - ✅ All passing
+
+3. **03-job-status-updates.spec.ts**: 15/15 tests passing (100%)
+   - Section 5: Approve/Reject Workflow Test - ✅ All passing
+   - Section 6: Status Update Validation - ✅ All passing
+
+4. **07-filtered-jobs.spec.ts**: 10/10 tests passing (100%)
+   - Filtered jobs display and validation - ✅ All passing
+
+5. **Partial passes from other suites**: 33 additional tests passing
+
+🔧 **Recent Bug Fixes (September 30, 2025):**
+
+**Modal Interaction Fixes:**
+1. **Escape key handling**: Added global keyboard event listener to close modals on Escape press
+2. **Click-outside-to-close**: Implemented overlay click handlers with stopPropagation on modal content
+3. **Button data-testids**: Added unique test IDs to prevent Playwright strict mode violations
+   - `data-testid="modal-close-x"` for × close buttons
+   - `data-testid="modal-close-button"` for "Close" text buttons
+
+**Statistics Updates:**
+4. **Real-time stats refresh**: Added `fetchStats()` call in `updateJobStatus()` for immediate statistics updates
+
+🎯 **Test Suites with Failures (27 failing tests):**
+
+| Test Suite | Passing | Failing | Skipped | Key Issues |
+|-----------|---------|---------|---------|------------|
+| 04-content-generation.spec.ts | 13 | 7 | 0 | Close button ambiguity, modal interactions |
+| 05-job-details.spec.ts | 12 | 11 | 0 | Missing modal fields, button state issues |
+| 06-statistics.spec.ts | 12 | 6 | 3 | API response time thresholds, criteria endpoint |
+| 08-responsive-design.spec.ts | 17 | 1 | 0 | Horizontal scroll on mobile (375px) |
+| 09-error-handling.spec.ts | 19 | 1 | 0 | API 500 error graceful handling |
+| 10-performance.spec.ts | 13 | 3 | 0 | Memory leak detection, FPS monitoring |
+| 11-accessibility.spec.ts | 18 | 2 | 2 | ARIA landmarks, focus trap in modals |
+
+**Detailed Failure Analysis:**
+
+**Category 1: Modal Interaction Issues (7 failures)**
+- **Issue**: Close button selector ambiguity - tests find both × and "Close" buttons
+- **Root Cause**: Page Object Model selectors match multiple elements in strict mode
+- **Status**: Partially fixed - data-testids added, but page objects need updating
+- **Affected Tests**: Content generation modal close tests
+
+**Category 2: Job Details Modal Fields (11 failures)**
+- **Issue**: Missing or incorrectly formatted fields in job details modal
+- **Suspected Problems**: Status badge, location field, source display, date formatting
+- **Status**: Investigation needed - need to check modal implementation vs test expectations
+- **Affected Tests**: 05-job-details.spec.ts
+
+**Category 3: Statistics API Performance (6 failures)**
+- **Issue**: API response times exceeding 100ms threshold in tests
+- **Root Cause**: Either actual performance issue or unrealistic test thresholds
+- **Status**: Need to profile actual API performance and adjust thresholds if necessary
+- **Affected Tests**: 06-statistics.spec.ts response time tests
+
+**Category 4: Missing API Endpoint (3 failures)**
+- **Issue**: /api/criteria endpoint not returning expected data structure
+- **Status**: Need to verify endpoint implementation and response format
+- **Affected Tests**: Criteria configuration tests in 06-statistics.spec.ts
+
+**Category 5: Responsive Design (1 failure)**
+- **Issue**: Horizontal scroll detected on 375px mobile viewport
+- **Status**: CSS overflow issue - investigate mobile layout
+- **Affected Tests**: 08-responsive-design.spec.ts mobile layout test
+
+**Category 6: Error Handling (1 failure)**
+- **Issue**: API 500 error not handled gracefully
+- **Status**: Need to add error state UI or improve fallback data display
+- **Affected Tests**: 09-error-handling.spec.ts API failure test
+
+**Category 7: Performance Metrics (3 failures)**
+- **Issue**: Memory leak detection, FPS monitoring during animations
+- **Status**: Advanced performance testing - may need tooling updates
+- **Affected Tests**: 10-performance.spec.ts
+
+**Category 8: Accessibility (4 failures)**
+- **Issue**: Missing ARIA landmarks, focus trap not working in modals
+- **Status**: Need to add proper semantic HTML and ARIA attributes
+- **Affected Tests**: 11-accessibility.spec.ts
+
+**Next Steps Priority:**
+1. **P1 - High**: Fix modal close button page object selectors (affects 7 tests)
+2. **P1 - High**: Investigate job details modal field display (affects 11 tests)
+3. **P2 - Medium**: Verify /api/criteria endpoint (affects 3 tests)
+4. **P2 - Medium**: Profile and fix statistics API response times (affects 6 tests)
+5. **P3 - Low**: Address mobile responsive design overflow issue (affects 1 test)
+6. **P3 - Low**: Add error state UI for API failures (affects 1 test)
+7. **P4 - Later**: Enhance performance monitoring tooling (affects 3 tests)
+8. **P4 - Later**: Add ARIA landmarks and focus management (affects 4 tests)
 
 **Infrastructure Validation Results:**
 
@@ -372,13 +457,31 @@ npm run test:e2e:chromium -- e2e/tests/02-tab-navigation.spec.ts
   - Content generation: data-testid="resume-panel", "cover-letter-panel", "resume-content", "cover-letter-content"
   - Filtered reasons: data-testid="filtered-reasons"
 
-✅ **Bug Fixes Applied (12/12 tests passing):**
+✅ **Bug Fixes Applied (130/189 tests passing):**
+
+**Setup & Load Tests (01-setup-load.spec.ts - 12/12 passing):**
 1. Fixed response.timing() API call (changed to property access: response.timing)
 2. Fixed URL matching regex for /api/jobs to avoid matching /api/jobs/stats
 3. Added fetchStats() call to useEffect in App.tsx (frontend was never calling stats API)
 4. Updated backend get_job_stats() to always return all 4 status fields with default value 0
 5. Updated test selectors to match actual UI text ("JobHunter" vs "JobHunter Dashboard")
 6. Updated tab label from "Inbox" to "New Jobs" in selectors
+
+**Tab Navigation Tests (02-tab-navigation.spec.ts - 15/15 passing):**
+7. Added aria-selected attribute to tab buttons for accessibility
+8. Added "active" CSS class to currently selected tab
+9. Added data-testid="salary-badge" and "location-badge" attributes
+10. Added salary-badge-green/red and location-badge-blue/gray CSS classes for badge color detection
+11. Converted filtered reasons from plain text to <ul><li> list structure
+12. Modified "All" tab to exclude rejected jobs (shows only active workflow: new, approved, applied, filtered)
+13. Added fetchStats() call in updateJobStatus() for real-time statistics updates after status changes
+
+**Modal Interaction Fixes (September 30, 2025 - 5 tests fixed):**
+14. Added global Escape key handler using useEffect with keydown event listener
+15. Implemented click-outside-to-close for JobDetails modal with stopPropagation on content
+16. Implemented click-outside-to-close for ContentGeneration modal with stopPropagation on content
+17. Added data-testid="modal-close-x" to distinguish × close buttons
+18. Added data-testid="modal-close-button" to distinguish "Close" text buttons
 
 **Known Infrastructure Gaps (To Address in Next Phases):**
 

@@ -177,6 +177,7 @@ const JobHunterDashboard: React.FC = () => {
         body: JSON.stringify({ status: newStatus })
       });
       fetchJobs();
+      fetchStats();
     } catch (error) {
       console.error('Error updating job status:', error);
       setJobs(jobs.map(j => j.job_id === jobId ? {...j, status: newStatus} : j));
@@ -227,10 +228,35 @@ const JobHunterDashboard: React.FC = () => {
     return jobs.filter(job => job.status === status);
   };
 
+  const getAllActiveJobs = (): Job[] => {
+    // Exclude rejected jobs from "All" tab - show only active workflow jobs
+    return jobs.filter(job => job.status !== 'rejected');
+  };
+
   useEffect(() => {
     fetchJobs();
     fetchStats();
   }, []);
+
+  // Handle Escape key for modals
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (selectedJob) {
+          setSelectedJob(null);
+        }
+        if (showContentGeneration) {
+          setShowContentGeneration(false);
+        }
+        if (showCriteriaConfig) {
+          setShowCriteriaConfig(false);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [selectedJob, showContentGeneration, showCriteriaConfig]);
 
   const meetsMinSalary = (job: Job): boolean => job.salary ? job.salary >= 130000 : false;
   const isRemote = (job: Job): boolean => job.location?.toLowerCase().includes('remote') || false;
@@ -254,7 +280,8 @@ const JobHunterDashboard: React.FC = () => {
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '12px', fontSize: '14px' }}>
         {job.salary && (
           <span
-            data-testid="job-salary"
+            data-testid="salary-badge"
+            className={`salary-badge ${meetsMinSalary(job) ? 'salary-badge-green' : 'salary-badge-red'}`}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -271,7 +298,8 @@ const JobHunterDashboard: React.FC = () => {
 
         {job.location && (
           <span
-            data-testid="job-location"
+            data-testid="location-badge"
+            className={`location-badge ${isRemote(job) ? 'location-badge-blue' : 'location-badge-gray'}`}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -315,9 +343,11 @@ const JobHunterDashboard: React.FC = () => {
           <div style={{ fontSize: '12px', fontWeight: '500', color: '#dc2626', marginBottom: '4px' }}>
             Filtered Reasons:
           </div>
-          <div style={{ fontSize: '12px', color: '#7f1d1d' }}>
-            {job.filter_reason}
-          </div>
+          <ul style={{ fontSize: '12px', color: '#7f1d1d', margin: 0, paddingLeft: '20px' }}>
+            {job.filter_reason.split(';').map((reason, idx) => (
+              <li key={idx} className="reason">{reason.trim()}</li>
+            ))}
+          </ul>
         </div>
       )}
 
@@ -386,16 +416,20 @@ const JobHunterDashboard: React.FC = () => {
   );
 
   const JobDetails: React.FC<{ job: Job; onClose: () => void }> = ({ job, onClose }) => (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '16px',
-      zIndex: 50
-    }} data-testid="modal-overlay">
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px',
+        zIndex: 50
+      }}
+      data-testid="modal-overlay"
+      onClick={onClose}
+    >
       <div
         role="dialog"
         style={{
@@ -405,7 +439,9 @@ const JobHunterDashboard: React.FC = () => {
           width: '100%',
           maxHeight: '90vh',
           overflowY: 'auto'
-        }}>
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div style={{ padding: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
             <div>
@@ -413,6 +449,7 @@ const JobHunterDashboard: React.FC = () => {
               <p style={{ fontSize: '20px', color: '#6b7280' }} data-testid="modal-company">{job.company}</p>
             </div>
             <button
+              data-testid="modal-close-x"
               onClick={onClose}
               style={{
                 color: '#6b7280',
@@ -597,6 +634,8 @@ const JobHunterDashboard: React.FC = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
+              aria-selected={activeTab === tab}
+              className={activeTab === tab ? 'active' : ''}
               style={{
                 padding: '8px 16px',
                 fontWeight: 500,
@@ -618,7 +657,7 @@ const JobHunterDashboard: React.FC = () => {
             activeTab === 'approved' ? filterJobs('approved') :
             activeTab === 'applied' ? filterJobs('applied') :
             activeTab === 'filtered' ? filterJobs('filtered') :
-            jobs
+            getAllActiveJobs()
           ).map(job => (
             <JobCard key={job.job_id} job={job} />
           ))}
@@ -628,7 +667,7 @@ const JobHunterDashboard: React.FC = () => {
           activeTab === 'approved' ? filterJobs('approved') :
           activeTab === 'applied' ? filterJobs('applied') :
           activeTab === 'filtered' ? filterJobs('filtered') :
-          jobs
+          getAllActiveJobs()
         ).length === 0 && (
           <div style={{ textAlign: 'center', padding: '48px 0' }}>
             <Filter style={{ width: '64px', height: '64px', color: '#d1d5db', margin: '0 auto 16px' }} />
@@ -642,19 +681,23 @@ const JobHunterDashboard: React.FC = () => {
       )}
 
       {showContentGeneration && generatedContent && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          zIndex: 50,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '20px'
-        }} data-testid="modal-overlay">
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 50,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px'
+          }}
+          data-testid="modal-overlay"
+          onClick={() => setShowContentGeneration(false)}
+        >
           <div
             role="dialog"
             style={{
@@ -666,7 +709,9 @@ const JobHunterDashboard: React.FC = () => {
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column'
-            }}>
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div style={{
               padding: '20px',
               borderBottom: '1px solid #e5e7eb',
@@ -676,6 +721,7 @@ const JobHunterDashboard: React.FC = () => {
             }}>
               <h2 style={{ fontSize: '24px', fontWeight: 'bold', margin: 0 }}>Generated Content</h2>
               <button
+                data-testid="modal-close-x"
                 onClick={() => setShowContentGeneration(false)}
                 style={{
                   background: 'none',
@@ -758,6 +804,7 @@ const JobHunterDashboard: React.FC = () => {
               gap: '12px'
             }}>
               <button
+                data-testid="modal-close-button"
                 onClick={() => setShowContentGeneration(false)}
                 style={{
                   padding: '8px 16px',
