@@ -14,6 +14,11 @@
 /frontend/yarn-debug.log*
 /frontend/yarn-error.log*
 
+# Frontend test artifacts
+/frontend/.tap/
+/frontend/playwright-report/
+/frontend/test-results/
+
 # Database
 *.db
 *.sqlite
