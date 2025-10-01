@@ -637,6 +637,232 @@ expect(fps).toBeGreaterThan(30);
 
 ---
 
+### P5: Test Database Population - Enable Skipped Tests
+
+**Context**: After completing P1+P2+P3+P4 fixes, we have achieved 157/189 tests passing (83.1%) with **0 failing tests** and **all 11 test suites at 100%**. However, 32 tests (16.9%) are currently skipped due to insufficient or missing test data in the database.
+
+#### Current Database State
+
+```sql
+-- Current job counts by status (September 30, 2025)
+SELECT status, COUNT(*) FROM jobs GROUP BY status;
+
+  status  | count
+----------+-------
+ approved |     7
+ filtered |     3
+ rejected |     3
+-- Total: 13 jobs
+```
+
+**Critical Issue**: **0 jobs with status='new'** - This is the primary cause of test skips.
+
+#### Root Cause Analysis
+
+Tests are skipping because:
+
+1. **No "inbox" jobs** - Most skipped tests look for `status='new'` jobs (the "Inbox" tab in the UI)
+   - Tests check for jobs in the "New Jobs" tab
+   - Page Object Model uses `clickTab('inbox')` which displays `status='new'` jobs
+   - Currently: 0 jobs with this status = automatic test skip
+
+2. **Insufficient volume** - Performance tests need 50+ jobs for large dataset validation
+   - Current: 13 jobs total
+   - Performance test requirement: 50+ jobs (line 161-163 in 10-performance.spec.ts)
+   - Scrolling test requirement: 20+ jobs (line 188-190 in 10-performance.spec.ts)
+
+3. **Limited variety** - Need more filtered jobs with specific filter reasons
+   - Current: 3 filtered jobs (likely generic reasons)
+   - Tests need: Jobs filtered by salary, commute time, domain mismatch
+   - Multiple filter reasons per job for comprehensive validation
+
+#### Skipped Test Breakdown (32 tests total)
+
+| Test Suite | Skipped | Reason | Example Skip Condition |
+|-----------|---------|--------|------------------------|
+| 05-job-details.spec.ts | 5 | No jobs in specific tabs | `if (jobCount === 0) test.skip()` |
+| 06-statistics.spec.ts | 5 | No inbox jobs for approval/rejection | `if (inboxCount === 0) test.skip()` |
+| 10-performance.spec.ts | 3 | Insufficient jobs (<50 for performance, <20 for scrolling) | `if (jobCount < 50) test.skip()` |
+| 11-accessibility.spec.ts | 2 | No jobs for keyboard navigation tests | `if (jobCount === 0) test.skip()` |
+| Other suites | 17 | Various data-dependent scenarios | Conditional skips throughout |
+
+#### Solution: Comprehensive SQL Seed Script
+
+Create `database/test-seed-data.sql` with realistic, diverse job data:
+
+**Job Distribution Plan** (65 new jobs = 78 total):
+
+1. **30 'new' status jobs** - Enable inbox tests
+   - Salary range: $80,000 - $200,000 (mix above/below $130K threshold)
+   - Locations: Mix of Remote, Bay Area cities, other locations
+   - Companies: Diverse tech companies, startups, enterprises
+   - Domains: Testing, AI, Firmware, plus some non-matching domains
+   - Sources: LinkedIn, Indeed, Gmail, Dice (realistic variety)
+
+2. **10 additional approved jobs** - Supplement existing 7
+   - Total approved: 17 jobs (enables content generation tests)
+   - All meet filtering criteria (salary ≥$130K, good location, matching domain)
+   - Variety in job titles and companies for content generation diversity
+
+3. **15 filtered jobs** - Enable comprehensive filtering tests
+   - 5 filtered by salary (<$130K): e.g., $80K, $95K, $110K, $120K, $125K
+   - 5 filtered by commute (>45 min): Sacramento (65 min), Los Angeles (120 min), San Diego (150 min)
+   - 5 filtered by domain mismatch: Marketing Manager, Sales Engineer, HR Director, Account Executive, Product Manager
+   - Some jobs with multiple filter reasons for edge case testing
+
+4. **5 applied jobs** - Enable application workflow tests
+   - Jobs that have been approved and applied to
+   - Include application dates, follow-up dates
+
+5. **5 additional rejected jobs** - Supplement existing 3
+   - Total rejected: 8 jobs
+   - Manual rejection scenarios (different from auto-filtered)
+
+#### Implementation Steps
+
+**Step 1: Create SQL Seed Script** (`database/test-seed-data.sql`)
+
+```sql
+-- Test Seed Data for JobHunter E2E Tests
+-- Purpose: Enable 32 skipped tests by providing sufficient data variety
+-- Generated: September 30, 2025
+
+-- 30 'new' status jobs (various salaries, locations, companies)
+INSERT INTO jobs (title, company, salary, location, source, status, description, url, date_collected) VALUES
+  ('Senior AI Test Engineer', 'TechCorp AI', 155000, 'Remote', 'LinkedIn', 'new', 'Develop test frameworks for AI products', 'https://example.com/job1', NOW()),
+  ('Test Automation Engineer', 'Quality First Inc', 145000, 'San Francisco, CA', 'Direct', 'new', 'Build comprehensive test automation using Playwright', 'https://example.com/job2', NOW()),
+  ('Firmware Validation Engineer', 'Hardware Systems Corp', 160000, 'Fremont, CA', 'LinkedIn', 'new', 'Validate embedded firmware for IoT devices', 'https://example.com/job3', NOW()),
+  -- ... (27 more new jobs with varying characteristics)
+
+-- 10 additional approved jobs
+INSERT INTO jobs (title, company, salary, location, source, status, description, url, date_collected) VALUES
+  ('Lead Software Testing Engineer', 'Enterprise Solutions LLC', 170000, 'Remote', 'Gmail', 'approved', 'Lead testing initiatives across product lines', 'https://example.com/job31', NOW()),
+  -- ... (9 more approved jobs)
+
+-- 15 filtered jobs with specific reasons
+INSERT INTO jobs (title, company, salary, location, source, status, filter_reason, date_collected) VALUES
+  ('Junior QA Tester', 'StartupCo', 80000, 'Remote', 'Indeed', 'filtered', 'Salary below minimum ($130,000)', NOW()),
+  ('Test Engineer', 'Far Away Corp', 140000, 'Sacramento, CA', 'Indeed', 'filtered', 'Commute time exceeds 45 minutes (estimated: 65 minutes)', NOW()),
+  ('Marketing Manager', 'AdTech Corp', 150000, 'Remote', 'LinkedIn', 'filtered', 'Domain does not match preferred domains (Testing, AI, Firmware)', NOW()),
+  -- ... (12 more filtered jobs)
+
+-- 5 applied jobs
+INSERT INTO jobs (title, company, salary, location, source, status, date_collected) VALUES
+  ('Senior QA Automation Architect', 'Global Tech Solutions', 185000, 'Remote', 'LinkedIn', 'applied', NOW()),
+  -- ... (4 more applied jobs)
+
+-- 5 additional rejected jobs
+INSERT INTO jobs (title, company, salary, location, source, status, date_collected) VALUES
+  ('AI Prompt Engineer', 'AI Innovations', 160000, 'Remote', 'Direct', 'rejected', NOW()),
+  -- ... (4 more rejected jobs)
+```
+
+**Step 2: Run Seed Script**
+
+```bash
+# Run seed script against jobhunter database
+cd /Users/sam/Projects/JobHuntAI
+psql -U jobhunter_user -d jobhunter -f database/test-seed-data.sql
+
+# Verify insertion
+psql -U jobhunter_user -d jobhunter -c "SELECT status, COUNT(*) FROM jobs GROUP BY status ORDER BY status;"
+```
+
+**Step 3: Verify Data Insertion**
+
+```bash
+# Check total job count (should be ~78)
+psql -U jobhunter_user -d jobhunter -c "SELECT COUNT(*) FROM jobs;"
+
+# Check status distribution
+psql -U jobhunter_user -d jobhunter -c "
+  SELECT
+    status,
+    COUNT(*) as count,
+    ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER(), 1) as percentage
+  FROM jobs
+  GROUP BY status
+  ORDER BY status;
+"
+
+# Check salary distribution for filtering tests
+psql -U jobhunter_user -d jobhunter -c "
+  SELECT
+    CASE
+      WHEN salary >= 130000 THEN 'Above threshold (≥$130K)'
+      WHEN salary < 130000 THEN 'Below threshold (<$130K)'
+      ELSE 'No salary'
+    END as salary_category,
+    COUNT(*) as count
+  FROM jobs
+  GROUP BY salary_category;
+"
+
+# Verify filtered reasons variety
+psql -U jobhunter_user -d jobhunter -c "
+  SELECT filter_reason, COUNT(*)
+  FROM jobs
+  WHERE status = 'filtered'
+  GROUP BY filter_reason;
+"
+```
+
+**Step 4: Run Full Test Suite**
+
+```bash
+cd frontend
+npm run test:e2e:chromium
+
+# Expected results:
+# - Previously skipped tests should now run
+# - Pass rate should increase from 157/189 (83.1%) to ~180-185/189 (95-98%)
+# - Remaining skips (if any) for truly optional scenarios
+```
+
+**Step 5: Update Documentation**
+
+```bash
+# Update test results files with new statistics
+# - frontend/TEST_RESULTS_LATEST.md
+# - README_auto-test-results.md
+# - README_auto-test-plan.md (this file)
+
+# Commit changes
+git add database/test-seed-data.sql
+git add frontend/TEST_RESULTS_LATEST.md
+git add README_auto-test-results.md
+git add README_auto-test-plan.md
+git commit -m "Add comprehensive test seed data - enable 32 skipped tests"
+```
+
+#### Expected Outcome
+
+**Before P5:**
+- 157/189 tests passing (83.1%)
+- 0 tests failing (0%)
+- 32 tests skipped (16.9%)
+- 11 test suites at 100% (of non-skipped tests)
+
+**After P5:**
+- **~180-185 tests passing (95-98%)** ⬅️ Target
+- 0 tests failing (0%)
+- **~4-9 tests skipped (2-5%)** (only truly optional scenarios)
+- **11 test suites at 100%** (maintained)
+
+**Benefits:**
+1. ✅ Enable comprehensive testing of inbox workflow (30 new status jobs)
+2. ✅ Validate performance with large datasets (78 total jobs > 50 threshold)
+3. ✅ Test all filtering scenarios (salary, commute, domain mismatch)
+4. ✅ Demonstrate thorough E2E test coverage for portfolio (~95%+ pass rate)
+5. ✅ Validate real-world data handling (diverse companies, locations, salaries)
+
+**Remaining Skips (Expected ~4-9 tests):**
+- Tests requiring specific browser features (e.g., advanced accessibility APIs)
+- Tests for features not yet implemented (e.g., "Configure Criteria" UI button)
+- Tests with unrealistic data requirements (e.g., 100+ jobs for stress testing)
+
+---
+
 **Next Steps Priority:**
 1. ✅ **P1 - High**: Fix modal close button page object selectors → COMPLETE (fixed 7 tests)
 2. ✅ **P1 - High**: Investigate job details modal field display → COMPLETE (fixed 11 tests)
