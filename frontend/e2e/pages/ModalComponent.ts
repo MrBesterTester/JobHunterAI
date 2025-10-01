@@ -23,9 +23,10 @@ export class ModalComponent {
     this.overlay = page.locator('[data-testid="modal-overlay"], .modal-overlay, .overlay').first();
 
     // Close button - use specific test IDs to avoid ambiguity
+    // Use .first() to handle cases where multiple close buttons exist (e.g., × and "Close" text button)
     this.closeButton = this.modal.locator('[data-testid="modal-close-x"]').or(
       this.modal.locator('[data-testid="modal-close-button"]')
-    );
+    ).first();
 
     this.title = this.modal.locator('[data-testid="modal-title"], .modal-title, h2, h3').first();
   }
