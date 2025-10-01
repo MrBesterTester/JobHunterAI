@@ -22,6 +22,8 @@
 # Database
 *.db
 *.sqlite
+/database/backups/
+/backend/.env.backup
 
 # User data (keep structure, ignore content)
 # To track the directory structure but not content, add:

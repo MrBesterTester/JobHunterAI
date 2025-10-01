@@ -464,6 +464,127 @@ Gmail/LinkedIn/API Sources → Intelligent Extraction → Automatic Filtering �
 
 **Production Ready**: Phase 4 completes the transformation from manual job management to fully automated job discovery and processing platform.
 
+## Development Helper Scripts
+
+JobHunter provides database management scripts to keep your personal data separate from test data. These scripts help you maintain two databases:
+- **`jobhunter_dev`** - Development database with test data (safe to share/reset)
+- **`jobhunter_personal`** - Your personal production database (private, never committed to Git)
+
+### Configuration
+
+Your database configuration is stored in [`backend/.env`](backend/.env) which is excluded from Git. An example configuration file is provided at [`backend/.env.example`](backend/.env.example) that you can use as a template.
+
+### Quick Start: Database Setup
+
+**1. Create both databases:**
+```bash
+# Create personal database
+psql -U postgres -c "CREATE DATABASE jobhunter_personal;"
+psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE jobhunter_personal TO jobhunter_user;"
+
+# Rename existing database to dev (if you have one), or create fresh dev database
+psql -U postgres -c "ALTER DATABASE jobhunter RENAME TO jobhunter_dev;"
+# OR create fresh: psql -U postgres -c "CREATE DATABASE jobhunter_dev;"
+```
+
+**2. Initialize personal database (schema only, no test data):**
+```bash
+psql -U jobhunter_user -d jobhunter_personal -f database/schema.sql
+psql -U jobhunter_user -d jobhunter_personal -f database/migration_phase5.1.sql
+```
+
+**3. Switch to personal database:**
+```bash
+./switch-to-personal.sh
+```
+
+### Helper Scripts
+
+#### [`switch-to-personal.sh`](switch-to-personal.sh)
+Switches your environment to use the personal database for real job hunting.
+
+**Usage:**
+```bash
+./switch-to-personal.sh
+```
+
+Updates `backend/.env` to point to `jobhunter_personal`. Restart the backend server after switching.
+
+#### [`switch-to-dev.sh`](switch-to-dev.sh)
+Switches your environment to use the development database for testing with test data.
+
+**Usage:**
+```bash
+./switch-to-dev.sh
+```
+
+Updates `backend/.env` to point to `jobhunter_dev`. Restart the backend server after switching.
+
+#### [`reset-dev-db.sh`](reset-dev-db.sh)
+Resets the development database to a clean state with fresh test data. **WARNING**: This will delete all data in `jobhunter_dev`!
+
+**Usage:**
+```bash
+./reset-dev-db.sh
+```
+
+This script will:
+- Drop and recreate the `jobhunter_dev` database
+- Load the schema and migrations
+- Load all test seed data (103 test jobs)
+
+Perfect for when you want to start fresh with clean test data.
+
+#### [`backup-personal-db.sh`](backup-personal-db.sh)
+Creates a timestamped, compressed backup of your personal database.
+
+**Usage:**
+```bash
+./backup-personal-db.sh
+```
+
+**Parameters:** None (timestamp is automatically generated)
+
+Backups are saved to `database/backups/` (excluded from Git) with filenames like `jobhunter_personal_20251001_143022.sql.gz`.
+
+#### [`restore-personal-db.sh`](restore-personal-db.sh)
+Restores your personal database from a backup file. **WARNING**: This will delete all current data in `jobhunter_personal`!
+
+**Usage:**
+```bash
+# Interactive mode - select from available backups
+./restore-personal-db.sh
+
+# Direct mode - restore specific backup file
+./restore-personal-db.sh database/backups/jobhunter_personal_20251001_143022.sql.gz
+```
+
+**Parameters:**
+- None (interactive): Shows a menu of available backups to choose from
+- `<backup-file>` (optional): Path to specific backup file to restore
+
+The script will:
+- List all available backups (if interactive mode)
+- Warn about data loss
+- Drop and recreate the database
+- Restore data from the selected backup
+- Confirm successful restoration
+
+### Security Notes
+
+✅ **Safe to commit to Git:**
+- `backend/.env.example` - Example configuration
+- Database schema files
+- Test seed data files
+- All helper scripts
+
+❌ **Never committed to Git (in .gitignore):**
+- `backend/.env` - Your actual database connection
+- `database/backups/` - Your personal database backups
+- `backend/.env.backup` - Backup files created by switch scripts
+
+See [`DATABASE_SETUP.md`](DATABASE_SETUP.md) for detailed database setup instructions.
+
 ## Project Structure
 
 ```
