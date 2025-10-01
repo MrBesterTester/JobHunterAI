@@ -90,6 +90,9 @@ const JobHunterDashboard: React.FC = () => {
   const fetchJobs = async (): Promise<void> => {
     try {
       const response = await fetch(`${API_URL}/jobs`);
+      if (!response.ok) {
+        throw new Error(`API returned status ${response.status}`);
+      }
       const data: Job[] = await response.json();
       setJobs(data);
       setLoading(false);
@@ -162,10 +165,15 @@ const JobHunterDashboard: React.FC = () => {
   const fetchStats = async (): Promise<void> => {
     try {
       const response = await fetch(`${API_URL}/jobs/stats`);
+      if (!response.ok) {
+        throw new Error(`Stats API returned status ${response.status}`);
+      }
       const data: JobStats = await response.json();
       setStats(data);
     } catch (error) {
       console.error('Error fetching stats:', error);
+      // Set default stats on error
+      setStats({ new: 0, approved: 0, applied: 0, filtered: 0, rejected: 0 });
     }
   };
 
@@ -629,17 +637,17 @@ const JobHunterDashboard: React.FC = () => {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>
-      <header style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb' }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '16px' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', overflowX: 'hidden', width: '100%' }}>
+      <header style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb', width: '100%' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '16px', boxSizing: 'border-box' }}>
           <h1 style={{ fontSize: '30px', fontWeight: 'bold', color: '#111827' }}>JobHunter</h1>
           <p style={{ color: '#6b7280' }}>Streamline your job search workflow</p>
         </div>
       </header>
 
-      <div style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb' }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '16px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '16px' }}>
+      <div style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb', width: '100%' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '16px', boxSizing: 'border-box' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '8px', width: '100%' }}>
             <div style={{ textAlign: 'center' }} data-testid="stat-new">
               <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#3b82f6' }}>{stats.new || 0}</p>
               <p style={{ fontSize: '14px', color: '#6b7280' }}>New Jobs</p>
@@ -668,8 +676,8 @@ const JobHunterDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 16px' }}>
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid #e5e7eb' }}>
+      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 16px', boxSizing: 'border-box', width: '100%' }}>
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid #e5e7eb', overflowX: 'auto' }}>
           {(['inbox', 'approved', 'applied', 'filtered', 'all'] as TabType[]).map(tab => (
             <button
               key={tab}
@@ -692,7 +700,7 @@ const JobHunterDashboard: React.FC = () => {
           ))}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))', gap: '16px', width: '100%' }}>
           {(activeTab === 'inbox' ? filterJobs('new') :
             activeTab === 'approved' ? filterJobs('approved') :
             activeTab === 'applied' ? filterJobs('applied') :
