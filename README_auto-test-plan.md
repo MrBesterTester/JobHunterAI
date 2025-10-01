@@ -456,14 +456,186 @@ npm run test:e2e:chromium -- e2e/tests/02-tab-navigation.spec.ts
 - **Affected Tests**: 09-error-handling.spec.ts API failure test
 
 **Category 8: Performance Metrics (3 failures) - P4**
-- **Issue**: Memory leak detection, FPS monitoring during animations
-- **Status**: Advanced performance testing - may need tooling updates
-- **Affected Tests**: 10-performance.spec.ts
+- **Issue**: Memory leak detection, API timing, FPS monitoring using non-existent `page.metrics()` API
+- **Status**: Requires alternative Playwright performance APIs
+- **Affected Tests**: 10-performance.spec.ts (lines 48-73, 95-122, 282-296)
 
 **Category 9: Accessibility (2 failures) - P4**
 - **Issue**: Missing ARIA landmarks, focus trap not working in modals
 - **Status**: Need to add proper semantic HTML and ARIA attributes
 - **Affected Tests**: 11-accessibility.spec.ts
+
+---
+
+### P4 Performance Test Fixes - Detailed Technical Plan
+
+**Context**: The 3 remaining P4 performance tests fail because they use `page.metrics()`, a Puppeteer API that doesn't exist in Playwright. Research completed September 30, 2025 shows Playwright uses different performance measurement approaches.
+
+#### Test 1: Memory Leak Detection (Line 48-73)
+
+**Current Issue:**
+```typescript
+const initialMetrics = await page.metrics(); // ❌ TypeError: page.metrics is not a function
+```
+
+**Root Cause**: `page.metrics()` is a Puppeteer-specific API. Playwright doesn't provide this method.
+
+**Solution - Use Chrome's Performance Memory API:**
+```typescript
+const initialMetrics = await page.evaluate(() => ({
+  JSHeapUsedSize: (performance as any).memory?.usedJSHeapSize || 0
+}));
+
+// After tab navigation loop...
+
+const finalMetrics = await page.evaluate(() => ({
+  JSHeapUsedSize: (performance as any).memory?.usedJSHeapSize || 0
+}));
+
+const heapSizeGrowth = (finalMetrics.JSHeapUsedSize - initialMetrics.JSHeapUsedSize) / 1024 / 1024;
+expect(heapSizeGrowth).toBeLessThan(50); // Max 50MB growth
+```
+
+**Why This Works**: Directly accesses Chrome's `window.performance.memory` API which provides `usedJSHeapSize` for memory monitoring.
+
+**Files to Modify**: `frontend/e2e/tests/10-performance.spec.ts` lines 52 and 65
+
+---
+
+#### Test 2: API Response Time Averaging (Line 95-122)
+
+**Current Issue:**
+```typescript
+page.on('response', (response) => {
+  const timing = response.timing();
+  if (timing.responseEnd) {
+    responseTimes.push(timing.responseEnd); // ❌ Wrong - responseEnd is absolute timestamp
+  }
+});
+```
+
+**Root Cause**: `response.timing().responseEnd` returns an absolute timestamp, not a duration. The test pushes timestamps into an array then averages them, which produces meaningless large numbers causing timeout.
+
+**Solution - Use Request Timing API Correctly:**
+```typescript
+const responseTimes: number[] = [];
+
+page.on('requestfinished', async (request) => {
+  if (request.url().includes('/api/') && !request.url().includes('generate')) {
+    const timing = request.timing();
+    const responseTime = timing.responseEnd - timing.requestStart; // Calculate duration
+    if (responseTime > 0) {
+      responseTimes.push(responseTime);
+    }
+  }
+});
+
+// Later...
+if (responseTimes.length > 0) {
+  const avgTime = responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length;
+  expect(avgTime).toBeLessThan(500); // Average < 500ms
+}
+```
+
+**Why This Works**:
+- Uses `requestfinished` event which has complete timing data
+- Calculates duration: `responseEnd - requestStart` = actual milliseconds
+- Stores durations (not timestamps) for proper averaging
+
+**Files to Modify**: `frontend/e2e/tests/10-performance.spec.ts` lines 98-105 and 117
+
+---
+
+#### Test 3: FPS Monitoring During Animations (Line 282-296)
+
+**Current Issue:**
+```typescript
+const metrics = await page.metrics(); // ❌ TypeError: page.metrics is not a function
+expect(metrics.LayoutDuration).toBeLessThan(1);
+```
+
+**Root Cause**: Again, `page.metrics()` doesn't exist in Playwright. Need alternative approach for frame rate measurement.
+
+**Solution - Use RequestAnimationFrame for FPS Measurement:**
+```typescript
+await dashboardPage.goto();
+
+// Trigger animations
+await dashboardPage.clickTab('inbox');
+await page.waitForTimeout(100);
+await dashboardPage.clickTab('approved');
+
+// Measure FPS over 60 frames
+const frameData = await page.evaluate(() => {
+  return new Promise<number[]>((resolve) => {
+    const frameTimes: number[] = [];
+    let lastTime = performance.now();
+    let count = 0;
+
+    function measureFrame() {
+      const now = performance.now();
+      frameTimes.push(now - lastTime);
+      lastTime = now;
+      count++;
+
+      if (count < 60) { // Measure 60 frames (~1 second)
+        requestAnimationFrame(measureFrame);
+      } else {
+        resolve(frameTimes);
+      }
+    }
+
+    requestAnimationFrame(measureFrame);
+  });
+});
+
+const avgFrameTime = frameData.reduce((a, b) => a + b) / frameData.length;
+const fps = 1000 / avgFrameTime;
+
+// Smooth animations = 30+ FPS
+expect(fps).toBeGreaterThan(30);
+```
+
+**Why This Works**:
+- Uses browser's native `requestAnimationFrame` API
+- Measures actual frame rendering times
+- Calculates real FPS from frame deltas
+- Tests actual user-perceived smoothness
+
+**Files to Modify**: `frontend/e2e/tests/10-performance.spec.ts` lines 285-295
+
+---
+
+#### Implementation Checklist
+
+**Phase 1: Test Fixes**
+- [ ] Update Test 1: Replace `page.metrics()` with `performance.memory` evaluation (2 locations)
+- [ ] Update Test 2: Fix API timing calculation using `request.timing()` correctly
+- [ ] Update Test 3: Add `requestAnimationFrame` FPS measurement helper
+- [ ] Run performance test suite: `npm run test:e2e:chromium -- e2e/tests/10-performance.spec.ts`
+- [ ] Verify all 16/16 tests pass
+
+**Phase 2: Validation**
+- [ ] Run full test suite to confirm no regressions
+- [ ] Verify pass rate: 157/189 (83.1%)
+- [ ] Confirm all 11 test suites at 100%
+
+**Phase 3: Documentation**
+- [ ] Update `frontend/TEST_RESULTS_LATEST.md` with final results
+- [ ] Update `README_auto-test-results.md` with completion status
+- [ ] Update this test plan with "RESOLVED" status
+
+**Phase 4: Git Commit**
+- [ ] Stage files: `git add e2e/tests/10-performance.spec.ts TEST_RESULTS_LATEST.md README_auto-test-results.md`
+- [ ] Commit: `git commit -m "Complete P4 performance tests - 157/189 passing (83.1%)"`
+
+**Expected Outcome:**
+- ✅ 157/189 tests passing (83.1% - up from 81.5%)
+- ✅ 0 failing tests
+- ✅ All 11 test suites at 100%
+- ✅ Showcase advanced browser performance API knowledge
+
+---
 
 **Next Steps Priority:**
 1. ✅ **P1 - High**: Fix modal close button page object selectors → COMPLETE (fixed 7 tests)
