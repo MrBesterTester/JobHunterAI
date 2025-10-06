@@ -84,8 +84,8 @@ This script will:
 brew install postgresql@14
 brew services start postgresql@14
 
-# Create database
-psql -U postgres
+# Create database (using your macOS username as the PostgreSQL superuser)
+psql -d postgres
 CREATE DATABASE jobhunter;
 CREATE USER jobhunter_user WITH PASSWORD 'jobhunter_dev_password';
 GRANT ALL PRIVILEGES ON DATABASE jobhunter TO jobhunter_user;
@@ -145,15 +145,17 @@ Your database configuration is stored in [`backend/.env`](backend/.env) which is
 
 ### Quick Start: Database Setup
 
+> **Note**: These commands use your macOS username as the PostgreSQL superuser. On macOS with Homebrew PostgreSQL, your system username (e.g., `sam`) is the default superuser, not `postgres`.
+
 **1. Create both databases:**
 ```bash
-# Create personal database
-psql -U postgres -c "CREATE DATABASE jobhunter_personal;"
-psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE jobhunter_personal TO jobhunter_user;"
+# Create personal database (connects as your macOS user)
+psql -d postgres -c "CREATE DATABASE jobhunter_personal;"
+psql -d postgres -c "GRANT ALL PRIVILEGES ON DATABASE jobhunter_personal TO jobhunter_user;"
 
 # Rename existing database to dev (if you have one), or create fresh dev database
-psql -U postgres -c "ALTER DATABASE jobhunter RENAME TO jobhunter_dev;"
-# OR create fresh: psql -U postgres -c "CREATE DATABASE jobhunter_dev;"
+psql -d postgres -c "ALTER DATABASE jobhunter RENAME TO jobhunter_dev;"
+# OR create fresh: psql -d postgres -c "CREATE DATABASE jobhunter_dev;"
 ```
 
 **2. Initialize personal database (schema only, no test data):**
