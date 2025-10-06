@@ -2,10 +2,18 @@
 
 # JobHunter Stop Script
 # Safely stops the backend and frontend processes
+# Use --full flag to also stop PostgreSQL
 
 set -e
 
-echo "🛑 Stopping JobHunter..."
+# Parse arguments
+STOP_POSTGRES=false
+if [ "$1" = "--full" ]; then
+    STOP_POSTGRES=true
+    echo "🛑 Stopping JobHunter (including PostgreSQL)..."
+else
+    echo "🛑 Stopping JobHunter..."
+fi
 echo ""
 
 # Function to check if process is running
@@ -23,6 +31,7 @@ count_processes() {
 # Track what we stopped
 BACKEND_STOPPED=false
 FRONTEND_STOPPED=false
+POSTGRES_STOPPED=false
 
 # Try to stop backend (cargo run)
 echo "🦀 Stopping backend (Rust)..."
@@ -85,14 +94,47 @@ else
 fi
 
 echo ""
+
+# Stop PostgreSQL if --full flag was provided
+if [ "$STOP_POSTGRES" = true ]; then
+    echo "📊 Stopping PostgreSQL..."
+
+    # Check if PostgreSQL is running
+    if brew services list | grep postgresql@14 | grep started > /dev/null 2>&1; then
+        brew services stop postgresql@14
+        sleep 2
+
+        # Verify it stopped
+        if ! brew services list | grep postgresql@14 | grep started > /dev/null 2>&1; then
+            echo "✅ PostgreSQL stopped"
+            POSTGRES_STOPPED=true
+        else
+            echo "❌ PostgreSQL may still be running"
+        fi
+    else
+        echo "ℹ️  PostgreSQL not running"
+        POSTGRES_STOPPED=true
+    fi
+    echo ""
+fi
+
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # Final status
 if [ "$BACKEND_STOPPED" = true ] && [ "$FRONTEND_STOPPED" = true ]; then
-    echo "✨ JobHunter stopped successfully"
+    echo "✨ JobHunter application stopped successfully"
     echo ""
-    echo "Note: PostgreSQL is still running"
-    echo "To stop PostgreSQL: brew services stop postgresql@14"
+
+    if [ "$STOP_POSTGRES" = true ]; then
+        if [ "$POSTGRES_STOPPED" = true ]; then
+            echo "✨ PostgreSQL also stopped"
+        else
+            echo "⚠️  PostgreSQL may still be running"
+        fi
+    else
+        echo "Note: PostgreSQL is still running"
+        echo "To stop it: ./stop.sh --full  OR  brew services stop postgresql@14"
+    fi
 else
     echo "⚠️  Some processes may still be running"
     echo ""

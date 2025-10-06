@@ -28,6 +28,7 @@ JobHunter is a comprehensive job application management system that automates an
   - [Configuration](#configuration)
   - [Quick Start: Database Setup](#quick-start-database-setup)
   - [Understanding Your Workflow: Setup vs. Daily Use](#understanding-your-workflow-setup-vs-daily-use)
+  - [Understanding Your Workflow: Properly Managing Your PostgreSQL Database](#understanding-your-workflow-properly-managing-your-postgresql-database)
   - [Helper Scripts](#helper-scripts)
   - [Security Notes](#security-notes)
 - [API Endpoints](#api-endpoints)
@@ -200,7 +201,8 @@ This script automatically:
 
 **Stopping the app:**
 ```bash
-./stop.sh
+./stop.sh          # Stop app only (PostgreSQL keeps running)
+./stop.sh --full   # Stop app AND PostgreSQL
 ```
 
 This script safely stops the application:
@@ -208,11 +210,13 @@ This script safely stops the application:
 - Checks if processes stopped successfully
 - Uses force kill if graceful shutdown fails
 - Reports detailed status of what was stopped
-- Leaves PostgreSQL running (stop separately if needed)
+- By default: Leaves PostgreSQL running for faster restarts
+- With `--full`: Also stops PostgreSQL (when done for the day)
 
 **Manual alternatives:**
 - Use PIDs from startup: `kill 78548 78593` (use actual PIDs shown)
 - Kill by name: `pkill -f 'cargo run'; pkill -f 'react-scripts'`
+- Stop PostgreSQL only: `brew services stop postgresql@14`
 
 **Note**: There's no "Quit" button in the web UI because this is a server application. The web UI is just a client - you need to stop the backend/frontend processes via the terminal.
 
@@ -228,6 +232,58 @@ You only need to run database commands in these scenarios:
 
 **The databases persist on disk** - once created, they're there until you explicitly delete them. The data survives app restarts, computer reboots, etc.
 
+### Understanding Your Workflow: Properly Managing Your PostgreSQL Database
+
+You may have noticed that `./stop.sh` leaves PostgreSQL running by default. This is intentional and follows database best practices. Here's why:
+
+#### Why Leave PostgreSQL Running?
+
+**1. PostgreSQL is a System Service**
+It's designed to run continuously in the background, like a web server. It's not tied to just JobHunter - it's infrastructure that can serve multiple applications.
+
+**2. Minimal Resource Usage When Idle**
+An idle PostgreSQL process uses very little CPU/memory (typically <50MB RAM, near-zero CPU). It's not worth the overhead of stopping and restarting it constantly.
+
+**3. Faster App Restarts**
+During development, you might stop/start the app frequently (testing, fixing bugs, etc.). If PostgreSQL stays running, `./start.sh` is much faster:
+- **With PostgreSQL running**: ~3-5 seconds (just start Rust + React)
+- **With PostgreSQL stopped**: ~8-12 seconds (wait for PostgreSQL to fully start, then Rust + React)
+
+**4. Data is Always Ready**
+Your databases remain "live" and accessible. You can connect with `psql` to inspect data, run queries, etc., even when the app isn't running.
+
+**5. Follows Standard Practice**
+Most developers start their database once (often at system startup via `brew services start postgresql@14`) and leave it running until system shutdown or maintenance.
+
+#### When You SHOULD Stop PostgreSQL
+
+Stop PostgreSQL manually when:
+- **Done for the day** and want to free up ~50MB RAM
+- **System maintenance** or PostgreSQL updates needed
+- **Troubleshooting** database connection issues
+- **Shutting down your computer** (though it stops automatically on shutdown)
+
+**Commands to stop PostgreSQL:**
+```bash
+./stop.sh --full                      # Stop app AND PostgreSQL together
+brew services stop postgresql@14      # Stop only PostgreSQL
+```
+
+**To restart PostgreSQL later:**
+```bash
+brew services start postgresql@14     # Manual start
+./start.sh                           # Or let start.sh handle it automatically
+```
+
+#### Quick Reference
+
+| Scenario | Command | What Happens |
+|----------|---------|-------------|
+| Quick break | `./stop.sh` | Stop app, keep database running (fastest restart) |
+| Done for the day | `./stop.sh --full` | Stop everything including PostgreSQL |
+| Need more RAM | `./stop.sh --full` | Free up ~50MB by stopping PostgreSQL |
+| Database troubleshooting | `./restart-db.sh` | Restart PostgreSQL without stopping app |
+
 ### Helper Scripts
 
 #### [`start.sh`](start.sh)
@@ -241,11 +297,12 @@ One-command startup for the entire application.
 Automatically starts PostgreSQL (if needed), the backend server, and the frontend. See [Daily Use](#daily-use-every-time-you-start-the-app) for details.
 
 #### [`stop.sh`](stop.sh)
-Safely stops the backend and frontend processes.
+Safely stops the backend and frontend processes, optionally including PostgreSQL.
 
 **Usage:**
 ```bash
-./stop.sh
+./stop.sh          # Stop app only (PostgreSQL keeps running)
+./stop.sh --full   # Stop app AND PostgreSQL
 ```
 
 This script:
@@ -253,9 +310,10 @@ This script:
 - Checks if processes stopped successfully after each attempt
 - Uses force kill (SIGKILL) if graceful shutdown fails
 - Reports detailed status of what was stopped
-- Leaves PostgreSQL running (can be stopped separately with `brew services stop postgresql@14`)
+- With `--full` flag: Also stops PostgreSQL service via Homebrew
+- Without `--full`: Leaves PostgreSQL running for faster restarts (recommended for development)
 
-The script is robust and handles edge cases like processes that don't respond to graceful shutdown.
+The script is robust and handles edge cases like processes that don't respond to graceful shutdown. See [Properly Managing Your PostgreSQL Database](#understanding-your-workflow-properly-managing-your-postgresql-database) for guidance on when to use `--full`.
 
 #### [`switch-to-personal.sh`](switch-to-personal.sh)
 Switches your environment to use the personal database for real job hunting.
