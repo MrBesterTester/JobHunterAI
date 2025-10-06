@@ -199,23 +199,20 @@ This script automatically:
 - Starts the frontend at http://localhost:3000
 
 **Stopping the app:**
-
-Option 1 - Use the PIDs from startup:
 ```bash
-# The start.sh script shows PIDs, e.g.:
-kill 78548 78593  # Use the actual PIDs shown when you started
+./stop.sh
 ```
 
-Option 2 - Kill by process name:
-```bash
-pkill -f 'cargo run'        # Stop backend
-pkill -f 'react-scripts'    # Stop frontend
-```
+This script safely stops the application:
+- Attempts graceful shutdown of backend and frontend
+- Checks if processes stopped successfully
+- Uses force kill if graceful shutdown fails
+- Reports detailed status of what was stopped
+- Leaves PostgreSQL running (stop separately if needed)
 
-Option 3 - Kill all at once:
-```bash
-pkill -f 'cargo run'; pkill -f 'react-scripts'
-```
+**Manual alternatives:**
+- Use PIDs from startup: `kill 78548 78593` (use actual PIDs shown)
+- Kill by name: `pkill -f 'cargo run'; pkill -f 'react-scripts'`
 
 **Note**: There's no "Quit" button in the web UI because this is a server application. The web UI is just a client - you need to stop the backend/frontend processes via the terminal.
 
@@ -232,6 +229,33 @@ You only need to run database commands in these scenarios:
 **The databases persist on disk** - once created, they're there until you explicitly delete them. The data survives app restarts, computer reboots, etc.
 
 ### Helper Scripts
+
+#### [`start.sh`](start.sh)
+One-command startup for the entire application.
+
+**Usage:**
+```bash
+./start.sh
+```
+
+Automatically starts PostgreSQL (if needed), the backend server, and the frontend. See [Daily Use](#daily-use-every-time-you-start-the-app) for details.
+
+#### [`stop.sh`](stop.sh)
+Safely stops the backend and frontend processes.
+
+**Usage:**
+```bash
+./stop.sh
+```
+
+This script:
+- Attempts graceful shutdown of backend (Rust) and frontend (React)
+- Checks if processes stopped successfully after each attempt
+- Uses force kill (SIGKILL) if graceful shutdown fails
+- Reports detailed status of what was stopped
+- Leaves PostgreSQL running (can be stopped separately with `brew services stop postgresql@14`)
+
+The script is robust and handles edge cases like processes that don't respond to graceful shutdown.
 
 #### [`switch-to-personal.sh`](switch-to-personal.sh)
 Switches your environment to use the personal database for real job hunting.
