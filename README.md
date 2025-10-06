@@ -520,6 +520,21 @@ Switches your environment to use the development database for testing with test 
 
 Updates `backend/.env` to point to `jobhunter_dev`. Restart the backend server after switching.
 
+#### [`restart-db.sh`](restart-db.sh)
+Restarts the PostgreSQL database service.
+
+**Usage:**
+```bash
+./restart-db.sh
+```
+
+Use this script to restart the PostgreSQL@14 service via Homebrew. This is useful when:
+- Switching between databases and the backend needs a fresh database connection
+- PostgreSQL becomes unresponsive or needs to be refreshed
+- After system updates or configuration changes
+
+The script will verify that PostgreSQL started successfully after restarting.
+
 #### [`reset-dev-db.sh`](reset-dev-db.sh)
 Resets the development database to a clean state with fresh test data. **WARNING**: This will delete all data in `jobhunter_dev`!
 
