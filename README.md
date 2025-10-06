@@ -15,6 +15,38 @@ JobHunter is a comprehensive job application management system that automates an
 - **Professional UI**: Clean, responsive TypeScript React interface with comprehensive job management
 - **Comprehensive Testing**: 244 automated tests (100% backend, 92.1% frontend E2E) with large-scale performance validation
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Tech Stack](#tech-stack)
+- [Quick Start](#quick-start)
+  - [One-Command Startup](#-one-command-startup-easiest)
+  - [Initial Setup](#-initial-setup-first-time-only)
+- [Job Criteria](#job-criteria)
+- [Workflow](#workflow)
+- [API Endpoints](#api-endpoints)
+- [Implementation Status](#implementation-status)
+  - [Phase 1 - Core System](#phase-1---core-system--complete)
+  - [Phase 2 - Intelligent Automation](#phase-2---intelligent-automation--complete)
+  - [Phase 3 - Content Generation](#phase-3---content-generation--complete)
+  - [Phase 4 - Automated Job Intake](#phase-4---automated-job-intake--complete)
+  - [Phase 5.1 - Calendar Integration & Follow-ups](#phase-51---calendar-integration--follow-ups--complete)
+  - [What NOT to Build](#what-not-to-build-for-now)
+  - [Phase 5.2+ - Future Considerations](#phase-52---future-considerations-not-currently-planned)
+- [Current Workflow](#current-workflow)
+- [Development Helper Scripts](#development-helper-scripts)
+  - [Configuration](#configuration)
+  - [Quick Start: Database Setup](#quick-start-database-setup)
+  - [Helper Scripts](#helper-scripts)
+  - [Security Notes](#security-notes)
+- [Project Structure](#project-structure)
+- [Technical Achievements](#technical-achievements)
+- [Testing & Quality Assurance](#testing--quality-assurance)
+- [Browser & Testing Strategy](#browser--testing-strategy)
+- [Contributing](#contributing)
+- [License](#license)
+- [Contact](#contact)
+
 ## Tech Stack
 
 - **Backend**: Rust (Actix-web)
