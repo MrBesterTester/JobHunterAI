@@ -27,6 +27,7 @@ JobHunter is a comprehensive job application management system that automates an
 - [Development Helper Scripts](#development-helper-scripts)
   - [Configuration](#configuration)
   - [Quick Start: Database Setup](#quick-start-database-setup)
+  - [Understanding Your Workflow: Setup vs. Daily Use](#understanding-your-workflow-setup-vs-daily-use)
   - [Helper Scripts](#helper-scripts)
   - [Security Notes](#security-notes)
 - [API Endpoints](#api-endpoints)
@@ -168,6 +169,67 @@ psql -U jobhunter_user -d jobhunter_personal -f database/migration_phase5.1.sql
 ```bash
 ./switch-to-personal.sh
 ```
+
+### Understanding Your Workflow: Setup vs. Daily Use
+
+JobHunter uses a persistent PostgreSQL database that has a "split personality" by design - you maintain two separate databases to keep your real job data separate from test data.
+
+#### One-Time Setup (Do This Once)
+
+**Option A: Simple single database**
+1. Follow "Initial Setup (First Time Only)" in the [Quick Start](#quick-start) section above
+2. Done! Database `jobhunter` exists with schema loaded
+
+**Option B: Dev/Personal database separation** (Recommended)
+1. Follow "Initial Setup (First Time Only)" in the [Quick Start](#quick-start) section above
+2. Follow "Quick Start: Database Setup" above (creates `jobhunter_personal` and `jobhunter_dev`)
+3. Run `./switch-to-personal.sh` or `./switch-to-dev.sh` to choose which database to use
+4. Done! Both databases exist with schemas loaded
+
+#### Daily Use (Every Time You Start the App)
+
+**Starting the app:**
+```bash
+./start.sh
+```
+
+This script automatically:
+- Checks if PostgreSQL is running (starts it if needed)
+- Starts the backend (connects to whichever database is configured in `backend/.env`)
+- Starts the frontend at http://localhost:3000
+
+**Stopping the app:**
+
+Option 1 - Use the PIDs from startup:
+```bash
+# The start.sh script shows PIDs, e.g.:
+kill 78548 78593  # Use the actual PIDs shown when you started
+```
+
+Option 2 - Kill by process name:
+```bash
+pkill -f 'cargo run'        # Stop backend
+pkill -f 'react-scripts'    # Stop frontend
+```
+
+Option 3 - Kill all at once:
+```bash
+pkill -f 'cargo run'; pkill -f 'react-scripts'
+```
+
+**Note**: There's no "Quit" button in the web UI because this is a server application. The web UI is just a client - you need to stop the backend/frontend processes via the terminal.
+
+#### When to Use Database Commands Again
+
+You only need to run database commands in these scenarios:
+
+- **Switching databases**: `./switch-to-dev.sh` or `./switch-to-personal.sh` (then restart backend)
+- **Resetting dev data**: `./reset-dev-db.sh` (reloads test data)
+- **Backing up personal data**: `./backup-personal-db.sh`
+- **Restoring from backup**: `./restore-personal-db.sh`
+- **Restarting PostgreSQL**: `./restart-db.sh` (if database becomes unresponsive)
+
+**The databases persist on disk** - once created, they're there until you explicitly delete them. The data survives app restarts, computer reboots, etc.
 
 ### Helper Scripts
 
