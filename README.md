@@ -7,12 +7,13 @@ A workflow-driven job application management system to streamline your job searc
 JobHunter is a comprehensive job application management system that automates and streamlines your entire job search workflow. The system intelligently filters opportunities, prevents duplicates, and generates personalized application materials tailored to each role.
 
 **Key Features:**
+- **Automated Job Intake**: New UI tab for managing Gmail/LinkedIn/Indeed integrations with one-click OAuth and sync
 - **Intelligent Job Filtering**: Automatically filters jobs based on salary ($130K+), location (remote/≤45min commute), and domain (Testing, AI, Firmware)
 - **Advanced Deduplication**: Uses SHA256 hashing to prevent processing duplicate job postings
 - **Automated Content Generation**: Creates customized resumes and cover letters for each approved job
 - **Resume Management System**: Upload, manage, and version multiple resumes with master resume selection
 - **Real-time Dashboard**: Track job statuses with filtering, statistics, and detailed job information
-- **Professional UI**: Clean, responsive TypeScript React interface with comprehensive job management
+- **Professional UI**: Clean, responsive TypeScript React interface with 8 tabs covering the complete workflow
 - **Comprehensive Testing**: 244 automated tests (100% backend, 92.1% frontend E2E) with large-scale performance validation
 
 ## Table of Contents
@@ -24,6 +25,12 @@ JobHunter is a comprehensive job application management system that automates an
   - [Initial Setup](#-initial-setup-first-time-only)
 - [Job Criteria](#job-criteria)
 - [Workflow](#workflow)
+- [UI Features Guide](#ui-features-guide)
+  - [Dashboard Overview](#dashboard-overview)
+  - [Navigation Tabs](#navigation-tabs)
+  - [Intake Tab](#-intake-tab-new)
+  - [Other Tabs](#-new-jobs-tab-inbox)
+  - [Resume Management](#resume-management)
 - [Development Helper Scripts](#development-helper-scripts)
   - [Configuration](#configuration)
   - [Quick Start: Database Setup](#quick-start-database-setup)
@@ -134,6 +141,208 @@ Based on your requirements:
 3. **Review** - Manual approval of filtered jobs
 4. **Apply** - Generate custom resume/cover letter
 5. **Track** - Monitor application status and follow-ups
+
+## UI Features Guide
+
+JobHunter provides a comprehensive web interface to manage your entire job search workflow. Access the dashboard at **http://localhost:3000** after starting the application.
+
+### Dashboard Overview
+
+The dashboard displays real-time statistics across the top:
+- **New Jobs**: Pending review (status: `new`)
+- **Approved**: Ready for application (status: `approved`)
+- **Applied**: Applications submitted (status: `applied`)
+- **Rejected**: Jobs you've declined (status: `rejected`)
+- **Filtered**: Auto-filtered by criteria (status: `filtered`)
+- **Total**: All jobs in the system
+
+### Navigation Tabs
+
+#### 📥 Intake Tab (New!)
+
+**Purpose**: Manage automated job collection from multiple sources without using `curl` commands.
+
+**Features**:
+
+1. **Gmail Integration Card**
+   - **Authenticate with Gmail**: OAuth authentication flow for secure access
+   - **Sync Now**: Manually trigger Gmail job email sync
+   - **Auto-sync Status**: Shows sync schedule (default: every 60 minutes)
+   - **Connection Status**: Visual indicator of OAuth connection state
+   - **Last Sync Time**: Relative time display (e.g., "2 hours ago")
+   - **Settings**: Configure sync preferences (future enhancement)
+
+2. **LinkedIn Integration Card**
+   - **Sync Now**: Trigger LinkedIn job sync (currently using mock data)
+   - **Mock Implementation Notice**: Clearly indicates test mode status
+   - **Learn More**: Information about LinkedIn API requirements
+   - Note: Requires LinkedIn API credentials for production use
+
+3. **Indeed Integration Card**
+   - **Status**: Coming Soon placeholder
+   - **Request Implementation**: Link to feature roadmap (planned for Phase 4.1)
+
+4. **Sync All Sources**
+   - Top-right button to sync all active/connected sources simultaneously
+   - Shows loading state with spinner during sync operations
+   - Disabled during active sync to prevent conflicts
+
+5. **Recent Intake Activity Log**
+   - Displays last 10-20 sync operations across all sources
+   - **Click to Expand**: See detailed information about each sync
+   - Shows: Operation type, source name, jobs discovered, jobs added, timestamp
+   - Status indicators: ✓ Success, ⚠ Warning, ✗ Error
+   - Auto-refreshes every 5 seconds during active syncs
+
+6. **Intake Performance Dashboard**
+   - **By Source**: Visual progress bars showing discovery breakdown
+   - **Statistics Cards**: Total discovered, approved count, sync count, average per sync
+   - **Last Sync**: Relative timestamps for each source
+   - Responsive grid layout adapts to screen size
+
+**How to Use**:
+```bash
+# 1. Start the application
+./start.sh
+
+# 2. Navigate to http://localhost:3000
+
+# 3. Click the "Intake" tab in the navigation
+
+# 4. For Gmail:
+#    a. Click "Authenticate with Gmail" (first time only)
+#    b. Complete OAuth flow in popup window
+#    c. Click "Sync Now" to fetch job emails
+#    d. Monitor progress in Activity Log
+
+# 5. For LinkedIn:
+#    a. Click "Sync Now" (uses mock data currently)
+#    b. View results in Activity Log and Statistics
+```
+
+#### 📋 New Jobs Tab (Inbox)
+
+**Purpose**: Review newly discovered jobs that passed automatic filtering.
+
+**Features**:
+- Job cards with title, company, location, salary
+- Visual badges: Salary (green if ≥$130K), Location (blue for remote), Commute time
+- **Approve** button: Move to "Approved" status for application
+- **Reject** button: Mark as not interested
+- Click any card for detailed view with full description
+
+#### ✅ Approved Tab
+
+**Purpose**: Jobs you've approved and are ready to apply to.
+
+**Features**:
+- All features from New Jobs tab
+- **Generate Resume & Cover Letter** button: Creates customized application materials
+- Click to view generated content in modal with side-by-side display
+
+#### 📤 Applied Tab
+
+**Purpose**: Track jobs you've already applied to.
+
+**Features**:
+- View application history
+- Track application dates
+- Monitor follow-up requirements
+- Integrated with Calendar and Follow-ups tabs
+
+#### 🔍 Filtered Tab
+
+**Purpose**: Review jobs that were automatically filtered out by your criteria.
+
+**Features**:
+- **Filter Reasons**: Red banner showing why each job was filtered
+  - Examples: "Salary below minimum ($130,000)", "Commute time exceeds 45 minutes"
+- Can manually approve filtered jobs if criteria was too strict
+- Helps refine your filtering criteria over time
+
+#### 📊 All Tab
+
+**Purpose**: See all active jobs across all statuses (excludes rejected).
+
+**Features**:
+- Combined view of New, Approved, Applied, and Filtered jobs
+- Quick status overview across entire pipeline
+- Useful for getting the "big picture" of your job search
+
+#### 📅 Calendar Tab
+
+**Purpose**: Visualize application deadlines and interview schedules.
+
+**Features**:
+- Monthly calendar view with color-coded events
+- **Application Deadlines**: Yellow markers
+- **Interviews**: Green markers (initial, technical, final rounds)
+- **Follow-ups**: Blue markers
+- Click dates to see event details
+- Add events with intuitive date picker
+
+#### 📧 Follow-ups Tab
+
+**Purpose**: Manage communication tracking and reminders.
+
+**Features**:
+- List of all follow-up tasks across jobs
+- Status indicators: Pending (blue), Completed (green), Overdue (red)
+- **Mark Complete** button for each follow-up
+- Shows: Job title, company, follow-up type, scheduled date, notes
+- Sorted by date (overdue items first)
+
+### Job Detail Modal
+
+Click any job card to open a detailed modal showing:
+- Full job description
+- Complete salary and location information
+- Commute time (if applicable)
+- Job URL (clickable link)
+- Date collected
+- Status history
+- Action buttons (Approve/Reject/Generate Content)
+
+### Resume Management
+
+**Access**: Click "Manage Resume" button in top-right header
+
+**Features**:
+- Upload resume files (PDF, DOCX, TXT)
+- Set master resume for content generation
+- Version management (keep multiple resume variants)
+- View and edit resume content
+- Used as template for job-specific customization
+
+### Responsive Design
+
+The UI adapts to different screen sizes:
+- **Desktop (1280px+)**: Multi-column card grid, full navigation
+- **Tablet (768px-1280px)**: 2-column card grid, full features
+- **Mobile (≤768px)**: Single-column cards, scrollable tabs, touch-friendly buttons
+
+### Keyboard Navigation
+
+- **Tab**: Navigate between interactive elements
+- **Enter/Space**: Activate buttons
+- **Escape**: Close modals
+- Arrow keys work in calendar view
+
+### Loading States
+
+The UI provides clear feedback during operations:
+- Skeleton screens while loading data
+- Spinners during sync operations
+- Disabled buttons prevent double-actions
+- Success/error notifications
+
+### Error Handling
+
+Graceful error handling throughout:
+- API failures show user-friendly messages
+- Network issues display retry options
+- Form validation with inline error messages
+- Backend connection status indicators
 
 ## Development Helper Scripts
 
@@ -905,14 +1114,43 @@ JobHunter maintains high standards through comprehensive automated testing cover
 - ✅ All 11 frontend test suites functional
 
 **Test Execution:**
+
+**Option 1: Run Complete Test Suite (Recommended)**
+
+Use the automated test runner script to execute all tests with a single command:
+
 ```bash
-# Backend tests
+./run-all-tests.sh
+```
+
+This script runs all four test suites in sequence:
+1. **Backend Tests** (Rust/Cargo) - 93 tests
+2. **Frontend Unit Tests** (TAP/Jest) - Coverage reporting
+3. **E2E Tests** (Playwright) - 256 browser tests
+4. **Database Tests** (pgTAP) - Schema validation
+
+Features:
+- ✅ Color-coded output (green=pass, red=fail, blue=running, yellow=warning)
+- ✅ Progress tracking with test counters (Passed: X/4, Failed: Y/4)
+- ✅ Gracefully handles missing dependencies (pgTAP optional)
+- ✅ Exit code 0 on success, 1 on failure (CI/CD compatible)
+- ✅ Comprehensive summary report
+
+**Note:** E2E tests require the application to be running (`./start.sh` first).
+
+**Option 2: Run Individual Test Suites**
+
+```bash
+# Backend tests only
 cd backend && cargo test
 
-# Frontend E2E tests
+# Frontend unit tests only
+cd frontend && npm run test:coverage
+
+# Frontend E2E tests only (requires app running)
 cd frontend && npm run test:e2e:chromium
 
-# View detailed results
+# View detailed E2E results
 cd frontend && npx playwright show-report
 ```
 

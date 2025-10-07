@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, CheckCircle, XCircle, Clock, Briefcase, DollarSign, MapPin, Filter, FileText, Mail, Calendar as CalendarIcon } from 'lucide-react';
+import { AlertCircle, CheckCircle, XCircle, Clock, Briefcase, DollarSign, MapPin, Filter, FileText, Mail, Calendar as CalendarIcon, Download } from 'lucide-react';
 import ResumeManagement from './ResumeManagement';
 import CalendarTab from './CalendarTab';
 import FollowupsTab from './FollowupsTab';
+import IntakeTab from './IntakeTab';
 
 const API_URL = 'http://localhost:8080/api';
 
@@ -74,7 +75,7 @@ interface CoverLetterTemplate {
   updated_at: string;
 }
 
-type TabType = 'inbox' | 'approved' | 'applied' | 'filtered' | 'all' | 'calendar' | 'follow-ups';
+type TabType = 'inbox' | 'approved' | 'applied' | 'filtered' | 'all' | 'intake' | 'calendar' | 'follow-ups';
 
 const JobHunterDashboard: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -706,7 +707,7 @@ const JobHunterDashboard: React.FC = () => {
 
       <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 16px', boxSizing: 'border-box', width: '100%' }}>
         <nav style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid #e5e7eb', overflowX: 'auto' }}>
-          {(['inbox', 'approved', 'applied', 'filtered', 'all', 'calendar', 'follow-ups'] as TabType[]).map(tab => (
+          {(['inbox', 'approved', 'applied', 'filtered', 'all', 'intake', 'calendar', 'follow-ups'] as TabType[]).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -726,6 +727,7 @@ const JobHunterDashboard: React.FC = () => {
                 gap: '6px'
               }}
             >
+              {tab === 'intake' && <Download style={{ width: '16px', height: '16px' }} />}
               {tab === 'calendar' && <CalendarIcon style={{ width: '16px', height: '16px' }} />}
               {tab === 'follow-ups' && <Mail style={{ width: '16px', height: '16px' }} />}
               {tab === 'inbox' ? 'New Jobs' : tab}
@@ -733,7 +735,9 @@ const JobHunterDashboard: React.FC = () => {
           ))}
         </nav>
 
-        {activeTab === 'calendar' ? (
+        {activeTab === 'intake' ? (
+          <IntakeTab />
+        ) : activeTab === 'calendar' ? (
           <CalendarTab />
         ) : activeTab === 'follow-ups' ? (
           <FollowupsTab />
