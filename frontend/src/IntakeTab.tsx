@@ -293,8 +293,9 @@ const IntakeTab: React.FC = () => {
 
   const gmailSource = getSourceByType('email');
   const linkedinSource = getSourceByType('api');
-  // Check if auth is configured by checking if last_sync exists or auth_type is set
-  const isGmailConnected = gmailSource?.last_sync !== null;
+  // Check if auth is configured - for OAuth sources, if source is active and requires OAuth auth, assume it's connected
+  // (OAuth credentials must exist for the source to be active in the first place)
+  const isGmailConnected = gmailSource ? (gmailSource.is_active && gmailSource.auth_required && gmailSource.auth_type === 'oauth2') : false;
   const isGmailSyncing = syncingSource === gmailSource?.source_id;
   const isLinkedInSyncing = syncingSource === linkedinSource?.source_id;
 

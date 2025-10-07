@@ -28,17 +28,42 @@ JobHunter is a comprehensive job application management system that automates an
 - [UI Features Guide](#ui-features-guide)
   - [Dashboard Overview](#dashboard-overview)
   - [Navigation Tabs](#navigation-tabs)
-  - [Intake Tab](#-intake-tab-new)
-  - [Other Tabs](#-new-jobs-tab-inbox)
+    - [Intake Tab](#-intake-tab-new)
+    - [New Jobs Tab](#-new-jobs-tab-inbox)
+    - [Approved Tab](#-approved-tab)
+    - [Applied Tab](#-applied-tab)
+    - [Filtered Tab](#-filtered-tab)
+    - [All Tab](#-all-tab)
+    - [Calendar Tab](#-calendar-tab)
+    - [Follow-ups Tab](#-follow-ups-tab)
+  - [Job Detail Modal](#job-detail-modal)
   - [Resume Management](#resume-management)
+  - [Responsive Design](#responsive-design)
+  - [Keyboard Navigation](#keyboard-navigation)
+  - [Loading States](#loading-states)
+  - [Error Handling](#error-handling)
 - [Development Helper Scripts](#development-helper-scripts)
   - [Configuration](#configuration)
+  - [Gmail Integration Setup](#gmail-integration-setup)
   - [Quick Start: Database Setup](#quick-start-database-setup)
   - [Understanding Your Workflow: Setup vs. Daily Use](#understanding-your-workflow-setup-vs-daily-use)
   - [Understanding Your Workflow: Properly Managing Your PostgreSQL Database](#understanding-your-workflow-properly-managing-your-postgresql-database)
   - [Helper Scripts](#helper-scripts)
+    - [start.sh](#startsh)
+    - [stop.sh](#stopsh)
+    - [switch-to-personal.sh](#switch-to-personalsh)
+    - [switch-to-dev.sh](#switch-to-devsh)
+    - [restart-db.sh](#restart-dbsh)
+    - [reset-dev-db.sh](#reset-dev-dbsh)
+    - [backup-personal-db.sh](#backup-personal-dbsh)
+    - [restore-personal-db.sh](#restore-personal-dbsh)
   - [Security Notes](#security-notes)
 - [API Endpoints](#api-endpoints)
+  - [Jobs](#jobs)
+  - [Applications](#applications)
+  - [Job Criteria](#job-criteria-1)
+  - [Content Generation & Resume Management](#content-generation--resume-management)
+  - [Automated Job Intake](#automated-job-intake-phase-4)
 - [Implementation Status](#implementation-status)
   - [Phase 1 - Core System](#phase-1---core-system--complete)
   - [Phase 2 - Intelligent Automation](#phase-2---intelligent-automation--complete)
@@ -48,10 +73,24 @@ JobHunter is a comprehensive job application management system that automates an
   - [What NOT to Build](#what-not-to-build-for-now)
   - [Phase 5.2+ - Future Considerations](#phase-52---future-considerations-not-currently-planned)
 - [Current Workflow](#current-workflow)
+  - [Automated Job Intake & Processing](#1-automated-job-intake--processing-)
+  - [Job Review & Approval](#2-job-review--approval)
+  - [Content Generation & Application](#3-content-generation--application)
+  - [Key Features in Action](#4-key-features-in-action)
 - [Project Structure](#project-structure)
 - [Technical Achievements](#technical-achievements)
+  - [System Performance](#system-performance)
+  - [Code Quality & Architecture](#code-quality--architecture)
+  - [Feature Completeness](#feature-completeness)
+  - [Development Stats](#development-stats)
 - [Testing & Quality Assurance](#testing--quality-assurance)
+  - [Backend Testing](#backend-testing-100-coverage)
+  - [Frontend E2E Testing](#frontend-e2e-testing-941-coverage)
+  - [Testing Architecture](#testing-architecture)
+  - [Key Testing Achievements](#key-testing-achievements)
 - [Browser & Testing Strategy](#browser--testing-strategy)
+  - [Development & Testing Browser: Chrome](#development--testing-browser-chrome)
+  - [Cross-Browser Compatibility](#cross-browser-compatibility)
 - [Contributing](#contributing)
 - [License](#license)
 - [Contact](#contact)
@@ -353,6 +392,64 @@ JobHunter provides database management scripts to keep your personal data separa
 ### Configuration
 
 Your database configuration is stored in [`backend/.env`](backend/.env) which is excluded from Git. An example configuration file is provided at [`backend/.env.example`](backend/.env.example) that you can use as a template.
+
+### Gmail Integration Setup
+
+To use the automated Gmail job intake feature, you need to set up Google OAuth credentials:
+
+**1. Create Google Cloud Project:**
+- Go to [Google Cloud Console](https://console.cloud.google.com/)
+- Create a new project (or select existing one)
+- Name it something like "JobHunter Gmail Integration"
+
+**2. Enable Gmail API:**
+- In your project, go to "APIs & Services" → "Library"
+- Search for "Gmail API"
+- Click "Enable"
+
+**3. Create OAuth 2.0 Credentials:**
+- Go to "APIs & Services" → "Credentials"
+- Click "Create Credentials" → "OAuth client ID"
+- If prompted, configure the OAuth consent screen:
+  - User Type: "External" (unless you have a Google Workspace)
+  - App name: "JobHunter"
+  - User support email: your email
+  - Developer contact: your email
+  - Scopes: Add `https://www.googleapis.com/auth/gmail.readonly`
+  - Test users: Add your Gmail address
+  - **Note**: To add test users later (or add additional users, up to 100), go to Google Cloud Console → your project → "OAuth consent screen" → "Audience" section → "Test users" → "+ ADD USERS"
+- Back to "Create OAuth client ID":
+  - Application type: "Web application"
+  - Name: "JobHunter Backend"
+  - Authorized redirect URIs: `http://localhost:8080/auth/gmail/callback`
+- Click "Create"
+- **Copy the Client ID and Client Secret**: After creating the OAuth client, both values are displayed. If you already clicked "Done", go to "APIs & Services" → "Credentials", click on your OAuth client name under "OAuth 2.0 Client IDs", and you'll see both the Client ID and Client secret (click show/copy to reveal the secret)
+
+**4. Update `.env` file:**
+```bash
+# Edit backend/.env and replace the placeholder values:
+GMAIL_CLIENT_ID=your-actual-client-id.apps.googleusercontent.com
+GMAIL_CLIENT_SECRET=your-actual-client-secret
+GMAIL_REDIRECT_URI=http://localhost:8080/auth/gmail/callback
+```
+
+**5. Restart the backend:**
+```bash
+./stop.sh
+./start.sh
+```
+
+**6. Authenticate in the UI:**
+- Navigate to the Intake tab in your browser
+- Click "Authenticate with Gmail"
+- Complete the OAuth flow in the popup window
+- You should see "Connected" status
+
+**Troubleshooting:**
+- **"Failed to initiate Gmail authentication"** - Check that `GMAIL_CLIENT_ID` is set in `.env`
+- **OAuth error in popup** - Verify redirect URI matches exactly: `http://localhost:8080/auth/gmail/callback`
+- **"Unauthorized"** - Make sure your Gmail address is added as a test user in the OAuth consent screen
+- **Still not working** - Check backend logs for detailed error messages
 
 ### Quick Start: Database Setup
 
