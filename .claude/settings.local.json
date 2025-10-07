@@ -57,7 +57,8 @@
       "WebFetch(domain:docs.claude.com)",
       "Bash(chmod:*)",
       "Bash(brew services:*)",
-      "Bash(bash:*)"
+      "Bash(bash:*)",
+      "Bash(./switch-to-personal.sh:*)"
     ],
     "deny": [],
     "ask": [
