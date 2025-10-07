@@ -429,6 +429,27 @@ This script safely stops the application:
 
 **Note**: There's no "Quit" button in the web UI because this is a server application. The web UI is just a client - you need to stop the backend/frontend processes via the terminal.
 
+#### Daily Use with Personal Database (For Real Job Hunting)
+
+If you're using the personal database separation feature, the correct startup sequence is:
+
+**Starting fresh (PostgreSQL not running):**
+```bash
+./switch-to-personal.sh
+./start.sh
+```
+
+**If the app is already running with the wrong database:**
+```bash
+./stop.sh
+./switch-to-personal.sh
+./start.sh
+```
+
+**Key Point**: Always run `switch-to-personal.sh` **before** `start.sh`, not after. The backend loads the database configuration when it starts, so switching after startup has no effect until you restart.
+
+**Why this matters**: Running `./start.sh` first, then `./switch-to-personal.sh` will leave your backend connected to the wrong database until you restart. This is a common mistake that leads to confusion about which data you're seeing.
+
 #### When to Use Database Commands Again
 
 You only need to run database commands in these scenarios:
