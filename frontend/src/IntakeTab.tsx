@@ -38,23 +38,6 @@ interface SourceSummary {
   last_sync_attempt: string | null;
 }
 
-interface IntakeSummary {
-  total_jobs_discovered: number;
-  total_jobs_added: number;
-  duplicates_prevented: number;
-  by_source: {
-    [key: string]: {
-      discovered: number;
-      added: number;
-    };
-  };
-  avg_confidence_score: number;
-  confidence_distribution: {
-    high: number;
-    medium: number;
-    low: number;
-  };
-}
 
 interface GmailAuthResponse {
   auth_url: string;
