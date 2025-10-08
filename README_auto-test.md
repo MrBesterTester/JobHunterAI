@@ -34,6 +34,75 @@ docker-compose -f docker-compose.test.yml up
 
 ---
 
+## 📑 Table of Contents
+
+- [✅ Phase 1 Implementation Complete](#-phase-1-implementation-complete)
+  - [🔧 Backend Testing Infrastructure](#-backend-testing-infrastructure)
+    - [Dependencies Added to Cargo.toml](#dependencies-added-to-cargotoml)
+    - [Test Files Created](#test-files-created)
+    - [Test Coverage Areas](#test-coverage-areas)
+    - [Example Backend Test](#example-backend-test)
+    - [Gmail API Integration Tests (NEW)](#gmail-api-integration-tests-new---october-8-2025)
+  - [🎨 Frontend TAP Testing Setup](#-frontend-tap-testing-setup)
+    - [Dependencies Added to package.json](#dependencies-added-to-packagejson)
+    - [TAP Configuration](#tap-configuration-tapconfigjs)
+    - [Test Files Created](#test-files-created-1)
+    - [Example Frontend Test](#example-frontend-test)
+  - [🌐 End-to-End Testing with Playwright](#-end-to-end-testing-with-playwright)
+    - [Dependencies Added to package.json](#dependencies-added-to-packagejson-1)
+    - [Playwright Configuration](#playwright-configuration-playwrightconfigts)
+    - [E2E Test Files Created](#e2e-test-files-created-15-test-suites)
+    - [Intake Tab Test Coverage](#intake-tab-test-coverage-new---october-6-2025)
+    - [Example E2E Test](#example-e2e-test)
+    - [Running E2E Tests](#running-e2e-tests)
+    - [E2E Test Best Practices](#e2e-test-best-practices)
+  - [🗄️ Database pgTAP Testing](#️-database-pgtap-testing)
+    - [Test Files Created](#test-files-created-2)
+    - [pgTAP Test Coverage](#pgtap-test-coverage)
+    - [Example Database Test](#example-database-test)
+  - [🔗 System Integration Setup](#-system-integration-setup)
+    - [Docker Test Environment](#docker-test-environment-docker-composetestyml)
+    - [Test Database Configuration](#test-database-configuration)
+- [🎯 Ready for Execution](#-ready-for-execution)
+  - [Individual Test Suites](#individual-test-suites)
+  - [Full Integration Testing](#full-integration-testing)
+  - [Environment Setup](#environment-setup)
+    - [Test Database Setup](#test-database-setup)
+    - [Frontend Dependencies](#frontend-dependencies)
+- [📊 Key Performance Targets](#-key-performance-targets)
+  - [Performance Test Examples](#performance-test-examples)
+    - [Backend Performance Validation](#backend-performance-validation)
+    - [Frontend Performance Testing](#frontend-performance-testing)
+- [🛠️ Developer Workflow](#️-developer-workflow)
+  - [Adding New Tests](#adding-new-tests)
+    - [Backend Tests](#backend-tests)
+    - [Frontend Unit Tests](#frontend-unit-tests)
+    - [Frontend E2E Tests](#frontend-e2e-tests)
+    - [Database Tests](#database-tests)
+  - [Test-Driven Development](#test-driven-development)
+  - [Debugging Tests](#debugging-tests)
+    - [Backend Debugging](#backend-debugging)
+    - [Frontend Unit Test Debugging](#frontend-unit-test-debugging)
+    - [E2E Test Debugging](#e2e-test-debugging)
+    - [Database Debugging](#database-debugging)
+- [🔧 Troubleshooting](#-troubleshooting)
+  - [Common Issues](#common-issues)
+    - [Database Connection Errors](#database-connection-errors)
+    - [Frontend Test Failures](#frontend-test-failures)
+    - [Docker Issues](#docker-issues)
+- [📈 Contributing to Tests](#-contributing-to-tests)
+  - [Guidelines](#guidelines)
+  - [Pull Request Checklist](#pull-request-checklist)
+  - [Code Review Focus](#code-review-focus)
+- [🔄 Running All Tests](#-running-all-tests)
+  - [Option 1: Sequential Manual Execution](#option-1-sequential-manual-execution)
+  - [Option 2: Use the Automated Test Runner Script](#option-2-use-the-automated-test-runner-script-recommended)
+  - [Test Suite Summary](#test-suite-summary)
+  - [CI/CD Integration](#cicd-integration)
+- [🎉 Next Steps](#-next-steps)
+
+---
+
 ## ✅ Phase 1 Implementation Complete
 
 JobHunter now has a **production-ready testing foundation** with comprehensive Phase 1 infrastructure implemented across all system components.
@@ -53,6 +122,7 @@ proptest = "1.2"        # Property-based testing
 
 #### **Test Files Created**
 - **`backend/tests/api_tests.rs`** - Comprehensive API and database integration tests
+- **`backend/src/main.rs` (tests module)** - Gmail API integration and architecture tests
 
 #### **Test Coverage Areas**
 - ✅ **API Endpoint Testing** with database integration
@@ -61,6 +131,8 @@ proptest = "1.2"        # Property-based testing
 - ✅ **Database Constraint** validation across 12 tables
 - ✅ **Performance Benchmarks** (<100ms API response, <50ms DB queries)
 - ✅ **Error Handling** scenarios for edge cases
+- ✅ **Gmail API Integration** - JSON deserialization and data structure validation
+- ✅ **Source Architecture** - Multi-source identification and type safety
 
 #### **Example Backend Test**
 ```rust
@@ -76,6 +148,74 @@ async fn test_job_filtering_logic() {
     let should_pass_filter = test_case.salary.unwrap_or(0) >= 130000;
     assert_eq!(should_pass_filter, test_case.should_pass);
 }
+```
+
+#### **Gmail API Integration Tests** (NEW - October 8, 2025)
+
+Added comprehensive Gmail API integration tests to validate JSON deserialization and source architecture:
+
+**Test Suite: `backend/src/main.rs` (tests module)**
+
+1. **`test_gmail_message_deserialization()`**
+   - Validates Gmail API v1 JSON response parsing with camelCase field names
+   - Tests `threadId` and `internalDate` field mapping with `#[serde(rename)]`
+   - Ensures payload structure (headers, body) deserializes correctly
+   - **Critical Fix**: Caught field name mismatch that was causing "missing field `thread_id`" errors
+
+2. **`test_source_identification_architecture()`**
+   - Documents and validates the source identification design principle
+   - Tests that `source_type` is used for categorization (email, api, calendar)
+   - Tests that `source_name` is used for unique identification (gmail, outlook, yahoo)
+   - Validates that multiple sources can share the same type without conflicts
+   - **Prevents Future Bugs**: Ensures proper architecture for supporting multiple email providers
+
+3. **`test_gmail_list_response_deserialization()`**
+   - Tests Gmail messages list endpoint response parsing
+   - Validates `nextPageToken` field mapping for pagination
+   - Ensures message reference objects deserialize with correct camelCase mapping
+
+**Example Test**:
+```rust
+#[test]
+fn test_gmail_message_deserialization() {
+    let gmail_api_response = r#"{
+        "id": "18c5a9b2f3d4e5f6",
+        "threadId": "18c5a9b2f3d4e5f6",
+        "internalDate": "1696521600000",
+        "payload": {
+            "headers": [
+                {"name": "From", "value": "recruiter@techcorp.com"},
+                {"name": "Subject", "value": "Senior Test Engineer Position"}
+            ],
+            "body": {"size": 1234, "data": "SGVsbG8gV29ybGQ="}
+        }
+    }"#;
+
+    let result: Result<GmailMessage, _> = serde_json::from_str(gmail_api_response);
+
+    assert!(result.is_ok(), "Failed to deserialize Gmail API response");
+    let message = result.unwrap();
+    assert_eq!(message.thread_id, "18c5a9b2f3d4e5f6");
+    assert_eq!(message.internal_date, "1696521600000");
+}
+```
+
+**Why These Tests Matter**:
+- **Bug Prevention**: The Gmail message deserialization test caught a critical bug where the backend couldn't parse Gmail API responses due to camelCase field name mismatches
+- **Architecture Documentation**: The source identification test serves as living documentation for how to properly identify and distinguish between multiple job sources
+- **Scalability**: These tests ensure the system can support multiple email providers (Gmail, Outlook, Yahoo) without conflicts
+- **Integration Validation**: Tests validate real-world Gmail API response structures match our expectations
+
+**Running Gmail Integration Tests**:
+```bash
+# Run all Gmail tests
+cargo test test_gmail -- --nocapture
+
+# Run specific Gmail test
+cargo test test_gmail_message_deserialization -- --nocapture
+
+# Run source architecture test
+cargo test test_source_identification_architecture -- --nocapture
 ```
 
 ### **🎨 Frontend TAP Testing Setup**
@@ -735,14 +875,15 @@ Failed: 0/4
 
 ### **Test Suite Summary**
 
-**Total Test Count** (as of October 6, 2025):
-- **Backend**: ~50 tests (Rust integration tests)
+**Total Test Count** (as of October 8, 2025):
+- **Backend**: ~53 tests (Rust integration tests)
+  - Including **3 new Gmail API integration tests** ✨
 - **Frontend Unit**: ~30 tests (TAP/TypeScript)
 - **Frontend E2E**: **221 tests** (Playwright)
-  - Including **27 new Intake tab tests** ✨
+  - Including **27 Intake tab tests**
 - **Database**: ~45 tests (pgTAP)
 
-**Grand Total: ~346 automated tests** covering the complete JobHunter platform
+**Grand Total: ~349 automated tests** covering the complete JobHunter platform
 
 ### **CI/CD Integration**
 
@@ -798,11 +939,14 @@ jobs:
 
 ## 🎉 Next Steps
 
-With Phase 1 complete, the testing infrastructure is ready for:
+With Phase 1 complete and Phase 4 Gmail integration in progress, the testing infrastructure is ready for:
 
 1. **Phase 2 Implementation** - Intelligent automation testing (job filtering, deduplication)
 2. **Phase 3 Implementation** - Content generation testing (resume/cover letter)
-3. **Phase 4 Implementation** - Automated job intake testing (Gmail, LinkedIn APIs)
+3. **Phase 4 Implementation** - Automated job intake testing ✨ **IN PROGRESS**
+   - ✅ Gmail API integration tests (3 tests added)
+   - 🔄 LinkedIn API integration tests (pending)
+   - 🔄 Full job intake workflow tests (pending)
 4. **CI/CD Integration** - Automated test execution on code changes
 5. **Coverage Reporting** - Detailed analysis and improvement tracking
 

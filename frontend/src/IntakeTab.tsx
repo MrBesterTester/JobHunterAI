@@ -12,18 +12,22 @@ interface JobSource {
   sync_interval_minutes: number;
   auth_required: boolean;
   auth_type: string | null;
+  has_credentials?: boolean;
 }
 
 interface IntakeLog {
   log_id: string;
   source_id: string;
-  operation_type: string;
-  status: 'success' | 'failure' | 'in_progress';
+  sync_status: string;
   jobs_discovered: number;
-  jobs_added: number;
-  error_message?: string;
-  started_at: string;
-  completed_at?: string;
+  jobs_approved: number;
+  jobs_filtered: number;
+  jobs_deduplicated: number;
+  errors_count: number;
+  error_details?: any;
+  sync_started_at: string;
+  sync_completed_at?: string;
+  created_at: string;
 }
 
 interface SourceSummary {
@@ -151,7 +155,7 @@ const IntakeTab: React.FC = () => {
 
   // Gmail sync
   const handleGmailSync = async (): Promise<void> => {
-    const gmailSource = sources.find(s => s.source_type === 'gmail');
+    const gmailSource = sources.find(s => s.source_name === 'gmail');
     if (!gmailSource) return;
 
     setSyncingSource(gmailSource.source_id);
@@ -255,6 +259,10 @@ const IntakeTab: React.FC = () => {
     return sources.find(s => s.source_type === type);
   };
 
+  const getSourceByName = (name: string): JobSource | undefined => {
+    return sources.find(s => s.source_name === name);
+  };
+
   const formatRelativeTime = (dateString: string): string => {
     const date = new Date(dateString);
     const now = new Date();
@@ -271,10 +279,13 @@ const IntakeTab: React.FC = () => {
 
   const getStatusIcon = (status: string): JSX.Element => {
     switch (status) {
+      case 'completed':
       case 'success':
         return <CheckCircle className="w-5 h-5 text-green-500" />;
+      case 'failed':
       case 'failure':
         return <XCircle className="w-5 h-5 text-red-500" />;
+      case 'running':
       case 'in_progress':
         return <Clock className="w-5 h-5 text-blue-500" />;
       default:
@@ -291,11 +302,12 @@ const IntakeTab: React.FC = () => {
     );
   }
 
-  const gmailSource = getSourceByType('email');
-  const linkedinSource = getSourceByType('api');
-  // Check if auth is configured - for OAuth sources, if source is active and requires OAuth auth, assume it's connected
-  // (OAuth credentials must exist for the source to be active in the first place)
-  const isGmailConnected = gmailSource ? (gmailSource.is_active && gmailSource.auth_required && gmailSource.auth_type === 'oauth2') : false;
+  // Use source_name to identify specific sources, not source_type
+  // This allows multiple sources of the same type (e.g., Gmail, Outlook, Yahoo all have type 'email')
+  const gmailSource = getSourceByName('gmail');
+  const linkedinSource = getSourceByName('linkedin');
+  // Check if OAuth credentials actually exist
+  const isGmailConnected = gmailSource ? (gmailSource.has_credentials === true) : false;
   const isGmailSyncing = syncingSource === gmailSource?.source_id;
   const isLinkedInSyncing = syncingSource === linkedinSource?.source_id;
 
@@ -650,19 +662,19 @@ const IntakeTab: React.FC = () => {
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    {getStatusIcon(log.status)}
+                    {getStatusIcon(log.sync_status)}
                     <div>
                       <p style={{ fontWeight: '500', margin: 0, fontSize: '14px' }}>
-                        {log.operation_type} - {sources.find(s => s.source_id === log.source_id)?.source_name || 'Unknown Source'}
+                        Sync - {sources.find(s => s.source_id === log.source_id)?.source_name || 'Unknown Source'}
                       </p>
                       <p style={{ fontSize: '12px', color: '#6b7280', margin: '4px 0 0 0' }}>
-                        {formatRelativeTime(log.started_at)}
+                        {formatRelativeTime(log.sync_started_at)}
                       </p>
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <p style={{ fontSize: '14px', fontWeight: '500', margin: 0 }}>
-                      {log.jobs_discovered} discovered, {log.jobs_added} added
+                      {log.jobs_discovered} discovered, {log.jobs_approved} approved
                     </p>
                   </div>
                 </div>
@@ -675,12 +687,12 @@ const IntakeTab: React.FC = () => {
                     fontSize: '12px',
                     color: '#6b7280'
                   }}>
-                    <p><strong>Started:</strong> {new Date(log.started_at).toLocaleString()}</p>
-                    {log.completed_at && (
-                      <p><strong>Completed:</strong> {new Date(log.completed_at).toLocaleString()}</p>
+                    <p><strong>Started:</strong> {new Date(log.sync_started_at).toLocaleString()}</p>
+                    {log.sync_completed_at && (
+                      <p><strong>Completed:</strong> {new Date(log.sync_completed_at).toLocaleString()}</p>
                     )}
-                    {log.error_message && (
-                      <p style={{ color: '#dc2626' }}><strong>Error:</strong> {log.error_message}</p>
+                    {log.error_details && (
+                      <p style={{ color: '#dc2626' }}><strong>Error:</strong> {JSON.stringify(log.error_details)}</p>
                     )}
                   </div>
                 )}

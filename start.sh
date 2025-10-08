@@ -23,6 +23,9 @@ fi
 echo ""
 echo "🦀 Starting backend (Rust/Actix-web)..."
 cd backend
+# Set TMPDIR to avoid permission issues with system temp directories
+export TMPDIR=$HOME/tmp
+mkdir -p $TMPDIR
 cargo run &
 BACKEND_PID=$!
 cd ..

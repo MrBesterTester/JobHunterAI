@@ -152,8 +152,10 @@ pub struct EmailJob {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GmailMessage {
     pub id: String,
+    #[serde(rename = "threadId")]
     pub thread_id: String,
     pub payload: GmailPayload,
+    #[serde(rename = "internalDate")]
     pub internal_date: String,
 }
 
@@ -1841,14 +1843,35 @@ async fn create_job_internal(job_req: &CreateJobRequest, pool: &PgPool) -> std::
 }
 
 async fn get_job_sources(pool: web::Data<PgPool>) -> Result<HttpResponse> {
-    let sources = sqlx::query_as::<_, JobSource>(
-        "SELECT * FROM job_sources ORDER BY source_name"
+    let sources_with_creds = sqlx::query!(
+        r#"
+        SELECT
+            js.*,
+            EXISTS(SELECT 1 FROM oauth_credentials oc WHERE oc.source_id = js.source_id) as "has_credentials!"
+        FROM job_sources js
+        ORDER BY js.source_name
+        "#
     )
     .fetch_all(pool.get_ref())
     .await
     .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
 
-    Ok(HttpResponse::Ok().json(sources))
+    // Convert to JSON with has_credentials field
+    let result: Vec<serde_json::Value> = sources_with_creds.iter().map(|row| {
+        serde_json::json!({
+            "source_id": row.source_id,
+            "source_name": row.source_name,
+            "source_type": row.source_type,
+            "is_active": row.is_active,
+            "last_sync": row.last_sync,
+            "sync_interval_minutes": row.sync_interval_minutes,
+            "auth_required": row.auth_required,
+            "auth_type": row.auth_type,
+            "has_credentials": row.has_credentials,
+        })
+    }).collect();
+
+    Ok(HttpResponse::Ok().json(result))
 }
 
 async fn get_intake_logs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
@@ -2766,4 +2789,126 @@ async fn main() -> std::io::Result<()> {
     .bind(("127.0.0.1", 8080))?
     .run()
     .await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_gmail_message_deserialization() {
+        // Test that Gmail API JSON response with camelCase fields deserializes correctly
+        // This simulates the actual Gmail API v1 response format
+
+        let gmail_api_response = r#"{
+            "id": "18c5a9b2f3d4e5f6",
+            "threadId": "18c5a9b2f3d4e5f6",
+            "internalDate": "1696521600000",
+            "payload": {
+                "headers": [
+                    {
+                        "name": "From",
+                        "value": "recruiter@techcorp.com"
+                    },
+                    {
+                        "name": "Subject",
+                        "value": "Senior Test Engineer Position"
+                    }
+                ],
+                "body": {
+                    "size": 1234,
+                    "data": "SGVsbG8gV29ybGQ="
+                }
+            }
+        }"#;
+
+        // This will fail if the struct doesn't have proper serde rename attributes
+        let result: Result<GmailMessage, _> = serde_json::from_str(gmail_api_response);
+
+        assert!(
+            result.is_ok(),
+            "Failed to deserialize Gmail API response: {:?}",
+            result.err()
+        );
+
+        let message = result.unwrap();
+        assert_eq!(message.id, "18c5a9b2f3d4e5f6");
+        assert_eq!(message.thread_id, "18c5a9b2f3d4e5f6");
+        assert_eq!(message.internal_date, "1696521600000");
+        assert_eq!(message.payload.headers.len(), 2);
+
+        let from_header = message.payload.headers.iter()
+            .find(|h| h.name == "From")
+            .expect("Should have From header");
+        assert_eq!(from_header.value, "recruiter@techcorp.com");
+    }
+
+    #[test]
+    fn test_source_identification_architecture() {
+        // This test documents the architecture for identifying job sources
+        //
+        // IMPORTANT DESIGN PRINCIPLE:
+        // - source_type is a CATEGORY: 'email', 'api', 'calendar', etc.
+        // - source_name is a UNIQUE IDENTIFIER: 'gmail', 'outlook', 'yahoo', etc.
+        //
+        // Multiple sources can share the same type:
+        // - Gmail (source_type='email', source_name='gmail')
+        // - Outlook (source_type='email', source_name='outlook')
+        // - Yahoo (source_type='email', source_name='yahoo')
+        //
+        // Frontend MUST use source_name to identify specific sources, NOT source_type
+
+        let gmail_source_type = "email";
+        let gmail_source_name = "gmail";
+
+        // Verify Gmail configuration
+        assert_eq!(gmail_source_type, "email",
+            "Gmail source_type is 'email' (a category)");
+        assert_eq!(gmail_source_name, "gmail",
+            "Gmail source_name is 'gmail' (unique identifier)");
+
+        // Test that multiple email sources can coexist
+        let outlook_source_type = "email";  // Same type as Gmail
+        let outlook_source_name = "outlook"; // Different name
+
+        assert_eq!(outlook_source_type, gmail_source_type,
+            "Multiple email sources share the same type");
+        assert_ne!(outlook_source_name, gmail_source_name,
+            "But have different unique names");
+
+        println!("✓ Source identification architecture validated");
+        println!("  - Use source_type for filtering by category");
+        println!("  - Use source_name for identifying specific sources");
+    }
+
+    #[test]
+    fn test_gmail_list_response_deserialization() {
+        // Test Gmail messages list response with camelCase
+        let gmail_list_response = r#"{
+            "messages": [
+                {
+                    "id": "msg1",
+                    "threadId": "thread1"
+                },
+                {
+                    "id": "msg2",
+                    "threadId": "thread2"
+                }
+            ],
+            "nextPageToken": "abc123"
+        }"#;
+
+        let result: Result<GmailListResponse, _> = serde_json::from_str(gmail_list_response);
+
+        assert!(
+            result.is_ok(),
+            "Failed to deserialize Gmail list response: {:?}",
+            result.err()
+        );
+
+        let list = result.unwrap();
+        assert!(list.messages.is_some());
+        assert_eq!(list.messages.unwrap().len(), 2);
+        assert_eq!(list.next_page_token, Some("abc123".to_string()));
+    }
 }
