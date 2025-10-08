@@ -495,15 +495,68 @@ JobHunter uses a persistent PostgreSQL database that has a "split personality" b
 
 #### Daily Use (Every Time You Start the App)
 
-**Starting the app:**
+**Starting the app (Two Methods):**
+
+**Method 1: Separate Terminal Window (Recommended for Development)**
 ```bash
+# Open a new terminal window and run:
 ./start.sh
+
+# Skip browser auto-open (if you already have it open)
+NO_BROWSER=1 ./start.sh
 ```
 
-This script automatically:
-- Checks if PostgreSQL is running (starts it if needed)
-- Starts the backend (connects to whichever database is configured in `backend/.env`)
-- Starts the frontend at http://localhost:3000
+**Pros:**
+- ✅ See all server logs in real-time (backend errors, frontend warnings, compilation issues)
+- ✅ Easy to stop (just Ctrl-C in that window)
+- ✅ Immediate crash detection - you'll see if something breaks
+- ✅ Debugging friendly - scroll back through logs to find issues
+- ✅ Clear status - you can see the window is running the app
+- ✅ Easy restart - Ctrl-C, up arrow, enter to restart
+
+**Cons:**
+- ❌ Requires managing multiple terminal windows
+- ❌ Takes up screen space
+
+**Method 2: Background via Claude Code (For Quick "Just Use the App" Sessions)**
+```bash
+# In Claude Code chat, run ./start.sh
+# Press Ctrl-B when prompted to background the task
+# Wait for browser to open automatically
+```
+
+**Pros:**
+- ✅ No extra windows - everything in one place
+- ✅ Screen real estate saved - one less window to manage
+- ✅ Convenient - start app without leaving chat with Claude
+
+**Cons:**
+- ❌ No visible logs - can't see errors, warnings, or status messages
+- ❌ Harder to debug - if something fails, you won't know why
+- ❌ Harder to stop - must use `./stop.sh` or hunt for PIDs
+- ❌ No crash detection - backend/frontend could die and you won't notice until the UI breaks
+- ❌ Lost warnings - TypeScript warnings, API errors, performance issues are invisible
+- ❌ Can't monitor health - don't know if services are responding slowly
+
+**Recommendation:**
+- **Development work**: Use Method 1 - you need logs for debugging and monitoring
+- **Quick usage**: Use Method 2 - you just want to use the app without development concerns
+
+**What happens during startup:**
+1. ✅ Checks if PostgreSQL is running (starts it if needed)
+2. ✅ Starts the backend server
+3. ⏳ Polls backend until `http://localhost:8080/api/jobs` responds (up to 30s)
+4. ✅ Starts the frontend development server
+5. ⏳ Polls frontend until `http://localhost:3000` responds (up to 60s)
+6. ✨ **"JobHunter is ready!"** - Application is now fully operational
+7. 🌐 Opens browser to http://localhost:3000 automatically (unless NO_BROWSER=1)
+
+**Startup features:**
+- **Real readiness detection**: Script waits for both services to actually respond before declaring success
+- **Clear progress indicators**: See "⏳ Waiting for backend/frontend to be ready..." during startup
+- **Automatic failure handling**: Exits with error if services don't start within timeout
+- **Automatic browser launch**: Opens http://localhost:3000 when ready (skip with `NO_BROWSER=1`)
+- **Typical startup time**: 10-15 seconds (backend ~2s, frontend compilation ~8-13s)
 
 **Stopping the app:**
 ```bash

@@ -58,7 +58,9 @@
       "Bash(chmod:*)",
       "Bash(brew services:*)",
       "Bash(bash:*)",
-      "Bash(./switch-to-personal.sh:*)"
+      "Bash(./switch-to-personal.sh:*)",
+      "Bash(./start.sh:*)",
+      "Bash(pkill:*)"
     ],
     "deny": [],
     "ask": [
