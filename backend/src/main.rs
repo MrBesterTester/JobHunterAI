@@ -76,6 +76,73 @@ pub struct JobDeduplication {
 }
 
 // ============================================================================
+// Phase 5.2: Email Draft Models
+// ============================================================================
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct EmailDraft {
+    pub draft_id: Uuid,
+    pub application_id: Uuid,
+    pub gmail_draft_id: Option<String>,
+    pub gmail_message_id: Option<String>,
+    pub recipient_email: String,
+    pub subject: String,
+    pub body_text: String,
+    pub attachment_name: Option<String>,
+    pub attachment_size: Option<i32>,
+    pub status: String,
+    pub created_at: DateTime<Utc>,
+    pub sent_at: Option<DateTime<Utc>>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreateDraftRequest {
+    pub application_id: Uuid,
+    pub recipient_email: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreateDraftResponse {
+    pub draft_id: Uuid,
+    pub gmail_draft_id: String,
+    pub gmail_url: String,
+    pub status: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DraftStatusResponse {
+    pub draft_id: Uuid,
+    pub status: String,
+    pub created_at: String,
+    pub sent_at: Option<String>,
+    pub gmail_url: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GmailDraftRequest {
+    pub message: GmailDraftMessage,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GmailDraftMessage {
+    pub raw: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GmailDraftResponse {
+    pub id: String,
+    pub message: GmailDraftMessageResponse,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GmailDraftMessageResponse {
+    pub id: String,
+    #[serde(rename = "threadId")]
+    pub thread_id: String,
+}
+
+// ============================================================================
 // Phase 4: Automated Job Intake Models
 // ============================================================================
 
@@ -2756,6 +2823,398 @@ async fn get_application_timeline(
 }
 
 // ============================================================================
+// Phase 5.2: Email Draft Creation & Monitoring
+// ============================================================================
+
+/// Build a MIME message with cover letter as body and resume as attachment
+fn build_mime_message(
+    from_email: &str,
+    to_email: &str,
+    subject: &str,
+    body: &str,
+    resume_content: &str,
+    resume_filename: &str,
+) -> String {
+    let boundary = format!("boundary_{}", uuid::Uuid::new_v4().to_string().replace("-", ""));
+
+    let mut message = String::new();
+    message.push_str(&format!("From: {}\r\n", from_email));
+    message.push_str(&format!("To: {}\r\n", to_email));
+    message.push_str(&format!("Subject: {}\r\n", subject));
+    message.push_str("MIME-Version: 1.0\r\n");
+    message.push_str(&format!("Content-Type: multipart/mixed; boundary=\"{}\"\r\n", boundary));
+    message.push_str("\r\n");
+
+    // Cover letter as body
+    message.push_str(&format!("--{}\r\n", boundary));
+    message.push_str("Content-Type: text/plain; charset=\"UTF-8\"\r\n");
+    message.push_str("\r\n");
+    message.push_str(body);
+    message.push_str("\r\n");
+
+    // Resume as attachment
+    message.push_str(&format!("--{}\r\n", boundary));
+    message.push_str(&format!("Content-Type: application/octet-stream; name=\"{}\"\r\n", resume_filename));
+    message.push_str("Content-Transfer-Encoding: base64\r\n");
+    message.push_str(&format!("Content-Disposition: attachment; filename=\"{}\"\r\n", resume_filename));
+    message.push_str("\r\n");
+
+    // Encode resume content as base64
+    let resume_base64 = general_purpose::STANDARD.encode(resume_content.as_bytes());
+    message.push_str(&resume_base64);
+    message.push_str("\r\n");
+
+    // Final boundary
+    message.push_str(&format!("--{}--\r\n", boundary));
+
+    message
+}
+
+/// Create a Gmail draft via the Gmail API
+async fn create_gmail_draft(
+    application_id: Uuid,
+    recipient_email: String,
+    pool: &PgPool,
+) -> actix_web::Result<CreateDraftResponse> {
+    // 1. Get the application and job details
+    let application = sqlx::query_as::<_, Application>(
+        "SELECT * FROM applications WHERE application_id = $1"
+    )
+    .bind(application_id)
+    .fetch_one(pool)
+    .await
+    .map_err(|e| actix_web::error::ErrorNotFound(format!("Application not found: {}", e)))?;
+
+    let job = sqlx::query_as::<_, Job>(
+        "SELECT * FROM jobs WHERE job_id = $1"
+    )
+    .bind(application.job_id)
+    .fetch_one(pool)
+    .await
+    .map_err(|e| actix_web::error::ErrorNotFound(format!("Job not found: {}", e)))?;
+
+    // 2. Get the generated content (resume and cover letter)
+    let _resume_version = application.resume_version
+        .ok_or_else(|| actix_web::error::ErrorBadRequest("No resume version found. Please generate content first."))?;
+
+    let _cover_letter_version = application.cover_letter_version
+        .ok_or_else(|| actix_web::error::ErrorBadRequest("No cover letter version found. Please generate content first."))?;
+
+    // Fetch the actual content (assuming it was stored during generation)
+    // For now, we'll regenerate it - in production, you might want to cache this
+    let generated_content = generate_content_for_job(&job, pool).await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to generate content: {}", e)))?;
+
+    // 3. Build MIME message
+    let from_email = std::env::var("APPLICANT_EMAIL")
+        .unwrap_or_else(|_| "sam@samkirk.com".to_string());
+
+    let subject = format!("Application for {} - {}",
+        job.title,
+        std::env::var("APPLICANT_NAME").unwrap_or_else(|_| "Sam Kirk".to_string())
+    );
+
+    let resume_filename = format!("{}_{}_{}_resume.{}",
+        job.company.to_lowercase().replace(" ", "_"),
+        job.title.to_lowercase().replace(" ", "_"),
+        chrono::Utc::now().format("%Y%m%d"),
+        generated_content.resume_format
+    );
+
+    let mime_message = build_mime_message(
+        &from_email,
+        &recipient_email,
+        &subject,
+        &generated_content.cover_letter,
+        &generated_content.resume,
+        &resume_filename,
+    );
+
+    // 4. Encode the entire message as base64 (Gmail API requirement)
+    let encoded_message = general_purpose::URL_SAFE_NO_PAD.encode(mime_message.as_bytes());
+
+    // 5. Get OAuth credentials
+    let oauth_cred = sqlx::query_as::<_, OAuthCredential>(
+        "SELECT * FROM oauth_credentials WHERE source_id = (SELECT source_id FROM job_sources WHERE source_name = 'gmail') LIMIT 1"
+    )
+    .fetch_one(pool)
+    .await
+    .map_err(|e| actix_web::error::ErrorUnauthorized(format!("Gmail not authenticated: {}", e)))?;
+
+    // Check if token is expired and refresh if needed
+    let access_token = if oauth_cred.token_expires_at < Some(chrono::Utc::now()) {
+        refresh_gmail_token(&oauth_cred, pool).await?
+    } else {
+        oauth_cred.access_token
+            .ok_or_else(|| actix_web::error::ErrorUnauthorized("No access token"))?
+    };
+
+    // 6. Call Gmail API to create draft
+    let client = reqwest::Client::new();
+    let draft_request = GmailDraftRequest {
+        message: GmailDraftMessage {
+            raw: encoded_message,
+        },
+    };
+
+    let response = client
+        .post("https://gmail.googleapis.com/gmail/v1/users/me/drafts")
+        .bearer_auth(&access_token)
+        .json(&draft_request)
+        .send()
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Gmail API call failed: {}", e)))?;
+
+    if !response.status().is_success() {
+        let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+        return Err(actix_web::error::ErrorInternalServerError(format!("Gmail API error: {}", error_text)));
+    }
+
+    let gmail_response: GmailDraftResponse = response.json().await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to parse Gmail response: {}", e)))?;
+
+    // 7. Store draft in database
+    let draft_id = Uuid::new_v4();
+    let gmail_url = format!("https://mail.google.com/mail/u/0/#drafts?compose={}", gmail_response.id);
+
+    let attachment_size = generated_content.resume.len() as i32;
+
+    sqlx::query(
+        "INSERT INTO email_drafts (draft_id, application_id, gmail_draft_id, recipient_email, subject, body_text, attachment_name, attachment_size, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'created')"
+    )
+    .bind(draft_id)
+    .bind(application_id)
+    .bind(&gmail_response.id)
+    .bind(&recipient_email)
+    .bind(&subject)
+    .bind(&generated_content.cover_letter)
+    .bind(&resume_filename)
+    .bind(attachment_size)
+    .execute(pool)
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to save draft: {}", e)))?;
+
+    // 8. Update application with draft info
+    sqlx::query(
+        "UPDATE applications SET draft_created_at = NOW(), draft_url = $1 WHERE application_id = $2"
+    )
+    .bind(&gmail_url)
+    .bind(application_id)
+    .execute(pool)
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to update application: {}", e)))?;
+
+    // 9. Record communication
+    sqlx::query(
+        "INSERT INTO communications (application_id, message_content, channel, direction, from_contact, to_contact, subject, gmail_draft_id)
+         VALUES ($1, $2, 'email', 'outbound', $3, $4, $5, $6)"
+    )
+    .bind(application_id)
+    .bind(&generated_content.cover_letter)
+    .bind(&from_email)
+    .bind(&recipient_email)
+    .bind(&subject)
+    .bind(&gmail_response.id)
+    .execute(pool)
+    .await
+    .ok(); // Don't fail if communication logging fails
+
+    Ok(CreateDraftResponse {
+        draft_id,
+        gmail_draft_id: gmail_response.id,
+        gmail_url,
+        status: "created".to_string(),
+    })
+}
+
+/// Check if a Gmail draft has been sent
+async fn check_draft_status(
+    application_id: Uuid,
+    pool: &PgPool,
+) -> actix_web::Result<DraftStatusResponse> {
+    // Get the draft from database
+    let draft = sqlx::query_as::<_, EmailDraft>(
+        "SELECT * FROM email_drafts WHERE application_id = $1 ORDER BY created_at DESC LIMIT 1"
+    )
+    .bind(application_id)
+    .fetch_one(pool)
+    .await
+    .map_err(|e| actix_web::error::ErrorNotFound(format!("No draft found: {}", e)))?;
+
+    // If already marked as sent, return that status
+    if draft.status == "sent" {
+        return Ok(DraftStatusResponse {
+            draft_id: draft.draft_id,
+            status: "sent".to_string(),
+            created_at: draft.created_at.to_rfc3339(),
+            sent_at: draft.sent_at.map(|dt| dt.to_rfc3339()),
+            gmail_url: None,
+        });
+    }
+
+    // Check with Gmail API if draft still exists
+    let gmail_draft_id = draft.gmail_draft_id
+        .ok_or_else(|| actix_web::error::ErrorInternalServerError("No Gmail draft ID"))?;
+
+    // Get OAuth credentials
+    let oauth_cred = sqlx::query_as::<_, OAuthCredential>(
+        "SELECT * FROM oauth_credentials WHERE source_id = (SELECT source_id FROM job_sources WHERE source_name = 'gmail') LIMIT 1"
+    )
+    .fetch_one(pool)
+    .await
+    .map_err(|e| actix_web::error::ErrorUnauthorized(format!("Gmail not authenticated: {}", e)))?;
+
+    let access_token = if oauth_cred.token_expires_at < Some(chrono::Utc::now()) {
+        refresh_gmail_token(&oauth_cred, pool).await?
+    } else {
+        oauth_cred.access_token
+            .ok_or_else(|| actix_web::error::ErrorUnauthorized("No access token"))?
+    };
+
+    // Try to fetch the draft
+    let client = reqwest::Client::new();
+    let response = client
+        .get(&format!("https://gmail.googleapis.com/gmail/v1/users/me/drafts/{}", gmail_draft_id))
+        .bearer_auth(&access_token)
+        .send()
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Gmail API call failed: {}", e)))?;
+
+    // If draft not found (404), it was likely sent or deleted
+    if response.status() == 404 {
+        // Mark as sent in database
+        sqlx::query(
+            "UPDATE email_drafts SET status = 'sent', sent_at = NOW() WHERE draft_id = $1"
+        )
+        .bind(draft.draft_id)
+        .execute(pool)
+        .await
+        .ok();
+
+        // Update application status
+        sqlx::query(
+            "UPDATE applications SET application_status = 'sent' WHERE application_id = $1"
+        )
+        .bind(application_id)
+        .execute(pool)
+        .await
+        .ok();
+
+        return Ok(DraftStatusResponse {
+            draft_id: draft.draft_id,
+            status: "sent".to_string(),
+            created_at: draft.created_at.to_rfc3339(),
+            sent_at: Some(chrono::Utc::now().to_rfc3339()),
+            gmail_url: None,
+        });
+    }
+
+    // Draft still exists
+    let gmail_url = format!("https://mail.google.com/mail/u/0/#drafts?compose={}", gmail_draft_id);
+
+    Ok(DraftStatusResponse {
+        draft_id: draft.draft_id,
+        status: "created".to_string(),
+        created_at: draft.created_at.to_rfc3339(),
+        sent_at: None,
+        gmail_url: Some(gmail_url),
+    })
+}
+
+/// API endpoint: Create Gmail draft for application
+async fn create_draft_handler(
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+    body: web::Json<CreateDraftRequest>,
+) -> Result<HttpResponse> {
+    let application_id = path.into_inner();
+
+    let result = create_gmail_draft(
+        application_id,
+        body.recipient_email.clone(),
+        pool.get_ref(),
+    ).await?;
+
+    Ok(HttpResponse::Ok().json(result))
+}
+
+/// API endpoint: Check draft status
+async fn get_draft_status_handler(
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse> {
+    let application_id = path.into_inner();
+
+    let status = check_draft_status(application_id, pool.get_ref()).await?;
+
+    Ok(HttpResponse::Ok().json(status))
+}
+
+/// API endpoint: Delete draft
+async fn delete_draft_handler(
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse> {
+    let application_id = path.into_inner();
+
+    // Get the draft
+    let draft = sqlx::query_as::<_, EmailDraft>(
+        "SELECT * FROM email_drafts WHERE application_id = $1 ORDER BY created_at DESC LIMIT 1"
+    )
+    .bind(application_id)
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorNotFound(format!("No draft found: {}", e)))?;
+
+    let gmail_draft_id = draft.gmail_draft_id
+        .ok_or_else(|| actix_web::error::ErrorInternalServerError("No Gmail draft ID"))?;
+
+    // Get OAuth credentials
+    let oauth_cred = sqlx::query_as::<_, OAuthCredential>(
+        "SELECT * FROM oauth_credentials WHERE source_id = (SELECT source_id FROM job_sources WHERE source_name = 'gmail') LIMIT 1"
+    )
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorUnauthorized(format!("Gmail not authenticated: {}", e)))?;
+
+    let access_token = if oauth_cred.token_expires_at < Some(chrono::Utc::now()) {
+        refresh_gmail_token(&oauth_cred, pool.get_ref()).await?
+    } else {
+        oauth_cred.access_token
+            .ok_or_else(|| actix_web::error::ErrorUnauthorized("No access token"))?
+    };
+
+    // Delete draft from Gmail
+    let client = reqwest::Client::new();
+    let response = client
+        .delete(&format!("https://gmail.googleapis.com/gmail/v1/users/me/drafts/{}", gmail_draft_id))
+        .bearer_auth(&access_token)
+        .send()
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Gmail API call failed: {}", e)))?;
+
+    if !response.status().is_success() && response.status() != 404 {
+        let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+        return Err(actix_web::error::ErrorInternalServerError(format!("Gmail API error: {}", error_text)));
+    }
+
+    // Update database
+    sqlx::query(
+        "UPDATE email_drafts SET status = 'deleted' WHERE draft_id = $1"
+    )
+    .bind(draft.draft_id)
+    .execute(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to update draft: {}", e)))?;
+
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "message": "Draft deleted successfully",
+        "draft_id": draft.draft_id
+    })))
+}
+
+// ============================================================================
 // Main Server
 // ============================================================================
 
@@ -2818,6 +3277,10 @@ async fn main() -> std::io::Result<()> {
             .route("/api/follow-ups/{id}/approve", web::put().to(approve_follow_up))
             .route("/api/follow-ups/{id}/send", web::post().to(send_follow_up))
             .route("/api/applications/{id}/timeline", web::get().to(get_application_timeline))
+            // Phase 5.2: Email Composition & Sending APIs
+            .route("/api/applications/{id}/create-draft", web::post().to(create_draft_handler))
+            .route("/api/applications/{id}/draft-status", web::get().to(get_draft_status_handler))
+            .route("/api/applications/{id}/draft", web::delete().to(delete_draft_handler))
     })
     .bind(("127.0.0.1", 8080))?
     .run()

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, CheckCircle, XCircle, Clock, Briefcase, DollarSign, MapPin, Filter, FileText, Mail, Calendar as CalendarIcon, Download } from 'lucide-react';
+import { AlertCircle, CheckCircle, XCircle, Clock, Briefcase, DollarSign, MapPin, Filter, FileText, Mail, Calendar as CalendarIcon, Download, Send } from 'lucide-react';
 import ResumeManagement from './ResumeManagement';
 import CalendarTab from './CalendarTab';
 import FollowupsTab from './FollowupsTab';
 import IntakeTab from './IntakeTab';
+import EmailComposer from './EmailComposer';
 
 const API_URL = 'http://localhost:8080/api';
 
@@ -79,7 +80,7 @@ type TabType = 'inbox' | 'approved' | 'applied' | 'filtered' | 'all' | 'intake' 
 
 const JobHunterDashboard: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [applications, setApplications] = useState<Application[]>([]); // eslint-disable-line @typescript-eslint/no-unused-vars
+  const [applications, setApplications] = useState<Application[]>([]);
   const [criteria, setCriteria] = useState<JobCriteria | null>(null);
   const [stats, setStats] = useState<JobStats>({});
   const [activeTab, setActiveTab] = useState<TabType>('inbox');
@@ -94,6 +95,8 @@ const JobHunterDashboard: React.FC = () => {
   const [resumes, setResumes] = useState<ResumeVersion[]>([]);
   const [isUploadingResume, setIsUploadingResume] = useState<boolean>(false);
   const [resumeUploadError, setResumeUploadError] = useState<string | null>(null);
+  const [showEmailComposer, setShowEmailComposer] = useState<boolean>(false);
+  const [emailComposerJob, setEmailComposerJob] = useState<Job | null>(null);
 
   // Helper function to detect if content is HTML
   const isHtmlContent = (text: string): boolean => {
@@ -238,6 +241,8 @@ const JobHunterDashboard: React.FC = () => {
         const job = jobs.find(j => j.job_id === jobId);
         setGeneratedContentJob(job || null);
         setShowContentGeneration(true);
+        // Fetch applications to ensure we have the latest application_id
+        await fetchApplications();
       } else {
         console.error('Failed to generate content');
       }
@@ -283,6 +288,11 @@ const JobHunterDashboard: React.FC = () => {
     }, 100);
   };
 
+  const openEmailComposer = (job: Job): void => {
+    setEmailComposerJob(job);
+    setShowEmailComposer(true);
+  };
+
   const getStatusIcon = (status: string): JSX.Element => {
     switch (status) {
       case 'new': return <AlertCircle className="w-5 h-5 text-blue-500" />;
@@ -317,19 +327,20 @@ const JobHunterDashboard: React.FC = () => {
   useEffect(() => {
     fetchJobs();
     fetchStats();
+    fetchApplications();
   }, []);
 
   // Handle Escape key for modals
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        if (selectedJob) {
+        if (showEmailComposer) {
+          setShowEmailComposer(false);
+        } else if (selectedJob) {
           setSelectedJob(null);
-        }
-        if (showContentGeneration) {
+        } else if (showContentGeneration) {
           setShowContentGeneration(false);
-        }
-        if (showCriteriaConfig) {
+        } else if (showCriteriaConfig) {
           setShowCriteriaConfig(false);
         }
       }
@@ -337,7 +348,7 @@ const JobHunterDashboard: React.FC = () => {
 
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
-  }, [selectedJob, showContentGeneration, showCriteriaConfig]);
+  }, [selectedJob, showContentGeneration, showCriteriaConfig, showEmailComposer]);
 
   const meetsMinSalary = (job: Job): boolean => job.salary ? job.salary >= 130000 : false;
   const isRemote = (job: Job): boolean => job.location?.toLowerCase().includes('remote') || false;
@@ -992,6 +1003,30 @@ const JobHunterDashboard: React.FC = () => {
               >
                 Download Files
               </button>
+              {generatedContentJob && (
+                <button
+                  onClick={() => {
+                    openEmailComposer(generatedContentJob);
+                    setShowContentGeneration(false);
+                  }}
+                  data-testid="create-draft-button"
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#10b981',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <Send style={{ width: '16px', height: '16px' }} />
+                  Create Email Draft
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -1000,6 +1035,28 @@ const JobHunterDashboard: React.FC = () => {
       {showResumeManagement && (
         <ResumeManagement onClose={() => setShowResumeManagement(false)} />
       )}
+
+      {showEmailComposer && emailComposerJob && generatedContent && (() => {
+        const application = applications.find(app => app.job_id === emailComposerJob.job_id);
+        if (!application) {
+          return null; // Application doesn't exist yet - shouldn't happen if content was generated
+        }
+        return (
+          <EmailComposer
+            applicationId={application.application_id}
+            jobTitle={emailComposerJob.title}
+            company={emailComposerJob.company}
+            coverLetter={generatedContent.cover_letter}
+            resumeContent={generatedContent.resume}
+            resumeFormat={generatedContent.resume_format}
+            onClose={() => setShowEmailComposer(false)}
+            onDraftCreated={() => {
+              fetchApplications();
+              fetchJobs();
+            }}
+          />
+        );
+      })()}
     </div>
   );
 };
