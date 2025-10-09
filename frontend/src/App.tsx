@@ -87,6 +87,7 @@ const JobHunterDashboard: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [showCriteriaConfig, setShowCriteriaConfig] = useState<boolean>(false);
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
+  const [generatedContentJob, setGeneratedContentJob] = useState<Job | null>(null);
   const [showContentGeneration, setShowContentGeneration] = useState<boolean>(false);
   const [generatingContent, setGeneratingContent] = useState<boolean>(false);
   const [showResumeManagement, setShowResumeManagement] = useState<boolean>(false);
@@ -233,6 +234,9 @@ const JobHunterDashboard: React.FC = () => {
       if (response.ok) {
         const content: GeneratedContent = await response.json();
         setGeneratedContent(content);
+        // Store the job for filename generation when downloading
+        const job = jobs.find(j => j.job_id === jobId);
+        setGeneratedContentJob(job || null);
         setShowContentGeneration(true);
       } else {
         console.error('Failed to generate content');
@@ -242,6 +246,41 @@ const JobHunterDashboard: React.FC = () => {
     } finally {
       setGeneratingContent(false);
     }
+  };
+
+  const downloadGeneratedContent = (): void => {
+    if (!generatedContent || !generatedContentJob) return;
+
+    // Create a sanitized filename base from company and job title
+    const sanitize = (str: string) => str.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    const companyName = sanitize(generatedContentJob.company);
+    const jobTitle = sanitize(generatedContentJob.title);
+    const timestamp = new Date(generatedContent.generated_at).toISOString().split('T')[0];
+    const filenameBase = `${companyName}_${jobTitle}_${timestamp}`;
+
+    // Download resume
+    const resumeBlob = new Blob([generatedContent.resume], { type: 'text/markdown' });
+    const resumeUrl = URL.createObjectURL(resumeBlob);
+    const resumeLink = document.createElement('a');
+    resumeLink.href = resumeUrl;
+    resumeLink.download = `${filenameBase}_resume.md`;
+    document.body.appendChild(resumeLink);
+    resumeLink.click();
+    document.body.removeChild(resumeLink);
+    URL.revokeObjectURL(resumeUrl);
+
+    // Download cover letter (with a small delay to avoid browser blocking multiple downloads)
+    setTimeout(() => {
+      const coverLetterBlob = new Blob([generatedContent.cover_letter], { type: 'text/plain' });
+      const coverLetterUrl = URL.createObjectURL(coverLetterBlob);
+      const coverLetterLink = document.createElement('a');
+      coverLetterLink.href = coverLetterUrl;
+      coverLetterLink.download = `${filenameBase}_cover_letter.txt`;
+      document.body.appendChild(coverLetterLink);
+      coverLetterLink.click();
+      document.body.removeChild(coverLetterLink);
+      URL.revokeObjectURL(coverLetterUrl);
+    }, 100);
   };
 
   const getStatusIcon = (status: string): JSX.Element => {
@@ -940,10 +979,7 @@ const JobHunterDashboard: React.FC = () => {
                 Close
               </button>
               <button
-                onClick={() => {
-                  // Here you could add download functionality
-                  console.log('Download functionality would go here');
-                }}
+                onClick={downloadGeneratedContent}
                 style={{
                   padding: '8px 16px',
                   backgroundColor: '#3b82f6',
