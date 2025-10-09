@@ -21,21 +21,22 @@ JobHunter is a comprehensive job application management system that automates an
 - [Overview](#overview)
 - [Tech Stack](#tech-stack)
 - [Quick Start](#quick-start)
-  - [One-Command Startup](#-one-command-startup-easiest)
-  - [Initial Setup](#-initial-setup-first-time-only)
+  - [One-Command Startup](#one-command-startup-easiest)
+  - [Initial Setup](#initial-setup-first-time-only)
 - [Job Criteria](#job-criteria)
 - [Workflow](#workflow)
+  - [Detailed Workflow](#detailed-workflow)
 - [UI Features Guide](#ui-features-guide)
   - [Dashboard Overview](#dashboard-overview)
   - [Navigation Tabs](#navigation-tabs)
-    - [Intake Tab](#-intake-tab-new)
-    - [New Jobs Tab](#-new-jobs-tab-inbox)
-    - [Approved Tab](#-approved-tab)
-    - [Applied Tab](#-applied-tab)
-    - [Filtered Tab](#-filtered-tab)
-    - [All Tab](#-all-tab)
-    - [Calendar Tab](#-calendar-tab)
-    - [Follow-ups Tab](#-follow-ups-tab)
+    - [Intake Tab](#intake-tab-new)
+    - [New Jobs Tab](#new-jobs-tab-inbox)
+    - [Approved Tab](#approved-tab)
+    - [Applied Tab](#applied-tab)
+    - [Filtered Tab](#filtered-tab)
+    - [All Tab](#all-tab)
+    - [Calendar Tab](#calendar-tab)
+    - [Follow-ups Tab](#follow-ups-tab)
   - [Job Detail Modal](#job-detail-modal)
   - [Resume Management](#resume-management)
   - [Responsive Design](#responsive-design)
@@ -64,6 +65,7 @@ JobHunter is a comprehensive job application management system that automates an
   - [Job Criteria](#job-criteria-1)
   - [Content Generation & Resume Management](#content-generation--resume-management)
   - [Automated Job Intake](#automated-job-intake-phase-4)
+  - [Calendar & Follow-ups](#calendar--follow-ups-phase-51)
 - [Implementation Status](#implementation-status)
   - [Phase 1 - Core System](#phase-1---core-system--complete)
   - [Phase 2 - Intelligent Automation](#phase-2---intelligent-automation--complete)
@@ -72,11 +74,6 @@ JobHunter is a comprehensive job application management system that automates an
   - [Phase 5.1 - Calendar Integration & Follow-ups](#phase-51---calendar-integration--follow-ups--complete)
   - [What NOT to Build](#what-not-to-build-for-now)
   - [Phase 5.2+ - Future Considerations](#phase-52---future-considerations-not-currently-planned)
-- [Current Workflow](#current-workflow)
-  - [Automated Job Intake & Processing](#1-automated-job-intake--processing-)
-  - [Job Review & Approval](#2-job-review--approval)
-  - [Content Generation & Application](#3-content-generation--application)
-  - [Key Features in Action](#4-key-features-in-action)
 - [Project Structure](#project-structure)
 - [Technical Achievements](#technical-achievements)
   - [System Performance](#system-performance)
@@ -180,6 +177,120 @@ Based on your requirements:
 3. **Review** - Manual approval of filtered jobs
 4. **Apply** - Generate custom resume/cover letter
 5. **Track** - Monitor application status and follow-ups
+
+### Detailed Workflow
+
+The fully implemented JobHunter system provides an end-to-end automated workflow:
+
+#### 1. Automated Job Intake & Processing
+
+```
+Gmail/LinkedIn/API Sources → Intelligent Extraction → Automatic Filtering → Deduplication Check → Status Assignment
+                        ↳ Manual Entry (still available)
+```
+
+**Features:**
+- **Fully Automated**: Gmail email monitoring and LinkedIn job discovery
+- **Intelligent Extraction**: Multi-pattern parsing with confidence scoring for job details
+- **Multi-source Deduplication**: SHA256-based prevention of duplicates across all sources
+- **Automatic Filtering**: All jobs filtered against salary ($130K+), location, and domain criteria
+- **Status Assignment**: `new` (passed all filters) or `filtered` (failed criteria with detailed reasons)
+- **Manual Override**: Dashboard entry still available for one-off job additions
+
+**How to Use:**
+- Navigate to the **Intake** tab
+- Click "Authenticate with Gmail" (first time only) to set up automated email monitoring
+- Click "Sync Now" to manually trigger job discovery
+- Or use "Sync All Sources" to pull from all connected sources at once
+
+#### 2. Job Review & Approval
+
+**Features:**
+- **Dashboard Interface**: View jobs organized by status in tabbed interface
+- **Filter Transparency**: See exactly why jobs were filtered with detailed reasons
+- **Manual Approval**: Review `new` jobs and approve/reject with one-click
+- **Real-time Statistics**: Track filtering effectiveness and job pipeline
+
+**How to Use:**
+- Go to the **New Jobs** tab to see jobs that passed filtering
+- Click any job card to see full details
+- Click **Approve** to move it to the application queue
+- Click **Reject** if not interested
+- Check the **Filtered** tab to review auto-rejected jobs
+
+#### 3. Resume & Cover Letter Generation
+
+**Setup Your Master Resume (One-Time):**
+
+You have **three options** to set up your master resume:
+
+1. **Option A: File-based (Recommended)**
+   - Edit `data/resumes/master_resume.md` directly in Markdown format
+   - Click "Manage Resume" → "Load from File" to import it
+
+2. **Option B: Upload via UI**
+   - Click "Manage Resume" (top-right header)
+   - Click "Upload New Resume"
+   - Paste text or upload a file (PDF, DOCX, TXT)
+   - Set it as "Master Resume"
+
+3. **Option C: Manual Entry**
+   - Click "Manage Resume"
+   - Create a new resume version
+   - Paste/type your resume content
+   - Set it as "Master Resume"
+
+**Generate Job-Specific Content:**
+
+Once your master resume is set up:
+
+1. **Navigate to the Approved tab**
+   - Find a job you want to apply to
+
+2. **Click "Generate Resume & Cover Letter"**
+   - Button appears on job cards and in the job detail modal
+   - System generates customized content in <2 seconds
+
+3. **Review Generated Content**
+   - Modal opens with side-by-side view:
+     - **Left**: Customized resume with relevant keywords highlighted
+     - **Right**: Personalized cover letter with company/role-specific content
+
+**How It Works:**
+- **Resume Customization**: Emphasizes relevant experience based on job domain
+  - AI roles: Highlights "AI-powered", "LLM", "Prompt Engineering"
+  - Testing roles: Highlights "Test Automation", "Quality Engineering", "CI/CD"
+  - Firmware roles: Highlights "firmware", "hardware", "validation"
+- **Cover Letter Generation**: Uses templates with 20+ variables including:
+  - Company name, job title, salary, location
+  - Role-specific qualification bullets
+  - Domain-specific technical focus
+  - Personalized opening paragraphs
+
+**Use the Content:**
+- Copy from the modal to your clipboard
+- Click "Download Files" (prepared for future PDF export)
+- Apply to the job using your customized materials
+
+#### 4. Application Tracking & Follow-ups
+
+**Features:**
+- **Applied Tab**: Track all submitted applications
+- **Calendar Tab**: Schedule interviews and deadlines
+- **Follow-ups Tab**: Automated follow-up reminders
+- **Timeline View**: Complete application lifecycle visualization
+
+**Key Features in Action:**
+
+**Intelligent Filtering Examples:**
+- ❌ "Junior Marketing Assistant, $45K, 120min commute" → Filtered: Multiple criteria failed
+- ✅ "Senior AI Test Engineer, $155K, Remote" → Approved: Passes all filters
+- ⚠️ Duplicate detection prevents reprocessing same opportunities
+
+**Content Personalization Examples:**
+- **AI Testing Role**: Highlights "AI-powered test generation", "LLM integration", "prompt engineering"
+- **Firmware Role**: Emphasizes "hardware validation", "embedded systems", "firmware testing"
+- **Leadership Role**: Features "team mentoring", "cross-functional leadership", "engineering management"
 
 ## UI Features Guide
 
@@ -835,6 +946,24 @@ See [`DATABASE_SETUP.md`](DATABASE_SETUP.md) for detailed database setup instruc
 - `GET /api/job-sources` - List all configured job sources
 - `GET /api/intake/logs` - View detailed intake operation logs
 
+### Calendar & Follow-ups (Phase 5.1)
+
+**Interview Management:**
+- `POST /api/interviews` - Schedule new interview with date, type, location, and interviewer details
+- `GET /api/interviews/upcoming` - Get next 30 days of scheduled interviews
+- `GET /api/interviews/{id}` - Get specific interview details
+- `PUT /api/interviews/{id}` - Update interview information (reschedule, change details)
+- `DELETE /api/interviews/{id}` - Cancel interview
+
+**Follow-up System:**
+- `POST /api/follow-ups` - Create follow-up schedule for an application
+- `GET /api/follow-ups/pending` - Get pending follow-ups awaiting approval
+- `PUT /api/follow-ups/{id}/approve` - Approve follow-up email for sending
+- `POST /api/follow-ups/{id}/send` - Send approved follow-up email
+
+**Application Timeline:**
+- `GET /api/applications/{id}/timeline` - Get complete application timeline with all events (applications, communications, interviews, follow-ups)
+
 ## Implementation Status
 
 ### Phase 1 - Core System ✅ **COMPLETE**
@@ -1087,76 +1216,18 @@ See [`DATABASE_SETUP.md`](DATABASE_SETUP.md) for detailed database setup instruc
 ---
 
 ### Phase 5.2+ - Future Considerations (Not Currently Planned)
+- **LLM-based Job Extraction & Analysis**: Replace or augment the current deterministic regex-based job extraction with a large language model for improved accuracy. Benefits would include:
+  - More intelligent job title extraction from email subjects and body content
+  - Better company name identification
+  - Improved salary and location parsing from unstructured text
+  - Semantic understanding of job descriptions for better filtering
+  - Higher quality summaries and extracted metadata
+  - Confidence scoring based on semantic analysis rather than pattern matching
 - Advanced success metrics (time-to-interview, offer rates by source)
 - Job market trend analysis and salary benchmarking
 - Salary negotiation tracking and offer comparison
 - Company research integration (Glassdoor, Blind)
 - Professional network mapping
-
-## Current Workflow
-
-The fully implemented JobHunter system provides an end-to-end automated workflow:
-
-### 1. Automated Job Intake & Processing ✅
-```
-Gmail/LinkedIn/API Sources → Intelligent Extraction → Automatic Filtering → Deduplication Check → Status Assignment
-                        ↳ Manual Entry (still available)
-```
-- **Fully Automated**: Gmail email monitoring and LinkedIn job discovery (Phase 4 complete)
-- **Intelligent Extraction**: Multi-pattern parsing with confidence scoring for job details
-- **Multi-source Deduplication**: SHA256-based prevention of duplicates across all sources
-- **Automatic Filtering**: All jobs filtered against salary ($130K+), location, and domain criteria
-- **Status Assignment**: `new` (passed all filters) or `filtered` (failed criteria with detailed reasons)
-- **Manual Override**: Dashboard entry still available for one-off job additions
-
-### 2. Job Review & Approval
-- **Dashboard Interface**: View jobs organized by status in tabbed interface
-- **Filter Transparency**: See exactly why jobs were filtered with detailed reasons
-- **Manual Approval**: Review `new` jobs and approve/reject with one-click
-- **Real-time Statistics**: Track filtering effectiveness and job pipeline
-
-### 3. Content Generation & Application
-- **Smart Generation**: Click "Generate Resume & Cover Letter" on approved jobs
-- **Intelligent Customization**:
-  - Resume emphasizes relevant experience based on job requirements
-  - Cover letter personalizes content for specific company and role
-  - Salary-aware messaging and domain-specific technical focus
-- **Professional Review**: Side-by-side modal displays generated content
-- **Ready for Application**: Content optimized for the specific opportunity
-
-### 4. Key Features in Action
-
-**Intelligent Filtering Examples:**
-- ❌ "Junior Marketing Assistant, $45K, 120min commute" → Filtered: Multiple criteria failed
-- ✅ "Senior AI Test Engineer, $155K, Remote" → Approved: Passes all filters
-- ⚠️ Duplicate detection prevents reprocessing same opportunities
-
-**Content Personalization Examples:**
-- **AI Testing Role**: Highlights "AI-powered test generation", "LLM integration", "prompt engineering"
-- **Firmware Role**: Emphasizes "hardware validation", "embedded systems", "firmware testing"
-- **Leadership Role**: Features "team mentoring", "cross-functional leadership", "engineering management"
-
-## 🎉 Phase 4 Complete: Fully Autonomous Job Hunter
-
-**Complete Implementation**: All 4 phases successfully implemented, creating a fully autonomous job discovery and application system:
-
-**Phase 1-4 Integration Achieved**:
-- ✅ **Automated Job Discovery**: Gmail email monitoring and LinkedIn API integration
-- ✅ **Intelligent Processing**: Multi-pattern extraction with confidence scoring
-- ✅ **Advanced Filtering**: Multi-criteria job evaluation with detailed reasoning
-- ✅ **Cross-source Deduplication**: SHA256-based duplicate prevention across all sources
-- ✅ **Personalized Content Generation**: Context-aware resume and cover letter creation
-- ✅ **Professional Dashboard**: Complete job management interface with real-time updates
-- ✅ **Comprehensive Monitoring**: Full audit trails and performance analytics
-
-**Fully Autonomous Workflow**: The system now operates end-to-end without manual intervention:
-- Automated job discovery from Gmail and LinkedIn (with Indeed ready)
-- Intelligent filtering and deduplication of all discovered opportunities
-- Automatic content generation for approved jobs
-- Complete audit trail and performance monitoring
-- Manual review and approval workflow for final quality control
-
-**Production Ready**: Phase 4 completes the transformation from manual job management to fully automated job discovery and processing platform.
 
 ## Project Structure
 

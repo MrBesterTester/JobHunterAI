@@ -94,6 +94,32 @@ const JobHunterDashboard: React.FC = () => {
   const [isUploadingResume, setIsUploadingResume] = useState<boolean>(false);
   const [resumeUploadError, setResumeUploadError] = useState<string | null>(null);
 
+  // Helper function to detect if content is HTML
+  const isHtmlContent = (text: string): boolean => {
+    return /<\/?[a-z][\s\S]*>/i.test(text);
+  };
+
+  // Helper function to render description (HTML or plain text)
+  const renderDescription = (description: string) => {
+    if (isHtmlContent(description)) {
+      return (
+        <div
+          style={{
+            color: '#374151',
+            lineHeight: '1.6'
+          }}
+          dangerouslySetInnerHTML={{ __html: description }}
+        />
+      );
+    } else {
+      return (
+        <p style={{ color: '#374151', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
+          {description}
+        </p>
+      );
+    }
+  };
+
 
   const fetchJobs = async (): Promise<void> => {
     try {
@@ -549,7 +575,9 @@ const JobHunterDashboard: React.FC = () => {
           {job.description && (
             <div style={{ marginBottom: '24px' }}>
               <h3 style={{ fontWeight: 600, marginBottom: '8px' }}>Description</h3>
-              <p style={{ color: '#374151', whiteSpace: 'pre-wrap' }} data-testid="job-description">{job.description}</p>
+              <div data-testid="job-description">
+                {renderDescription(job.description)}
+              </div>
             </div>
           )}
 

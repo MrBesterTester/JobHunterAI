@@ -1703,6 +1703,19 @@ fn extract_job_from_email(subject: &Option<String>, body: &Option<String>) -> Op
                 }
             }
         }
+
+        // If no pattern matched, use the subject line as title (fallback)
+        if extraction.title.is_none() && !subj.trim().is_empty() {
+            let cleaned_subject = subj.trim();
+            // Truncate if too long
+            let title = if cleaned_subject.len() > 80 {
+                format!("{}...", &cleaned_subject[..77])
+            } else {
+                cleaned_subject.to_string()
+            };
+            extraction.title = Some(title);
+            extraction.confidence += 0.1; // Lower confidence for fallback
+        }
     }
 
     // Extract company name
@@ -1783,8 +1796,28 @@ async fn create_job_from_extraction(
     source: &JobSource,
     pool: &PgPool,
 ) -> std::result::Result<Uuid, sqlx::Error> {
+    // Generate better fallback title from description if available
+    let fallback_title = if let Some(desc) = &extraction.description {
+        // Try to extract first meaningful line from description as title
+        desc.lines()
+            .filter(|line| !line.trim().is_empty())
+            .next()
+            .map(|line| {
+                // Truncate to reasonable title length
+                let trimmed = line.trim();
+                if trimmed.len() > 80 {
+                    format!("{}...", &trimmed[..77])
+                } else {
+                    trimmed.to_string()
+                }
+            })
+            .unwrap_or_else(|| "Job Opportunity".to_string())
+    } else {
+        "Job Opportunity".to_string()
+    };
+
     let job_req = CreateJobRequest {
-        title: extraction.title.clone().unwrap_or_else(|| "Extracted Job".to_string()),
+        title: extraction.title.clone().unwrap_or(fallback_title),
         company: extraction.company.clone().unwrap_or_else(|| "Unknown Company".to_string()),
         location: extraction.location.clone(),
         source: source.source_name.clone(),
