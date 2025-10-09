@@ -858,6 +858,28 @@ const JobHunterDashboard: React.FC = () => {
 
             <div style={{ flex: 1, overflow: 'auto', padding: '20px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', height: '100%' }}>
+                <div data-testid="cover-letter-panel">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <Mail style={{ width: '20px', height: '20px', color: '#10b981' }} />
+                    <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Cover Letter</h3>
+                  </div>
+                  <div
+                    data-testid="cover-letter-content"
+                    style={{
+                      backgroundColor: '#f9fafb',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '4px',
+                      padding: '16px',
+                      fontSize: '14px',
+                      lineHeight: '1.6',
+                      height: '500px',
+                      overflow: 'auto',
+                      whiteSpace: 'pre-wrap'
+                    }}>
+                    {generatedContent.cover_letter}
+                  </div>
+                </div>
+
                 <div data-testid="resume-panel">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                     <FileText style={{ width: '20px', height: '20px', color: '#3b82f6' }} />
@@ -878,28 +900,6 @@ const JobHunterDashboard: React.FC = () => {
                       whiteSpace: 'pre-wrap'
                     }}>
                     {generatedContent.resume}
-                  </div>
-                </div>
-
-                <div data-testid="cover-letter-panel">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                    <Mail style={{ width: '20px', height: '20px', color: '#10b981' }} />
-                    <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Cover Letter</h3>
-                  </div>
-                  <div
-                    data-testid="cover-letter-content"
-                    style={{
-                      backgroundColor: '#f9fafb',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '4px',
-                      padding: '16px',
-                      fontSize: '14px',
-                      lineHeight: '1.6',
-                      height: '500px',
-                      overflow: 'auto',
-                      whiteSpace: 'pre-wrap'
-                    }}>
-                    {generatedContent.cover_letter}
                   </div>
                 </div>
               </div>

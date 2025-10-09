@@ -172,11 +172,10 @@ Based on your requirements:
 
 ## Workflow
 
-1. **Intake** - Jobs collected from email, LinkedIn, Indeed, etc.
-2. **Filter** - Automatic filtering against your criteria
-3. **Review** - Manual approval of filtered jobs
-4. **Apply** - Generate custom resume/cover letter
-5. **Track** - Monitor application status and follow-ups
+1. **Automated Job Intake & Processing** - Jobs collected and automatically filtered from email, LinkedIn, Indeed, etc.
+2. **Job Review & Approval** - Manual approval of jobs in unified Inbox (both auto-approved and auto-filtered)
+3. **Resume & Cover Letter Generation** - Generate custom resume/cover letter for approved jobs
+4. **Application Tracking & Follow-ups** - Monitor application status, schedule interviews, and manage follow-ups
 
 ### Detailed Workflow
 
