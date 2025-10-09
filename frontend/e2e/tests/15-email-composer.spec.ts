@@ -192,8 +192,13 @@ test.describe('Email Composer (Phase 5.2)', () => {
       await createDraftButton.click();
 
       // Check attachment section exists
-      const attachmentSection = page.locator('text=/.*resume.*\\.md/i');
+      const attachmentSection = page.getByTestId('resume-attachment');
       await expect(attachmentSection).toBeVisible();
+
+      // Verify it contains resume filename with company name
+      const attachmentText = await attachmentSection.textContent();
+      expect(attachmentText).toMatch(/resume/i);
+      expect(attachmentText).toContain(company.toLowerCase().replace(/[^a-z0-9]/gi, '_'));
     });
 
     test('should have close button', async ({ page }) => {

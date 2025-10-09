@@ -37,6 +37,8 @@ pub struct Application {
     pub cover_letter_version: Option<String>,
     pub application_status: String,
     pub date_applied: Option<DateTime<Utc>>,
+    pub draft_created_at: Option<DateTime<Utc>>,
+    pub draft_url: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
@@ -454,6 +456,7 @@ pub struct GeneratedContent {
     pub cover_letter: String,
     pub resume_format: String,
     pub generated_at: DateTime<Utc>,
+    pub application_id: Uuid,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -855,6 +858,7 @@ async fn generate_content_for_job(job: &Job, pool: &PgPool) -> Result<GeneratedC
         cover_letter,
         resume_format: master_resume.format,
         generated_at: Utc::now(),
+        application_id: Uuid::nil(), // Will be set by the handler
     })
 }
 
@@ -1294,9 +1298,43 @@ async fn generate_content_handler(
     .await
     .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Job not found: {}", e)))?;
 
+    // Check if application already exists for this job
+    let existing_application = sqlx::query_as::<_, Application>(
+        "SELECT * FROM applications WHERE job_id = $1"
+    )
+    .bind(job_id)
+    .fetch_optional(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    // Create application if it doesn't exist
+    let application_id = if let Some(app) = existing_application {
+        app.application_id
+    } else {
+        // Create new application
+        let new_app_id = Uuid::new_v4();
+        sqlx::query(
+            r#"
+            INSERT INTO applications (application_id, job_id, resume_version,
+                                     cover_letter_version, application_status, date_applied)
+            VALUES ($1, $2, NULL, NULL, 'pending', NOW())
+            "#
+        )
+        .bind(new_app_id)
+        .bind(job_id)
+        .execute(pool.get_ref())
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to create application: {}", e)))?;
+
+        new_app_id
+    };
+
     // Generate content
     match generate_content_for_job(&job, pool.get_ref()).await {
-        Ok(content) => Ok(HttpResponse::Ok().json(content)),
+        Ok(mut content) => {
+            content.application_id = application_id;
+            Ok(HttpResponse::Ok().json(content))
+        },
         Err(e) => Ok(HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Failed to generate content: {}", e)
         })))
@@ -1326,9 +1364,43 @@ async fn generate_content_with_options_handler(
     .await
     .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Job not found: {}", e)))?;
 
+    // Check if application already exists for this job
+    let existing_application = sqlx::query_as::<_, Application>(
+        "SELECT * FROM applications WHERE job_id = $1"
+    )
+    .bind(job_id)
+    .fetch_optional(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    // Create application if it doesn't exist
+    let application_id = if let Some(app) = existing_application {
+        app.application_id
+    } else {
+        // Create new application
+        let new_app_id = Uuid::new_v4();
+        sqlx::query(
+            r#"
+            INSERT INTO applications (application_id, job_id, resume_version,
+                                     cover_letter_version, application_status, date_applied)
+            VALUES ($1, $2, NULL, NULL, 'pending', NOW())
+            "#
+        )
+        .bind(new_app_id)
+        .bind(job_id)
+        .execute(pool.get_ref())
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to create application: {}", e)))?;
+
+        new_app_id
+    };
+
     // For now, use the basic generation (could extend to use custom templates)
     match generate_content_for_job(&job, pool.get_ref()).await {
-        Ok(content) => Ok(HttpResponse::Ok().json(content)),
+        Ok(mut content) => {
+            content.application_id = application_id;
+            Ok(HttpResponse::Ok().json(content))
+        },
         Err(e) => Ok(HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Failed to generate content: {}", e)
         })))

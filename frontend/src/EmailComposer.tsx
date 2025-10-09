@@ -206,15 +206,18 @@ const EmailComposer: React.FC<EmailComposerProps> = ({
               </div>
 
               {/* Attachment Indicator */}
-              <div style={{
-                marginBottom: '20px',
-                padding: '12px',
-                backgroundColor: '#f3f4f6',
-                borderRadius: '4px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
+              <div
+                data-testid="resume-attachment"
+                style={{
+                  marginBottom: '20px',
+                  padding: '12px',
+                  backgroundColor: '#f3f4f6',
+                  borderRadius: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
                 <FileText style={{ width: '20px', height: '20px', color: '#6b7280' }} />
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: '14px', fontWeight: '500', margin: 0, color: '#374151' }}>
