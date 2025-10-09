@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, CheckCircle, XCircle, Clock, Briefcase, DollarSign, MapPin, Filter, FileText, Mail, Calendar as CalendarIcon, Download, Send } from 'lucide-react';
+import { AlertCircle, CheckCircle, XCircle, Clock, Briefcase, DollarSign, MapPin, Filter, FileText, Mail, Calendar as CalendarIcon, Download, Send, ExternalLink } from 'lucide-react';
 import ResumeManagement from './ResumeManagement';
 import CalendarTab from './CalendarTab';
 import FollowupsTab from './FollowupsTab';
@@ -48,6 +48,15 @@ interface Application {
   cover_letter_version?: string;
   application_status: string;
   date_applied?: string;
+  draft_created_at?: string;
+  draft_url?: string;
+}
+
+interface DraftStatus {
+  status: string;
+  draft_id?: string;
+  gmail_draft_id?: string;
+  sent_at?: string;
 }
 
 interface GeneratedContent {
@@ -293,6 +302,10 @@ const JobHunterDashboard: React.FC = () => {
     setShowEmailComposer(true);
   };
 
+  const getApplicationForJob = (jobId: string): Application | undefined => {
+    return applications.find(app => app.job_id === jobId);
+  };
+
   const getStatusIcon = (status: string): JSX.Element => {
     switch (status) {
       case 'new': return <AlertCircle className="w-5 h-5 text-blue-500" />;
@@ -442,6 +455,64 @@ const JobHunterDashboard: React.FC = () => {
           </ul>
         </div>
       )}
+
+      {(() => {
+        const application = getApplicationForJob(job.job_id);
+        if (application?.draft_url) {
+          return (
+            <div
+              data-testid="draft-status"
+              style={{
+                marginTop: '8px',
+                padding: '8px',
+                backgroundColor: '#ecfdf5',
+                borderRadius: '4px',
+                borderLeft: '4px solid #10b981',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Mail style={{ width: '16px', height: '16px', color: '#10b981' }} />
+                <div>
+                  <div style={{ fontSize: '12px', fontWeight: '500', color: '#065f46' }}>
+                    Gmail Draft Created
+                  </div>
+                  {application.draft_created_at && (
+                    <div style={{ fontSize: '11px', color: '#059669' }}>
+                      {new Date(application.draft_created_at).toLocaleString()}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <a
+                href={application.draft_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                data-testid="open-draft-link"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '4px 8px',
+                  backgroundColor: '#10b981',
+                  color: 'white',
+                  borderRadius: '4px',
+                  textDecoration: 'none',
+                  fontSize: '12px',
+                  fontWeight: '500'
+                }}
+              >
+                Open in Gmail
+                <ExternalLink style={{ width: '12px', height: '12px' }} />
+              </a>
+            </div>
+          );
+        }
+        return null;
+      })()}
 
       {(job.status === 'new' || job.status === 'filtered') && (
         <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>

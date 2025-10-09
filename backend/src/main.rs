@@ -3407,4 +3407,215 @@ mod tests {
         assert_eq!(list.messages.unwrap().len(), 2);
         assert_eq!(list.next_page_token, Some("abc123".to_string()));
     }
+
+    // ============================================================================
+    // Phase 5.2: Email Draft Tests
+    // ============================================================================
+
+    #[test]
+    fn test_build_mime_message_structure() {
+        // Test that build_mime_message creates a valid MIME multipart/mixed message
+        let from_email = "test@example.com";
+        let to_email = "recipient@company.com";
+        let subject = "Test Subject";
+        let body = "This is the email body";
+        let resume_content = "# Resume\n\n## Experience\n- Test role";
+        let resume_filename = "resume.md";
+
+        let mime_message = build_mime_message(
+            from_email,
+            to_email,
+            subject,
+            body,
+            resume_content,
+            resume_filename,
+        );
+
+        // Verify headers are present
+        assert!(mime_message.contains(&format!("From: {}", from_email)));
+        assert!(mime_message.contains(&format!("To: {}", to_email)));
+        assert!(mime_message.contains(&format!("Subject: {}", subject)));
+        assert!(mime_message.contains("Content-Type: multipart/mixed"));
+
+        // Verify body part
+        assert!(mime_message.contains("Content-Type: text/plain; charset=\"UTF-8\""));
+        assert!(mime_message.contains(body));
+
+        // Verify attachment part
+        assert!(mime_message.contains("Content-Type: application/octet-stream"));
+        assert!(mime_message.contains(&format!("name=\"{}\"", resume_filename)));
+        assert!(mime_message.contains("Content-Transfer-Encoding: base64"));
+        assert!(mime_message.contains(&format!("filename=\"{}\"", resume_filename)));
+
+        // Verify base64 encoding of resume is present
+        let encoded_resume = base64::engine::general_purpose::STANDARD.encode(resume_content);
+        assert!(mime_message.contains(&encoded_resume));
+    }
+
+    #[test]
+    fn test_mime_message_has_unique_boundary() {
+        // Test that each MIME message gets a unique boundary
+        let from_email = "test@example.com";
+        let to_email = "recipient@company.com";
+        let subject = "Test";
+        let body = "Body";
+        let resume = "Resume";
+        let filename = "resume.md";
+
+        let message1 = build_mime_message(from_email, to_email, subject, body, resume, filename);
+        let message2 = build_mime_message(from_email, to_email, subject, body, resume, filename);
+
+        // Extract boundaries from both messages (note: boundary is in quotes)
+        let boundary_pattern = regex::Regex::new(r#"boundary="(boundary_[a-f0-9]+)""#).unwrap();
+
+        let boundary1 = boundary_pattern.captures(&message1)
+            .and_then(|caps| caps.get(1))
+            .map(|m| m.as_str());
+
+        let boundary2 = boundary_pattern.captures(&message2)
+            .and_then(|caps| caps.get(1))
+            .map(|m| m.as_str());
+
+        // Boundaries should exist and be different (UUID-based)
+        assert!(boundary1.is_some());
+        assert!(boundary2.is_some());
+        assert_ne!(boundary1, boundary2, "Each MIME message should have a unique boundary");
+    }
+
+    #[test]
+    fn test_base64_url_safe_encoding() {
+        // Test that MIME message can be encoded as URL-safe base64 for Gmail API
+        let from_email = "test@example.com";
+        let to_email = "recipient@company.com";
+        let subject = "Test Subject";
+        let body = "Email body";
+        let resume = "Resume content";
+        let filename = "resume.md";
+
+        let mime_message = build_mime_message(from_email, to_email, subject, body, resume, filename);
+
+        // Encode as URL-safe base64 (as required by Gmail API)
+        let encoded = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(&mime_message);
+
+        // Verify no padding characters
+        assert!(!encoded.contains('='));
+
+        // Verify URL-safe characters only (no + or /)
+        assert!(!encoded.contains('+'));
+        assert!(!encoded.contains('/'));
+
+        // Verify it can be decoded back
+        let decoded = base64::engine::general_purpose::URL_SAFE_NO_PAD.decode(&encoded);
+        assert!(decoded.is_ok());
+        assert_eq!(decoded.unwrap(), mime_message.as_bytes());
+    }
+
+    #[test]
+    fn test_gmail_draft_request_serialization() {
+        // Test that GmailDraftRequest serializes to correct JSON format
+        let raw_message = "dGVzdCBtZXNzYWdl"; // "test message" in base64
+
+        let draft_request = GmailDraftRequest {
+            message: GmailDraftMessage {
+                raw: raw_message.to_string(),
+            },
+        };
+
+        let json = serde_json::to_string(&draft_request).unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
+
+        // Verify structure matches Gmail API requirements
+        assert!(parsed.get("message").is_some());
+        assert_eq!(parsed["message"]["raw"], raw_message);
+    }
+
+    #[test]
+    fn test_gmail_draft_response_deserialization() {
+        // Test that Gmail draft creation response deserializes correctly
+        let gmail_response = r#"{
+            "id": "r-1234567890",
+            "message": {
+                "id": "18c5a9b2f3d4e5f6",
+                "threadId": "18c5a9b2f3d4e5f6",
+                "labelIds": ["DRAFT"]
+            }
+        }"#;
+
+        let result: Result<GmailDraftResponse, _> = serde_json::from_str(gmail_response);
+
+        assert!(result.is_ok(), "Failed to deserialize Gmail draft response: {:?}", result.err());
+
+        let response = result.unwrap();
+        assert_eq!(response.id, "r-1234567890");
+        assert_eq!(response.message.id, "18c5a9b2f3d4e5f6");
+        assert_eq!(response.message.thread_id, "18c5a9b2f3d4e5f6");
+    }
+
+    #[test]
+    fn test_mime_message_with_special_characters() {
+        // Test MIME message construction with special characters
+        let from_email = "test@example.com";
+        let to_email = "recipient@company.com";
+        let subject = "Application for \"Senior Engineer\" - Test & Review";
+        let body = "Hello,\n\nI'm interested in the position.\n\nBest regards,\nJohn";
+        let resume = "# Résumé\n\n## Skills\n- C++ & Python";
+        let filename = "resume_2025.md";
+
+        let mime_message = build_mime_message(from_email, to_email, subject, body, resume, filename);
+
+        // Verify all content is present
+        assert!(mime_message.contains(&subject));
+        assert!(mime_message.contains(body));
+
+        // Verify special characters in resume are base64 encoded
+        let encoded_resume = base64::engine::general_purpose::STANDARD.encode(resume);
+        assert!(mime_message.contains(&encoded_resume));
+    }
+
+    #[test]
+    fn test_mime_message_with_large_resume() {
+        // Test MIME message with a large resume (10KB+)
+        let from_email = "test@example.com";
+        let to_email = "recipient@company.com";
+        let subject = "Application";
+        let body = "Please find my resume attached.";
+
+        // Create a large resume (10KB)
+        let large_resume = "# Resume\n\n".to_string() + &"Experience details. ".repeat(500);
+        let filename = "resume.md";
+
+        let mime_message = build_mime_message(from_email, to_email, subject, body, &large_resume, filename);
+
+        // Verify structure is still valid
+        assert!(mime_message.contains("Content-Type: multipart/mixed"));
+        assert!(mime_message.contains("Content-Transfer-Encoding: base64"));
+
+        // Verify large resume is encoded
+        let encoded_resume = base64::engine::general_purpose::STANDARD.encode(&large_resume);
+        assert!(mime_message.contains(&encoded_resume));
+
+        // Verify total message size is reasonable (less than 50KB after base64 encoding)
+        assert!(mime_message.len() < 50000);
+    }
+
+    #[test]
+    fn test_draft_status_response_deserialization() {
+        // Test DraftStatusResponse deserialization
+        let status_json = r#"{
+            "status": "created",
+            "draft_id": "123e4567-e89b-12d3-a456-426614174000",
+            "created_at": "2025-10-09T10:30:00Z",
+            "sent_at": null,
+            "gmail_url": "https://mail.google.com/mail/u/0/#drafts/r-1234567890"
+        }"#;
+
+        let result: Result<DraftStatusResponse, _> = serde_json::from_str(status_json);
+        assert!(result.is_ok());
+
+        let response = result.unwrap();
+        assert_eq!(response.status, "created");
+        assert_eq!(response.created_at, "2025-10-09T10:30:00Z");
+        assert_eq!(response.gmail_url, Some("https://mail.google.com/mail/u/0/#drafts/r-1234567890".to_string()));
+        assert_eq!(response.sent_at, None);
+    }
 }
