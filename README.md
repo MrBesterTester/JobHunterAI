@@ -72,8 +72,9 @@ JobHunter is a comprehensive job application management system that automates an
   - [Phase 3 - Content Generation](#phase-3---content-generation--complete)
   - [Phase 4 - Automated Job Intake](#phase-4---automated-job-intake--complete)
   - [Phase 5.1 - Calendar Integration & Follow-ups](#phase-51---calendar-integration--follow-ups--complete)
+  - [Phase 5.2 - Email Composition & Sending](#phase-52---email-composition--sending--in-progress)
   - [What NOT to Build](#what-not-to-build-for-now)
-  - [Phase 5.2+ - Future Considerations](#phase-52---future-considerations-not-currently-planned)
+  - [Phase 5.3+ - Future Considerations](#phase-53---future-considerations-not-currently-planned)
 - [Project Structure](#project-structure)
 - [Technical Achievements](#technical-achievements)
   - [System Performance](#system-performance)
@@ -1170,6 +1171,51 @@ See [`DATABASE_SETUP.md`](DATABASE_SETUP.md) for detailed database setup instruc
 
 ---
 
+### Phase 5.2 - Email Composition & Sending 🔄 **IN PROGRESS**
+**Started**: October 9, 2025
+**Status**: Planning → Implementation
+**Priority**: CRITICAL (completes core PRD workflow)
+
+**Goal**: Complete the final missing piece from PRD Section 4.4 - enable automatic Gmail draft creation for job applications.
+
+#### What This Adds
+- **Gmail Draft Creation**: Automatically create email drafts with cover letter as body and resume as attachment
+- **Draft-based Workflow**: Review and edit drafts in Gmail before sending
+- **Status Monitoring**: Track when drafts are created and sent
+- **Communication Recording**: Auto-record sent emails in Communications table
+- **End-to-End Workflow**: Complete automation from job discovery to application sending
+
+#### Implementation Plan
+- **Backend** (Day 1):
+  - Gmail API draft creation via `POST /gmail/v1/users/me/drafts`
+  - MIME message construction with cover letter body + resume attachment
+  - Database: `email_drafts` table for tracking
+  - API endpoints: `POST /api/applications/{id}/create-draft`, `GET /api/applications/{id}/draft-status`
+
+- **Frontend** (Day 2):
+  - EmailComposer component with draft preview
+  - "Create Gmail Draft" button on approved jobs
+  - Draft status indicators in application tracker
+  - Link to open draft in Gmail
+
+- **Testing** (Day 3):
+  - 8+ backend tests (MIME construction, API calls, status monitoring)
+  - 10+ E2E tests (UI workflow, error handling, integration)
+  - Manual testing with real Gmail account
+
+#### Success Criteria
+- ✅ Can create Gmail draft from approved job with one click
+- ✅ Cover letter appears as email body
+- ✅ Resume attached in correct format
+- ✅ Draft opens in Gmail for review/editing
+- ✅ Sending draft updates application status to "sent"
+- ✅ Email recorded in Communications table
+- ✅ **100% of PRD core requirements complete**
+
+**See [PHASE_5.2_IMPLEMENTATION.md](docs/PHASE_5.2_IMPLEMENTATION.md) for detailed roadmap and technical specifications.**
+
+---
+
 ### What NOT to Build (For Now)
 
 #### ❌ Apple Mail Integration
@@ -1225,7 +1271,7 @@ See [`DATABASE_SETUP.md`](DATABASE_SETUP.md) for detailed database setup instruc
 
 ---
 
-### Phase 5.2+ - Future Considerations (Not Currently Planned)
+### Phase 5.3+ - Future Considerations (Not Currently Planned)
 - **LLM-based Job Extraction & Analysis**: Replace or augment the current deterministic regex-based job extraction with a large language model for improved accuracy. Benefits would include:
   - More intelligent job title extraction from email subjects and body content
   - Better company name identification
