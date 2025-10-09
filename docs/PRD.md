@@ -1,7 +1,31 @@
-# Product Requirements Document (PRD)  
-**Project Name:** JobHunter  
-**Prepared by:** Sam Kirk  
-**Date:** 2025-09-11  
+# Product Requirements Document (PRD)
+**Project Name:** JobHunter
+**Prepared by:** Sam Kirk
+**Date:** 2025-09-11
+
+---
+
+## Table of Contents
+
+1. [Overview](#1-overview)
+2. [Goals & Objectives](#2-goals--objectives)
+3. [Job Criteria](#3-job-criteria)
+4. [Workflow](#4-workflow)
+   - [4.1 Intake Sources](#41-intake-sources)
+   - [4.2 Processing Pipeline](#42-processing-pipeline)
+   - [4.3 Resume & Cover Letter Generation](#43-resume--cover-letter-generation)
+   - [4.4 Email Composition & Sending](#44-email-composition--sending)
+   - [4.5 Application & Tracking](#45-application--tracking)
+5. [Database Schema](#5-database-schema)
+6. [User Interface](#6-user-interface)
+   - [6.1 Dashboard (Frontend: TypeScript)](#61-dashboard-frontend-typescript)
+7. [Technical Implementation](#7-technical-implementation)
+   - [7.1 Frontend](#71-frontend)
+   - [7.2 Backend](#72-backend)
+   - [7.3 Database](#73-database)
+8. [Success Metrics](#8-success-metrics)
+9. [Risks & Mitigations](#9-risks--mitigations)
+10. [Next Steps](#10-next-steps)
 
 ---
 
@@ -18,11 +42,12 @@ The implementation stack is:
 
 ## 2. Goals & Objectives
 
-- Streamline the job search process by automating repetitive tasks.  
-- Ensure only relevant, high-paying job offers are considered.  
-- Prevent duplicate processing of the same job.  
-- Generate tailored resumes and cover letters for each approved application.  
-- Maintain a complete record of job offers, applications, and communication history.  
+- Streamline the job search process by automating repetitive tasks.
+- Ensure only relevant, high-paying job offers are considered.
+- Prevent duplicate processing of the same job.
+- Generate tailored resumes and cover letters for each approved application.
+- Send application emails using cover letter as email body with resume attached.
+- Maintain a complete record of job offers, applications, and communication history.
 - Provide a dashboard for monitoring progress and managing applications.  
 
 ---
@@ -66,39 +91,62 @@ The implementation stack is:
   - Includes metadata to trace back to original job source.  
 - Export in **same format/media as job posting** (email, portal, etc.).  
 
-### 4.4 Application & Tracking
-- Track application status: Sent, Pending, Follow-up, Closed.  
-- Store all communication history in database.  
+### 4.4 Email Composition & Sending
+- **Email body is the cover letter**: The generated cover letter serves as the email content.
+- **Resume is attached**: Attach the customized resume in whatever format was generated.
+- **Draft-based workflow for user approval**:
+  - Create email as a draft in Gmail.
+  - User reviews and edits the draft in Gmail before sending.
+  - User manually sends the email from Gmail after approval.
+- **Gmail Integration**:
+  - Use Gmail API to create drafts with cover letter as body and resume attachment.
+  - Track when draft is created and monitor for sent status.
+- **After sending**:
+  - Record sent email in Communications table with full content and metadata.
+  - Update application status to "sent" upon successful delivery.
+- Support different delivery methods based on application requirements (direct email, portal upload, etc.).
+
+### 4.5 Application & Tracking
+- Track application status: Sent, Pending, Follow-up, Closed.
+- Store all communication history in database.
 - Enable reminders for follow-ups.  
 
 ---
 
-## 5. Database Schema (Draft)
+## 5. Database Schema
 
-**Table: Jobs**  
-- `job_id` (PK)  
-- `title`  
-- `company`  
-- `location`  
-- `source` (email/site/text/manual)  
-- `salary`  
-- `commute_time`  
-- `status` (new, filtered, approved, rejected, applied, closed)  
-- `date_collected`  
+The database consists of three main tables within a single PostgreSQL database:
 
-**Table: Applications**  
-- `application_id` (PK)  
-- `job_id` (FK)  
-- `resume_version`  
-- `cover_letter_version`  
-- `application_status` (sent, pending, follow-up, closed)  
-- `date_applied`  
+**Table: Jobs**
+*Stores job postings collected from various sources.*
 
-**Table: Communications**  
-- `communication_id` (PK)  
-- `application_id` (FK)  
-- `message_content`  
-- `message_date`  
+- `job_id` (PK)
+- `title`
+- `company`
+- `location`
+- `source` (email/site/text/manual)
+- `salary`
+- `commute_time`
+- `status` (new, filtered, approved, rejected, applied, closed)
+- `date_collected`
+
+**Table: Applications**
+*Stores your applications to specific jobs, including the customized resume and cover letter versions used.*
+
+- `application_id` (PK)
+- `job_id` (FK)
+- `resume_version`
+- `cover_letter_version`
+- `application_status` (sent, pending, follow-up, closed)
+- `date_applied`
+
+**Table: Communications**
+*Tracks all communication history related to applications (sent emails, received responses, phone calls, etc.). Provides a complete audit trail of all interactions for each job application.*
+
+- `communication_id` (PK)
+- `application_id` (FK)
+- `message_content`
+- `message_date`
 - `channel` (email, text, portal, phone)  
 
 ---
@@ -106,10 +154,15 @@ The implementation stack is:
 ## 6. User Interface
 
 ### 6.1 Dashboard (Frontend: TypeScript)
-- **Inbox Panel:** List of new jobs (from all sources).  
-- **Filter Panel:** Show why jobs were rejected or approved.  
-- **Approval Panel:** User reviews and approves/rejects jobs.  
-- **Application Tracker:** Displays status of each job application.  
+- **Inbox Panel:** List of new jobs (from all sources).
+- **Filter Panel:** Show why jobs were rejected or approved.
+- **Approval Panel:** User reviews and approves/rejects jobs.
+- **Email Composer:** Interface to prepare application emails with:
+  - Preview of cover letter as email body with resume attachment.
+  - "Create Gmail Draft" button to generate draft for user review.
+  - Link to open Gmail draft for editing and sending.
+  - Copy functionality as backup option.
+- **Application Tracker:** Displays status of each job application.
 - **Follow-up Alerts:** Notifications for pending follow-ups.  
 
 ---
@@ -125,11 +178,12 @@ The implementation stack is:
   - Application tracker with filters.  
 
 ### 7.2 Backend
-- **Language:** Rust  
-- **Features:**  
-  - Intake API to pull from email, text, job boards, manual input.  
-  - Filtering and deduplication engine.  
-  - Resume/cover letter generator (templating + LLM integration optional).  
+- **Language:** Rust
+- **Features:**
+  - Intake API to pull from email, text, job boards, manual input.
+  - Filtering and deduplication engine.
+  - Resume/cover letter generator (templating + LLM integration optional).
+  - Gmail API integration to create email drafts (cover letter as body, resume as attachment).
   - Database interface.  
 
 ### 7.3 Database
