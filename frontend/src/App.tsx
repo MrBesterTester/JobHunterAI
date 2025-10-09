@@ -393,7 +393,7 @@ const JobHunterDashboard: React.FC = () => {
         </div>
       )}
 
-      {job.status === 'new' && (
+      {(job.status === 'new' || job.status === 'filtered') && (
         <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
           <button
             onClick={(e) => { e.stopPropagation(); updateJobStatus(job.job_id, 'approved'); }}
@@ -582,7 +582,7 @@ const JobHunterDashboard: React.FC = () => {
           )}
 
           <div style={{ display: 'flex', gap: '8px' }}>
-            {job.status === 'new' && (
+            {(job.status === 'new' || job.status === 'filtered') && (
               <>
                 <button
                   onClick={() => { updateJobStatus(job.job_id, 'approved'); onClose(); }}
@@ -758,7 +758,7 @@ const JobHunterDashboard: React.FC = () => {
               {tab === 'intake' && <Download style={{ width: '16px', height: '16px' }} />}
               {tab === 'calendar' && <CalendarIcon style={{ width: '16px', height: '16px' }} />}
               {tab === 'follow-ups' && <Mail style={{ width: '16px', height: '16px' }} />}
-              {tab === 'inbox' ? 'New Jobs' : tab}
+              {tab === 'inbox' ? 'Inbox' : tab}
             </button>
           ))}
         </nav>
@@ -772,7 +772,7 @@ const JobHunterDashboard: React.FC = () => {
         ) : (
           <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))', gap: '16px', width: '100%' }}>
-              {(activeTab === 'inbox' ? filterJobs('new') :
+              {(activeTab === 'inbox' ? jobs.filter(j => j.status === 'new' || j.status === 'filtered') :
                 activeTab === 'approved' ? filterJobs('approved') :
                 activeTab === 'applied' ? filterJobs('applied') :
                 activeTab === 'filtered' ? filterJobs('filtered') :
@@ -782,7 +782,7 @@ const JobHunterDashboard: React.FC = () => {
               ))}
             </div>
 
-            {(activeTab === 'inbox' ? filterJobs('new') :
+            {(activeTab === 'inbox' ? jobs.filter(j => j.status === 'new' || j.status === 'filtered') :
               activeTab === 'approved' ? filterJobs('approved') :
               activeTab === 'applied' ? filterJobs('applied') :
               activeTab === 'filtered' ? filterJobs('filtered') :

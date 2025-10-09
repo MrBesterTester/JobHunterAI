@@ -30,7 +30,7 @@ JobHunter is a comprehensive job application management system that automates an
   - [Dashboard Overview](#dashboard-overview)
   - [Navigation Tabs](#navigation-tabs)
     - [Intake Tab](#intake-tab-new)
-    - [New Jobs Tab](#new-jobs-tab-inbox)
+    - [Inbox Tab](#inbox-tab)
     - [Approved Tab](#approved-tab)
     - [Applied Tab](#applied-tab)
     - [Filtered Tab](#filtered-tab)
@@ -206,17 +206,20 @@ Gmail/LinkedIn/API Sources → Intelligent Extraction → Automatic Filtering �
 #### 2. Job Review & Approval
 
 **Features:**
-- **Dashboard Interface**: View jobs organized by status in tabbed interface
-- **Filter Transparency**: See exactly why jobs were filtered with detailed reasons
-- **Manual Approval**: Review `new` jobs and approve/reject with one-click
+- **Unified Inbox**: Single "Inbox" tab shows both auto-approved (`new`) and auto-filtered jobs
+- **Filter Transparency**: See exactly why jobs were filtered with detailed red warning badges
+- **Override Capability**: Approve/reject any job regardless of auto-filter results
 - **Real-time Statistics**: Track filtering effectiveness and job pipeline
+- **One-Click Actions**: Green "Approve" and red "Reject" buttons on all inbox jobs
 
 **How to Use:**
-- Go to the **New Jobs** tab to see jobs that passed filtering
+- Go to the **Inbox** tab to see all jobs requiring review (both `new` and `filtered`)
+- Jobs that passed filtering show normally
+- Jobs that failed filtering display red "Filtered Reasons" badges explaining why
 - Click any job card to see full details
-- Click **Approve** to move it to the application queue
+- Click **Approve** to move it to the application queue (works for both new and filtered jobs)
 - Click **Reject** if not interested
-- Check the **Filtered** tab to review auto-rejected jobs
+- Optional: Check the **Filtered** tab to review only auto-filtered jobs separately
 
 #### 3. Resume & Cover Letter Generation
 
@@ -370,23 +373,29 @@ The dashboard displays real-time statistics across the top:
 #    b. View results in Activity Log and Statistics
 ```
 
-#### 📋 New Jobs Tab (Inbox)
+#### 📋 Inbox Tab
 
-**Purpose**: Review newly discovered jobs that passed automatic filtering.
+**Purpose**: Review all incoming jobs in one place - both auto-approved and auto-filtered.
 
 **Features**:
+- **Unified View**: Shows both `new` (passed filters) and `filtered` (failed filters) jobs together
 - Job cards with title, company, location, salary
 - Visual badges: Salary (green if ≥$130K), Location (blue for remote), Commute time
-- **Approve** button: Move to "Approved" status for application
-- **Reject** button: Mark as not interested
+- **Filter Reason Badges**: Red warning badges on filtered jobs showing specific reasons
+  - Example: "Salary $85K below minimum $130,000; Non-remote position with unknown commute time"
+- **Override Capability**: Approve or reject ANY job, regardless of auto-filter results
+- **Approve** button (green): Move to "Approved" status for application
+- **Reject** button (red): Mark as not interested
 - Click any card for detailed view with full description
+
+**Workflow**: This is your primary action queue - all new jobs land here for manual review and decision.
 
 #### ✅ Approved Tab
 
 **Purpose**: Jobs you've approved and are ready to apply to.
 
 **Features**:
-- All features from New Jobs tab
+- Job cards with title, company, location, salary information
 - **Generate Resume & Cover Letter** button: Creates customized application materials
 - Click to view generated content in modal with side-by-side display
 
@@ -402,13 +411,15 @@ The dashboard displays real-time statistics across the top:
 
 #### 🔍 Filtered Tab
 
-**Purpose**: Review jobs that were automatically filtered out by your criteria.
+**Purpose**: Historical view of jobs that were automatically filtered out. Optional - most users work primarily from the Inbox tab.
 
 **Features**:
 - **Filter Reasons**: Red banner showing why each job was filtered
   - Examples: "Salary below minimum ($130,000)", "Commute time exceeds 45 minutes"
-- Can manually approve filtered jobs if criteria was too strict
-- Helps refine your filtering criteria over time
+- Same approve/reject buttons as Inbox (can override filter decisions)
+- Useful for analyzing filter effectiveness and refining criteria over time
+
+**Note**: Since filtered jobs also appear in the Inbox tab with approve buttons, this tab is primarily for historical review and filter tuning.
 
 #### 📊 All Tab
 
