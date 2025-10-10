@@ -281,7 +281,7 @@ tap.test('JobCard Component Tests', async (t) => {
 - **Parallel execution**: 4 workers for faster test runs
 - **Base URL**: http://localhost:3000 (configurable)
 
-#### **E2E Test Files Created (15 test suites)**
+#### **E2E Test Files Created (16 test suites)**
 - **`01-setup-load.spec.ts`** - Initial page load and basic functionality (10 tests)
 - **`02-tab-navigation.spec.ts`** - Tab switching and filtering (20 tests)
 - **`03-job-status-updates.spec.ts`** - Status change operations (15 tests)
@@ -296,9 +296,10 @@ tap.test('JobCard Component Tests', async (t) => {
 - **`12-calendar-management.spec.ts`** - Calendar events and deadlines (16 tests)
 - **`13-follow-ups-management.spec.ts`** - Follow-up tracking (14 tests)
 - **`14-timeline-view.spec.ts`** - Timeline visualization (10 tests)
-- **`15-intake-tab.spec.ts`** - **NEW!** Job intake UI testing (27 tests)
+- **`15-intake-tab.spec.ts`** - Job intake UI testing (27 tests)
+- **`15-email-composer.spec.ts`** - **NEW!** Email composition and Gmail draft creation (16 tests) ✨
 
-**Total: 221+ end-to-end tests** covering the complete user workflow
+**Total: 237+ end-to-end tests** covering the complete user workflow
 
 #### **Intake Tab Test Coverage** (NEW - October 6, 2025)
 
@@ -355,6 +356,56 @@ The newly added `15-intake-tab.spec.ts` provides comprehensive testing for the I
 
 12. **Error Handling** (1 test)
     - Graceful API error handling
+
+#### **Email Composer Test Coverage** (NEW - October 9, 2025)
+
+The newly added `15-email-composer.spec.ts` provides comprehensive testing for Phase 5.2 Email Composition & Sending:
+
+**Test Suites**:
+1. **Create Email Draft Button** (2 tests)
+   - Button visibility after content generation
+   - Send icon display on button
+
+2. **Email Composer Modal** (7 tests)
+   - Modal opening when Create Draft button clicked
+   - Recipient email field display and editability
+   - Subject line field with job title pre-filled
+   - Cover letter preview from generated content
+   - Resume attachment indicator with file size
+   - Close button functionality
+   - Modal closing on button click
+
+3. **Draft Creation Workflow** (3 tests)
+   - Recipient email requirement validation
+   - Recipient email editing capability
+   - Subject line editing capability
+
+4. **Error Handling** (2 tests)
+   - Error message display on API failure
+   - Validation handling for invalid email addresses
+
+5. **Draft Status Display** (2 tests)
+   - Draft status badge on job card after creation
+   - Gmail link generation and display
+
+**Key Features Tested**:
+- **Gmail Integration**: Draft creation via Gmail API
+- **Application Record Creation**: Automatic application record generation during content generation
+- **UI/UX Flow**: Complete email composition workflow from button click to Gmail redirect
+- **Error Recovery**: Graceful handling of API failures and validation errors
+- **Status Tracking**: Visual indicators for draft creation status
+
+**Running Email Composer Tests**:
+```bash
+# Run Email Composer tests specifically
+npx playwright test e2e/tests/15-email-composer.spec.ts
+
+# Run with visible browser
+npx playwright test e2e/tests/15-email-composer.spec.ts --headed
+
+# Run specific test by name
+npx playwright test -g "should open email composer modal"
+```
 
 #### **Example E2E Test**
 ```typescript
@@ -875,15 +926,17 @@ Failed: 0/4
 
 ### **Test Suite Summary**
 
-**Total Test Count** (as of October 8, 2025):
-- **Backend**: ~53 tests (Rust integration tests)
-  - Including **3 new Gmail API integration tests** ✨
+**Total Test Count** (as of October 9, 2025):
+- **Backend**: ~61 tests (Rust integration tests)
+  - Including **3 Gmail API integration tests**
+  - Including **8 Gmail draft/MIME encoding tests** ✨
 - **Frontend Unit**: ~30 tests (TAP/TypeScript)
-- **Frontend E2E**: **221 tests** (Playwright)
+- **Frontend E2E**: **237 tests** (Playwright)
   - Including **27 Intake tab tests**
+  - Including **16 Email Composer tests** ✨
 - **Database**: ~45 tests (pgTAP)
 
-**Grand Total: ~349 automated tests** covering the complete JobHunter platform
+**Grand Total: ~373 automated tests** covering the complete JobHunter platform
 
 ### **CI/CD Integration**
 

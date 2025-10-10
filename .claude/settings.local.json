@@ -60,7 +60,15 @@
       "Bash(bash:*)",
       "Bash(./switch-to-personal.sh:*)",
       "Bash(./start.sh:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Read(//private/var/folders/zz/**)",
+      "Bash(cargo clean:*)",
+      "Bash(TMPDIR=$HOME/tmp mkdir -p $HOME/tmp)",
+      "Bash(wait)",
+      "Bash(TMPDIR=$HOME/tmp cargo build)",
+      "Bash(TMPDIR=$HOME/tmp cargo test test_gmail_message_deserialization -- --nocapture)",
+      "Bash(TMPDIR=$HOME/tmp cargo test test_gmail -- --nocapture)",
+      "Bash(TMPDIR=$HOME/tmp cargo test test_source_identification_architecture -- --nocapture)"
     ],
     "deny": [],
     "ask": [
