@@ -826,6 +826,10 @@ const JobHunterDashboard: React.FC = () => {
       <div style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb', width: '100%' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '16px', boxSizing: 'border-box' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '8px', width: '100%' }}>
+            <div style={{ textAlign: 'center' }} data-testid="stat-filtered">
+              <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#f97316' }}>{stats.filtered || 0}</p>
+              <p style={{ fontSize: '14px', color: '#6b7280' }}>Filtered</p>
+            </div>
             <div style={{ textAlign: 'center' }} data-testid="stat-new">
               <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#3b82f6' }}>{stats.new || 0}</p>
               <p style={{ fontSize: '14px', color: '#6b7280' }}>New Jobs</p>
@@ -842,10 +846,6 @@ const JobHunterDashboard: React.FC = () => {
               <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#ef4444' }}>{stats.rejected || 0}</p>
               <p style={{ fontSize: '14px', color: '#6b7280' }}>Rejected</p>
             </div>
-            <div style={{ textAlign: 'center' }} data-testid="stat-filtered">
-              <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#f97316' }}>{stats.filtered || 0}</p>
-              <p style={{ fontSize: '14px', color: '#6b7280' }}>Filtered</p>
-            </div>
             <div style={{ textAlign: 'center' }}>
               <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#6b7280' }}>{Object.values(stats).reduce((a, b) => a + b, 0)}</p>
               <p style={{ fontSize: '14px', color: '#6b7280' }}>Total</p>
@@ -856,7 +856,7 @@ const JobHunterDashboard: React.FC = () => {
 
       <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 16px', boxSizing: 'border-box', width: '100%' }}>
         <nav style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid #e5e7eb', overflowX: 'auto' }}>
-          {(['inbox', 'approved', 'applied', 'filtered', 'all', 'intake', 'calendar', 'follow-ups'] as TabType[]).map(tab => (
+          {(['intake', 'inbox', 'approved', 'applied', 'calendar', 'follow-ups', 'filtered', 'all'] as TabType[]).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}

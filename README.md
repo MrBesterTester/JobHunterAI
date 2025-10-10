@@ -26,6 +26,7 @@ JobHunter is a comprehensive job application management system that automates an
   - [Initial Setup](#initial-setup-first-time-only)
 - [Job Criteria](#job-criteria)
 - [Workflow](#workflow)
+  - [Workflow Diagram](#workflow)
   - [Detailed Workflow](#detailed-workflow)
 - [UI Features Guide](#ui-features-guide)
   - [Dashboard Overview](#dashboard-overview)
@@ -179,6 +180,87 @@ Based on your requirements:
 3. **Resume & Cover Letter Generation** - Generate custom resume/cover letter for approved jobs
 4. **Email Draft Creation** - One-click Gmail draft creation with cover letter body and resume attachment
 5. **Application Tracking & Follow-ups** - Monitor application status, schedule interviews, and manage follow-ups
+
+```mermaid
+flowchart TD
+    Start([Job Sources]) --> Sources
+
+    subgraph Sources [" 1. Automated Job Intake "]
+        Gmail[📧 Gmail] --> Extract
+        LinkedIn[💼 LinkedIn] --> Extract
+        Indeed[🔍 Indeed] --> Extract
+        Manual[✍️ Manual Entry] --> Extract
+        Extract[Intelligent Extraction<br/>Title, Company, Salary, Location]
+    end
+
+    Extract --> Dedup{Deduplication<br/>SHA256 Hash}
+    Dedup -->|Duplicate| Reject1[❌ Reject<br/>Already Exists]
+    Dedup -->|New| Filter
+
+    subgraph Filter [" 2. Intelligent Filtering "]
+        Check[Check Criteria]
+        Check --> Salary{Salary ≥ $130K?}
+        Salary -->|Yes| Location{Remote or<br/>≤45min commute?}
+        Salary -->|No| Filtered
+        Location -->|Yes| Domain{Matches Domain?<br/>Testing/AI/Firmware}
+        Location -->|No| Filtered
+        Domain -->|Yes| New[✅ Status: New]
+        Domain -->|No| Filtered[⚠️ Status: Filtered<br/>with Reasons]
+    end
+
+    New --> Inbox
+    Filtered --> Inbox
+
+    subgraph Review [" 3. Manual Review & Approval "]
+        Inbox[📋 Inbox Tab<br/>Review All Jobs]
+        Inbox --> Decision{User Decision}
+        Decision -->|Approve| Approved[✅ Status: Approved]
+        Decision -->|Reject| Reject2[❌ Status: Rejected]
+    end
+
+    Approved --> Generate
+
+    subgraph Content [" 4. Content Generation "]
+        Generate[Generate Resume &<br/>Cover Letter]
+        Generate --> Customize[Domain-aware<br/>Customization]
+        Customize --> Template[Handlebars<br/>Template Engine]
+        Template --> Review2[Review Generated<br/>Content]
+    end
+
+    Review2 --> Draft
+
+    subgraph Email [" 5. Email Draft Creation "]
+        Draft[Create Gmail Draft]
+        Draft --> MIME[MIME Message<br/>Construction]
+        MIME --> Attach[Attach Resume PDF<br/>Base64 Encoded]
+        Attach --> GmailAPI[Gmail API<br/>Create Draft]
+        GmailAPI --> OpenGmail[📤 Open in Gmail]
+    end
+
+    OpenGmail --> Send{Send Email?}
+    Send -->|Yes| Applied[✅ Status: Applied]
+    Send -->|No| Wait[Wait for User]
+
+    subgraph Tracking [" 6. Application Tracking & Follow-ups "]
+        Applied --> Timeline[📊 Application Timeline]
+        Timeline --> Interview[📅 Schedule Interviews]
+        Interview --> Followup[📧 Automated Follow-ups]
+        Followup --> Track[Track Response &<br/>Offer Status]
+    end
+
+    Track --> End([Complete])
+    Reject1 --> End
+    Reject2 --> End
+
+    style Start fill:#e1f5ff
+    style End fill:#e1f5ff
+    style New fill:#d4edda
+    style Filtered fill:#fff3cd
+    style Approved fill:#d4edda
+    style Applied fill:#d4edda
+    style Reject1 fill:#f8d7da
+    style Reject2 fill:#f8d7da
+```
 
 ### Detailed Workflow
 
@@ -342,12 +424,12 @@ JobHunter provides a comprehensive web interface to manage your entire job searc
 
 ### Dashboard Overview
 
-The dashboard displays real-time statistics across the top:
+The dashboard displays real-time statistics across the top (ordered by workflow progression):
+- **Filtered**: Auto-filtered by criteria (status: `filtered`)
 - **New Jobs**: Pending review (status: `new`)
 - **Approved**: Ready for application (status: `approved`)
 - **Applied**: Applications submitted (status: `applied`)
 - **Rejected**: Jobs you've declined (status: `rejected`)
-- **Filtered**: Auto-filtered by criteria (status: `filtered`)
 - **Total**: All jobs in the system
 
 ### Navigation Tabs
@@ -1360,6 +1442,15 @@ See [`DATABASE_SETUP.md`](DATABASE_SETUP.md) for detailed database setup instruc
   - Semantic understanding of job descriptions for better filtering
   - Higher quality summaries and extracted metadata
   - Confidence scoring based on semantic analysis rather than pattern matching
+- **Microsoft Outlook Integration (sam@samkirk.com)**: Add support for monitoring the sam@samkirk.com email account using Microsoft Graph API. This would complement the existing Gmail integration for comprehensive email coverage. Considerations include:
+  - Microsoft Graph API offers similar OAuth flow to Gmail's implementation
+  - Would require registering an Azure AD application and obtaining credentials
+  - API supports reading emails, creating drafts, and sending messages
+  - Rate limits are generous for personal use (similar to Gmail)
+  - Implementation complexity comparable to existing Gmail integration
+  - Could reuse much of the existing email parsing logic
+  - Deduplication system already handles multi-source scenarios
+  - Note: Detailed planning deferred - will revisit when prioritizing Phase 5.3+
 - Advanced success metrics (time-to-interview, offer rates by source)
 - Job market trend analysis and salary benchmarking
 - Salary negotiation tracking and offer comparison
