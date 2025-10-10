@@ -45,8 +45,8 @@ JobHunter is a comprehensive job application management system that automates an
   - [Keyboard Navigation](#keyboard-navigation)
   - [Loading States](#loading-states)
   - [Error Handling](#error-handling)
-- [Development Helper Scripts](#development-helper-scripts)
-  - [Configuration](#configuration)
+- [Configuration, Setups and Development Helper Scripts](#configuration-setups-and-development-helper-scripts)
+  - [Database Configuration](#database-configuration)
   - [Gmail Integration Setup](#gmail-integration-setup)
   - [Quick Start: Database Setup](#quick-start-database-setup)
   - [Understanding Your Workflow: Setup vs. Daily Use](#understanding-your-workflow-setup-vs-daily-use)
@@ -361,7 +361,9 @@ Once your master resume is set up:
 
 #### 4. Email Draft Creation
 
-Once you've generated content for an approved job, you can create a Gmail draft with one click:
+Once you've generated content for an approved job, you can create a Gmail draft with one click.
+
+**Note:** This feature requires Gmail API setup. If you haven't set up Gmail integration yet, see [Gmail Integration Setup](#gmail-integration-setup) for configuration instructions.
 
 **Create Gmail Draft:**
 
@@ -628,19 +630,21 @@ Graceful error handling throughout:
 - Form validation with inline error messages
 - Backend connection status indicators
 
-## Development Helper Scripts
+## Configuration, Setups and Development Helper Scripts
 
 JobHunter provides database management scripts to keep your personal data separate from test data. These scripts help you maintain two databases:
 - **`jobhunter_dev`** - Development database with test data (safe to share/reset)
 - **`jobhunter_personal`** - Your personal production database (private, never committed to Git)
 
-### Configuration
+### Database Configuration
 
 Your database configuration is stored in [`backend/.env`](backend/.env) which is excluded from Git. An example configuration file is provided at [`backend/.env.example`](backend/.env.example) that you can use as a template.
 
 ### Gmail Integration Setup
 
-To use the automated Gmail job intake and email draft creation features, you need to set up Google OAuth credentials:
+To use the automated Gmail job intake and email draft creation features, you need to set up Google OAuth credentials.
+
+**Quick Navigation Path:** Google Cloud Console > [Your Project Name] > APIs & Services > OAuth consent screen > Audience > Test Users
 
 **1. Create Google Cloud Project:**
 - Go to [Google Cloud Console](https://console.cloud.google.com/)
