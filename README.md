@@ -558,7 +558,7 @@ Your database configuration is stored in [`backend/.env`](backend/.env) which is
 
 ### Gmail Integration Setup
 
-To use the automated Gmail job intake feature, you need to set up Google OAuth credentials:
+To use the automated Gmail job intake and email draft creation features, you need to set up Google OAuth credentials:
 
 **1. Create Google Cloud Project:**
 - Go to [Google Cloud Console](https://console.cloud.google.com/)
@@ -578,8 +578,16 @@ To use the automated Gmail job intake feature, you need to set up Google OAuth c
   - App name: "JobHunter"
   - User support email: your email
   - Developer contact: your email
-  - Scopes: Add `https://www.googleapis.com/auth/gmail.readonly`
-  - Test users: Add your Gmail address
+  - Click "SAVE AND CONTINUE"
+  - **Scopes**: Click "ADD OR REMOVE SCOPES" and add **both** of the following:
+    - `https://www.googleapis.com/auth/gmail.readonly` - For reading job emails (automated job intake)
+    - `https://www.googleapis.com/auth/gmail.compose` - For creating email drafts (application sending)
+    - You can search for these in the scope list or filter by "Gmail API"
+    - Click "UPDATE" after selecting both scopes
+    - Click "SAVE AND CONTINUE"
+  - Test users: Click "ADD USERS" and add your Gmail address
+  - Click "SAVE AND CONTINUE"
+  - Review the summary and click "BACK TO DASHBOARD"
   - **Note**: To add test users later (or add additional users, up to 100), go to Google Cloud Console → your project → "OAuth consent screen" → "Audience" section → "Test users" → "+ ADD USERS"
 - Back to "Create OAuth client ID":
   - Application type: "Web application"
@@ -587,6 +595,15 @@ To use the automated Gmail job intake feature, you need to set up Google OAuth c
   - Authorized redirect URIs: `http://localhost:8080/auth/gmail/callback`
 - Click "Create"
 - **Copy the Client ID and Client Secret**: After creating the OAuth client, both values are displayed. If you already clicked "Done", go to "APIs & Services" → "Credentials", click on your OAuth client name under "OAuth 2.0 Client IDs", and you'll see both the Client ID and Client secret (click show/copy to reveal the secret)
+
+**If Updating Existing OAuth Configuration:**
+- Go to "APIs & Services" → "OAuth consent screen"
+- Click "EDIT APP"
+- Navigate through to the "Scopes" step
+- Click "ADD OR REMOVE SCOPES"
+- Add `https://www.googleapis.com/auth/gmail.compose` if not already present
+- Click "UPDATE" and "SAVE AND CONTINUE"
+- **Important**: After adding the new scope, you must re-authenticate in the JobHunter UI (Intake tab → "Authenticate with Gmail") to get a new token with draft creation permissions
 
 **4. Update `.env` file:**
 ```bash
