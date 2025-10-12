@@ -54,7 +54,11 @@ interface SyncResponse {
   duplicates_skipped: number;
 }
 
-const IntakeTab: React.FC = () => {
+interface IntakeTabProps {
+  onJobsUpdated?: () => void;
+}
+
+const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
   const [sources, setSources] = useState<JobSource[]>([]);
   const [logs, setLogs] = useState<IntakeLog[]>([]);
   const [sourceSummaries, setSourceSummaries] = useState<SourceSummary[]>([]);
@@ -180,6 +184,11 @@ const IntakeTab: React.FC = () => {
         fetchLogs(),
         fetchSummary()
       ]);
+
+      // Notify parent component to refresh jobs list
+      if (onJobsUpdated) {
+        onJobsUpdated();
+      }
     } catch (err) {
       console.error('Error syncing Gmail:', err);
       setError('Failed to sync Gmail jobs');
@@ -215,6 +224,11 @@ const IntakeTab: React.FC = () => {
         fetchLogs(),
         fetchSummary()
       ]);
+
+      // Notify parent component to refresh jobs list
+      if (onJobsUpdated) {
+        onJobsUpdated();
+      }
     } catch (err) {
       console.error('Error syncing LinkedIn:', err);
       setError('Failed to sync LinkedIn jobs');
@@ -247,6 +261,11 @@ const IntakeTab: React.FC = () => {
         fetchLogs(),
         fetchSummary()
       ]);
+
+      // Notify parent component to refresh jobs list
+      if (onJobsUpdated) {
+        onJobsUpdated();
+      }
     } catch (err) {
       console.error('Error syncing all sources:', err);
       setError('Failed to sync all sources');

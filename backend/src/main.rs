@@ -1738,7 +1738,10 @@ async fn process_gmail_messages(
 
             // Extract job information
             if let Some(job_data) = extract_job_from_email(&subject, &body_text) {
-                if job_data.confidence > 0.5 { // Only process high-confidence extractions
+                println!("Extracted job data - Title: {:?}, Company: {:?}, Confidence: {}",
+                    job_data.title, job_data.company, job_data.confidence);
+
+                if job_data.confidence > 0.3 { // Lowered threshold to process more jobs
                     match create_job_from_extraction(&job_data, source, pool).await {
                         Ok(_) => {
                             processed_count += 1;
@@ -1766,11 +1769,16 @@ async fn process_gmail_messages(
                             .await?;
                         }
                     }
+                } else {
+                    println!("Skipping job due to low confidence: {}", job_data.confidence);
                 }
+            } else {
+                println!("Failed to extract job data from email - Subject: {:?}", subject);
             }
         }
     }
 
+    println!("Gmail sync complete - Discovered: {}, Processed: {}", discovered_count, processed_count);
     Ok((discovered_count, processed_count))
 }
 
@@ -1924,8 +1932,11 @@ fn extract_job_from_email(subject: &Option<String>, body: &Option<String>) -> Op
     }
 
     if extraction.confidence > 0.3 {
+        println!("Job extraction succeeded - Title: {:?}, Company: {:?}, Confidence: {:.2}",
+            extraction.title, extraction.company, extraction.confidence);
         Some(extraction)
     } else {
+        println!("Job extraction rejected - low confidence: {:.2}", extraction.confidence);
         None
     }
 }
@@ -2030,6 +2041,7 @@ async fn get_job_sources(pool: web::Data<PgPool>) -> Result<HttpResponse> {
 
     // Convert to JSON with has_credentials field
     let result: Vec<serde_json::Value> = sources_with_creds.iter().map(|row| {
+        println!("Source: {}, has_credentials raw value: {}", row.source_name, row.has_credentials);
         serde_json::json!({
             "source_id": row.source_id,
             "source_name": row.source_name,

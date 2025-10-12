@@ -885,7 +885,7 @@ const JobHunterDashboard: React.FC = () => {
         </nav>
 
         {activeTab === 'intake' ? (
-          <IntakeTab />
+          <IntakeTab onJobsUpdated={() => { fetchJobs(); fetchStats(); }} />
         ) : activeTab === 'calendar' ? (
           <CalendarTab />
         ) : activeTab === 'follow-ups' ? (
