@@ -23,6 +23,7 @@ url = "2.3"
 tokio-cron-scheduler = "0.9"
 urlencoding = "2.1"
 bigdecimal = "0.3"
+html2text = "0.12"
 # Phase 5.1: Google Calendar integration
 google-calendar3 = "5.0"
 yup-oauth2 = "8"
