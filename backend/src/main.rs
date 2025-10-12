@@ -282,11 +282,52 @@ pub struct JobExtractionResult {
     pub title: Option<String>,
     pub company: Option<String>,
     pub location: Option<String>,
-    pub salary: Option<i32>,
+    pub salary_min: Option<i32>,
+    pub salary_max: Option<i32>,
     pub description: Option<String>,
     pub url: Option<String>,
     pub confidence: f64,
     pub extraction_method: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct ExtractionPrompt {
+    pub prompt_id: Uuid,
+    pub prompt_name: String,
+    pub prompt_type: String,
+    pub prompt_content: String,
+    pub is_active: bool,
+    pub version: i32,
+    pub created_by: String,
+    pub created_at: chrono::NaiveDateTime,
+    pub updated_at: chrono::NaiveDateTime,
+    pub notes: Option<String>,
+}
+
+// Claude API structures
+#[derive(Debug, Serialize)]
+struct ClaudeRequest {
+    model: String,
+    max_tokens: u32,
+    messages: Vec<ClaudeMessage>,
+}
+
+#[derive(Debug, Serialize)]
+struct ClaudeMessage {
+    role: String,
+    content: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct ClaudeResponse {
+    content: Vec<ClaudeContent>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ClaudeContent {
+    #[serde(rename = "type")]
+    content_type: String,
+    text: String,
 }
 
 // ============================================================================
@@ -315,6 +356,12 @@ pub struct CreateApplicationRequest {
     pub job_id: Uuid,
     pub resume_version: Option<String>,
     pub cover_letter_version: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdatePromptRequest {
+    pub prompt_content: String,
+    pub notes: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1737,7 +1784,7 @@ async fn process_gmail_messages(
             .await?;
 
             // Extract job information
-            if let Some(job_data) = extract_job_from_email(&subject, &body_text) {
+            if let Some(job_data) = extract_job_from_email_async(&subject, &body_text, pool).await {
                 println!("Extracted job data - Title: {:?}, Company: {:?}, Confidence: {}",
                     job_data.title, job_data.company, job_data.confidence);
 
@@ -1814,6 +1861,139 @@ fn extract_email_body(payload: &GmailPayload) -> Option<String> {
     None
 }
 
+// ============================================================================
+// Claude API Client Functions
+// ============================================================================
+
+/// Fetch the active extraction prompt from database
+async fn get_active_extraction_prompt(pool: &PgPool) -> Result<ExtractionPrompt, String> {
+    sqlx::query_as::<_, ExtractionPrompt>(
+        "SELECT * FROM extraction_prompts WHERE prompt_type = 'job_extraction' AND is_active = true LIMIT 1"
+    )
+    .fetch_one(pool)
+    .await
+    .map_err(|e| format!("Failed to fetch extraction prompt: {}", e))
+}
+
+/// Convert HTML to plain text
+fn html_to_text(html: &str) -> String {
+    html2text::from_read(html.as_bytes(), 100)
+}
+
+/// Call Claude API for job extraction
+async fn call_claude_api(
+    api_key: &str,
+    prompt_content: &str,
+    email_subject: &str,
+    email_body: &str,
+) -> Result<JobExtractionResult, String> {
+    let client = reqwest::Client::new();
+
+    // Convert HTML to text if needed
+    let clean_body = if email_body.contains("<html") || email_body.contains("<body") {
+        html_to_text(email_body)
+    } else {
+        email_body.to_string()
+    };
+
+    // Construct the user message with email content
+    let user_message = format!(
+        "**Subject:** {}\n\n**Body:**\n{}",
+        email_subject,
+        clean_body
+    );
+
+    let request = ClaudeRequest {
+        model: "claude-3-haiku-20240307".to_string(),
+        max_tokens: 1024,
+        messages: vec![
+            ClaudeMessage {
+                role: "user".to_string(),
+                content: format!("{}\n\n{}", prompt_content, user_message),
+            }
+        ],
+    };
+
+    let response = client
+        .post("https://api.anthropic.com/v1/messages")
+        .header("x-api-key", api_key)
+        .header("anthropic-version", "2023-06-01")
+        .header("content-type", "application/json")
+        .json(&request)
+        .send()
+        .await
+        .map_err(|e| format!("Failed to call Claude API: {}", e))?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_default();
+        return Err(format!("Claude API error {}: {}", status, error_text));
+    }
+
+    let claude_response: ClaudeResponse = response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse Claude response: {}", e))?;
+
+    // Extract text from response
+    let response_text = claude_response
+        .content
+        .first()
+        .ok_or("No content in Claude response")?
+        .text
+        .trim();
+
+    // Parse JSON from response
+    let mut extraction: JobExtractionResult = serde_json::from_str(response_text)
+        .map_err(|e| format!("Failed to parse extraction JSON: {} - Response: {}", e, response_text))?;
+
+    extraction.extraction_method = "llm".to_string();
+
+    Ok(extraction)
+}
+
+/// Async wrapper that tries LLM extraction first, then falls back to regex
+async fn extract_job_from_email_async(
+    subject: &Option<String>,
+    body: &Option<String>,
+    pool: &PgPool,
+) -> Option<JobExtractionResult> {
+    // Try LLM extraction first if API key is available
+    if let Ok(api_key) = std::env::var("ANTHROPIC_API_KEY") {
+        if !api_key.is_empty() {
+            // Fetch active prompt
+            if let Ok(prompt) = get_active_extraction_prompt(pool).await {
+                let subject_str = subject.as_deref().unwrap_or("");
+                let body_str = body.as_deref().unwrap_or("");
+
+                // Try Claude API
+                match call_claude_api(&api_key, &prompt.prompt_content, subject_str, body_str).await {
+                    Ok(extraction) => {
+                        println!("LLM extraction succeeded - Title: {:?}, Company: {:?}, Confidence: {:.2}",
+                            extraction.title, extraction.company, extraction.confidence);
+
+                        // Only return if confidence is high enough
+                        if extraction.confidence >= 0.3 {
+                            return Some(extraction);
+                        } else {
+                            println!("LLM extraction confidence too low: {:.2}, falling back to regex", extraction.confidence);
+                        }
+                    }
+                    Err(e) => {
+                        println!("LLM extraction failed: {}, falling back to regex", e);
+                    }
+                }
+            } else {
+                println!("No active extraction prompt found, falling back to regex");
+            }
+        }
+    }
+
+    // Fallback to regex-based extraction
+    println!("Using regex-based extraction");
+    extract_job_from_email(subject, body)
+}
+
 fn extract_job_from_email(subject: &Option<String>, body: &Option<String>) -> Option<JobExtractionResult> {
     let combined_text = format!(
         "{} {}",
@@ -1825,7 +2005,8 @@ fn extract_job_from_email(subject: &Option<String>, body: &Option<String>) -> Op
         title: None,
         company: None,
         location: None,
-        salary: None,
+        salary_min: None,
+        salary_max: None,
         description: body.clone(),
         url: None,
         confidence: 0.0,
@@ -1896,7 +2077,9 @@ fn extract_job_from_email(subject: &Option<String>, body: &Option<String>) -> Op
             if let Some(captures) = re.captures(&combined_text) {
                 if let Some(salary_match) = captures.get(1) {
                     if let Ok(salary) = salary_match.as_str().replace(",", "").parse::<i32>() {
-                        extraction.salary = Some(if salary < 1000 { salary * 1000 } else { salary });
+                        let salary_value = if salary < 1000 { salary * 1000 } else { salary };
+                        extraction.salary_min = Some(salary_value);
+                        extraction.salary_max = Some(salary_value);
                         extraction.confidence += 0.2;
                         break;
                     }
@@ -1966,12 +2149,19 @@ async fn create_job_from_extraction(
         "Job Opportunity".to_string()
     };
 
+    // Calculate average salary from min/max for storage (single field in DB)
+    let salary = match (extraction.salary_min, extraction.salary_max) {
+        (Some(min), Some(max)) => Some((min + max) / 2),
+        (Some(val), None) | (None, Some(val)) => Some(val),
+        (None, None) => None,
+    };
+
     let job_req = CreateJobRequest {
         title: extraction.title.clone().unwrap_or(fallback_title),
         company: extraction.company.clone().unwrap_or_else(|| "Unknown Company".to_string()),
         location: extraction.location.clone(),
         source: source.source_name.clone(),
-        salary: extraction.salary,
+        salary,
         commute_time: None,
         description: extraction.description.clone(),
         url: extraction.url.clone(),
@@ -2296,10 +2486,12 @@ fn extract_job_from_linkedin(job_data: &serde_json::Value) -> Option<JobExtracti
     let url = job_data["url"].as_str().map(|s| s.to_string());
 
     // Extract salary
-    let salary = if let Some(salary_obj) = job_data["salary"].as_object() {
-        salary_obj["min"].as_i64().map(|s| s as i32)
+    let (salary_min, salary_max) = if let Some(salary_obj) = job_data["salary"].as_object() {
+        let min = salary_obj["min"].as_i64().map(|s| s as i32);
+        let max = salary_obj["max"].as_i64().map(|s| s as i32);
+        (min, max)
     } else {
-        None
+        (None, None)
     };
 
     // High confidence for structured LinkedIn API data
@@ -2316,7 +2508,8 @@ fn extract_job_from_linkedin(job_data: &serde_json::Value) -> Option<JobExtracti
         title: Some(title),
         company: Some(company),
         location,
-        salary,
+        salary_min,
+        salary_max,
         description,
         url,
         confidence: confidence.min(1.0),
@@ -3299,6 +3492,65 @@ async fn delete_draft_handler(
 }
 
 // ============================================================================
+// Phase 5.3: LLM Job Extraction Handlers
+// ============================================================================
+
+async fn get_active_extraction_prompt_handler(
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse> {
+    match get_active_extraction_prompt(pool.get_ref()).await {
+        Ok(prompt) => Ok(HttpResponse::Ok().json(prompt)),
+        Err(e) => Err(actix_web::error::ErrorInternalServerError(format!("Failed to fetch prompt: {}", e))),
+    }
+}
+
+async fn update_active_extraction_prompt_handler(
+    pool: web::Data<PgPool>,
+    req: web::Json<UpdatePromptRequest>,
+) -> Result<HttpResponse> {
+    // Deactivate all current prompts
+    sqlx::query("UPDATE extraction_prompts SET is_active = false WHERE prompt_type = 'job_extraction'")
+        .execute(pool.get_ref())
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to deactivate prompts: {}", e)))?;
+
+    // Get the current max version
+    let max_version: Option<i32> = sqlx::query_scalar(
+        "SELECT MAX(version) FROM extraction_prompts WHERE prompt_type = 'job_extraction'"
+    )
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to get max version: {}", e)))?;
+
+    let next_version = max_version.unwrap_or(0) + 1;
+
+    // Insert new prompt as active
+    let new_prompt = sqlx::query_as::<_, ExtractionPrompt>(
+        r#"
+        INSERT INTO extraction_prompts (
+            prompt_name, prompt_type, prompt_content, is_active, version, created_by, notes
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING *
+        "#
+    )
+    .bind(format!("Job Email Extraction v{}", next_version))
+    .bind("job_extraction")
+    .bind(&req.prompt_content)
+    .bind(true)
+    .bind(next_version)
+    .bind("user")
+    .bind(&req.notes)
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to insert new prompt: {}", e)))?;
+
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "message": "Prompt updated successfully",
+        "prompt": new_prompt
+    })))
+}
+
+// ============================================================================
 // Main Server
 // ============================================================================
 
@@ -3365,6 +3617,9 @@ async fn main() -> std::io::Result<()> {
             .route("/api/applications/{id}/create-draft", web::post().to(create_draft_handler))
             .route("/api/applications/{id}/draft-status", web::get().to(get_draft_status_handler))
             .route("/api/applications/{id}/draft", web::delete().to(delete_draft_handler))
+            // Phase 5.3: LLM Job Extraction APIs
+            .route("/api/extraction/prompts", web::get().to(get_active_extraction_prompt_handler))
+            .route("/api/extraction/prompts/active", web::put().to(update_active_extraction_prompt_handler))
     })
     .bind(("127.0.0.1", 8080))?
     .run()

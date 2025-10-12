@@ -54,6 +54,19 @@ interface SyncResponse {
   duplicates_skipped: number;
 }
 
+interface ExtractionPrompt {
+  prompt_id: string;
+  prompt_name: string;
+  prompt_type: string;
+  prompt_content: string;
+  is_active: boolean;
+  version: number;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  notes: string | null;
+}
+
 interface IntakeTabProps {
   onJobsUpdated?: () => void;
 }
@@ -68,6 +81,11 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
   const [syncingAll, setSyncingAll] = useState<boolean>(false);
   const [lastSyncResult, setLastSyncResult] = useState<SyncResponse | null>(null);
   const [showLogDetails, setShowLogDetails] = useState<string | null>(null);
+  const [showPromptEditor, setShowPromptEditor] = useState<boolean>(false);
+  const [extractionPrompt, setExtractionPrompt] = useState<ExtractionPrompt | null>(null);
+  const [promptContent, setPromptContent] = useState<string>('');
+  const [promptNotes, setPromptNotes] = useState<string>('');
+  const [savingPrompt, setSavingPrompt] = useState<boolean>(false);
 
   // Fetch job sources
   const fetchSources = async (): Promise<void> => {
@@ -112,6 +130,51 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
     }
   };
 
+  // Fetch extraction prompt
+  const fetchExtractionPrompt = async (): Promise<void> => {
+    try {
+      const response = await fetch(`${API_URL}/extraction/prompts`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch extraction prompt: ${response.status}`);
+      }
+      const data: ExtractionPrompt = await response.json();
+      setExtractionPrompt(data);
+      setPromptContent(data.prompt_content);
+      setPromptNotes(data.notes || '');
+    } catch (err) {
+      console.error('Error fetching extraction prompt:', err);
+    }
+  };
+
+  // Update extraction prompt
+  const updateExtractionPrompt = async (): Promise<void> => {
+    setSavingPrompt(true);
+    setError(null);
+    try {
+      const response = await fetch(`${API_URL}/extraction/prompts/active`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt_content: promptContent,
+          notes: promptNotes || null
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update prompt: ${response.status}`);
+      }
+
+      await fetchExtractionPrompt();
+      setShowPromptEditor(false);
+      alert('Prompt updated successfully! The new prompt will be used for future job extractions.');
+    } catch (err) {
+      console.error('Error updating prompt:', err);
+      setError('Failed to update extraction prompt');
+    } finally {
+      setSavingPrompt(false);
+    }
+  };
+
   // Initial data load
   useEffect(() => {
     const loadData = async (): Promise<void> => {
@@ -119,7 +182,8 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
       await Promise.all([
         fetchSources(),
         fetchLogs(),
-        fetchSummary()
+        fetchSummary(),
+        fetchExtractionPrompt()
       ]);
       setLoading(false);
     };
@@ -645,6 +709,135 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
             Request Implementation
           </button>
         </div>
+      </div>
+
+      {/* LLM Extraction Prompt Editor */}
+      <div style={{
+        backgroundColor: 'white',
+        border: '1px solid #e5e7eb',
+        borderRadius: '8px',
+        padding: '20px',
+        marginBottom: '32px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <div>
+            <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>LLM Job Extraction Prompt</h3>
+            <p style={{ fontSize: '14px', color: '#6b7280', margin: '4px 0 0 0' }}>
+              Customize the prompt used by Claude Haiku to extract job information from emails
+            </p>
+          </div>
+          <button
+            onClick={() => setShowPromptEditor(!showPromptEditor)}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '6px',
+              border: '1px solid #3b82f6',
+              backgroundColor: showPromptEditor ? '#eff6ff' : 'white',
+              color: '#3b82f6',
+              fontWeight: '500',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            {showPromptEditor ? 'Hide Editor' : 'Edit Prompt'}
+          </button>
+        </div>
+
+        {extractionPrompt && !showPromptEditor && (
+          <div style={{ fontSize: '14px', color: '#6b7280' }}>
+            <p><strong>Active Version:</strong> v{extractionPrompt.version} - {extractionPrompt.prompt_name}</p>
+            <p><strong>Last Updated:</strong> {new Date(extractionPrompt.updated_at).toLocaleString()}</p>
+            {extractionPrompt.notes && <p><strong>Notes:</strong> {extractionPrompt.notes}</p>}
+          </div>
+        )}
+
+        {showPromptEditor && (
+          <div style={{ marginTop: '16px' }}>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px' }}>
+                Prompt Content
+              </label>
+              <textarea
+                value={promptContent}
+                onChange={(e) => setPromptContent(e.target.value)}
+                style={{
+                  width: '100%',
+                  minHeight: '400px',
+                  padding: '12px',
+                  borderRadius: '6px',
+                  border: '1px solid #d1d5db',
+                  fontSize: '13px',
+                  fontFamily: 'monospace',
+                  resize: 'vertical'
+                }}
+                placeholder="Enter the prompt for job extraction..."
+              />
+              <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                This prompt is sent to Claude Haiku along with the email subject and body to extract job information.
+              </p>
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px' }}>
+                Notes (Optional)
+              </label>
+              <input
+                type="text"
+                value={promptNotes}
+                onChange={(e) => setPromptNotes(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #d1d5db',
+                  fontSize: '14px'
+                }}
+                placeholder="Description of changes..."
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  setPromptContent(extractionPrompt?.prompt_content || '');
+                  setPromptNotes(extractionPrompt?.notes || '');
+                  setShowPromptEditor(false);
+                }}
+                disabled={savingPrompt}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  border: '1px solid #d1d5db',
+                  backgroundColor: 'white',
+                  color: '#6b7280',
+                  cursor: savingPrompt ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  opacity: savingPrompt ? 0.6 : 1
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={updateExtractionPrompt}
+                disabled={savingPrompt || !promptContent.trim()}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  backgroundColor: savingPrompt || !promptContent.trim() ? '#9ca3af' : '#3b82f6',
+                  color: 'white',
+                  fontWeight: '500',
+                  cursor: savingPrompt || !promptContent.trim() ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  opacity: savingPrompt || !promptContent.trim() ? 0.6 : 1
+                }}
+              >
+                {savingPrompt ? 'Saving...' : 'Save Prompt'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Activity Log Section */}
