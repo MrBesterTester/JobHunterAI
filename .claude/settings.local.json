@@ -68,7 +68,11 @@
       "Bash(TMPDIR=$HOME/tmp cargo build)",
       "Bash(TMPDIR=$HOME/tmp cargo test test_gmail_message_deserialization -- --nocapture)",
       "Bash(TMPDIR=$HOME/tmp cargo test test_gmail -- --nocapture)",
-      "Bash(TMPDIR=$HOME/tmp cargo test test_source_identification_architecture -- --nocapture)"
+      "Bash(TMPDIR=$HOME/tmp cargo test test_source_identification_architecture -- --nocapture)",
+      "Bash(npx tsc:*)",
+      "Bash(./stop.sh)",
+      "Read(//Users/sam/.cargo/bin/**)",
+      "Bash(export PATH=\"$HOME/.cargo/bin:$PATH\")"
     ],
     "deny": [],
     "ask": [

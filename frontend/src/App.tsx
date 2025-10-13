@@ -4,6 +4,7 @@ import ResumeManagement from './ResumeManagement';
 import CalendarTab from './CalendarTab';
 import FollowupsTab from './FollowupsTab';
 import IntakeTab from './IntakeTab';
+import IgnoredTab from './IgnoredTab';
 import EmailComposer from './EmailComposer';
 
 const API_URL = 'http://localhost:8080/api';
@@ -39,6 +40,7 @@ interface JobStats {
   applied?: number;
   rejected?: number;
   filtered?: number;
+  ignored?: number;
 }
 
 interface Application {
@@ -85,14 +87,14 @@ interface CoverLetterTemplate {
   updated_at: string;
 }
 
-type TabType = 'inbox' | 'approved' | 'applied' | 'filtered' | 'all' | 'intake' | 'calendar' | 'follow-ups';
+type TabType = 'approved' | 'applied' | 'filtered' | 'all' | 'intake' | 'calendar' | 'follow-ups' | 'ignored';
 
 const JobHunterDashboard: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [criteria, setCriteria] = useState<JobCriteria | null>(null);
   const [stats, setStats] = useState<JobStats>({});
-  const [activeTab, setActiveTab] = useState<TabType>('inbox');
+  const [activeTab, setActiveTab] = useState<TabType>('intake');
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [showCriteriaConfig, setShowCriteriaConfig] = useState<boolean>(false);
@@ -216,11 +218,24 @@ const JobHunterDashboard: React.FC = () => {
         throw new Error(`Stats API returned status ${response.status}`);
       }
       const data: JobStats = await response.json();
+
+      // Fetch ignored emails count
+      try {
+        const ignoredResponse = await fetch(`${API_URL}/intake/ignored-emails`);
+        if (ignoredResponse.ok) {
+          const ignoredData = await ignoredResponse.json();
+          data.ignored = ignoredData.length;
+        }
+      } catch (err) {
+        console.error('Error fetching ignored count:', err);
+        data.ignored = 0;
+      }
+
       setStats(data);
     } catch (error) {
       console.error('Error fetching stats:', error);
       // Set default stats on error
-      setStats({ new: 0, approved: 0, applied: 0, filtered: 0, rejected: 0 });
+      setStats({ new: 0, approved: 0, applied: 0, filtered: 0, rejected: 0, ignored: 0 });
     }
   };
 
@@ -830,9 +845,13 @@ const JobHunterDashboard: React.FC = () => {
               <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#f97316' }}>{stats.filtered || 0}</p>
               <p style={{ fontSize: '14px', color: '#6b7280' }}>Filtered</p>
             </div>
+            <div style={{ textAlign: 'center' }} data-testid="stat-ignored">
+              <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#dc2626' }}>{stats.ignored || 0}</p>
+              <p style={{ fontSize: '14px', color: '#6b7280' }}>Ignored</p>
+            </div>
             <div style={{ textAlign: 'center' }} data-testid="stat-new">
               <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#3b82f6' }}>{stats.new || 0}</p>
-              <p style={{ fontSize: '14px', color: '#6b7280' }}>New Jobs</p>
+              <p style={{ fontSize: '14px', color: '#6b7280' }}>New</p>
             </div>
             <div style={{ textAlign: 'center' }} data-testid="stat-approved">
               <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#10b981' }}>{stats.approved || 0}</p>
@@ -856,7 +875,7 @@ const JobHunterDashboard: React.FC = () => {
 
       <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 16px', boxSizing: 'border-box', width: '100%' }}>
         <nav style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid #e5e7eb', overflowX: 'auto' }}>
-          {(['intake', 'inbox', 'approved', 'applied', 'calendar', 'follow-ups', 'filtered', 'all'] as TabType[]).map(tab => (
+          {(['intake', 'filtered', 'ignored', 'approved', 'applied', 'follow-ups', 'calendar', 'all'] as TabType[]).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -879,7 +898,8 @@ const JobHunterDashboard: React.FC = () => {
               {tab === 'intake' && <Download style={{ width: '16px', height: '16px' }} />}
               {tab === 'calendar' && <CalendarIcon style={{ width: '16px', height: '16px' }} />}
               {tab === 'follow-ups' && <Mail style={{ width: '16px', height: '16px' }} />}
-              {tab === 'inbox' ? 'Inbox' : tab}
+              {tab === 'ignored' && <XCircle style={{ width: '16px', height: '16px' }} />}
+              {tab}
             </button>
           ))}
         </nav>
@@ -890,11 +910,12 @@ const JobHunterDashboard: React.FC = () => {
           <CalendarTab />
         ) : activeTab === 'follow-ups' ? (
           <FollowupsTab />
+        ) : activeTab === 'ignored' ? (
+          <IgnoredTab />
         ) : (
           <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))', gap: '16px', width: '100%' }}>
-              {(activeTab === 'inbox' ? jobs.filter(j => j.status === 'new' || j.status === 'filtered') :
-                activeTab === 'approved' ? filterJobs('approved') :
+              {(activeTab === 'approved' ? filterJobs('approved') :
                 activeTab === 'applied' ? filterJobs('applied') :
                 activeTab === 'filtered' ? filterJobs('filtered') :
                 getAllActiveJobs()
@@ -903,8 +924,7 @@ const JobHunterDashboard: React.FC = () => {
               ))}
             </div>
 
-            {(activeTab === 'inbox' ? jobs.filter(j => j.status === 'new' || j.status === 'filtered') :
-              activeTab === 'approved' ? filterJobs('approved') :
+            {(activeTab === 'approved' ? filterJobs('approved') :
               activeTab === 'applied' ? filterJobs('applied') :
               activeTab === 'filtered' ? filterJobs('filtered') :
               getAllActiveJobs()

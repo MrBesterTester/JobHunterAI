@@ -1,13 +1,36 @@
 use actix_web::{web, App, HttpResponse, HttpServer, Result};
 use actix_cors::Cors;
 use serde::{Deserialize, Serialize};
-use sqlx::{PgPool, FromRow};
+use sqlx::{PgPool, FromRow, Row};
 use uuid::Uuid;
 use chrono::{DateTime, Utc};
 use sha2::{Sha256, Digest};
 use handlebars::Handlebars;
 use base64::{Engine as _, engine::general_purpose};
 use bigdecimal::{BigDecimal, ToPrimitive};
+use std::fs::OpenOptions;
+use std::io::Write;
+
+// ============================================================================
+// Debug Logging
+// ============================================================================
+
+fn log_debug(message: &str) {
+    let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.3f");
+    let log_message = format!("[{}] {}\n", timestamp, message);
+
+    // Write to file
+    if let Ok(mut file) = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open("backend/intake_debug.log")
+    {
+        let _ = file.write_all(log_message.as_bytes());
+    }
+
+    // Also print to stdout for immediate visibility
+    print!("{}", log_message);
+}
 
 // ============================================================================
 // Database Models
@@ -326,6 +349,7 @@ struct ClaudeResponse {
 #[derive(Debug, Deserialize)]
 struct ClaudeContent {
     #[serde(rename = "type")]
+    #[allow(dead_code)]
     content_type: String,
     text: String,
 }
@@ -1784,9 +1808,14 @@ async fn process_gmail_messages(
             .await?;
 
             // Extract job information
-            if let Some(job_data) = extract_job_from_email_async(&subject, &body_text, pool).await {
-                println!("Extracted job data - Title: {:?}, Company: {:?}, Confidence: {}",
-                    job_data.title, job_data.company, job_data.confidence);
+            if let Some(mut job_data) = extract_job_from_email_async(&subject, &body_text, pool).await {
+                log_debug(&format!("Extracted job data - Title: {:?}, Company: {:?}, Confidence: {:.2}, Method: {}",
+                    job_data.title, job_data.company, job_data.confidence, job_data.extraction_method));
+
+                // Replace LLM summary with full email body for better user visibility
+                if let Some(full_body) = &body_text {
+                    job_data.description = Some(full_body.clone());
+                }
 
                 if job_data.confidence > 0.3 { // Lowered threshold to process more jobs
                     match create_job_from_extraction(&job_data, source, pool).await {
@@ -1804,7 +1833,7 @@ async fn process_gmail_messages(
                             .await?;
                         }
                         Err(e) => {
-                            println!("Failed to create job from email: {}", e);
+                            log_debug(&format!("Failed to create job from email: {}", e));
 
                             // Store processing error
                             sqlx::query!(
@@ -1817,15 +1846,15 @@ async fn process_gmail_messages(
                         }
                     }
                 } else {
-                    println!("Skipping job due to low confidence: {}", job_data.confidence);
+                    log_debug(&format!("Skipping job due to low confidence: {:.2}", job_data.confidence));
                 }
             } else {
-                println!("Failed to extract job data from email - Subject: {:?}", subject);
+                log_debug(&format!("Failed to extract job data from email - Subject: {:?}", subject));
             }
         }
     }
 
-    println!("Gmail sync complete - Discovered: {}, Processed: {}", discovered_count, processed_count);
+    log_debug(&format!("Gmail sync complete - Discovered: {}, Processed: {}", discovered_count, processed_count));
     Ok((discovered_count, processed_count))
 }
 
@@ -1833,23 +1862,70 @@ fn extract_email_body(payload: &GmailPayload) -> Option<String> {
     // Try to extract from direct body first
     if let Some(body) = &payload.body {
         if let Some(data) = &body.data {
-            if let Ok(decoded) = general_purpose::URL_SAFE_NO_PAD.decode(data) {
-                if let Ok(text) = String::from_utf8(decoded) {
-                    return Some(text);
+            if !data.is_empty() {
+                if let Ok(decoded) = general_purpose::URL_SAFE_NO_PAD.decode(data) {
+                    if let Ok(text) = String::from_utf8(decoded) {
+                        if !text.trim().is_empty() {
+                            return Some(text);
+                        }
+                    }
                 }
             }
         }
     }
 
-    // Try to extract from parts
+    // Try to extract from parts (handles multipart emails)
     if let Some(parts) = &payload.parts {
+        // First try to find text/plain (preferred for readability)
+        for part in parts {
+            if part.mime_type == "text/plain" {
+                if let Some(body) = &part.body {
+                    if let Some(data) = &body.data {
+                        if !data.is_empty() {
+                            if let Ok(decoded) = general_purpose::URL_SAFE_NO_PAD.decode(data) {
+                                if let Ok(text) = String::from_utf8(decoded) {
+                                    if !text.trim().is_empty() {
+                                        return Some(text);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // If no text/plain found, try text/html
+        for part in parts {
+            if part.mime_type == "text/html" {
+                if let Some(body) = &part.body {
+                    if let Some(data) = &body.data {
+                        if !data.is_empty() {
+                            if let Ok(decoded) = general_purpose::URL_SAFE_NO_PAD.decode(data) {
+                                if let Ok(text) = String::from_utf8(decoded) {
+                                    if !text.trim().is_empty() {
+                                        return Some(text);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Last resort: try any text/* type
         for part in parts {
             if part.mime_type.starts_with("text/") {
                 if let Some(body) = &part.body {
                     if let Some(data) = &body.data {
-                        if let Ok(decoded) = general_purpose::URL_SAFE_NO_PAD.decode(data) {
-                            if let Ok(text) = String::from_utf8(decoded) {
-                                return Some(text);
+                        if !data.is_empty() {
+                            if let Ok(decoded) = general_purpose::URL_SAFE_NO_PAD.decode(data) {
+                                if let Ok(text) = String::from_utf8(decoded) {
+                                    if !text.trim().is_empty() {
+                                        return Some(text);
+                                    }
+                                }
                             }
                         }
                     }
@@ -1969,28 +2045,28 @@ async fn extract_job_from_email_async(
                 // Try Claude API
                 match call_claude_api(&api_key, &prompt.prompt_content, subject_str, body_str).await {
                     Ok(extraction) => {
-                        println!("LLM extraction succeeded - Title: {:?}, Company: {:?}, Confidence: {:.2}",
-                            extraction.title, extraction.company, extraction.confidence);
+                        log_debug(&format!("LLM extraction succeeded - Title: {:?}, Company: {:?}, Confidence: {:.2}",
+                            extraction.title, extraction.company, extraction.confidence));
 
                         // Only return if confidence is high enough
                         if extraction.confidence >= 0.3 {
                             return Some(extraction);
                         } else {
-                            println!("LLM extraction confidence too low: {:.2}, falling back to regex", extraction.confidence);
+                            log_debug(&format!("LLM extraction confidence too low: {:.2}, falling back to regex", extraction.confidence));
                         }
                     }
                     Err(e) => {
-                        println!("LLM extraction failed: {}, falling back to regex", e);
+                        log_debug(&format!("LLM extraction failed: {}, falling back to regex", e));
                     }
                 }
             } else {
-                println!("No active extraction prompt found, falling back to regex");
+                log_debug("No active extraction prompt found, falling back to regex");
             }
         }
     }
 
     // Fallback to regex-based extraction
-    println!("Using regex-based extraction");
+    log_debug("Using regex-based extraction");
     extract_job_from_email(subject, body)
 }
 
@@ -2231,7 +2307,6 @@ async fn get_job_sources(pool: web::Data<PgPool>) -> Result<HttpResponse> {
 
     // Convert to JSON with has_credentials field
     let result: Vec<serde_json::Value> = sources_with_creds.iter().map(|row| {
-        println!("Source: {}, has_credentials raw value: {}", row.source_name, row.has_credentials);
         serde_json::json!({
             "source_id": row.source_id,
             "source_name": row.source_name,
@@ -2257,6 +2332,155 @@ async fn get_intake_logs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
 
     Ok(HttpResponse::Ok().json(logs))
+}
+
+// Get ignored/unprocessed emails
+async fn get_ignored_emails(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    let ignored = sqlx::query!(
+        r#"
+        SELECT
+            email_job_id,
+            message_id,
+            subject,
+            sender_email,
+            sender_name,
+            received_date,
+            body_text,
+            body_html,
+            extraction_confidence,
+            processing_errors
+        FROM email_jobs
+        WHERE processed = false OR extraction_confidence < 0.3
+        ORDER BY received_date DESC
+        LIMIT 100
+        "#
+    )
+    .fetch_all(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    let result: Vec<serde_json::Value> = ignored.iter().map(|row| {
+        serde_json::json!({
+            "email_job_id": row.email_job_id,
+            "message_id": row.message_id,
+            "subject": row.subject,
+            "sender_email": row.sender_email,
+            "sender_name": row.sender_name,
+            "received_date": row.received_date,
+            "body_text": row.body_text,
+            "body_html": row.body_html,
+            "extraction_confidence": row.extraction_confidence.as_ref().map(|c| c.to_string().parse::<f64>().unwrap_or(0.0)),
+            "processing_errors": row.processing_errors,
+        })
+    }).collect();
+
+    Ok(HttpResponse::Ok().json(result))
+}
+
+#[derive(Debug, Deserialize)]
+struct RefilterRequest {
+    scope: String, // "last_sync" or "all_filtered"
+}
+
+// Re-filter existing jobs without fetching from Gmail
+async fn refilter_jobs(
+    pool: web::Data<PgPool>,
+    req: web::Json<RefilterRequest>,
+) -> Result<HttpResponse> {
+    // Define a common query based on scope
+    let query_str = match req.scope.as_str() {
+        "last_sync" => {
+            r#"
+            SELECT j.job_id, j.title, j.company, j.location, j.salary, j.description, j.url, j.source, j.status
+            FROM jobs j
+            INNER JOIN (
+                SELECT MAX(sync_started_at) as last_sync
+                FROM job_intake_logs
+                WHERE sync_status = 'completed'
+            ) ls ON j.date_collected >= ls.last_sync
+            WHERE j.source = 'gmail'
+            "#
+        }
+        "all_filtered" => {
+            r#"
+            SELECT job_id, title, company, location, salary, description, url, source, status
+            FROM jobs
+            WHERE status = 'filtered' AND source = 'gmail'
+            "#
+        }
+        _ => {
+            return Err(actix_web::error::ErrorBadRequest("Invalid scope. Must be 'last_sync' or 'all_filtered'"));
+        }
+    };
+
+    // Fetch jobs using the common query structure
+    let jobs_to_refilter = sqlx::query(query_str)
+        .fetch_all(pool.get_ref())
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to fetch jobs: {}", e)))?;
+
+    let mut refiltered_count = 0;
+    let mut to_new = 0;
+    let mut to_filtered = 0;
+
+    for job_row in jobs_to_refilter {
+        let job_id: Uuid = job_row.try_get("job_id")
+            .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to get job_id: {}", e)))?;
+        let title: String = job_row.try_get("title").unwrap_or_default();
+        let company: String = job_row.try_get("company").unwrap_or_default();
+        let location: Option<String> = job_row.try_get("location").ok();
+        let salary: Option<i32> = job_row.try_get("salary").ok();
+        let description: Option<String> = job_row.try_get("description").ok();
+        let url: Option<String> = job_row.try_get("url").ok();
+        let source: String = job_row.try_get("source").unwrap_or_default();
+        let old_status: String = job_row.try_get("status").unwrap_or_default();
+
+        // Create a CreateJobRequest to pass to filter_job
+        let job_req = CreateJobRequest {
+            title,
+            company,
+            location,
+            salary,
+            description,
+            url,
+            source,
+            commute_time: None,
+        };
+
+        // Re-apply filtering logic
+        let filter_result = filter_job(&job_req, pool.get_ref()).await;
+
+        // Update job status and filter_reason
+        sqlx::query!(
+            "UPDATE jobs SET status = $1, filter_reason = $2 WHERE job_id = $3",
+            filter_result.status,
+            filter_result.reasons.join("; "),
+            job_id
+        )
+        .execute(pool.get_ref())
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to update job: {}", e)))?;
+
+        refiltered_count += 1;
+
+        // Track status changes
+        if old_status != filter_result.status {
+            if filter_result.status == "new" {
+                to_new += 1;
+            } else if filter_result.status == "filtered" {
+                to_filtered += 1;
+            }
+        }
+    }
+
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "message": "Re-filtering completed successfully",
+        "jobs_refiltered": refiltered_count,
+        "status_changes": {
+            "to_new": to_new,
+            "to_filtered": to_filtered,
+        }
+    })))
 }
 
 // ============================================================================
@@ -3602,6 +3826,8 @@ async fn main() -> std::io::Result<()> {
             .route("/api/intake/summary", web::get().to(get_job_intake_summary))
             .route("/api/job-sources", web::get().to(get_job_sources))
             .route("/api/intake/logs", web::get().to(get_intake_logs))
+            .route("/api/intake/ignored-emails", web::get().to(get_ignored_emails))
+            .route("/api/jobs/refilter", web::post().to(refilter_jobs))
             // Phase 5.1: Calendar & Follow-ups APIs
             .route("/api/interviews", web::post().to(create_interview))
             .route("/api/interviews/upcoming", web::get().to(get_upcoming_interviews))

@@ -33,31 +33,37 @@ BACKEND_STOPPED=false
 FRONTEND_STOPPED=false
 POSTGRES_STOPPED=false
 
-# Try to stop backend (cargo run)
+# Try to stop backend (both cargo run and the binary)
 echo "🦀 Stopping backend (Rust)..."
-if check_process 'cargo run'; then
-    BACKEND_COUNT=$(count_processes 'cargo run')
+BACKEND_RUNNING=false
+if check_process 'cargo run' || check_process 'jobhunter-backend'; then
+    BACKEND_RUNNING=true
+    BACKEND_COUNT=$(count_processes 'cargo run|jobhunter-backend')
     pkill -f 'cargo run' 2>/dev/null || true
+    pkill -f 'jobhunter-backend' 2>/dev/null || true
     sleep 1
 
     # Check if it stopped
-    if ! check_process 'cargo run'; then
+    if ! check_process 'cargo run' && ! check_process 'jobhunter-backend'; then
         echo "✅ Backend stopped gracefully ($BACKEND_COUNT process(es))"
         BACKEND_STOPPED=true
     else
         # Try force kill
         echo "⚠️  Backend didn't stop, trying force kill..."
         pkill -9 -f 'cargo run' 2>/dev/null || true
+        pkill -9 -f 'jobhunter-backend' 2>/dev/null || true
         sleep 1
 
-        if ! check_process 'cargo run'; then
+        if ! check_process 'cargo run' && ! check_process 'jobhunter-backend'; then
             echo "✅ Backend stopped (forced)"
             BACKEND_STOPPED=true
         else
             echo "❌ Backend still running (may need manual intervention)"
         fi
     fi
-else
+fi
+
+if [ "$BACKEND_RUNNING" = false ]; then
     echo "ℹ️  Backend not running"
     BACKEND_STOPPED=true
 fi

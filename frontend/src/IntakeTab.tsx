@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Briefcase, Search, RefreshCw, Settings, CheckCircle, XCircle, AlertCircle, Clock, TrendingUp } from 'lucide-react';
+import { Mail, Briefcase, Search, RefreshCw, Settings, CheckCircle, XCircle, AlertCircle, Clock, TrendingUp, Filter } from 'lucide-react';
 
 const API_URL = 'http://localhost:8080/api';
 
@@ -71,6 +71,15 @@ interface IntakeTabProps {
   onJobsUpdated?: () => void;
 }
 
+interface RefilterResponse {
+  message: string;
+  jobs_refiltered: number;
+  status_changes: {
+    to_new: number;
+    to_filtered: number;
+  };
+}
+
 const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
   const [sources, setSources] = useState<JobSource[]>([]);
   const [logs, setLogs] = useState<IntakeLog[]>([]);
@@ -86,6 +95,9 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
   const [promptContent, setPromptContent] = useState<string>('');
   const [promptNotes, setPromptNotes] = useState<string>('');
   const [savingPrompt, setSavingPrompt] = useState<boolean>(false);
+  const [refiltering, setRefiltering] = useState<boolean>(false);
+  const [refilterScope, setRefilterScope] = useState<string>('last_sync');
+  const [lastRefilterResult, setLastRefilterResult] = useState<RefilterResponse | null>(null);
 
   // Fetch job sources
   const fetchSources = async (): Promise<void> => {
@@ -338,6 +350,44 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
     }
   };
 
+  // Re-filter existing jobs
+  const handleRefilter = async (): Promise<void> => {
+    setRefiltering(true);
+    setError(null);
+    setLastRefilterResult(null);
+
+    try {
+      const response = await fetch(`${API_URL}/jobs/refilter`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scope: refilterScope })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Re-filter failed: ${response.status}`);
+      }
+
+      const data: RefilterResponse = await response.json();
+      setLastRefilterResult(data);
+
+      // Refresh all data
+      await Promise.all([
+        fetchLogs(),
+        fetchSummary()
+      ]);
+
+      // Notify parent component to refresh jobs list
+      if (onJobsUpdated) {
+        onJobsUpdated();
+      }
+    } catch (err) {
+      console.error('Error re-filtering jobs:', err);
+      setError('Failed to re-filter jobs');
+    } finally {
+      setRefiltering(false);
+    }
+  };
+
   const getSourceByType = (type: string): JobSource | undefined => {
     return sources.find(s => s.source_type === type);
   };
@@ -413,27 +463,71 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
             Configure and manage automated job discovery from multiple sources
           </p>
         </div>
-        <button
-          onClick={handleSyncAll}
-          disabled={syncingAll || syncingSource !== null}
-          style={{
-            padding: '10px 20px',
-            borderRadius: '6px',
-            border: 'none',
-            backgroundColor: syncingAll ? '#9ca3af' : '#3b82f6',
-            color: 'white',
-            fontWeight: '600',
-            cursor: syncingAll || syncingSource !== null ? 'not-allowed' : 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            fontSize: '14px',
-            opacity: syncingAll || syncingSource !== null ? 0.6 : 1
-          }}
-        >
-          <RefreshCw style={{ width: '18px', height: '18px', animation: syncingAll ? 'spin 1s linear infinite' : 'none' }} />
-          {syncingAll ? 'Syncing All...' : 'Sync All Sources'}
-        </button>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          {/* Re-filter controls */}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <select
+              value={refilterScope}
+              onChange={(e) => setRefilterScope(e.target.value)}
+              disabled={refiltering}
+              style={{
+                padding: '10px 12px',
+                borderRadius: '6px',
+                border: '1px solid #d1d5db',
+                backgroundColor: 'white',
+                color: '#374151',
+                fontSize: '14px',
+                cursor: refiltering ? 'not-allowed' : 'pointer',
+                opacity: refiltering ? 0.6 : 1
+              }}
+            >
+              <option value="last_sync">Last Sync Only</option>
+              <option value="all_filtered">All Filtered Jobs</option>
+            </select>
+            <button
+              onClick={handleRefilter}
+              disabled={refiltering || syncingAll || syncingSource !== null}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '6px',
+                border: 'none',
+                backgroundColor: refiltering ? '#9ca3af' : '#8b5cf6',
+                color: 'white',
+                fontWeight: '600',
+                cursor: refiltering || syncingAll || syncingSource !== null ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '14px',
+                opacity: refiltering || syncingAll || syncingSource !== null ? 0.6 : 1
+              }}
+            >
+              <Filter style={{ width: '18px', height: '18px', animation: refiltering ? 'spin 1s linear infinite' : 'none' }} />
+              {refiltering ? 'Re-filtering...' : 'Re-filter Jobs'}
+            </button>
+          </div>
+          <button
+            onClick={handleSyncAll}
+            disabled={syncingAll || syncingSource !== null || refiltering}
+            style={{
+              padding: '10px 20px',
+              borderRadius: '6px',
+              border: 'none',
+              backgroundColor: syncingAll ? '#9ca3af' : '#3b82f6',
+              color: 'white',
+              fontWeight: '600',
+              cursor: syncingAll || syncingSource !== null || refiltering ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '14px',
+              opacity: syncingAll || syncingSource !== null || refiltering ? 0.6 : 1
+            }}
+          >
+            <RefreshCw style={{ width: '18px', height: '18px', animation: syncingAll ? 'spin 1s linear infinite' : 'none' }} />
+            {syncingAll ? 'Syncing All...' : 'Sync All Sources'}
+          </button>
+        </div>
       </div>
 
       {/* Error display */}
@@ -468,6 +562,27 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
           <CheckCircle style={{ width: '20px', height: '20px', color: '#059669' }} />
           <span style={{ color: '#065f46', fontSize: '14px' }}>
             {lastSyncResult.message} - {lastSyncResult.jobs_added} new jobs added, {lastSyncResult.duplicates_skipped} duplicates skipped
+          </span>
+        </div>
+      )}
+
+      {/* Re-filter success notification */}
+      {lastRefilterResult && !refiltering && (
+        <div style={{
+          backgroundColor: '#e0e7ff',
+          border: '1px solid #8b5cf6',
+          borderRadius: '6px',
+          padding: '12px 16px',
+          marginBottom: '24px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <CheckCircle style={{ width: '20px', height: '20px', color: '#7c3aed' }} />
+          <span style={{ color: '#5b21b6', fontSize: '14px' }}>
+            {lastRefilterResult.message} - {lastRefilterResult.jobs_refiltered} jobs refiltered,
+            {' '}{lastRefilterResult.status_changes.to_new} moved to New,
+            {' '}{lastRefilterResult.status_changes.to_filtered} remained Filtered
           </span>
         </div>
       )}
