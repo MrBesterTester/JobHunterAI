@@ -2751,6 +2751,95 @@ async fn get_ignored_emails(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     Ok(HttpResponse::Ok().json(result))
 }
 
+// Get failed emails (emails with processing errors)
+async fn get_failed_emails(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    let failed = sqlx::query!(
+        r#"
+        SELECT
+            email_job_id,
+            message_id,
+            subject,
+            sender_email,
+            sender_name,
+            received_date,
+            body_text,
+            body_html,
+            extraction_confidence,
+            processing_errors
+        FROM email_jobs
+        WHERE processing_errors IS NOT NULL
+        ORDER BY received_date DESC
+        LIMIT 100
+        "#
+    )
+    .fetch_all(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    let result: Vec<serde_json::Value> = failed.iter().map(|row| {
+        serde_json::json!({
+            "email_job_id": row.email_job_id,
+            "message_id": row.message_id,
+            "subject": row.subject,
+            "sender_email": row.sender_email,
+            "sender_name": row.sender_name,
+            "received_date": row.received_date,
+            "body_text": row.body_text,
+            "body_html": row.body_html,
+            "extraction_confidence": row.extraction_confidence.as_ref().map(|c| c.to_string().parse::<f64>().unwrap_or(0.0)),
+            "processing_errors": row.processing_errors,
+        })
+    }).collect();
+
+    Ok(HttpResponse::Ok().json(result))
+}
+
+// Get duplicate emails (processed but no job created, high confidence)
+async fn get_duplicate_emails(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    let duplicates = sqlx::query!(
+        r#"
+        SELECT
+            email_job_id,
+            message_id,
+            subject,
+            sender_email,
+            sender_name,
+            received_date,
+            body_text,
+            body_html,
+            extraction_confidence,
+            processing_errors
+        FROM email_jobs
+        WHERE processed = true
+          AND job_id IS NULL
+          AND processing_errors IS NULL
+          AND (extraction_confidence IS NULL OR extraction_confidence >= 0.3)
+        ORDER BY received_date DESC
+        LIMIT 100
+        "#
+    )
+    .fetch_all(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    let result: Vec<serde_json::Value> = duplicates.iter().map(|row| {
+        serde_json::json!({
+            "email_job_id": row.email_job_id,
+            "message_id": row.message_id,
+            "subject": row.subject,
+            "sender_email": row.sender_email,
+            "sender_name": row.sender_name,
+            "received_date": row.received_date,
+            "body_text": row.body_text,
+            "body_html": row.body_html,
+            "extraction_confidence": row.extraction_confidence.as_ref().map(|c| c.to_string().parse::<f64>().unwrap_or(0.0)),
+            "processing_errors": row.processing_errors,
+        })
+    }).collect();
+
+    Ok(HttpResponse::Ok().json(result))
+}
+
 #[derive(Debug, Deserialize)]
 struct RefilterRequest {
     scope: String, // "last_sync" or "all_filtered"
@@ -4208,6 +4297,8 @@ async fn main() -> std::io::Result<()> {
             .route("/api/job-sources", web::get().to(get_job_sources))
             .route("/api/intake/logs", web::get().to(get_intake_logs))
             .route("/api/intake/ignored-emails", web::get().to(get_ignored_emails))
+            .route("/api/intake/failed-emails", web::get().to(get_failed_emails))
+            .route("/api/intake/duplicate-emails", web::get().to(get_duplicate_emails))
             .route("/api/jobs/refilter", web::post().to(refilter_jobs))
             // Phase 5.1: Calendar & Follow-ups APIs
             .route("/api/interviews", web::post().to(create_interview))

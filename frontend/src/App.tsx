@@ -5,6 +5,8 @@ import CalendarTab from './CalendarTab';
 import FollowupsTab from './FollowupsTab';
 import IntakeTab from './IntakeTab';
 import IgnoredTab from './IgnoredTab';
+import FailedTab from './FailedTab';
+import DuplicatesTab from './DuplicatesTab';
 import EmailComposer from './EmailComposer';
 
 const API_URL = 'http://localhost:8080/api';
@@ -1379,19 +1381,9 @@ const JobHunterDashboard: React.FC = () => {
         ) : activeTab === 'ignored' ? (
           <IgnoredTab />
         ) : activeTab === 'failed' ? (
-          <div style={{ textAlign: 'center', padding: '48px 0' }}>
-            <AlertTriangle style={{ width: '64px', height: '64px', color: '#ef4444', margin: '0 auto 16px' }} />
-            <h3 style={{ fontSize: '20px', fontWeight: '600', color: '#111827', marginBottom: '8px' }}>Failed Processing</h3>
-            <p style={{ color: '#6b7280', marginBottom: '4px' }}>This tab will show emails that failed during processing.</p>
-            <p style={{ fontSize: '14px', color: '#9ca3af' }}>Count: {stats.failed || 0}</p>
-          </div>
+          <FailedTab />
         ) : activeTab === 'duplicates' ? (
-          <div style={{ textAlign: 'center', padding: '48px 0' }}>
-            <Copy style={{ width: '64px', height: '64px', color: '#f59e0b', margin: '0 auto 16px' }} />
-            <h3 style={{ fontSize: '20px', fontWeight: '600', color: '#111827', marginBottom: '8px' }}>Duplicate Jobs</h3>
-            <p style={{ color: '#6b7280', marginBottom: '4px' }}>This tab will show jobs that matched existing entries.</p>
-            <p style={{ fontSize: '14px', color: '#9ca3af' }}>Count: {stats.duplicated || 0}</p>
-          </div>
+          <DuplicatesTab />
         ) : (
           <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))', gap: '16px', width: '100%' }}>
