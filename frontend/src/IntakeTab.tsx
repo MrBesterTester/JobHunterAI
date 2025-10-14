@@ -22,6 +22,7 @@ interface IntakeLog {
   jobs_discovered: number;
   jobs_failed_processing: number;
   jobs_duplicated: number;
+  jobs_filtered_out: number;
   jobs_created: number;
   jobs_approved: number; // DEPRECATED
   jobs_filtered: number; // DEPRECATED
@@ -1012,6 +1013,8 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
                     <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
                       <span style={{ color: '#10b981' }}>✓ {log.jobs_created || 0} processed</span>
                       {' • '}
+                      <span style={{ color: '#f97316' }}>⚠ {log.jobs_filtered_out || 0} filtered</span>
+                      {' • '}
                       <span style={{ color: '#f59e0b' }}>⊕ {log.jobs_duplicated || 0} dupes</span>
                       {' • '}
                       <span style={{ color: '#ef4444' }}>✗ {log.jobs_failed_processing || 0} failed</span>
@@ -1033,6 +1036,7 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
                     )}
                     <p><strong>Total Discovered:</strong> {log.jobs_discovered}</p>
                     <p style={{ color: '#10b981' }}><strong>✓ Jobs Processed:</strong> {log.jobs_created || 0}</p>
+                    <p style={{ color: '#f97316' }}><strong>⚠ Jobs Filtered Out:</strong> {log.jobs_filtered_out || 0}</p>
                     <p style={{ color: '#f59e0b' }}><strong>⊕ Duplicates Skipped:</strong> {log.jobs_duplicated || 0}</p>
                     <p style={{ color: '#ef4444' }}><strong>✗ Failed Processing:</strong> {log.jobs_failed_processing || 0}</p>
                     {log.validation_error && (
