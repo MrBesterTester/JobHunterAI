@@ -1010,7 +1010,7 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
                       {log.jobs_discovered} Total
                     </p>
                     <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
-                      <span style={{ color: '#10b981' }}>✓ {log.jobs_created || 0} created</span>
+                      <span style={{ color: '#10b981' }}>✓ {log.jobs_created || 0} processed</span>
                       {' • '}
                       <span style={{ color: '#f59e0b' }}>⊕ {log.jobs_duplicated || 0} dupes</span>
                       {' • '}
@@ -1032,7 +1032,7 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
                       <p><strong>Completed:</strong> {new Date(log.sync_completed_at).toLocaleString()}</p>
                     )}
                     <p><strong>Total Discovered:</strong> {log.jobs_discovered}</p>
-                    <p style={{ color: '#10b981' }}><strong>✓ Jobs Created:</strong> {log.jobs_created || 0}</p>
+                    <p style={{ color: '#10b981' }}><strong>✓ Jobs Processed:</strong> {log.jobs_created || 0}</p>
                     <p style={{ color: '#f59e0b' }}><strong>⊕ Duplicates Skipped:</strong> {log.jobs_duplicated || 0}</p>
                     <p style={{ color: '#ef4444' }}><strong>✗ Failed Processing:</strong> {log.jobs_failed_processing || 0}</p>
                     {log.validation_error && (

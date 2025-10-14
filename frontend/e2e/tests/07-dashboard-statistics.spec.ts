@@ -97,29 +97,38 @@ test.describe('Dashboard Statistics', () => {
     expect(totalUI).toBe(stats.discovered || 0);
   });
 
-  test('MECE validation: discovered = failed + filtered + duplicated + created', async ({ page }) => {
+  test('should display processed counter from intake logs', async ({ page }) => {
+    const processedStat = page.locator('[data-testid="stat-created"]');
+    await expect(processedStat).toBeVisible();
+
+    const count = await processedStat.locator('p').first().textContent();
+    expect(count).toMatch(/^\d+$/);
+
+    // Check label says "Processed"
+    const label = await processedStat.locator('p').nth(1).textContent();
+    expect(label).toBe('Processed');
+  });
+
+  test('MECE validation: discovered = failed + filtered + duplicated + processed', async ({ page }) => {
     // Fetch stats from API
     const response = await page.request.get('http://localhost:8080/api/jobs/stats');
     expect(response.ok()).toBeTruthy();
 
     const stats = await response.json();
 
-    // MECE equation: discovered = failed + filtered + duplicated + new
-    // Note: "new" here represents created jobs with status='new'
+    // MECE equation: discovered = failed + filtered + duplicated + created (processed)
     const discovered = stats.discovered || 0;
     const failed = stats.failed || 0;
     const filtered = stats.filtered || 0;
     const duplicated = stats.duplicated || 0;
+    const processed = stats.created || 0;
 
-    // Get the count of jobs with status='new' from the stats
-    const created = stats.new || 0;
+    // Validate MECE: the sum should equal discovered
+    const sum = failed + filtered + duplicated + processed;
+    expect(sum).toBe(discovered);
 
-    // The sum of non-"new" counters plus jobs in "new" status should be close to discovered
-    // (Some jobs might have been moved to approved/applied/rejected)
-    const accountedFor = failed + filtered + duplicated;
-
-    // At minimum, we should have these counters accounting for part of discovered
-    expect(accountedFor).toBeLessThanOrEqual(discovered);
+    // Also validate backend returned mece_valid=1
+    expect(stats.mece_valid).toBe(1);
   });
 
   test('all stat counters should be non-negative', async ({ page }) => {
@@ -128,6 +137,7 @@ test.describe('Dashboard Statistics', () => {
       '[data-testid="stat-ignored"]',
       '[data-testid="stat-failed"]',
       '[data-testid="stat-duplicated"]',
+      '[data-testid="stat-created"]',
       '[data-testid="stat-new"]',
       '[data-testid="stat-approved"]',
       '[data-testid="stat-applied"]',
@@ -149,6 +159,7 @@ test.describe('Dashboard Statistics', () => {
       { testId: 'stat-ignored', label: 'Ignored' },
       { testId: 'stat-failed', label: 'Failed' },
       { testId: 'stat-duplicated', label: 'Duplicates' },
+      { testId: 'stat-created', label: 'Processed' },
       { testId: 'stat-new', label: 'New' },
       { testId: 'stat-approved', label: 'Approved' },
       { testId: 'stat-applied', label: 'Applied' },
