@@ -1261,13 +1261,13 @@ const JobHunterDashboard: React.FC = () => {
       <div style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb', width: '100%' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '16px', boxSizing: 'border-box' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '8px', width: '100%' }}>
+            <div style={{ textAlign: 'center' }} data-testid="stat-ignored">
+              <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#dc2626' }}>{stats.ignored || 0}</p>
+              <p style={{ fontSize: '14px', color: '#6b7280' }}>Non-Job Emails</p>
+            </div>
             <div style={{ textAlign: 'center' }} data-testid="stat-filtered">
               <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#f97316' }}>{stats.filtered || 0}</p>
               <p style={{ fontSize: '14px', color: '#6b7280' }}>Filtered</p>
-            </div>
-            <div style={{ textAlign: 'center' }} data-testid="stat-ignored">
-              <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#dc2626' }}>{stats.ignored || 0}</p>
-              <p style={{ fontSize: '14px', color: '#6b7280' }}>Ignored</p>
             </div>
             <div style={{ textAlign: 'center' }} data-testid="stat-failed">
               <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#ef4444' }}>{stats.failed || 0}</p>
