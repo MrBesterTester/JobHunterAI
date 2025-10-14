@@ -762,6 +762,16 @@ GMAIL_REDIRECT_URI=http://localhost:8080/auth/gmail/callback
 - Complete the OAuth flow in the popup window
 - You should see "Connected" status
 
+**7. Create Gmail Label (Required for Phase 5.3.3):**
+- Go to your Gmail account (gmail.com)
+- Click the gear icon → "See all settings" → "Labels"
+- Scroll to the "Labels" section
+- Click "Create new label"
+- Name it **"JobOp"** (case-sensitive, exactly as shown)
+- Click "Create"
+
+**Important**: The app will automatically apply the "JobOp" label to emails containing job opportunities during the sync process (Phase 5.3.3). You don't need to manually label any emails - just create the empty label and let the app handle the rest.
+
 **Troubleshooting:**
 - **"Failed to initiate Gmail authentication"** - Check that `GMAIL_CLIENT_ID` is set in `.env`
 - **OAuth error in popup** - Verify redirect URI matches exactly: `http://localhost:8080/auth/gmail/callback`
