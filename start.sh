@@ -35,7 +35,7 @@ echo ""
 
 echo "⚛️  Starting frontend (React/TypeScript)..."
 cd frontend
-npm start > /dev/null 2>&1 &
+BROWSER=none npm start > /dev/null 2>&1 &
 FRONTEND_PID=$!
 cd ..
 
