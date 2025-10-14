@@ -109,22 +109,24 @@ test.describe('Dashboard Statistics', () => {
     expect(label).toBe('Processed');
   });
 
-  test('MECE validation: discovered = failed + filtered + duplicated + processed', async ({ page }) => {
+  test('MECE validation: discovered = failed + filtered_during_intake + duplicated + processed', async ({ page }) => {
     // Fetch stats from API
     const response = await page.request.get('http://localhost:8080/api/jobs/stats');
     expect(response.ok()).toBeTruthy();
 
     const stats = await response.json();
 
-    // MECE equation: discovered = failed + filtered + duplicated + created (processed)
+    // MECE equation: discovered = failed + filtered_during_intake + duplicated + created (processed)
+    // Note: "filtered" is the count of jobs with status='filtered' in jobs table
+    // "filtered_during_intake" is the count of jobs filtered during email processing (never created)
     const discovered = stats.discovered || 0;
     const failed = stats.failed || 0;
-    const filtered = stats.filtered || 0;
+    const filtered_during_intake = stats.filtered_during_intake || 0;
     const duplicated = stats.duplicated || 0;
     const processed = stats.created || 0;
 
     // Validate MECE: the sum should equal discovered
-    const sum = failed + filtered + duplicated + processed;
+    const sum = failed + filtered_during_intake + duplicated + processed;
     expect(sum).toBe(discovered);
 
     // Also validate backend returned mece_valid=1

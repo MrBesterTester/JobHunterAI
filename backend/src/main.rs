@@ -1254,7 +1254,7 @@ async fn get_job_stats(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     stats_map.entry("new".to_string()).or_insert(0);
     stats_map.entry("approved".to_string()).or_insert(0);
     stats_map.entry("applied".to_string()).or_insert(0);
-    // Note: "filtered" is set from job_intake_logs below, not from job status
+    stats_map.entry("filtered".to_string()).or_insert(0); // Jobs with status='filtered' from jobs table
 
     // Add failed, duplicated, filtered, created, and discovered counts from job_intake_logs (MECE counters)
     let intake_stats = sqlx::query!(
@@ -1275,7 +1275,9 @@ async fn get_job_stats(pool: web::Data<PgPool>) -> Result<HttpResponse> {
 
     stats_map.insert("failed".to_string(), intake_stats.total_failed.unwrap_or(0));
     stats_map.insert("duplicated".to_string(), intake_stats.total_duplicated.unwrap_or(0));
-    stats_map.insert("filtered".to_string(), intake_stats.total_filtered.unwrap_or(0));
+    // Note: "filtered" count comes from jobs table (jobs with status='filtered'), not intake logs
+    // stats_map.insert("filtered".to_string(), intake_stats.total_filtered.unwrap_or(0)); // This was overwriting the jobs table count
+    stats_map.insert("filtered_during_intake".to_string(), intake_stats.total_filtered.unwrap_or(0)); // Jobs filtered during email processing
     stats_map.insert("created".to_string(), intake_stats.total_created.unwrap_or(0));
     stats_map.insert("discovered".to_string(), intake_stats.total_discovered.unwrap_or(0));
 
