@@ -230,7 +230,7 @@ CREATE TABLE oauth_credentials (
 
 -- Job Intake Logs Table
 -- Tracking metrics are mutually exclusive and collectively exhaustive:
--- jobs_discovered = jobs_failed_processing + jobs_duplicated + jobs_created
+-- jobs_discovered = jobs_failed_processing + jobs_filtered_out + jobs_duplicated + jobs_created
 CREATE TABLE job_intake_logs (
     log_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     source_id UUID NOT NULL REFERENCES job_sources(source_id) ON DELETE CASCADE,
@@ -238,6 +238,7 @@ CREATE TABLE job_intake_logs (
     sync_completed_at TIMESTAMP WITH TIME ZONE,
     jobs_discovered INTEGER DEFAULT 0,           -- Total emails/items discovered
     jobs_failed_processing INTEGER DEFAULT 0,    -- Failed extraction or low confidence
+    jobs_filtered_out INTEGER DEFAULT 0,         -- Emails with confidence < 0.3 (not job opportunities)
     jobs_duplicated INTEGER DEFAULT 0,           -- Matched existing jobs (deduped)
     jobs_created INTEGER DEFAULT 0,              -- New jobs actually created
     jobs_filtered INTEGER DEFAULT 0,             -- DEPRECATED: use jobs_created status instead

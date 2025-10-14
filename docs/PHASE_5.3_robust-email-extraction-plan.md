@@ -63,6 +63,15 @@
   - [Progressive Query Filter](#progressive-query-filter)
   - [Accurate Date Tracking Implementation](#accurate-date-tracking-implementation)
   - [Testing](#testing-phase-532)
+- [Phase 5.3.3: LLM-Based Email Filtering with Gmail Labels](#phase-533-llm-based-email-filtering-with-gmail-labels)
+  - [Problem Statement](#problem-statement-phase-533)
+  - [Proposed Solution](#proposed-solution-phase-533)
+  - [Current State Analysis](#current-state-analysis-phase-533)
+  - [Architecture Changes](#architecture-changes-phase-533)
+  - [Implementation Plan](#implementation-plan-phase-533)
+  - [Benefits & Considerations](#benefits--considerations-phase-533)
+  - [Cost Impact](#cost-impact-phase-533)
+  - [Testing Strategy](#testing-strategy-phase-533)
 - [Next Steps](#next-steps)
 - [Appendix A: Sample Extraction Prompt](#appendix-a-sample-extraction-prompt)
 - [Appendix B: Current Regex Patterns (For Reference)](#appendix-b-current-regex-patterns-for-reference)
@@ -1618,15 +1627,409 @@ interface Job {
 
 ---
 
+## Phase 5.3.3: LLM-Based Email Filtering with Gmail Labels
+
+### Problem Statement (Phase 5.3.3)
+
+**Current Issues:**
+1. **Inaccurate Subject-Line Filter**: The deterministic query `is:unread subject:(job OR position OR opportunity...)` catches too many false positives:
+   - Marketing emails ("Opportunity to save!")
+   - Unsubscribe confirmations
+   - Newsletter content
+   - General promotional emails
+2. **All Emails Marked as Read**: Both real job opportunities and spam get marked as read, making Gmail inbox management difficult
+3. **Wasted LLM Processing**: LLM processes obvious non-job emails that should be filtered out earlier
+4. **Lost Opportunities**: Subject-based filtering misses emails where job opportunities are only in the body
+
+**User Impact:**
+- Can't distinguish real job emails from noise in Gmail
+- Inbox gets cluttered with unread non-job emails mixed with unprocessed job emails
+- LLM costs include processing spam/marketing emails
+
+### Proposed Solution (Phase 5.3.3)
+
+**Smart LLM-Based Filtering with Gmail Labels:**
+
+1. **Broaden Gmail Query**: Remove subject-based filter, process ALL unread emails (except already tagged)
+2. **LLM Classification**: Use Claude Haiku to determine if email contains a real job opportunity
+3. **Gmail Label Management**:
+   - **Real job opportunities (confidence ≥ 0.3)**: Add "JobOp" label + mark as read + create job in database
+   - **Non-job emails (confidence < 0.3)**: Leave unread + no label + no job creation
+4. **Deterministic Skip**: Skip emails already tagged with "JobOp" label (avoid reprocessing)
+5. **User Control**: Users can manually review unread emails in inbox and mark them as read or tag them
+
+**Workflow:**
+```
+Gmail Sync Request
+    ↓
+Query: "is:unread -label:JobOp"  ← Skip already-processed
+    ↓
+Fetch up to 50 unread emails
+    ↓
+For each email:
+    ↓
+LLM Analysis (subject + body)
+    ↓
+    ├─ Confidence ≥ 0.3 (Real Job)
+    │   ├─ Add "JobOp" label
+    │   ├─ Mark as read
+    │   └─ Create job in database
+    │
+    └─ Confidence < 0.3 (Not a Job)
+        ├─ No label
+        ├─ Leave unread
+        └─ No job created
+```
+
+### Current State Analysis (Phase 5.3.3)
+
+**Existing Implementation** (backend/src/main.rs:1816):
+```rust
+// Current query - subject-based filter
+let query = "is:unread subject:(job OR position OR opportunity OR career OR hiring OR opening)";
+```
+
+**Existing Mark-as-Read** (backend/src/main.rs:1768-1798):
+- Function `mark_gmail_message_as_read()` already exists
+- Uses Gmail API `messages/{id}/modify` with `removeLabelIds: ["UNREAD"]`
+- Currently marks ALL processed emails as read (both jobs and non-jobs)
+
+**Existing LLM Integration** (backend/src/main.rs:2164-2203):
+- Function `extract_job_from_email_async()` uses Claude Haiku
+- Returns `JobExtractionResult` with confidence score
+- Current threshold: confidence > 0.3 triggers job creation
+- Already handles job vs. non-job classification
+
+**Current Email Processing** (backend/src/main.rs:1928-1984):
+- Creates job if confidence > 0.3
+- Marks email as read regardless of confidence
+- No Gmail labeling implemented
+
+### Architecture Changes (Phase 5.3.3)
+
+**1. Create Gmail Label Functions**
+
+New function to get or create "JobOp" label:
+```rust
+/// Get or create the "JobOp" label in Gmail
+async fn get_or_create_jobop_label(
+    client: &reqwest::Client,
+    access_token: &str,
+) -> std::result::Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    // First, try to find existing label
+    let url = "https://gmail.googleapis.com/gmail/v1/users/me/labels";
+    let response = client
+        .get(url)
+        .bearer_auth(access_token)
+        .send()
+        .await?;
+
+    #[derive(Debug, Deserialize)]
+    struct LabelsResponse {
+        labels: Vec<LabelInfo>,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct LabelInfo {
+        id: String,
+        name: String,
+    }
+
+    let labels: LabelsResponse = response.json().await?;
+
+    // Check if "JobOp" label already exists
+    if let Some(label) = labels.labels.iter().find(|l| l.name == "JobOp") {
+        return Ok(label.id.clone());
+    }
+
+    // Create new "JobOp" label
+    let create_body = serde_json::json!({
+        "name": "JobOp",
+        "labelListVisibility": "labelShow",
+        "messageListVisibility": "show"
+    });
+
+    let create_response = client
+        .post("https://gmail.googleapis.com/gmail/v1/users/me/labels")
+        .bearer_auth(access_token)
+        .json(&create_body)
+        .send()
+        .await?;
+
+    let created_label: LabelInfo = create_response.json().await?;
+    Ok(created_label.id)
+}
+```
+
+New function to add "JobOp" label to email:
+```rust
+/// Add the "JobOp" label to a Gmail message
+async fn add_jobop_label(
+    client: &reqwest::Client,
+    access_token: &str,
+    message_id: &str,
+    label_id: &str,
+) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let url = format!(
+        "https://gmail.googleapis.com/gmail/v1/users/me/messages/{}/modify",
+        message_id
+    );
+
+    let body = serde_json::json!({
+        "addLabelIds": [label_id]
+    });
+
+    let response = client
+        .post(&url)
+        .bearer_auth(access_token)
+        .json(&body)
+        .send()
+        .await?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_default();
+        return Err(format!("Failed to add label: {}", status).into());
+    }
+
+    Ok(())
+}
+```
+
+**2. Update Gmail Query**
+
+Change from subject-based to label-based filtering:
+```rust
+// OLD (backend/src/main.rs:1816)
+let query = "is:unread subject:(job OR position OR opportunity OR career OR hiring OR opening)";
+
+// NEW
+let query = "is:unread -label:JobOp";  // All unread emails EXCEPT those already tagged as JobOp
+```
+
+**3. Update Email Processing Logic**
+
+Modify processing workflow (backend/src/main.rs:1928-1984):
+```rust
+// Get or create JobOp label (once per sync)
+let jobop_label_id = match get_or_create_jobop_label(&client, access_token).await {
+    Ok(id) => id,
+    Err(e) => {
+        log_debug(&format!("Warning: Failed to get JobOp label: {}", e));
+        String::new() // Continue without labeling
+    }
+};
+
+// ... process each email ...
+
+if let Some(mut job_data) = extract_job_from_email_async(&subject, &body_text, pool).await {
+    log_debug(&format!("Extracted job data - Title: {:?}, Company: {:?}, Confidence: {:.2}, Method: {}",
+        job_data.title, job_data.company, job_data.confidence, job_data.extraction_method));
+
+    // Replace LLM summary with full email body
+    if let Some(full_body) = &body_text {
+        job_data.description = Some(full_body.clone());
+    }
+
+    if job_data.confidence > 0.3 { // Real job opportunity
+        // Add "JobOp" label
+        if !jobop_label_id.is_empty() {
+            if let Err(e) = add_jobop_label(&client, access_token, &message.id, &jobop_label_id).await {
+                log_debug(&format!("Warning: Failed to add JobOp label to message {}: {}", message.id, e));
+            }
+        }
+
+        // Mark as read
+        if let Err(e) = mark_gmail_message_as_read(&client, access_token, &message.id).await {
+            log_debug(&format!("Warning: Failed to mark message {} as read: {}", message.id, e));
+        }
+
+        // Create job in database
+        match create_job_from_extraction(&job_data, source, pool, Some(received_date)).await {
+            Ok(JobCreationResult::Created(_job_id)) => {
+                metrics.created += 1;
+                // Mark email as processed in email_jobs table
+                // ... (existing code)
+            }
+            // ... (existing code)
+        }
+    } else {
+        // Low confidence - not a real job opportunity
+        metrics.failed_processing += 1;
+        log_debug(&format!("Email filtered out (confidence {:.2}) - leaving unread: {:?}",
+            job_data.confidence, subject));
+
+        // DO NOT mark as read
+        // DO NOT add label
+        // Email stays in inbox as unread for manual review
+    }
+} else {
+    // Extraction failed
+    metrics.failed_processing += 1;
+    log_debug(&format!("Failed to extract job data - leaving unread: {:?}", subject));
+    // DO NOT mark as read
+}
+```
+
+**4. Update Metrics**
+
+Update MECE counters to distinguish filtered emails:
+```rust
+struct SyncMetrics {
+    discovered: i32,
+    failed_processing: i32,  // Extraction errors
+    filtered_out: i32,        // NEW: Low confidence (not a job)
+    duplicated: i32,
+    created: i32,
+}
+
+// Validation
+let sum = metrics.failed_processing + metrics.filtered_out + metrics.duplicated + metrics.created;
+assert_eq!(sum, metrics.discovered);
+```
+
+**5. Enhance Prompt**
+
+Update prompts/job_extraction_default.md to emphasize job vs. non-job classification:
+```markdown
+## Confidence Scoring
+
+- **0.9-1.0**: Clear job posting with all key fields (title, company, location)
+- **0.7-0.9**: Job posting missing 1-2 fields
+- **0.5-0.7**: Likely a job but unclear details
+- **0.3-0.5**: Uncertain if job posting
+- **< 0.3**: NOT a job posting ← IMPORTANT for filtering
+
+Return confidence < 0.3 for:
+- Unsubscribe confirmations
+- Newsletter content
+- Marketing emails ("Opportunity to save money!")
+- Calendar invites unrelated to jobs
+- Email forwarding notifications
+- Automated notifications
+- Job alerts from job boards (without actual job details)
+- Generic recruiter outreach without specific positions
+```
+
+### Implementation Plan (Phase 5.3.3)
+
+**Changes Required:**
+
+1. **Update Gmail Query** (backend/src/main.rs:1816)
+   - Change from: `"is:unread subject:(job OR position...)"`
+   - Change to: `"is:unread -label:JobOp"`
+
+2. **Add Gmail Labeling Functions** (backend/src/main.rs, after line 1798)
+   - `get_or_create_jobop_label()` - Get/create "JobOp" label ID
+   - `add_jobop_label()` - Add label to specific message
+
+3. **Update Email Processing Logic** (backend/src/main.rs:1928-1984)
+   - Get JobOp label ID at start of sync
+   - For confidence ≥ 0.3: Add label + mark as read + create job
+   - For confidence < 0.3: Leave unread + no label + no job
+
+4. **Update Metrics** (backend/src/main.rs:1761-1766)
+   - Add `filtered_out` counter
+   - Update validation: `discovered = failed_processing + filtered_out + duplicated + created`
+
+5. **Enhance Prompt** (prompts/job_extraction_default.md)
+   - Strengthen guidance on confidence < 0.3 for non-job emails
+   - Add more examples of spam/marketing to reject
+
+**No OAuth Changes Needed:** `gmail.modify` scope already granted in Phase 5.3.2
+
+### Benefits & Considerations (Phase 5.3.3)
+
+**Benefits:**
+
+✅ **More Accurate Filtering**: LLM analyzes full email content, not just subject line
+✅ **Better Inbox Management**: Only real job emails get marked as read
+✅ **Clear Gmail Organization**: "JobOp" label makes job emails easily identifiable
+✅ **User Control**: Non-job emails stay in inbox for manual review
+✅ **No Duplicate Processing**: JobOp-labeled emails automatically skipped
+✅ **Cost Optimization**: Future syncs skip already-processed emails
+✅ **Catches Hidden Jobs**: Finds opportunities in emails with generic subjects
+
+**Considerations:**
+
+⚠️ **Initially Processes All Emails**: First sync processes ALL unread emails (not just job-related subjects)
+⚠️ **Slightly More API Calls**: Adds label management API calls
+⚠️ **LLM Classification Errors**: May occasionally misclassify (false positives/negatives)
+⚠️ **User Re-education**: Users need to understand new workflow
+
+**Mitigation:**
+
+- Keep 50 email limit per sync (already implemented)
+- Use confidence threshold 0.3 (catches edge cases)
+- User can manually mark emails as unread to reprocess
+- Monitor prompt accuracy and iterate
+
+### Cost Impact (Phase 5.3.3)
+
+**LLM Usage Comparison:**
+
+**Before Phase 5.3.3** (subject-based filter):
+- Processes ~50 emails per sync (subject-filtered)
+- ~40 are real job emails, ~10 are false positives
+- Cost: 50 emails × $0.0005 = **$0.025 per sync**
+
+**After Phase 5.3.3** (LLM-based filter):
+- Processes ~50 unread emails per sync (no subject filter)
+- ~40 are real job emails, ~10 are spam/marketing
+- Same cost: 50 emails × $0.0005 = **$0.025 per sync**
+- **Future syncs**: Skip JobOp-labeled emails → only process NEW unread emails
+
+**Net Impact:**
+- First sync: Same cost
+- Subsequent syncs: **Lower cost** (fewer emails to process due to progressive batching)
+- **Better value**: Processes all potential job emails, not just subject-matched ones
+
+**Gmail API Usage:**
+- Additional API calls: ~2 per real job email (get label, add label)
+- Gmail API quota: 1 billion requests/day → No concern
+
+### Testing Strategy (Phase 5.3.3)
+
+**Unit Tests:**
+1. Test `get_or_create_jobop_label()` creates label if not exists
+2. Test `get_or_create_jobop_label()` returns existing label ID
+3. Test `add_jobop_label()` successfully adds label to message
+4. Test query filter excludes JobOp-labeled emails
+
+**Integration Tests:**
+1. **Real Job Email**: Verify gets JobOp label + marked read + job created
+2. **Marketing Email**: Verify stays unread + no label + no job created
+3. **Unsubscribe Email**: Verify stays unread + no label + no job created
+4. **Already-Tagged Email**: Verify skipped by query filter
+5. **Manual Reprocessing**: Mark JobOp email as unread → verify not reprocessed (has label)
+
+**Acceptance Criteria:**
+- ✅ Gmail query excludes emails with "JobOp" label
+- ✅ Real job emails (confidence ≥ 0.3) get "JobOp" label and marked as read
+- ✅ Non-job emails (confidence < 0.3) stay unread without label
+- ✅ MECE validation passes: discovered = failed + filtered + duplicated + created
+- ✅ Subsequent syncs only process NEW unread emails
+- ✅ Manual testing with 50+ diverse emails shows improved accuracy
+
+**Rollback Plan:**
+If LLM filtering causes issues:
+1. Revert Gmail query to subject-based: `"is:unread subject:(job OR position...)"`
+2. Remove label management code
+3. Mark all emails as read (previous behavior)
+4. Remove `filtered_out` counter (merge into `failed_processing`)
+
+---
+
 ## Next Steps
 
 1. **✅ Phase 5.3 Complete** - LLM-based extraction with Claude Haiku
 2. **✅ Phase 5.3.1 Complete** - MECE Counter System with validation
 3. **✅ Phase 5.3.2 Complete** - Progressive email processing with mark-as-read
-4. **Ongoing**: Monitor extraction quality and iterate on prompt if needed
-5. **Ongoing**: Track API costs and optimize if necessary
-6. **Future**: Consider additional job sources (LinkedIn, Indeed APIs)
-7. **Future**: Implement automated prompt A/B testing for continuous improvement
+4. **🎯 Phase 5.3.3 Proposed** - LLM-based email filtering with Gmail labels
+5. **Ongoing**: Monitor extraction quality and iterate on prompt if needed
+6. **Ongoing**: Track API costs and optimize if necessary
+7. **Future**: Consider additional job sources (LinkedIn, Indeed APIs)
+8. **Future**: Implement automated prompt A/B testing for continuous improvement
 
 ## Appendix A: Sample Extraction Prompt
 

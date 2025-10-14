@@ -42,14 +42,23 @@ Return ONLY valid JSON in this exact structure:
 - **0.7-0.9**: Job posting missing 1-2 fields
 - **0.5-0.7**: Likely a job but unclear details
 - **0.3-0.5**: Uncertain if job posting
-- **< 0.3**: Not a job posting (spam, unsubscribe, general marketing)
+- **< 0.3**: NOT a job posting (critical for filtering - these emails stay unread in Gmail)
 
-Return confidence < 0.3 for:
+**IMPORTANT: Return confidence < 0.3 for:**
 - Unsubscribe confirmations
-- Newsletter content
-- Marketing emails
+- Newsletter content without specific job postings
+- Marketing emails ("Opportunity to save money!")
 - Calendar invites unrelated to jobs
 - Email forwarding notifications
+- Automated notifications
+- Job alerts from job boards WITHOUT actual job details
+- Generic recruiter outreach without specific positions
+- Spam or promotional content
+- Survey requests
+- Event invitations (unless job-related)
+- Company announcements not about hiring
+- Email signatures or automated replies
+- Test emails or delivery notifications
 
 ### Company Extraction
 - Look for "hiring for [Company]", "[Company] is seeking", "position at [Company]"

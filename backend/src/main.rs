@@ -213,6 +213,7 @@ pub struct JobIntakeLog {
     pub jobs_discovered: i32,
     // MECE counters (Mutually Exclusive, Collectively Exhaustive)
     pub jobs_failed_processing: i32,
+    pub jobs_filtered_out: i32,
     pub jobs_duplicated: i32,
     pub jobs_created: i32,
     // Deprecated fields (kept for backward compatibility)
@@ -1649,11 +1650,11 @@ async fn sync_gmail_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     match process_gmail_messages(&token, &source, pool.get_ref(), log_id).await {
         Ok(metrics) => {
             // Validate counters (mutually exclusive and collectively exhaustive)
-            let expected_total = metrics.failed_processing + metrics.duplicated + metrics.created;
+            let expected_total = metrics.failed_processing + metrics.filtered_out + metrics.duplicated + metrics.created;
             let validation_error = if expected_total != metrics.discovered {
                 Some(format!(
-                    "Counter mismatch: discovered={} but failed+duplicated+created={}+{}+{}={}",
-                    metrics.discovered, metrics.failed_processing, metrics.duplicated,
+                    "Counter mismatch: discovered={} but failed+filtered+duplicated+created={}+{}+{}+{}={}",
+                    metrics.discovered, metrics.failed_processing, metrics.filtered_out, metrics.duplicated,
                     metrics.created, expected_total
                 ))
             } else {
@@ -1671,14 +1672,16 @@ async fn sync_gmail_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
                 SET sync_completed_at = NOW(),
                     jobs_discovered = $1,
                     jobs_failed_processing = $2,
-                    jobs_duplicated = $3,
-                    jobs_created = $4,
-                    validation_error = $5,
+                    jobs_filtered_out = $3,
+                    jobs_duplicated = $4,
+                    jobs_created = $5,
+                    validation_error = $6,
                     sync_status = 'completed'
-                WHERE log_id = $6
+                WHERE log_id = $7
                 "#,
                 metrics.discovered,
                 metrics.failed_processing,
+                metrics.filtered_out,
                 metrics.duplicated,
                 metrics.created,
                 validation_error,
@@ -1693,6 +1696,7 @@ async fn sync_gmail_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
                 "metrics": {
                     "jobs_discovered": metrics.discovered,
                     "jobs_failed_processing": metrics.failed_processing,
+                    "jobs_filtered_out": metrics.filtered_out,
                     "jobs_duplicated": metrics.duplicated,
                     "jobs_created": metrics.created
                 },
@@ -1761,8 +1765,106 @@ async fn refresh_gmail_token(credentials: &OAuthCredential, pool: &PgPool) -> ac
 struct SyncMetrics {
     discovered: i32,
     failed_processing: i32,
+    filtered_out: i32,  // Emails with confidence < 0.3 (not real job opportunities)
     duplicated: i32,
     created: i32,
+}
+
+/// Get or create the "JobOp" label in Gmail
+/// This label is used to mark emails that contain real job opportunities
+async fn get_or_create_jobop_label(
+    client: &reqwest::Client,
+    access_token: &str,
+) -> std::result::Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    #[derive(Debug, Deserialize)]
+    struct LabelsResponse {
+        labels: Vec<LabelInfo>,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct LabelInfo {
+        id: String,
+        name: String,
+    }
+
+    // First, try to find existing label
+    let url = "https://gmail.googleapis.com/gmail/v1/users/me/labels";
+    let response = client
+        .get(url)
+        .bearer_auth(access_token)
+        .send()
+        .await?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_default();
+        return Err(format!("Failed to fetch labels: {} - {}", status, error_text).into());
+    }
+
+    let labels: LabelsResponse = response.json().await?;
+
+    // Check if "JobOp" label already exists
+    if let Some(label) = labels.labels.iter().find(|l| l.name == "JobOp") {
+        log_debug(&format!("Found existing JobOp label with ID: {}", label.id));
+        return Ok(label.id.clone());
+    }
+
+    // Create new "JobOp" label
+    log_debug("JobOp label not found, creating new label");
+    let create_body = serde_json::json!({
+        "name": "JobOp",
+        "labelListVisibility": "labelShow",
+        "messageListVisibility": "show"
+    });
+
+    let create_response = client
+        .post("https://gmail.googleapis.com/gmail/v1/users/me/labels")
+        .bearer_auth(access_token)
+        .json(&create_body)
+        .send()
+        .await?;
+
+    if !create_response.status().is_success() {
+        let status = create_response.status();
+        let error_text = create_response.text().await.unwrap_or_default();
+        return Err(format!("Failed to create label: {} - {}", status, error_text).into());
+    }
+
+    let created_label: LabelInfo = create_response.json().await?;
+    log_debug(&format!("Created new JobOp label with ID: {}", created_label.id));
+    Ok(created_label.id)
+}
+
+/// Add the "JobOp" label to a Gmail message
+async fn add_jobop_label(
+    client: &reqwest::Client,
+    access_token: &str,
+    message_id: &str,
+    label_id: &str,
+) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let url = format!(
+        "https://gmail.googleapis.com/gmail/v1/users/me/messages/{}/modify",
+        message_id
+    );
+
+    let body = serde_json::json!({
+        "addLabelIds": [label_id]
+    });
+
+    let response = client
+        .post(&url)
+        .bearer_auth(access_token)
+        .json(&body)
+        .send()
+        .await?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_default();
+        return Err(format!("Failed to add label: {} - {}", status, error_text).into());
+    }
+
+    Ok(())
 }
 
 /// Mark a Gmail message as read by removing the UNREAD label
@@ -1808,12 +1910,26 @@ async fn process_gmail_messages(
     let mut metrics = SyncMetrics {
         discovered: 0,
         failed_processing: 0,
+        filtered_out: 0,
         duplicated: 0,
         created: 0,
     };
 
-    // Search for job-related emails (unread only)
-    let query = "is:unread subject:(job OR position OR opportunity OR career OR hiring OR opening)";
+    // Get or create the "JobOp" label for marking real job opportunities
+    let jobop_label_id = match get_or_create_jobop_label(&client, access_token).await {
+        Ok(id) => {
+            log_debug(&format!("Using JobOp label ID: {}", id));
+            id
+        }
+        Err(e) => {
+            log_debug(&format!("Warning: Failed to get JobOp label: {}. Continuing without labeling.", e));
+            String::new() // Continue without labeling if it fails
+        }
+    };
+
+    // Search for all unread emails, excluding those already tagged as JobOp
+    // This allows the LLM to classify ALL emails, not just subject-matched ones
+    let query = "is:unread -label:JobOp";
     let url = format!(
         "https://gmail.googleapis.com/gmail/v1/users/me/messages?q={}",
         urlencoding::encode(query)
@@ -1925,7 +2041,19 @@ async fn process_gmail_messages(
                     job_data.description = subject.clone().or(Some("(No email content available)".to_string()));
                 }
 
-                if job_data.confidence > 0.3 { // Lowered threshold to process more jobs
+                if job_data.confidence > 0.3 { // Real job opportunity - add label and mark as read
+                    // Add "JobOp" label to email
+                    if !jobop_label_id.is_empty() {
+                        if let Err(e) = add_jobop_label(&client, access_token, &message.id, &jobop_label_id).await {
+                            log_debug(&format!("Warning: Failed to add JobOp label to message {}: {}", message.id, e));
+                        }
+                    }
+
+                    // Mark email as read in Gmail
+                    if let Err(e) = mark_gmail_message_as_read(&client, access_token, &message.id).await {
+                        log_debug(&format!("Warning: Failed to mark message {} as read: {}", message.id, e));
+                    }
+
                     match create_job_from_extraction(&job_data, source, pool, Some(received_date)).await {
                         Ok(JobCreationResult::Created(_job_id)) => {
                             metrics.created += 1;
@@ -1968,25 +2096,24 @@ async fn process_gmail_messages(
                         }
                     }
                 } else {
-                    metrics.failed_processing += 1;
-                    log_debug(&format!("Skipping job due to low confidence: {:.2}", job_data.confidence));
+                    // Low confidence - not a real job opportunity
+                    // Leave unread in Gmail inbox for manual review
+                    metrics.filtered_out += 1;
+                    log_debug(&format!("Email filtered out (confidence {:.2}) - leaving unread in Gmail: {:?}",
+                        job_data.confidence, subject));
+                    // DO NOT mark as read
+                    // DO NOT add JobOp label
                 }
             } else {
                 metrics.failed_processing += 1;
                 log_debug(&format!("Failed to extract job data from email - Subject: {:?}", subject));
-            }
-
-            // Mark email as read in Gmail so it won't be fetched again
-            // (User can manually mark as unread in Gmail to reprocess if needed)
-            if let Err(e) = mark_gmail_message_as_read(&client, access_token, &message.id).await {
-                log_debug(&format!("Warning: Failed to mark message {} as read: {}", message.id, e));
-                // Continue processing even if mark-as-read fails
+                // Leave unread for manual review
             }
         }
     }
 
-    log_debug(&format!("Gmail sync complete - Discovered: {}, Failed: {}, Duplicated: {}, Created: {}",
-        metrics.discovered, metrics.failed_processing, metrics.duplicated, metrics.created));
+    log_debug(&format!("Gmail sync complete - Discovered: {}, Failed: {}, Filtered: {}, Duplicated: {}, Created: {}",
+        metrics.discovered, metrics.failed_processing, metrics.filtered_out, metrics.duplicated, metrics.created));
     Ok(metrics)
 }
 
