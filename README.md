@@ -12,7 +12,7 @@ JobHunter is a comprehensive job application management system that automates an
 - **LLM-Based Email Filtering**: Claude Haiku analyzes ALL unread emails, not just subject-matched ones. Real job opportunities get "JobOp" label + marked read, non-jobs stay unread for manual review
 - **Progressive Email Processing**: Gmail integration marks processed emails as read, enabling progressive batching through inbox (50 emails at a time)
 - **LLM-Powered Job Extraction**: Claude Haiku integration for intelligent job extraction from emails (85%+ success rate, up from 30%)
-- **MECE Counter System**: Mutually Exclusive and Collectively Exhaustive tracking ensures discovered = failed + filtered + duplicated + created with validation
+- **MECE Counter System**: Mutually Exclusive and Collectively Exhaustive tracking ensures discovered = failed + filtered + duplicated + processed with validation
 - **Intelligent Job Filtering**: Automatically filters jobs based on salary ($130K+), location (remote/≤45min commute), and domain (Testing, AI, Firmware)
 - **Advanced Deduplication**: Uses SHA256 hashing to prevent processing duplicate job postings
 - **Automated Content Generation**: Creates customized resumes and cover letters for each approved job
@@ -468,17 +468,21 @@ JobHunter provides a comprehensive web interface to manage your entire job searc
 ### Dashboard Overview
 
 The dashboard displays real-time statistics across the top (ordered by workflow progression):
+- **Non-Job Emails**: Emails that were not job-related (never processed or low extraction confidence < 0.3)
 - **Filtered**: Jobs created but didn't meet criteria (status: `filtered`)
-- **Ignored**: Emails that were ignored entirely (not processed)
 - **Failed**: Emails that failed processing or extraction
 - **Duplicates**: Jobs that matched existing entries (deduped)
+- **Processed**: Jobs successfully processed and added to database
 - **New Jobs**: Pending review (status: `new`)
 - **Approved**: Ready for application (status: `approved`)
 - **Applied**: Applications submitted (status: `applied`)
 - **Rejected**: Jobs you've declined (status: `rejected`)
-- **Total**: Total emails discovered across all syncs (Filtered + Duplicates + Failed)
+- **Total**: Total job opportunity emails discovered across all syncs
 
-**Note on Total**: The Total counter represents cumulative intake metrics from all Gmail syncs. It shows Filtered + Duplicates + Failed to give you a complete picture of all job emails discovered. For example, if you sync 50 emails and see "Total: 50" with "Filtered: 43, Duplicates: 5, Failed: 2", you know all 50 emails were accounted for.
+**Counter Architecture**: The dashboard separates two systems:
+1. **Non-Job Emails (21)**: Emails Gmail sync fetched but determined to be non-job-related - these are skipped before entering the intake pipeline
+2. **MECE Intake Flow (50)**: Job opportunity emails that went through processing with the formula `Total = Processed + Filtered + Duplicates + Failed` (e.g., 50 = 28 + 15 + 1 + 6)
+3. **Workflow States (0)**: Jobs in the active workflow (New, Approved, Applied, Rejected)
 
 ### Navigation Tabs
 
@@ -515,8 +519,9 @@ The dashboard displays real-time statistics across the top (ordered by workflow 
    - Displays last 10-20 sync operations across all sources
    - **Click to Expand**: See detailed information about each sync
    - **MECE Counter Display**: Shows complete breakdown for every sync
-     - Total Discovered: All emails found
-     - ✓ Created (green): New jobs added to database
+     - Total Discovered: All job opportunity emails found
+     - ✓ Processed (green): New jobs added to database
+     - ⚠ Filtered (orange): Jobs that didn't meet criteria
      - ⊕ Duplicates (yellow): Jobs that matched existing entries
      - ✗ Failed (red): Emails that couldn't be processed
    - **Automatic Validation**: Reports errors if counters don't sum correctly
@@ -1062,8 +1067,8 @@ backend/tests/test_mece_counters.sh
 
 This test script:
 - Fetches the most recent intake log from the running backend
-- Extracts all counter values (discovered, failed, duplicated, created)
-- Validates the MECE property: `discovered = failed + duplicated + created`
+- Extracts all counter values (discovered, failed, filtered, duplicated, processed)
+- Validates the MECE property: `discovered = failed + filtered + duplicated + processed`
 - Reports pass/fail with detailed breakdown
 - Displays any validation errors from the backend
 
@@ -1076,17 +1081,18 @@ This test script:
 📊 Fetching most recent intake log...
 Counter Values:
   📧 Discovered:        50
-  ✗ Failed Processing:  2
-  ⊕ Duplicated:         5
-  ✓ Created:            43
+  ✗ Failed Processing:  6
+  ⚠ Filtered Out:       15
+  ⊕ Duplicated:         1
+  ✓ Processed:          28
 
 Validation:
-  Sum (F+D+C):          50
+  Sum (F+FL+D+P):       50
   Expected:             50
 
 ✅ MECE Counter Test: PASSED
    The counters are Mutually Exclusive and Collectively Exhaustive
-   Formula: Discovered (50) = Failed (2) + Duplicated (5) + Created (43)
+   Formula: Discovered (50) = Failed (6) + Filtered (15) + Duplicated (1) + Processed (28)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✨ All tests passed!
@@ -1651,11 +1657,12 @@ See [`DATABASE_SETUP.md`](DATABASE_SETUP.md) for detailed database setup instruc
 
 **1. MECE Counter Architecture** ✅
 - **Mutually Exclusive Categories**: Each email goes into exactly one bucket
-  - `jobs_created`: New unique jobs added to database
+  - `jobs_created` (Processed): New unique jobs added to database
+  - `jobs_filtered_out` (Filtered): Jobs that didn't meet criteria
   - `jobs_duplicated`: Matched existing jobs via deduplication
   - `jobs_failed_processing`: Failed extraction or below confidence threshold
 - **Collectively Exhaustive**: All emails accounted for
-  - **Invariant**: `jobs_discovered = jobs_failed_processing + jobs_duplicated + jobs_created`
+  - **Invariant**: `jobs_discovered = jobs_failed_processing + jobs_filtered_out + jobs_duplicated + jobs_created`
 - **Automatic Validation**: Backend checks math and reports errors if counters don't sum correctly
 
 **2. Enhanced Job Tracking** ✅
@@ -1667,14 +1674,16 @@ See [`DATABASE_SETUP.md`](DATABASE_SETUP.md) for detailed database setup instruc
 **3. Database Schema Updates** ✅
 - Added fields to `job_intake_logs`:
   - `jobs_failed_processing INTEGER` - Failed extraction or low confidence
+  - `jobs_filtered_out INTEGER` - Jobs that didn't meet criteria
   - `jobs_duplicated INTEGER` - Matched existing jobs (deduped)
-  - `jobs_created INTEGER` - New jobs actually created
+  - `jobs_created INTEGER` - New jobs actually processed
   - `validation_error TEXT` - Error message if counters don't add up
 - Migration applied to existing `jobhunter_personal` database
 
 **4. UI Enhancements** ✅
 - **Summary View**: Color-coded metrics at a glance
-  - `✓ X created` (green) - New jobs added
+  - `✓ X processed` (green) - New jobs added
+  - `⚠ X filtered` (orange) - Jobs that didn't meet criteria
   - `⊕ X dupes` (yellow) - Jobs that matched existing entries
   - `✗ X failed` (red) - Emails that couldn't be processed
 - **Detail View**: Complete breakdown when clicking log entry
@@ -1685,9 +1694,10 @@ See [`DATABASE_SETUP.md`](DATABASE_SETUP.md) for detailed database setup instruc
 **Example Sync Breakdown**:
 ```
 Total Discovered: 50
-├─ ✓ Jobs Created: 43 (new unique jobs)
-├─ ⊕ Duplicates: 5 (matched existing)
-└─ ✗ Failed: 2 (low confidence/extraction failed)
+├─ ✓ Jobs Processed: 28 (new unique jobs)
+├─ ⚠ Jobs Filtered: 15 (didn't meet criteria)
+├─ ⊕ Duplicates: 1 (matched existing)
+└─ ✗ Failed: 6 (low confidence/extraction failed)
 ```
 
 **Technical Implementation** ✅
@@ -1809,8 +1819,8 @@ Sync 3: Fetch next 50 unread emails (101-150) → Process → Mark as read
 - **Deterministic Skip**: Gmail query uses `-label:JobOp` to skip already-processed emails
 
 **3. Enhanced MECE Metrics** ✅
-- **New Counter**: Added `jobs_filtered_out` to track emails with confidence <0.3
-- **Updated Formula**: `discovered = failed_processing + filtered_out + duplicated + created`
+- **New Counter**: Added `jobs_filtered_out` to track jobs that didn't meet criteria
+- **Updated Formula**: `discovered = failed_processing + filtered_out + duplicated + processed`
 - **Database Migration**: Added `jobs_filtered_out` column to `job_intake_logs` table
 - **Validation**: Automatic counter verification ensures all emails accounted for
 
@@ -1865,7 +1875,7 @@ LLM Analysis (Claude Haiku on subject + body)
 - ✅ Gmail query excludes emails with "JobOp" label
 - ✅ Real job emails (confidence ≥ 0.3) get "JobOp" label and marked as read
 - ✅ Non-job emails (confidence < 0.3) stay unread without label
-- ✅ MECE validation passes: discovered = failed + filtered + duplicated + created
+- ✅ MECE validation passes: discovered = failed + filtered + duplicated + processed
 - ✅ Subsequent syncs only process NEW unread emails
 - ✅ Backend compiled successfully with all changes
 
@@ -2133,7 +2143,7 @@ JobHuntAI/
 ### System Performance
 - **LLM-Powered Extraction**: Claude Haiku integration achieving 85%+ success rate (up from 30%)
 - **LLM-Based Email Filtering**: Smart classification with Gmail labels - real jobs get "JobOp" label + marked read, non-jobs stay unread
-- **MECE Counter Validation**: Mutually Exclusive and Collectively Exhaustive tracking with automatic validation (discovered = failed + filtered + duplicated + created)
+- **MECE Counter Validation**: Mutually Exclusive and Collectively Exhaustive tracking with automatic validation (discovered = failed + filtered + duplicated + processed)
 - **Automated Job Discovery**: Multi-source intake with Gmail and LinkedIn integration
 - **Zero Duplicate Processing**: SHA256 hashing prevents duplicate job entries across all sources
 - **Real-time Filtering**: Jobs filtered in <100ms with detailed reasoning and confidence scoring
@@ -2153,7 +2163,7 @@ JobHuntAI/
 - ✅ **Multi-source Integration**: Gmail, LinkedIn, and API-based job discovery
 - ✅ **LLM-Powered Extraction**: Claude Haiku integration with 85%+ success rate and live prompt editing
 - ✅ **LLM-Based Email Filtering**: Smart classification with Gmail labels for accurate job vs. non-job distinction
-- ✅ **MECE Counter System**: Mutually Exclusive and Collectively Exhaustive tracking with automatic validation (failed + filtered + duplicated + created)
+- ✅ **MECE Counter System**: Mutually Exclusive and Collectively Exhaustive tracking with automatic validation (failed + filtered + duplicated + processed)
 - ✅ **Intelligent Automation**: Multi-criteria filtering with domain analysis and confidence scoring
 - ✅ **Advanced Email Processing**: Gmail OAuth integration with LLM-based job extraction
 - ✅ **Professional UI**: Dashboard with real-time updates and responsive design
