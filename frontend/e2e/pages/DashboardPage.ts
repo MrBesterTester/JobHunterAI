@@ -49,7 +49,8 @@ export class DashboardPage {
 
     // Tabs - look for buttons or clickable elements with these labels
     this.allTab = page.getByRole('button', { name: /^all$/i }).or(page.locator('[data-tab="all"]'));
-    this.inboxTab = page.getByRole('button', { name: /^new jobs$/i }).or(page.locator('[data-tab="inbox"]'));
+    // 'inbox' in tests maps to 'new' tab in the UI
+    this.inboxTab = page.getByRole('button', { name: /^new$/i }).or(page.locator('[data-tab="new"]'));
     this.approvedTab = page.getByRole('button', { name: /^approved$/i }).or(page.locator('[data-tab="approved"]'));
     this.appliedTab = page.getByRole('button', { name: /^applied$/i }).or(page.locator('[data-tab="applied"]'));
     this.filteredTab = page.getByRole('button', { name: /^filtered$/i }).or(page.locator('[data-tab="filtered"]'));
