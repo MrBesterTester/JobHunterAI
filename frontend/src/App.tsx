@@ -9,6 +9,53 @@ import EmailComposer from './EmailComposer';
 
 const API_URL = 'http://localhost:8080/api';
 
+interface CompensationDetails {
+  type?: string;
+  salary_min?: number;
+  salary_max?: number;
+  currency?: string;
+  hourly_rate?: number;
+  daily_rate?: number;
+  equity_offered?: boolean;
+  bonus_structure?: string;
+}
+
+interface EmploymentDetails {
+  relationship?: string;
+  tax_structure?: string;
+  contract_duration?: string;
+  agency_name?: string;
+  benefits?: string;
+  employment_type?: string;
+}
+
+interface RemoteWorkDetails {
+  policy?: string;
+  days_onsite_per_week?: number;
+  remote_eligible_states?: string[];
+  timezone_requirement?: string;
+}
+
+interface CommuteDetails {
+  office_location?: string;
+  company_shuttle?: boolean;
+  commute_perks?: string;
+  schedule_flexibility?: string;
+}
+
+interface JobDomainDetails {
+  primary_category?: string;
+  testing_focus?: boolean;
+  testing_level?: string;
+  automation_focus?: boolean;
+  test_automation_tools?: string[];
+  generative_ai_usage?: boolean;
+  ai_tools_mentioned?: string[];
+  test_equipment?: string;
+  tech_stack?: string[];
+  seniority?: string;
+}
+
 interface Job {
   job_id: string;
   title: string;
@@ -22,6 +69,14 @@ interface Job {
   description?: string;
   url?: string;
   filter_reason?: string;
+  raw_data?: {
+    compensation?: CompensationDetails;
+    employment?: EmploymentDetails;
+    remote_work?: RemoteWorkDetails;
+    commute?: CommuteDetails;
+    job_domain?: JobDomainDetails;
+    description?: string;  // Full email body
+  };
 }
 
 interface JobCriteria {
@@ -135,6 +190,88 @@ const JobHunterDashboard: React.FC = () => {
         </p>
       );
     }
+  };
+
+  // Trade-off data formatting helper functions
+  const formatCompensationType = (type?: string): string => {
+    const typeMap: Record<string, string> = {
+      'annual_salary': 'Annual Salary',
+      'hourly': 'Hourly Rate',
+      'daily_rate': 'Daily Rate',
+      'consulting_contract': 'Consulting Contract',
+      'retainer': 'Retainer',
+      'equity_heavy': 'Equity Heavy',
+      'commission_based': 'Commission Based'
+    };
+    return type ? (typeMap[type] || type) : 'Not specified';
+  };
+
+  const formatTaxStructure = (taxStructure?: string): string => {
+    const taxMap: Record<string, string> = {
+      'W2': 'W-2 Employee',
+      '1099': '1099 Contractor',
+      'corp_to_corp': 'Corp-to-Corp',
+      'schedule_c': 'Schedule C (Consulting)',
+      'unknown': 'Unknown'
+    };
+    return taxStructure ? (taxMap[taxStructure] || taxStructure) : 'Not specified';
+  };
+
+  const formatEmploymentRelationship = (relationship?: string): string => {
+    const relMap: Record<string, string> = {
+      'direct_hire': 'Direct Hire',
+      'staffing_agency': 'Staffing Agency',
+      'consulting': 'Consulting',
+      'contract_to_hire': 'Contract-to-Hire',
+      'independent_contractor': 'Independent Contractor'
+    };
+    return relationship ? (relMap[relationship] || relationship) : 'Not specified';
+  };
+
+  const formatRemotePolicy = (policy?: string): string => {
+    const policyMap: Record<string, string> = {
+      'fully_remote': 'Fully Remote',
+      'hybrid': 'Hybrid',
+      'onsite': 'Onsite',
+      'flexible': 'Flexible',
+      'remote_optional': 'Remote Optional'
+    };
+    return policy ? (policyMap[policy] || policy) : 'Not specified';
+  };
+
+  const formatSeniority = (seniority?: string): string => {
+    const seniorityMap: Record<string, string> = {
+      'junior': 'Junior',
+      'mid': 'Mid-Level',
+      'senior': 'Senior',
+      'staff': 'Staff',
+      'principal': 'Principal',
+      'lead': 'Lead',
+      'manager': 'Manager',
+      'director': 'Director'
+    };
+    return seniority ? (seniorityMap[seniority] || seniority) : 'Not specified';
+  };
+
+  const formatSalaryRange = (comp?: CompensationDetails): string => {
+    if (!comp) return 'Not specified';
+
+    if (comp.salary_min && comp.salary_max) {
+      if (comp.salary_min === comp.salary_max) {
+        return `$${comp.salary_min.toLocaleString()}`;
+      }
+      return `$${comp.salary_min.toLocaleString()} - $${comp.salary_max.toLocaleString()}`;
+    } else if (comp.salary_min) {
+      return `$${comp.salary_min.toLocaleString()}+`;
+    } else if (comp.salary_max) {
+      return `Up to $${comp.salary_max.toLocaleString()}`;
+    } else if (comp.hourly_rate) {
+      return `$${comp.hourly_rate}/hr`;
+    } else if (comp.daily_rate) {
+      return `$${comp.daily_rate}/day`;
+    }
+
+    return 'Not specified';
   };
 
 
@@ -465,6 +602,88 @@ const JobHunterDashboard: React.FC = () => {
           <CalendarIcon style={{ width: '16px', height: '16px' }} />
           {new Date(job.date_email_sent).toLocaleDateString()}
         </span>
+
+        {/* Trade-off badges */}
+        {job.raw_data?.employment?.tax_structure && (
+          <span
+            data-testid="tax-structure-badge"
+            style={{
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontSize: '12px',
+              fontWeight: '500',
+              backgroundColor:
+                job.raw_data.employment.tax_structure === '1099' ||
+                job.raw_data.employment.tax_structure === 'schedule_c' ? '#d1fae5' :
+                job.raw_data.employment.tax_structure === 'W2' ? '#fef3c7' : '#f3f4f6',
+              color:
+                job.raw_data.employment.tax_structure === '1099' ||
+                job.raw_data.employment.tax_structure === 'schedule_c' ? '#065f46' :
+                job.raw_data.employment.tax_structure === 'W2' ? '#92400e' : '#374151'
+            }}>
+            {formatTaxStructure(job.raw_data.employment.tax_structure)}
+          </span>
+        )}
+
+        {job.raw_data?.remote_work?.policy === 'fully_remote' && (
+          <span
+            data-testid="fully-remote-badge"
+            style={{
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontSize: '12px',
+              fontWeight: '500',
+              backgroundColor: '#dbeafe',
+              color: '#1e40af'
+            }}>
+            Fully Remote
+          </span>
+        )}
+
+        {job.raw_data?.commute?.company_shuttle && (
+          <span
+            data-testid="shuttle-badge"
+            style={{
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontSize: '12px',
+              fontWeight: '500',
+              backgroundColor: '#d1fae5',
+              color: '#065f46'
+            }}>
+            Company Shuttle
+          </span>
+        )}
+
+        {job.raw_data?.job_domain?.generative_ai_usage && (
+          <span
+            data-testid="ai-badge"
+            style={{
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontSize: '12px',
+              fontWeight: '500',
+              backgroundColor: '#e0e7ff',
+              color: '#3730a3'
+            }}>
+            Gen AI
+          </span>
+        )}
+
+        {job.raw_data?.job_domain?.testing_focus && (
+          <span
+            data-testid="testing-badge"
+            style={{
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontSize: '12px',
+              fontWeight: '500',
+              backgroundColor: '#fef3c7',
+              color: '#92400e'
+            }}>
+            Testing Focus
+          </span>
+        )}
       </div>
 
       {job.filter_reason && (
@@ -725,11 +944,190 @@ const JobHunterDashboard: React.FC = () => {
             </div>
           )}
 
-          {job.description && (
+          {/* Compensation Details Section */}
+          {job.raw_data?.compensation && (
+            <div style={{ marginBottom: '24px' }} data-testid="compensation-section">
+              <h3 style={{ fontWeight: 600, marginBottom: '12px', color: '#111827' }}>Compensation Details</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', fontSize: '14px' }}>
+                {job.raw_data.compensation.type && (
+                  <div>
+                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Type</p>
+                    <p style={{ fontWeight: 500, color: '#374151' }} data-testid="comp-type">{formatCompensationType(job.raw_data.compensation.type)}</p>
+                  </div>
+                )}
+                <div>
+                  <p style={{ color: '#6b7280', marginBottom: '4px' }}>Salary Range</p>
+                  <p style={{ fontWeight: 500, color: '#374151' }} data-testid="comp-range">{formatSalaryRange(job.raw_data.compensation)}</p>
+                </div>
+                {job.raw_data.compensation.equity_offered !== null && job.raw_data.compensation.equity_offered !== undefined && (
+                  <div>
+                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Equity</p>
+                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.compensation.equity_offered ? 'Yes' : 'No'}</p>
+                  </div>
+                )}
+                {job.raw_data.compensation.bonus_structure && (
+                  <div>
+                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Bonus Structure</p>
+                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.compensation.bonus_structure}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Employment Details Section */}
+          {job.raw_data?.employment && (
+            <div style={{ marginBottom: '24px' }} data-testid="employment-section">
+              <h3 style={{ fontWeight: 600, marginBottom: '12px', color: '#111827' }}>Employment Details</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', fontSize: '14px' }}>
+                {job.raw_data.employment.tax_structure && (
+                  <div>
+                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Tax Structure</p>
+                    <p style={{ fontWeight: 500, color: '#374151' }} data-testid="emp-tax">{formatTaxStructure(job.raw_data.employment.tax_structure)}</p>
+                  </div>
+                )}
+                {job.raw_data.employment.relationship && (
+                  <div>
+                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Relationship</p>
+                    <p style={{ fontWeight: 500, color: '#374151' }} data-testid="emp-relationship">{formatEmploymentRelationship(job.raw_data.employment.relationship)}</p>
+                  </div>
+                )}
+                {job.raw_data.employment.contract_duration && (
+                  <div>
+                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Duration</p>
+                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.employment.contract_duration}</p>
+                  </div>
+                )}
+                {job.raw_data.employment.agency_name && (
+                  <div>
+                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Agency</p>
+                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.employment.agency_name}</p>
+                  </div>
+                )}
+                {job.raw_data.employment.benefits && (
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Benefits</p>
+                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.employment.benefits}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Location & Commute Section */}
+          {(job.raw_data?.remote_work || job.raw_data?.commute) && (
+            <div style={{ marginBottom: '24px' }} data-testid="location-commute-section">
+              <h3 style={{ fontWeight: 600, marginBottom: '12px', color: '#111827' }}>Location & Commute</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', fontSize: '14px' }}>
+                {job.raw_data.remote_work?.policy && (
+                  <div>
+                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Remote Policy</p>
+                    <p style={{ fontWeight: 500, color: '#374151' }} data-testid="remote-policy">{formatRemotePolicy(job.raw_data.remote_work.policy)}</p>
+                  </div>
+                )}
+                {job.raw_data.remote_work?.days_onsite_per_week !== null && job.raw_data.remote_work?.days_onsite_per_week !== undefined && (
+                  <div>
+                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Days Onsite</p>
+                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.remote_work.days_onsite_per_week} days/week</p>
+                  </div>
+                )}
+                {job.raw_data.commute?.office_location && (
+                  <div>
+                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Office Location</p>
+                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.commute.office_location}</p>
+                  </div>
+                )}
+                {job.raw_data.commute?.company_shuttle !== null && job.raw_data.commute?.company_shuttle !== undefined && (
+                  <div>
+                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Company Shuttle</p>
+                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.commute.company_shuttle ? 'Yes' : 'No'}</p>
+                  </div>
+                )}
+                {job.raw_data.commute?.commute_perks && (
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Commute Perks</p>
+                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.commute.commute_perks}</p>
+                  </div>
+                )}
+                {job.raw_data.commute?.schedule_flexibility && (
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Schedule Flexibility</p>
+                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.commute.schedule_flexibility}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Technical Details Section */}
+          {job.raw_data?.job_domain && (
+            <div style={{ marginBottom: '24px' }} data-testid="technical-section">
+              <h3 style={{ fontWeight: 600, marginBottom: '12px', color: '#111827' }}>Technical Details</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', fontSize: '14px' }}>
+                {job.raw_data.job_domain.primary_category && (
+                  <div>
+                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Category</p>
+                    <p style={{ fontWeight: 500, color: '#374151' }} data-testid="tech-category">{job.raw_data.job_domain.primary_category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</p>
+                  </div>
+                )}
+                {job.raw_data.job_domain.seniority && (
+                  <div>
+                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Seniority</p>
+                    <p style={{ fontWeight: 500, color: '#374151' }} data-testid="tech-seniority">{formatSeniority(job.raw_data.job_domain.seniority)}</p>
+                  </div>
+                )}
+                {job.raw_data.job_domain.testing_focus !== null && job.raw_data.job_domain.testing_focus !== undefined && (
+                  <div>
+                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Testing Focus</p>
+                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.job_domain.testing_focus ? 'Yes' : 'No'}</p>
+                  </div>
+                )}
+                {job.raw_data.job_domain.automation_focus !== null && job.raw_data.job_domain.automation_focus !== undefined && (
+                  <div>
+                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Automation Focus</p>
+                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.job_domain.automation_focus ? 'Yes' : 'No'}</p>
+                  </div>
+                )}
+                {job.raw_data.job_domain.generative_ai_usage !== null && job.raw_data.job_domain.generative_ai_usage !== undefined && (
+                  <div>
+                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Generative AI</p>
+                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.job_domain.generative_ai_usage ? 'Yes' : 'No'}</p>
+                  </div>
+                )}
+                {job.raw_data.job_domain.testing_level && (
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Testing Level</p>
+                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.job_domain.testing_level}</p>
+                  </div>
+                )}
+                {job.raw_data.job_domain.test_equipment && (
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Test Equipment</p>
+                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.job_domain.test_equipment}</p>
+                  </div>
+                )}
+                {job.raw_data.job_domain.tech_stack && job.raw_data.job_domain.tech_stack.length > 0 && (
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Tech Stack</p>
+                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.job_domain.tech_stack.join(', ')}</p>
+                  </div>
+                )}
+                {job.raw_data.job_domain.test_automation_tools && job.raw_data.job_domain.test_automation_tools.length > 0 && (
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Automation Tools</p>
+                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.job_domain.test_automation_tools.join(', ')}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Enhanced Description Section - prefer raw_data.description (full email body) */}
+          {(job.raw_data?.description || job.description) && (
             <div style={{ marginBottom: '24px' }}>
-              <h3 style={{ fontWeight: 600, marginBottom: '8px' }}>Description</h3>
+              <h3 style={{ fontWeight: 600, marginBottom: '8px' }}>Full Email Body</h3>
               <div data-testid="job-description">
-                {renderDescription(job.description)}
+                {renderDescription(job.raw_data?.description || job.description || '')}
               </div>
             </div>
           )}

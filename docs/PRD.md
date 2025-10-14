@@ -10,6 +10,12 @@
 1. [Overview](#1-overview)
 2. [Goals & Objectives](#2-goals--objectives)
 3. [Job Criteria](#3-job-criteria)
+   - [3.1 Job Domain & Technical Focus](#31-job-domain--technical-focus)
+   - [3.2 Compensation Structure](#32-compensation-structure)
+   - [3.3 Employment Relationship](#33-employment-relationship)
+   - [3.4 Work Location & Remote Policy](#34-work-location--remote-policy)
+   - [3.5 Commute Considerations](#35-commute-considerations-for-hybridonsite-roles)
+   - [3.6 Job Evaluation Framework](#36-job-evaluation-framework)
 4. [Workflow](#4-workflow)
    - [4.1 Intake Sources](#41-intake-sources)
    - [4.2 Processing Pipeline](#42-processing-pipeline)
@@ -54,17 +60,116 @@ The implementation stack is:
 
 ## 3. Job Criteria
 
-- **Compensation:** Equivalent to ≥ $130K annual salary.  
-- **Domain:** Software/Firmware Engineering, with high preference for:  
-  - Testing and test automation at all levels of the software stack.  
-  - Generative AI applied to software development and testing (e.g., prompt engineering).  
-- **Work Location:**  
-  - Strong preference for remote work.  
-  - If commuting:  
-    - ≤ 3 times weekly.  
-    - ≤ 45 minutes from Fremont, CA (e.g., Hayward, Menlo Park, Newark, Union City, Milpitas).  
-    - Late-morning to evening commuting hours.  
-    - Company-provided bus service may extend acceptable distance.  
+**Philosophy**: Job evaluation is based on trade-offs across multiple dimensions, not binary pass/fail. The system extracts rich data to inform manual decision-making. Confidence scoring measures extraction quality, not job acceptability.
+
+### 3.1 Job Domain & Technical Focus
+
+**Dominant field**: Software/Firmware Engineering with emphasis on Testing & QA
+
+- **Testing Scope**: All levels of the stack welcome:
+  - BIOS/Power-On Self Tests (POST)
+  - Chip-level and board-level testing
+  - Integration testing
+  - System testing
+  - Web UI and end-to-end testing
+- **Test Automation**: Highly preferred
+- **Quality Assurance**: Core competency area
+- **Generative AI**: Bonus if role involves:
+  - AI-augmented testing
+  - Prompt engineering for test generation
+  - LLM-based test tooling
+- **Test Equipment**: ATE (Automatic Test Equipment), oscilloscopes, cellular radio testing, etc. acceptable
+- **Related Fields**: Technically adjacent roles (DevOps, Release Engineering, etc.) considered on case-by-case basis
+- **Key Insight**: Summary job description is critical for evaluation
+
+### 3.2 Compensation Structure
+
+**Preference Order**: Schedule C consulting > 1099 contract > Annual W-2 salary > Hourly W-2 temp
+
+**Compensation Types:**
+- **Annual Salary**: Preferred baseline structure
+  - Minimum: $130,000/year
+  - Better: Higher compensation
+- **Hourly Rate**: Less preferred than annual salary
+  - Must convert to annual equivalent (assume 2080 hours/year)
+  - Minimum: $62.50/hour (= $130K annual)
+- **Consulting Contract**: Highly preferred, especially:
+  - Contract with retainer arrangement
+  - Corp-to-corp arrangements
+  - Project-based with ongoing relationship
+- **Daily Rate**: Convert to annual equivalent for comparison
+- **Tax Structure Preference**: Schedule C (own consulting firm) > 1099 independent contractor > W-2 employee
+
+**Trade-off Principle**: A W-2 role at $160K might be less attractive than a 1099 contract at $140K due to tax advantages.
+
+### 3.3 Employment Relationship
+
+**Preference Order**: Direct consulting > Direct hire > Agency placement
+
+- **Direct Hire**: Preferred for stability
+- **Direct Consulting**: Most preferred if through own consulting firm (Schedule C income)
+- **Staffing Agency**: Less preferred but acceptable for strong opportunities
+  - Agency typically means W-2 (least preferred tax structure)
+  - Evaluate based on other compensating factors
+- **Contract-to-Hire**: Acceptable if strong conversion likelihood
+
+**Trade-off Principle**: Agency placement at higher rate might compensate for less preferred relationship structure.
+
+### 3.4 Work Location & Remote Policy
+
+**Strong preference for remote work**
+
+- **Fully Remote**: Ideal situation
+- **Hybrid**: Acceptable if ≤ 3 days/week onsite
+  - Better: 1-2 days/week
+  - Acceptable: 3 days/week
+  - Concerning: 4+ days/week
+- **Fully Onsite**: Only for exceptional compensation or opportunity
+
+**Trade-off Principle**: Higher compensation or better role can offset onsite requirements.
+
+### 3.5 Commute Considerations (for hybrid/onsite roles)
+
+When remote work is not available, commute factors become critical:
+
+**Distance/Time from Fremont, CA:**
+- **Ideal**: ≤ 45 minutes one-way
+- **Acceptable**: Up to 60 minutes with company transportation
+- **Concerning**: > 60 minutes
+
+**Commute Perks & Benefits:**
+- **Company Bus/Shuttle**: Significantly extends acceptable commute time
+  - Productive travel time (work on bus)
+  - No driving stress
+  - Can extend acceptable commute to ~60 minutes
+- **FasTrak/Express Lane Reimbursement**: Highly valued perk
+  - Reduces commute time variability
+  - Makes longer commutes more tolerable
+- **Schedule Flexibility**: Late-morning and evening commute hours preferred
+  - Avoid peak traffic
+  - Better work-life balance
+- **Other Perks**: Parking, transit passes, flexible hours
+
+**Acceptable Locations** (within 45 min typical):
+- Hayward, CA
+- Menlo Park, CA
+- Newark, CA
+- Union City, CA
+- Milpitas, CA
+- San Jose, CA (parts)
+- Mountain View, CA
+- Palo Alto, CA
+
+**Trade-off Principle**: A role with company shuttle and FasTrak at 55 minutes may be better than a role at 40 minutes without perks.
+
+### 3.6 Job Evaluation Framework
+
+All criteria interact in a multidimensional trade-off space. The system extracts data across all dimensions, and you make final acceptability decisions based on your assessment of the specific opportunity.
+
+**Example Trade-offs:**
+- Agency W-2 at $150K + fully remote might beat direct hire W-2 at $140K + 3 days onsite
+- Direct hire W-2 at $145K + 30 min commute + company shuttle might beat remote 1099 at $135K
+- 1099 contract at $130K might beat W-2 at $140K due to tax advantages
 
 ---
 

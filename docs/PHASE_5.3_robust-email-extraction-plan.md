@@ -72,6 +72,11 @@
   - [Benefits & Considerations](#benefits--considerations-phase-533)
   - [Cost Impact](#cost-impact-phase-533)
   - [Testing Strategy](#testing-strategy-phase-533)
+- [Phase 5.3.4: Trade-off Based Job Evaluation Display](#phase-534-trade-off-based-job-evaluation-display)
+  - [Problem Statement](#problem-statement-phase-534)
+  - [Proposed Solution](#proposed-solution-phase-534)
+  - [Implementation Details](#implementation-details-phase-534)
+  - [Benefits](#benefits-phase-534)
 - [Next Steps](#next-steps)
 - [Appendix A: Sample Extraction Prompt](#appendix-a-sample-extraction-prompt)
 - [Appendix B: Current Regex Patterns (For Reference)](#appendix-b-current-regex-patterns-for-reference)
@@ -2020,16 +2025,293 @@ If LLM filtering causes issues:
 
 ---
 
+## Phase 5.3.4: Trade-off Based Job Evaluation Display
+
+### ✅ COMPLETED (2025-10-14)
+
+**Status**: ✅ **IMPLEMENTATION COMPLETE**
+
+Phase 5.3.4 transformed the job evaluation system from binary pass/fail filtering to rich trade-off based decision making. The system now extracts and displays comprehensive data across 5 dimensions to support informed manual decisions.
+
+### Problem Statement (Phase 5.3.4)
+
+**Previous Approach**: The system used binary filtering (pass/fail) based on rigid criteria like minimum salary thresholds. This oversimplified job evaluation and missed important trade-offs.
+
+**Key Issues**:
+1. **Lost Nuance**: A W-2 role at $160K might be less attractive than a 1099 contract at $140K due to tax advantages
+2. **Incomplete Data**: No visibility into employment relationship (direct hire vs agency), remote policy details, commute perks
+3. **Poor Decision Support**: Users couldn't see the full picture to make informed trade-off decisions
+4. **Missing Context**: Technical details (testing focus, automation, AI usage) not captured or displayed
+
+**Example Trade-offs Not Captured**:
+- Schedule C consulting income vs W-2 employee income (tax implications)
+- Company shuttle + FasTrak reimbursement vs no commute perks
+- 1099 contractor status vs W-2 employee status
+- Fully remote vs hybrid with flexible schedule
+- Testing focus + automation vs generative AI usage
+
+### Proposed Solution (Phase 5.3.4)
+
+**Multi-Dimensional Trade-off Extraction**:
+
+Expand the job extraction system to capture rich data across 5 dimensions:
+
+1. **Compensation Details**: Type (annual/hourly/consulting), salary range, currency, equity, bonuses
+2. **Employment Details**: Relationship (direct hire/agency/consulting), tax structure (W-2/1099/Schedule C), contract duration, agency name, benefits
+3. **Remote Work Details**: Policy (fully remote/hybrid/onsite), days onsite, eligible states, timezone requirements
+4. **Commute Details**: Office location, company shuttle, FasTrak reimbursement, schedule flexibility
+5. **Job Domain Details**: Primary category, testing focus, automation focus, generative AI usage, test equipment, tech stack, seniority
+
+**UI Enhancements**:
+- **Job Cards**: Color-coded badges for key trade-off factors (tax structure, remote policy, shuttle, AI, testing)
+- **Job Detail Modal**: Comprehensive sections displaying all extracted trade-off data
+- **Full Email Body**: Preserve complete email content for context
+
+**Key Design Decision**: Use existing `raw_data JSONB` field to store nested structures - **zero database schema changes required**.
+
+### Implementation Details (Phase 5.3.4)
+
+#### 1. Documentation Updates
+
+**File**: `docs/PRD.md` (Section 3 expanded from ~14 to ~167 lines)
+
+**Changes**:
+- Added philosophical shift from binary filtering to trade-off evaluation
+- Documented 6 subsections covering all trade-off dimensions
+- Added trade-off principles like "1099 at $130K might beat W-2 at $140K due to tax advantages"
+- Created comprehensive job evaluation framework
+
+#### 2. Extraction Prompt Expansion
+
+**File**: `prompts/job_extraction_default.md` (JSON structure + ~200 lines of extraction rules)
+
+**Changes**:
+- Replaced 8-field flat JSON with nested 5-dimension structure (25+ total fields)
+- Added extensive "Advanced Extraction Rules" section (200+ lines)
+- Defined extraction rules for:
+  - Compensation type detection (annual salary, hourly, daily rate, consulting)
+  - Tax structure identification (W-2, 1099, corp-to-corp, Schedule C)
+  - Remote work policy parsing (fully remote, hybrid, onsite, flexible)
+  - Commute perks detection (company shuttle, FasTrak, parking, transit)
+  - Job domain classification (testing focus, automation, generative AI usage, test equipment)
+
+**Nested JSON Structure**:
+```json
+{
+  "title": "string",
+  "company": "string",
+  "location": "string",
+  "url": "string or null",
+  "description": "string",
+  "confidence": 0.0-1.0,
+
+  "compensation": { /* 8 fields */ },
+  "employment": { /* 6 fields */ },
+  "remote_work": { /* 4 fields */ },
+  "commute": { /* 4 fields */ },
+  "job_domain": { /* 10 fields */ }
+}
+```
+
+#### 3. Backend Implementation
+
+**File**: `backend/src/main.rs`
+
+**Created 5 New Rust Structs** (lines 310-382):
+```rust
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CompensationDetails {
+    #[serde(rename = "type")]
+    pub comp_type: Option<String>,
+    pub salary_min: Option<i32>,
+    pub salary_max: Option<i32>,
+    pub currency: Option<String>,
+    pub hourly_rate: Option<f64>,
+    pub daily_rate: Option<f64>,
+    pub equity_offered: Option<bool>,
+    pub bonus_structure: Option<String>,
+}
+
+// + 4 more structs: EmploymentDetails, RemoteWorkDetails, CommuteDetails, JobDomainDetails
+```
+
+**Updated JobExtractionResult** (lines 384-408):
+- Added nested fields: `compensation`, `employment`, `remote_work`, `commute`, `job_domain`
+- Maintained backward compatibility with flat `salary_min`/`salary_max` fields
+
+**Modified create_job_from_extraction** (lines 2523-2582):
+- Serializes full extraction to JSONB for storage in `raw_data` field
+- Falls back to nested compensation fields if flat fields are null
+- Passes extraction raw_data to `create_job_internal`
+
+**Updated create_job_internal signature** (lines 2589-2608):
+- Added `extraction_raw_data: Option<serde_json::Value>` parameter
+- Uses extraction raw_data instead of job_req for `raw_data` field
+
+#### 4. Frontend Implementation
+
+**File**: `frontend/src/App.tsx`
+
+**Created 5 TypeScript Interfaces** (lines 12-80):
+```typescript
+interface CompensationDetails { /* 8 fields */ }
+interface EmploymentDetails { /* 6 fields */ }
+interface RemoteWorkDetails { /* 4 fields */ }
+interface CommuteDetails { /* 4 fields */ }
+interface JobDomainDetails { /* 10 fields */ }
+```
+
+**Updated Job Interface** (line 80):
+```typescript
+interface Job {
+  // ... existing fields ...
+  raw_data?: {
+    compensation?: CompensationDetails;
+    employment?: EmploymentDetails;
+    remote_work?: RemoteWorkDetails;
+    commute?: CommuteDetails;
+    job_domain?: JobDomainDetails;
+    description?: string;  // Full email body
+  };
+}
+```
+
+**Added 6 Formatting Helper Functions** (lines 195-275):
+- `formatTaxStructure()`: W2 → "W-2 Employee", 1099 → "1099 Contractor"
+- `formatRemotePolicy()`: fully_remote → "Fully Remote"
+- `formatSalaryRange()`: Handles min/max, hourly, daily rate formatting
+- `formatCompensationType()`: annual_salary → "Annual Salary"
+- `formatEmploymentRelationship()`: direct_hire → "Direct Hire"
+- `formatSeniority()`: senior → "Senior"
+
+**Added Trade-off Badges to Job Cards** (lines 606-686):
+
+Color-coded badges based on preference hierarchy:
+```typescript
+// 1099/Schedule C: Green (#d1fae5, #065f46) - Preferred tax structure
+// W-2: Yellow/Amber (#fef3c7, #92400e) - Neutral tax structure
+// Fully Remote: Blue (#dbeafe, #1e40af) - Preferred work policy
+// Company Shuttle: Green (#d1fae5, #065f46) - Positive perk
+// Gen AI: Purple/Indigo (#e0e7ff, #3730a3) - Neutral-positive
+// Testing Focus: Yellow/Amber (#fef3c7, #92400e) - Neutral
+```
+
+**Expanded Job Detail Modal** (lines 947-1133):
+
+Added 4 comprehensive sections:
+
+1. **Compensation Details Section**:
+   - Compensation type (annual salary, hourly, consulting)
+   - Salary range (formatted with min/max or single value)
+   - Equity offered
+   - Bonus structure
+
+2. **Employment Details Section**:
+   - Tax structure (W-2, 1099, corp-to-corp, Schedule C)
+   - Employment relationship (direct hire, staffing agency, consulting)
+   - Contract duration
+   - Agency name (if applicable)
+   - Benefits
+   - Employment type (full-time, part-time, contract)
+
+3. **Location & Commute Section**:
+   - Remote policy (fully remote, hybrid, onsite)
+   - Days onsite per week
+   - Office location
+   - Company shuttle (yes/no)
+   - Commute perks (FasTrak, parking, transit)
+   - Schedule flexibility
+
+4. **Technical Details Section**:
+   - Primary category (software engineering, QA testing, etc.)
+   - Seniority level
+   - Testing focus (yes/no)
+   - Testing level (BIOS/POST, chip-level, board-level, integration, system, web UI)
+   - Automation focus (yes/no)
+   - Test automation tools (list)
+   - Generative AI usage (yes/no)
+   - AI tools mentioned (list)
+   - Test equipment (ATE, oscilloscopes, cellular testing)
+   - Tech stack (list)
+
+**Enhanced Description Section**:
+- Prefers `raw_data.description` (full email body) over `job.description` (LLM summary)
+- Uses `renderDescription()` to preserve whitespace and formatting
+
+#### 5. E2E Testing
+
+**Created Test File 1**: `e2e/tests/05-job-tradeoff-display.spec.ts` (298 lines)
+
+**15 comprehensive test cases**:
+- Tax structure badge display and styling
+- Fully remote badge display
+- Company shuttle badge display
+- Generative AI badge display
+- Testing focus badge display
+- Compensation section in modal
+- Employment section in modal
+- Location & commute section in modal
+- Technical details section in modal
+- Full email body display
+- Salary range formatting (various formats)
+- Multiple badges on same card
+- Missing data handling (graceful degradation)
+- Modal close functionality (X button, Escape key, overlay click)
+
+**Created Test File 2**: `e2e/tests/06-job-badge-styling.spec.ts` (337 lines)
+
+**16 styling-specific test cases**:
+- Tax structure badge colors (green for 1099/Schedule C, yellow for W-2)
+- Fully remote badge blue styling (#dbeafe, #1e40af)
+- Company shuttle badge green styling (#d1fae5, #065f46)
+- Generative AI badge purple/indigo styling (#e0e7ff, #3730a3)
+- Testing focus badge yellow/amber styling (#fef3c7, #92400e)
+- Consistent padding across badges (4px 8px)
+- Consistent border radius (4px)
+- Consistent font size (12px)
+- Consistent font weight (500)
+- Existing salary badge unchanged (green or red based on threshold)
+- Existing location badge unchanged (blue or gray)
+- Badge container flex wrap
+- Badge container gap (8px)
+- Modal section header styling consistency (font-weight: 600, color: #111827, margin-bottom: 12px)
+- Modal section grid layout consistency (grid, repeat(2, 1fr), gap: 12px, font-size: 14px)
+- Modal label/value styling consistency
+
+### Benefits (Phase 5.3.4)
+
+✅ **Informed Decision-Making**: Users see full picture across 5 dimensions to evaluate trade-offs
+✅ **Zero Schema Changes**: Used existing `raw_data JSONB` field - no database migrations required
+✅ **Backward Compatible**: Maintained flat `salary_min`/`salary_max` fields for existing code
+✅ **Rich Data Capture**: 25+ fields extracted across compensation, employment, remote work, commute, and technical domains
+✅ **Visual Hierarchy**: Color-coded badges indicate preferred options (green = preferred, yellow = neutral, blue = remote)
+✅ **Complete Context**: Full email body preserved for reference
+✅ **Comprehensive Testing**: 31 e2e tests ensure UI correctness across display and styling
+✅ **Tax-Aware Evaluation**: Distinguishes W-2 vs 1099 vs Schedule C for tax optimization
+✅ **Commute Optimization**: Captures shuttle, FasTrak, schedule flexibility for better commute decisions
+✅ **Technical Alignment**: Identifies testing focus, automation, AI usage for role fit assessment
+
+**Cost Impact**: No additional LLM costs - uses same Haiku extraction with expanded JSON schema.
+
+**User Experience Improvements**:
+- At-a-glance trade-off visibility on job cards
+- Detailed breakdowns in modal for deep evaluation
+- Clear semantic labeling (e.g., "Date Email Sent", "Tax Structure", "Remote Policy")
+- Graceful handling of missing data (sections only appear if data exists)
+
+---
+
 ## Next Steps
 
 1. **✅ Phase 5.3 Complete** - LLM-based extraction with Claude Haiku
 2. **✅ Phase 5.3.1 Complete** - MECE Counter System with validation
 3. **✅ Phase 5.3.2 Complete** - Progressive email processing with mark-as-read
 4. **🎯 Phase 5.3.3 Proposed** - LLM-based email filtering with Gmail labels
-5. **Ongoing**: Monitor extraction quality and iterate on prompt if needed
-6. **Ongoing**: Track API costs and optimize if necessary
-7. **Future**: Consider additional job sources (LinkedIn, Indeed APIs)
-8. **Future**: Implement automated prompt A/B testing for continuous improvement
+5. **✅ Phase 5.3.4 Complete** - Trade-off based job evaluation display
+6. **Ongoing**: Monitor extraction quality and iterate on prompt if needed
+7. **Ongoing**: Track API costs and optimize if necessary
+8. **Future**: Consider additional job sources (LinkedIn, Indeed APIs)
+9. **Future**: Implement automated prompt A/B testing for continuous improvement
 
 ## Appendix A: Sample Extraction Prompt
 

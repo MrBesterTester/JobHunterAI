@@ -27,11 +27,56 @@ Return ONLY valid JSON in this exact structure:
   "title": "string - exact job title",
   "company": "string - actual hiring company name",
   "location": "string - 'City, ST' format or 'Remote'",
-  "salary_min": number or null,
-  "salary_max": number or null,
   "url": "string - application URL or null",
-  "description": "string - 2-3 sentence summary",
-  "confidence": number between 0.0 and 1.0
+  "description": "string - 2-3 sentence summary focusing on key responsibilities, required skills, and what makes role unique",
+  "confidence": number between 0.0 and 1.0,
+
+  "compensation": {
+    "type": "annual_salary|hourly|daily_rate|consulting_contract|retainer|equity_heavy|commission_based",
+    "salary_min": number or null,
+    "salary_max": number or null,
+    "currency": "USD",
+    "hourly_rate": number or null,
+    "daily_rate": number or null,
+    "equity_offered": boolean or null,
+    "bonus_structure": "string or null - describe bonus, commission, profit sharing"
+  },
+
+  "employment": {
+    "relationship": "direct_hire|staffing_agency|consulting|contract_to_hire|independent_contractor",
+    "tax_structure": "W2|1099|corp_to_corp|schedule_c|unknown",
+    "contract_duration": "string or null - 'permanent', '6 months', '1 year contract', 'contract-to-hire'",
+    "agency_name": "string or null - staffing agency name if applicable",
+    "benefits": "string or null - health insurance, 401k, PTO, etc.",
+    "employment_type": "full_time|part_time|contract|temporary"
+  },
+
+  "remote_work": {
+    "policy": "fully_remote|hybrid|onsite|flexible|remote_optional",
+    "days_onsite_per_week": number or null,
+    "remote_eligible_states": ["string"] or null,
+    "timezone_requirement": "string or null"
+  },
+
+  "commute": {
+    "office_location": "string or null - specific office city or address",
+    "company_shuttle": boolean or null,
+    "commute_perks": "string or null - FasTrak, express lanes, parking, transit pass, flexible hours",
+    "schedule_flexibility": "string or null - flexible start/end times, core hours"
+  },
+
+  "job_domain": {
+    "primary_category": "software_engineering|firmware_engineering|qa_testing|test_automation|devops|other",
+    "testing_focus": boolean or null,
+    "testing_level": "string or null - BIOS/POST, chip-level, board-level, integration, system, web UI, e2e",
+    "automation_focus": boolean or null,
+    "test_automation_tools": ["string"] or null,
+    "generative_ai_usage": boolean or null,
+    "ai_tools_mentioned": ["string"] or null,
+    "test_equipment": "string or null - ATE, oscilloscopes, cellular testing, multimeters, etc.",
+    "tech_stack": ["string"] or null,
+    "seniority": "junior|mid|senior|staff|principal|lead|manager|director"
+  }
 }
 ```
 
@@ -96,6 +141,104 @@ Return ONLY valid JSON in this exact structure:
   - What makes this role unique
 - Pull from job description section, not recruiter introduction
 - Keep concise and factual
+
+## Advanced Extraction Rules
+
+### Compensation Type Detection
+
+**Annual Salary:**
+- Keywords: "salary", "$XXk", "$XXX,000/year", "annual compensation"
+- Format as: `"type": "annual_salary"`, populate `salary_min`/`salary_max`
+
+**Hourly Rate:**
+- Keywords: "/hr", "/hour", "hourly rate", "$XX per hour"
+- Format as: `"type": "hourly"`, populate `hourly_rate`
+- Convert to annual: hourly_rate × 2080 → also set `salary_min`/`salary_max` to equivalent
+
+**Daily Rate:**
+- Keywords: "/day", "daily rate", "$XXX per day"
+- Format as: `"type": "daily_rate"`, populate `daily_rate`
+- Estimate annual: daily_rate × 260 working days
+
+**Consulting/Contract:**
+- Keywords: "consulting engagement", "corp-to-corp", "C2C", "independent contractor", "retainer"
+- Format as: `"type": "consulting_contract"`
+
+### Tax Structure & Employment Relationship
+
+**W-2 (Employee):**
+- Direct hire → `"relationship": "direct_hire"`, `"tax_structure": "W2"`
+- Through agency → `"relationship": "staffing_agency"`, `"tax_structure": "W2"`, populate `agency_name`
+
+**1099 (Independent Contractor):**
+- Keywords: "1099", "independent contractor", "self-employed"
+- Format as: `"tax_structure": "1099"`
+
+**Corp-to-Corp / Schedule C:**
+- Keywords: "corp-to-corp", "C2C", "consulting firm", "your company"
+- Format as: `"tax_structure": "corp_to_corp"` or `"schedule_c"`
+
+**Staffing Agency Detection:**
+- Common agencies: "Pyramid Consulting", "CyberCoders", "Robert Half", "Insight Global", "TEKsystems"
+- Phrases: "on behalf of our client", "working with a client", "placed at"
+- Populate `agency_name`, set `relationship` to "staffing_agency"
+
+### Remote Work Policy Parsing
+
+**Fully Remote:**
+- Keywords: "fully remote", "100% remote", "remote-first", "work from anywhere"
+- Format as: `"policy": "fully_remote"`
+
+**Hybrid:**
+- Keywords: "hybrid", "X days in office", "X days onsite", "X days/week"
+- Extract days: "2 days onsite" → `"days_onsite_per_week": 2`
+- Format as: `"policy": "hybrid"`
+
+**Onsite:**
+- Keywords: "onsite", "in-office", "office-based"
+- Format as: `"policy": "onsite"`
+
+### Commute Perks Detection
+
+**Company Shuttle/Bus:**
+- Keywords: "shuttle", "company bus", "transportation provided", "commuter bus"
+- Format as: `"company_shuttle": true`
+
+**FasTrak/Express Lanes:**
+- Keywords: "FasTrak", "express lane", "toll reimbursement", "E-ZPass"
+- Include in: `"commute_perks": "FasTrak reimbursement"`
+
+**Other Perks:**
+- Parking: "free parking", "parking provided"
+- Transit: "transit pass", "Clipper card", "commuter benefits"
+- Flexibility: "flexible hours", "avoid rush hour", "core hours 10am-3pm"
+
+### Job Domain Classification
+
+**Testing Focus:**
+- Keywords: "QA", "Quality Assurance", "Test Engineer", "SDET", "testing", "test automation"
+- Set: `"testing_focus": true`
+
+**Testing Levels:**
+- BIOS/POST: "BIOS testing", "firmware testing", "POST", "boot testing"
+- Chip/Board: "chip validation", "board test", "hardware testing", "ATE"
+- Integration: "integration testing", "API testing"
+- System: "system testing", "end-to-end", "E2E"
+- UI: "UI testing", "web testing", "Selenium", "Playwright", "Cypress"
+
+**Automation Focus:**
+- Keywords: "automation", "CI/CD", "Jenkins", "pytest", "Selenium", "test framework"
+- Set: `"automation_focus": true`
+- Extract tools: ["Selenium", "pytest", "Jenkins"]
+
+**Generative AI:**
+- Keywords: "generative AI", "LLM", "GPT", "Claude", "prompt engineering", "AI-assisted"
+- Set: `"generative_ai_usage": true`
+- Extract tools: ["ChatGPT", "Claude", "Copilot"]
+
+**Test Equipment:**
+- Keywords: "ATE", "oscilloscope", "multimeter", "spectrum analyzer", "cellular testing", "RF testing"
+- Format as: `"test_equipment": "ATE, oscilloscopes for board-level validation"`
 
 ## Example Extraction
 

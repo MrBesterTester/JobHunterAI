@@ -307,8 +307,62 @@ pub struct OAuthTokenResponse {
     pub scope: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CompensationDetails {
+    #[serde(rename = "type")]
+    pub comp_type: Option<String>,
+    pub salary_min: Option<i32>,
+    pub salary_max: Option<i32>,
+    pub currency: Option<String>,
+    pub hourly_rate: Option<f64>,
+    pub daily_rate: Option<f64>,
+    pub equity_offered: Option<bool>,
+    pub bonus_structure: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct EmploymentDetails {
+    pub relationship: Option<String>,
+    pub tax_structure: Option<String>,
+    pub contract_duration: Option<String>,
+    pub agency_name: Option<String>,
+    pub benefits: Option<String>,
+    pub employment_type: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct RemoteWorkDetails {
+    pub policy: Option<String>,
+    pub days_onsite_per_week: Option<i32>,
+    pub remote_eligible_states: Option<Vec<String>>,
+    pub timezone_requirement: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CommuteDetails {
+    pub office_location: Option<String>,
+    pub company_shuttle: Option<bool>,
+    pub commute_perks: Option<String>,
+    pub schedule_flexibility: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct JobDomainDetails {
+    pub primary_category: Option<String>,
+    pub testing_focus: Option<bool>,
+    pub testing_level: Option<String>,
+    pub automation_focus: Option<bool>,
+    pub test_automation_tools: Option<Vec<String>>,
+    pub generative_ai_usage: Option<bool>,
+    pub ai_tools_mentioned: Option<Vec<String>>,
+    pub test_equipment: Option<String>,
+    pub tech_stack: Option<Vec<String>>,
+    pub seniority: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct JobExtractionResult {
+    // Backward compatible flat fields
     pub title: Option<String>,
     pub company: Option<String>,
     pub location: Option<String>,
@@ -318,6 +372,13 @@ pub struct JobExtractionResult {
     pub url: Option<String>,
     pub confidence: f64,
     pub extraction_method: String,
+
+    // New nested structures
+    pub compensation: Option<CompensationDetails>,
+    pub employment: Option<EmploymentDetails>,
+    pub remote_work: Option<RemoteWorkDetails>,
+    pub commute: Option<CommuteDetails>,
+    pub job_domain: Option<JobDomainDetails>,
 }
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
@@ -2486,10 +2547,20 @@ async fn create_job_from_extraction(
     };
 
     // Calculate average salary from min/max for storage (single field in DB)
+    // Also try to get from nested compensation if flat fields are empty
     let salary = match (extraction.salary_min, extraction.salary_max) {
         (Some(min), Some(max)) => Some((min + max) / 2),
         (Some(val), None) | (None, Some(val)) => Some(val),
-        (None, None) => None,
+        (None, None) => {
+            // Try to get from nested compensation
+            extraction.compensation.as_ref().and_then(|c| {
+                match (c.salary_min, c.salary_max) {
+                    (Some(min), Some(max)) => Some((min + max) / 2),
+                    (Some(val), None) | (None, Some(val)) => Some(val),
+                    (None, None) => None,
+                }
+            })
+        }
     };
 
     let job_req = CreateJobRequest {
@@ -2503,8 +2574,11 @@ async fn create_job_from_extraction(
         url: extraction.url.clone(),
     };
 
-    // Use existing job creation logic, passing through the date
-    create_job_internal(&job_req, pool, date_email_sent).await
+    // Serialize full extraction to JSONB for storage in raw_data
+    let extraction_raw_data = serde_json::to_value(extraction).ok();
+
+    // Use existing job creation logic, passing through the date and full extraction
+    create_job_internal(&job_req, pool, date_email_sent, extraction_raw_data).await
 }
 
 enum JobCreationResult {
@@ -2515,7 +2589,8 @@ enum JobCreationResult {
 async fn create_job_internal(
     job_req: &CreateJobRequest,
     pool: &PgPool,
-    date_email_sent: Option<DateTime<Utc>>
+    date_email_sent: Option<DateTime<Utc>>,
+    extraction_raw_data: Option<serde_json::Value>
 ) -> std::result::Result<JobCreationResult, sqlx::Error> {
     let job_id = Uuid::new_v4();
 
@@ -2529,8 +2604,8 @@ async fn create_job_internal(
         return Ok(JobCreationResult::Duplicate(existing_job_id));
     }
 
-    // Create job with appropriate status
-    let raw_data = serde_json::to_value(job_req).unwrap();
+    // Use extraction raw_data if provided, otherwise fall back to job_req
+    let raw_data = extraction_raw_data.unwrap_or_else(|| serde_json::to_value(job_req).unwrap());
 
     sqlx::query!(
         r#"
