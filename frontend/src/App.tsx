@@ -149,7 +149,7 @@ interface CoverLetterTemplate {
   updated_at: string;
 }
 
-type TabType = 'approved' | 'applied' | 'filtered' | 'failed' | 'duplicates' | 'all' | 'intake' | 'calendar' | 'follow-ups' | 'ignored';
+type TabType = 'approved' | 'applied' | 'filtered' | 'failed' | 'duplicates' | 'new' | 'all' | 'intake' | 'calendar' | 'follow-ups' | 'ignored';
 
 const JobHunterDashboard: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -1337,7 +1337,7 @@ const JobHunterDashboard: React.FC = () => {
 
       <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 16px', boxSizing: 'border-box', width: '100%' }}>
         <nav style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid #e5e7eb', overflowX: 'auto' }}>
-          {(['ignored', 'intake', 'filtered', 'failed', 'duplicates', 'approved', 'applied', 'follow-ups', 'calendar', 'all'] as TabType[]).map(tab => (
+          {(['ignored', 'intake', 'filtered', 'failed', 'duplicates', 'new', 'approved', 'applied', 'follow-ups', 'calendar', 'all'] as TabType[]).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -1362,6 +1362,7 @@ const JobHunterDashboard: React.FC = () => {
               {tab === 'filtered' && <Filter style={{ width: '16px', height: '16px' }} />}
               {tab === 'failed' && <AlertTriangle style={{ width: '16px', height: '16px' }} />}
               {tab === 'duplicates' && <Copy style={{ width: '16px', height: '16px' }} />}
+              {tab === 'new' && <AlertCircle style={{ width: '16px', height: '16px' }} />}
               {tab === 'calendar' && <CalendarIcon style={{ width: '16px', height: '16px' }} />}
               {tab === 'follow-ups' && <Mail style={{ width: '16px', height: '16px' }} />}
               {getTabLabel(tab)}
@@ -1394,7 +1395,8 @@ const JobHunterDashboard: React.FC = () => {
         ) : (
           <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))', gap: '16px', width: '100%' }}>
-              {(activeTab === 'approved' ? filterJobs('approved') :
+              {(activeTab === 'new' ? filterJobs('new') :
+                activeTab === 'approved' ? filterJobs('approved') :
                 activeTab === 'applied' ? filterJobs('applied') :
                 activeTab === 'filtered' ? filterJobs('filtered') :
                 getAllActiveJobs()
@@ -1403,7 +1405,8 @@ const JobHunterDashboard: React.FC = () => {
               ))}
             </div>
 
-            {(activeTab === 'approved' ? filterJobs('approved') :
+            {(activeTab === 'new' ? filterJobs('new') :
+              activeTab === 'approved' ? filterJobs('approved') :
               activeTab === 'applied' ? filterJobs('applied') :
               activeTab === 'filtered' ? filterJobs('filtered') :
               getAllActiveJobs()
