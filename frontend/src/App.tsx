@@ -1290,7 +1290,7 @@ const JobHunterDashboard: React.FC = () => {
             </div>
             <div style={{ textAlign: 'center' }}>
               <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#6b7280' }}>
-                {(stats.filtered || 0) + (stats.duplicated || 0) + (stats.failed || 0)}
+                {(stats.filtered || 0) + (stats.duplicated || 0) + (stats.failed || 0) + (stats.new || 0)}
               </p>
               <p style={{ fontSize: '14px', color: '#6b7280' }}>Total</p>
             </div>
