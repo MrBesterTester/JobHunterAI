@@ -98,6 +98,7 @@ interface JobStats {
   ignored?: number;
   failed?: number;
   duplicated?: number;
+  discovered?: number;
 }
 
 interface Application {
@@ -1288,9 +1289,9 @@ const JobHunterDashboard: React.FC = () => {
               <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#ef4444' }}>{stats.rejected || 0}</p>
               <p style={{ fontSize: '14px', color: '#6b7280' }}>Rejected</p>
             </div>
-            <div style={{ textAlign: 'center' }}>
+            <div style={{ textAlign: 'center' }} data-testid="stat-total">
               <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#6b7280' }}>
-                {(stats.filtered || 0) + (stats.duplicated || 0) + (stats.failed || 0) + (stats.new || 0)}
+                {stats.discovered || 0}
               </p>
               <p style={{ fontSize: '14px', color: '#6b7280' }}>Total</p>
             </div>
