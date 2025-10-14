@@ -99,6 +99,10 @@ interface JobStats {
   failed?: number;
   duplicated?: number;
   discovered?: number;
+  created?: number;
+  mece_valid?: number;
+  mece_expected?: number;
+  mece_actual?: number;
 }
 
 interface Application {
@@ -1273,6 +1277,10 @@ const JobHunterDashboard: React.FC = () => {
               <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#f59e0b' }}>{stats.duplicated || 0}</p>
               <p style={{ fontSize: '14px', color: '#6b7280' }}>Duplicates</p>
             </div>
+            <div style={{ textAlign: 'center' }} data-testid="stat-created">
+              <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#10b981' }}>{stats.created || 0}</p>
+              <p style={{ fontSize: '14px', color: '#6b7280' }}>Created</p>
+            </div>
             <div style={{ textAlign: 'center' }} data-testid="stat-new">
               <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#3b82f6' }}>{stats.new || 0}</p>
               <p style={{ fontSize: '14px', color: '#6b7280' }}>New</p>
@@ -1296,6 +1304,28 @@ const JobHunterDashboard: React.FC = () => {
               <p style={{ fontSize: '14px', color: '#6b7280' }}>Total</p>
             </div>
           </div>
+
+          {/* MECE Validation Warning */}
+          {stats.mece_valid === 0 && (
+            <div
+              style={{
+                marginTop: '12px',
+                padding: '12px',
+                backgroundColor: '#fef2f2',
+                borderRadius: '6px',
+                borderLeft: '4px solid #ef4444',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+              data-testid="mece-validation-warning"
+            >
+              <AlertCircle style={{ width: '20px', height: '20px', color: '#ef4444', flexShrink: 0 }} />
+              <div style={{ fontSize: '13px', color: '#7f1d1d' }}>
+                <strong>MECE Validation Failed:</strong> Total ({stats.mece_expected}) ≠ Failed + Filtered + Duplicates + Created ({stats.mece_actual})
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
