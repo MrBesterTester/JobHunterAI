@@ -55,12 +55,13 @@
   - [Backend Changes](#backend-changes-phase-531)
   - [Frontend Changes](#frontend-changes-phase-531)
   - [Testing](#testing-phase-531)
-- [Phase 5.3.2: Progressive Email Processing](#phase-532-progressive-email-processing)
+- [Phase 5.3.2: Progressive Email Processing & Date Tracking](#phase-532-progressive-email-processing--date-tracking)
   - [✅ COMPLETED (2025-10-13)](#-completed-2025-10-13-1)
   - [Implementation Details](#implementation-details-phase-532)
   - [OAuth Scope Enhancement](#oauth-scope-enhancement)
   - [Mark-as-Read Implementation](#mark-as-read-implementation)
   - [Progressive Query Filter](#progressive-query-filter)
+  - [Accurate Date Tracking Implementation](#accurate-date-tracking-implementation)
   - [Testing](#testing-phase-532)
 - [Next Steps](#next-steps)
 - [Appendix A: Sample Extraction Prompt](#appendix-a-sample-extraction-prompt)
@@ -1310,17 +1311,23 @@ Validation:
 
 ---
 
-## Phase 5.3.2: Progressive Email Processing
+## Phase 5.3.2: Progressive Email Processing & Date Tracking
 
 ### ✅ COMPLETED (2025-10-13)
 
 **Status**: ✅ **IMPLEMENTATION COMPLETE**
 
-Phase 5.3.2 implemented mark-as-read functionality to enable progressive batching through Gmail inbox, preventing duplicate processing and allowing continuous advancement through email backlog.
+Phase 5.3.2 implemented two key enhancements:
+1. **Progressive Email Processing**: Mark-as-read functionality to enable progressive batching through Gmail inbox
+2. **Accurate Date Tracking**: Renamed `date_collected` to `date_email_sent` and modified pipeline to record actual email sent date
 
-**Problem Statement**: Without mark-as-read, Gmail sync repeatedly fetched the same 50 emails. Users with 200+ unread job emails couldn't progressively process them 50 at a time.
+**Problem Statement**:
+1. **Duplicate Processing**: Without mark-as-read, Gmail sync repeatedly fetched the same 50 emails. Users with 200+ unread job emails couldn't progressively process them 50 at a time.
+2. **Inaccurate Dating**: Jobs were timestamped with processing time (`NOW()`), not the actual email sent date, making it difficult to track when opportunities first appeared.
 
-**Solution**: Mark processed emails as read in Gmail, use `is:unread` filter to fetch only unread emails, enabling automatic progression through inbox.
+**Solution**:
+1. Mark processed emails as read in Gmail, use `is:unread` filter to fetch only unread emails, enabling automatic progression through inbox.
+2. Pass email `received_date` from Gmail API through job creation pipeline, rename database field for semantic clarity.
 
 ### Implementation Details (Phase 5.3.2)
 
@@ -1441,9 +1448,130 @@ let query = "is:unread subject:(job OR position OR opportunity OR career OR hiri
 
 **Purpose**: Allows users to re-authenticate to get updated OAuth token with `gmail.modify` scope.
 
+### Accurate Date Tracking Implementation
+
+**File**: Database schema and backend/frontend
+
+**Problem**: Jobs were timestamped with `NOW()` (processing time), not the actual email sent date. The field name `date_collected` was semantically ambiguous.
+
+**Solution**: Comprehensive rename from `date_collected` to `date_email_sent` with pipeline changes to pass actual email date.
+
+**Database Changes**:
+
+**Migration Created**: `/database/migrations/001_rename_date_collected_to_date_email_sent.sql`
+```sql
+-- Rename the column
+ALTER TABLE jobs RENAME COLUMN date_collected TO date_email_sent;
+
+-- Drop old index
+DROP INDEX IF EXISTS idx_jobs_date_collected;
+
+-- Create new index
+CREATE INDEX idx_jobs_date_email_sent ON jobs(date_email_sent DESC);
+
+-- Recreate the view with the new column name
+DROP VIEW IF EXISTS jobs_with_applications;
+CREATE VIEW jobs_with_applications AS
+SELECT
+    j.*,
+    a.application_id,
+    a.application_status,
+    a.date_applied,
+    a.follow_up_date
+FROM jobs j
+LEFT JOIN applications a ON j.job_id = a.job_id
+ORDER BY j.date_email_sent DESC;
+```
+
+**Schema Updated**: `/database/schema.sql` (line 19)
+- Column: `date_email_sent TIMESTAMP WITH TIME ZONE DEFAULT NOW()`
+- Index: `CREATE INDEX idx_jobs_date_email_sent ON jobs(date_email_sent DESC);`
+- View: `jobs_with_applications` ORDER BY `j.date_email_sent DESC`
+
+**Backend Changes**:
+
+**File**: `backend/src/main.rs`
+
+**1. Job Struct Updated** (line 49):
+```rust
+pub date_email_sent: DateTime<Utc>,
+```
+
+**2. Function Signature Enhanced**:
+```rust
+async fn create_job_internal(
+    // ... existing parameters ...
+    date_email_sent: Option<DateTime<Utc>>,  // New parameter
+    pool: &PgPool,
+) -> std::result::Result<Uuid, sqlx::Error> {
+    // SQL query updated:
+    // VALUES (..., COALESCE($13, NOW()))
+    // Falls back to NOW() only when date not provided
+}
+```
+
+**3. Gmail Sync Integration**:
+```rust
+// Pass actual email received_date from Gmail API
+match create_job_from_extraction(&job_data, source, pool, Some(received_date)).await {
+    // Email received_date propagated through entire pipeline
+}
+```
+
+**4. Global Rename**: All SQL queries, struct fields, and variable names updated from `date_collected` to `date_email_sent` (15+ occurrences).
+
+**Frontend Changes**:
+
+**File**: `frontend/src/App.tsx`
+
+**1. Job Interface Updated** (line 21):
+```typescript
+interface Job {
+  // ... other fields ...
+  date_email_sent: string;
+}
+```
+
+**2. Job Card Badge** (Date badge with calendar icon):
+```typescript
+<span
+  data-testid="job-date"
+  style={{
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '4px 8px',
+    borderRadius: '4px',
+    backgroundColor: '#f3f4f6',
+    color: '#374151'
+  }}>
+  <CalendarIcon style={{ width: '16px', height: '16px' }} />
+  {new Date(job.date_email_sent).toLocaleDateString()}
+</span>
+```
+
+**3. Job Detail Modal**:
+```typescript
+<p style={{ fontSize: '14px', color: '#6b7280' }}>Date Email Sent</p>
+<p style={{ fontWeight: 600 }} data-testid="date-email-sent">
+  {new Date(job.date_email_sent).toLocaleDateString()}
+</p>
+```
+
+**Migration Applied**: Ran on both `jobhunter` and `jobhunter_personal` databases using macOS user (database owner).
+
+**Benefits**:
+- ✅ **Semantic Clarity**: Field name clearly indicates email sent date, not processing date
+- ✅ **Historical Accuracy**: Job opportunities timestamped with actual email date
+- ✅ **Visual Indicator**: Calendar icon in UI provides at-a-glance date information
+- ✅ **Manual Entry Support**: Falls back to `NOW()` for manual entries without email
+- ✅ **Database Consistency**: Index and view updated to match new column name
+
 ### Testing (Phase 5.3.2)
 
 **Manual Testing Results**:
+
+**Progressive Email Processing**:
 - ✅ Tested with 200+ real Gmail job emails
 - ✅ OAuth scope update verified (no more 403 errors)
 - ✅ Mark-as-read API calls succeed
@@ -1454,6 +1582,15 @@ let query = "is:unread subject:(job OR position OR opportunity OR career OR hiri
   - Third sync: Next 50 emails (continuing progression)
 - ✅ Manual reprocessing tested (marked email as unread → appeared in next sync)
 
+**Accurate Date Tracking**:
+- ✅ Database migration applied successfully on both databases
+- ✅ Backend compilation validated (no sqlx errors)
+- ✅ Jobs display actual email sent date in UI (calendar icon badge)
+- ✅ Job detail modal shows "Date Email Sent" label
+- ✅ Email dates preserved from Gmail API (not processing time)
+- ✅ Manual entries fall back to `NOW()` correctly
+- ✅ Index renamed and queries optimized for new column name
+
 **Error Resolution**:
 - **Issue**: Initial 403 Forbidden errors when marking as read
 - **Root Cause**: Backend only requested `gmail.readonly` scope
@@ -1461,12 +1598,21 @@ let query = "is:unread subject:(job OR position OR opportunity OR career OR hiri
 - **Resolution**: Users must re-authenticate via gear button
 
 **Benefits**:
+
+**Progressive Email Processing**:
 - ✅ **Progressive Batching**: Process large inboxes 50 emails at a time
 - ✅ **No Duplicate Processing**: Emails marked read after processing
 - ✅ **Manual Control**: Mark emails as unread to reprocess them
 - ✅ **Clean Inbox**: Processed job emails automatically marked as read
 - ✅ **Continuous Progress**: Each sync advances through inbox automatically
 - ✅ **Cost Optimization**: Avoid reprocessing same emails with LLM
+
+**Accurate Date Tracking**:
+- ✅ **Historical Accuracy**: Jobs timestamped with actual email sent date, not processing date
+- ✅ **Semantic Clarity**: Field name `date_email_sent` clearly indicates what the date represents
+- ✅ **Visual Feedback**: Calendar icon in UI provides immediate date recognition
+- ✅ **Better Sorting**: Jobs sorted by when opportunity appeared, not when processed
+- ✅ **Manual Entry Support**: Graceful fallback to processing time for manual entries
 
 **Cost Savings**: With mark-as-read, LLM extraction only happens once per email instead of repeatedly processing the same 50 emails.
 
@@ -1555,10 +1701,10 @@ After implementation, we expect to successfully extract jobs like:
 
 ---
 
-**Document Version**: 3.0
+**Document Version**: 3.1
 **Last Updated**: 2025-10-13
 **Author**: Claude Code
-**Status**: ✅ All Phases Complete - Phase 5.3, 5.3.1 (MECE Counters), and 5.3.2 (Progressive Email Processing)
+**Status**: ✅ All Phases Complete - Phase 5.3 (LLM Extraction), 5.3.1 (MECE Counters), and 5.3.2 (Progressive Email Processing & Date Tracking)
 
 ## Quick Start for Testing
 

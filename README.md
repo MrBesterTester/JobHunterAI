@@ -84,6 +84,7 @@ JobHunter is a comprehensive job application management system that automates an
   - [Phase 5.2 - Email Composition & Sending](#phase-52---email-composition--sending--complete)
   - [Phase 5.3 - LLM-based Job Extraction](#phase-53---llm-based-job-extraction--complete)
     - [Phase 5.3.1 - MECE Counter System](#phase-531---mece-counter-system--complete)
+    - [Phase 5.3.2 - Progressive Email Processing & Date Tracking](#phase-532---progressive-email-processing--date-tracking--complete)
   - [What NOT to Build](#what-not-to-build-for-now)
   - [Phase 5.4+ - Future Considerations](#phase-54---future-considerations-not-currently-planned)
 - [Project Structure](#project-structure)
@@ -1686,6 +1687,83 @@ Total Discovered: 50
 - ✅ **Audit Trail**: Full accountability in job intake logs
 
 **Phase 5.3.1 Complete** - The system now provides complete transparency and accountability in job intake tracking, ensuring users understand exactly what happened to every discovered email with mathematically validated MECE counters.
+
+#### Phase 5.3.2 - Progressive Email Processing & Date Tracking ✅ **COMPLETE**
+**Completion Date**: October 13, 2025
+**Status**: Fully implemented and tested
+
+**Goal**: Enable progressive email processing by marking processed emails as read in Gmail, and accurately track the date each job email was sent (not when it was processed).
+
+**Problem Solved**:
+1. **Duplicate Processing**: Previously, each sync would reprocess the same emails, leading to duplicate job entries and wasted API calls
+2. **Inaccurate Dating**: Jobs were timestamped with processing time (`NOW()`), not the actual email sent date, making it difficult to track when opportunities first appeared
+
+**Implemented Features**
+
+**1. Progressive Email Processing** ✅
+- **Gmail Read Status Tracking**: After processing each email, mark it as read in Gmail using Gmail API
+- **Incremental Batch Progression**: Each sync fetches only unread emails (`is:unread` filter), automatically advancing to next batch
+- **Manual Reprocessing**: Users can mark any email as unread in Gmail to reprocess it in the next sync
+- **Clean Inbox**: Processed job emails automatically marked as read for better organization
+
+**How It Works:**
+```
+Sync 1: Fetch 50 unread emails (1-50) → Process → Mark as read
+Sync 2: Fetch next 50 unread emails (51-100) → Process → Mark as read
+Sync 3: Fetch next 50 unread emails (101-150) → Process → Mark as read
+```
+
+**Benefits:**
+- No duplicate processing of already-handled emails
+- Progressive batching through large inboxes (50 emails at a time)
+- User control via Gmail's mark-as-unread feature
+- Cleaner inbox with processed emails marked as read
+
+**2. Accurate Date Tracking** ✅
+- **Database Schema Change**: Renamed `date_collected` to `date_email_sent` for semantic clarity
+- **Backend Pipeline**: Modified job creation functions to accept and pass email `received_date`
+- **Gmail Integration**: Pass actual email sent date from Gmail API to job creation
+- **Fallback Handling**: Defaults to `NOW()` only when date unavailable (manual entries)
+
+**Database Changes:**
+- Column rename: `jobs.date_collected` → `jobs.date_email_sent`
+- Index update: `idx_jobs_date_collected` → `idx_jobs_date_email_sent`
+- View update: `jobs_with_applications` ORDER BY clause uses new column name
+- Migration script: `/database/migrations/001_rename_date_collected_to_date_email_sent.sql`
+
+**Backend Changes (backend/src/main.rs):**
+- `Job` struct field: `pub date_email_sent: DateTime<Utc>`
+- `create_job_internal()`: Accept `Option<DateTime<Utc>>` parameter
+- SQL query: `COALESCE($13, NOW())` for fallback to current time
+- Gmail sync: Pass `Some(received_date)` when creating jobs from emails
+
+**Frontend Changes (frontend/src/App.tsx):**
+- Job interface: `date_email_sent: string`
+- Job cards: Date badge with calendar icon showing email sent date
+- Job detail modal: "Date Email Sent" label (was "Date Collected")
+- Visual indicator: Calendar icon with formatted date (e.g., "10/13/2025")
+
+**Technical Implementation** ✅
+- **Migration Applied**: Ran on both `jobhunter` and `jobhunter_personal` databases
+- **Code Updates**: Global rename across all SQL queries, struct fields, and UI components
+- **Testing**: Backend compilation validated, full sync tested with real Gmail data
+- **UI Enhancement**: Date badge with calendar icon shows at-a-glance date information
+
+**Success Criteria (All Achieved ✅)**
+- ✅ Jobs record actual email sent date, not processing time
+- ✅ Progressive email processing prevents duplicate syncs
+- ✅ Date displayed in job cards and detail modal
+- ✅ Calendar icon provides clear visual indicator
+- ✅ Manual entries still supported (fallback to `NOW()`)
+- ✅ Clean semantic naming (`date_email_sent` vs `date_collected`)
+
+**Code Locations:**
+- **Migration**: /database/migrations/001_rename_date_collected_to_date_email_sent.sql
+- **Backend**: backend/src/main.rs (create_job_internal, Gmail sync functions)
+- **Frontend**: frontend/src/App.tsx (Job interface, JobCard, JobDetails modal)
+- **Schema**: database/schema.sql (jobs table definition, indexes, views)
+
+**Phase 5.3.2 Complete** - The system now accurately tracks when job opportunities were originally sent (not when they were processed), and progressively processes emails without duplication, providing better historical tracking and cleaner inbox management.
 
 ---
 

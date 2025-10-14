@@ -16,7 +16,7 @@ CREATE TABLE jobs (
     salary INTEGER,
     commute_time INTEGER,
     status VARCHAR(20) DEFAULT 'new',
-    date_collected TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    date_email_sent TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     description TEXT,
     url TEXT,
     raw_data JSONB,
@@ -26,7 +26,7 @@ CREATE TABLE jobs (
 );
 
 CREATE INDEX idx_jobs_status ON jobs(status);
-CREATE INDEX idx_jobs_date_collected ON jobs(date_collected DESC);
+CREATE INDEX idx_jobs_date_email_sent ON jobs(date_email_sent DESC);
 CREATE INDEX idx_jobs_company ON jobs(company);
 CREATE INDEX idx_jobs_source ON jobs(source);
 
@@ -189,7 +189,7 @@ SELECT
     a.follow_up_date
 FROM jobs j
 LEFT JOIN applications a ON j.job_id = a.job_id
-ORDER BY j.date_collected DESC;
+ORDER BY j.date_email_sent DESC;
 
 -- ============================================================================
 -- Phase 4: Automated Job Intake Tables

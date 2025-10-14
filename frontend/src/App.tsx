@@ -18,7 +18,7 @@ interface Job {
   salary?: number;
   commute_time?: number;
   status: string;
-  date_collected: string;
+  date_email_sent: string;
   description?: string;
   url?: string;
   filter_reason?: string;
@@ -157,7 +157,7 @@ const JobHunterDashboard: React.FC = () => {
           location: 'Remote',
           salary: 145000,
           status: 'new',
-          date_collected: new Date().toISOString(),
+          date_email_sent: new Date().toISOString(),
           source: 'linkedin',
           description: 'Looking for experienced test automation engineer...'
         },
@@ -169,7 +169,7 @@ const JobHunterDashboard: React.FC = () => {
           salary: 135000,
           commute_time: 35,
           status: 'new',
-          date_collected: new Date().toISOString(),
+          date_email_sent: new Date().toISOString(),
           source: 'email',
           description: 'Work on cutting-edge AI testing tools...'
         },
@@ -181,7 +181,7 @@ const JobHunterDashboard: React.FC = () => {
           salary: 150000,
           commute_time: 25,
           status: 'approved',
-          date_collected: new Date(Date.now() - 86400000).toISOString(),
+          date_email_sent: new Date(Date.now() - 86400000).toISOString(),
           source: 'dice',
           description: 'Develop firmware validation frameworks...'
         }
@@ -450,6 +450,21 @@ const JobHunterDashboard: React.FC = () => {
         <span data-testid="job-source" style={{ padding: '4px 8px', borderRadius: '4px', backgroundColor: '#f3f4f6', color: '#374151' }}>
           {job.source}
         </span>
+
+        <span
+          data-testid="job-date"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            backgroundColor: '#f3f4f6',
+            color: '#374151'
+          }}>
+          <CalendarIcon style={{ width: '16px', height: '16px' }} />
+          {new Date(job.date_email_sent).toLocaleDateString()}
+        </span>
       </div>
 
       {job.filter_reason && (
@@ -690,8 +705,8 @@ const JobHunterDashboard: React.FC = () => {
               <p style={{ fontWeight: 600 }} data-testid="modal-source">{job.source}</p>
             </div>
             <div>
-              <p style={{ fontSize: '14px', color: '#6b7280' }}>Date Collected</p>
-              <p style={{ fontWeight: 600 }} data-testid="date-collected">{new Date(job.date_collected).toLocaleDateString()}</p>
+              <p style={{ fontSize: '14px', color: '#6b7280' }}>Date Email Sent</p>
+              <p style={{ fontWeight: 600 }} data-testid="date-email-sent">{new Date(job.date_email_sent).toLocaleDateString()}</p>
             </div>
           </div>
 

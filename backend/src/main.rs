@@ -46,7 +46,7 @@ pub struct Job {
     pub salary: Option<i32>,
     pub commute_time: Option<i32>,
     pub status: String,
-    pub date_collected: DateTime<Utc>,
+    pub date_email_sent: DateTime<Utc>,
     pub description: Option<String>,
     pub url: Option<String>,
     pub filter_reason: Option<String>,
@@ -945,7 +945,7 @@ async fn generate_content_for_job(job: &Job, pool: &PgPool) -> Result<GeneratedC
 
 async fn get_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     let jobs = sqlx::query_as::<_, Job>(
-        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_collected, description, url, filter_reason FROM jobs ORDER BY date_collected DESC"
+        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, url, filter_reason FROM jobs ORDER BY date_email_sent DESC"
     )
     .fetch_all(pool.get_ref())
     .await
@@ -959,7 +959,7 @@ async fn get_job(
     job_id: web::Path<Uuid>,
 ) -> Result<HttpResponse> {
     let job = sqlx::query_as::<_, Job>(
-        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_collected, description, url, filter_reason FROM jobs WHERE job_id = $1"
+        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, url, filter_reason FROM jobs WHERE job_id = $1"
     )
     .bind(*job_id)
     .fetch_optional(pool.get_ref())
@@ -1005,7 +1005,7 @@ async fn create_job(
     let job = sqlx::query_as::<_, Job>(
         r#"
         INSERT INTO jobs (job_id, title, company, location, source, salary,
-                         commute_time, status, date_collected, description, url, filter_reason)
+                         commute_time, status, date_email_sent, description, url, filter_reason)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9, $10, $11)
         RETURNING *
         "#
@@ -1040,7 +1040,7 @@ async fn update_job_status(
     status_req: web::Json<UpdateJobStatusRequest>,
 ) -> Result<HttpResponse> {
     let job = sqlx::query_as::<_, Job>(
-        "UPDATE jobs SET status = $1 WHERE job_id = $2 RETURNING job_id, title, company, location, source, salary, commute_time, status, date_collected, description, url, filter_reason"
+        "UPDATE jobs SET status = $1 WHERE job_id = $2 RETURNING job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, url, filter_reason"
     )
     .bind(&status_req.status)
     .bind(*job_id)
@@ -1059,7 +1059,7 @@ async fn get_jobs_by_status(
     status: web::Path<String>,
 ) -> Result<HttpResponse> {
     let jobs = sqlx::query_as::<_, Job>(
-        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_collected, description, url, filter_reason FROM jobs WHERE status = $1 ORDER BY date_collected DESC"
+        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, url, filter_reason FROM jobs WHERE status = $1 ORDER BY date_email_sent DESC"
     )
     .bind(status.as_str())
     .fetch_all(pool.get_ref())
@@ -1160,7 +1160,7 @@ async fn update_criteria(
 
 async fn get_filtered_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     let jobs = sqlx::query_as::<_, Job>(
-        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_collected, description, url, filter_reason FROM jobs WHERE status = 'filtered' ORDER BY date_collected DESC"
+        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, url, filter_reason FROM jobs WHERE status = 'filtered' ORDER BY date_email_sent DESC"
     )
     .fetch_all(pool.get_ref())
     .await
@@ -1385,7 +1385,7 @@ async fn generate_content_handler(
 
     // Get job details
     let job = sqlx::query_as::<_, Job>(
-        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_collected, description, url, filter_reason FROM jobs WHERE job_id = $1"
+        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, url, filter_reason FROM jobs WHERE job_id = $1"
     )
     .bind(job_id)
     .fetch_one(pool.get_ref())
@@ -1451,7 +1451,7 @@ async fn generate_content_with_options_handler(
 
     // Get job details
     let job = sqlx::query_as::<_, Job>(
-        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_collected, description, url, filter_reason FROM jobs WHERE job_id = $1"
+        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, url, filter_reason FROM jobs WHERE job_id = $1"
     )
     .bind(job_id)
     .fetch_one(pool.get_ref())
@@ -1920,10 +1920,13 @@ async fn process_gmail_messages(
                 // Replace LLM summary with full email body for better user visibility
                 if let Some(full_body) = &body_text {
                     job_data.description = Some(full_body.clone());
+                } else if job_data.description.is_none() {
+                    // Fallback: if no body text and no description from extraction, use subject
+                    job_data.description = subject.clone().or(Some("(No email content available)".to_string()));
                 }
 
                 if job_data.confidence > 0.3 { // Lowered threshold to process more jobs
-                    match create_job_from_extraction(&job_data, source, pool).await {
+                    match create_job_from_extraction(&job_data, source, pool, Some(received_date)).await {
                         Ok(JobCreationResult::Created(_job_id)) => {
                             metrics.created += 1;
 
@@ -2333,6 +2336,7 @@ async fn create_job_from_extraction(
     extraction: &JobExtractionResult,
     source: &JobSource,
     pool: &PgPool,
+    date_email_sent: Option<DateTime<Utc>>
 ) -> std::result::Result<JobCreationResult, sqlx::Error> {
     // Generate better fallback title from description if available
     let fallback_title = if let Some(desc) = &extraction.description {
@@ -2372,8 +2376,8 @@ async fn create_job_from_extraction(
         url: extraction.url.clone(),
     };
 
-    // Use existing job creation logic
-    create_job_internal(&job_req, pool).await
+    // Use existing job creation logic, passing through the date
+    create_job_internal(&job_req, pool, date_email_sent).await
 }
 
 enum JobCreationResult {
@@ -2381,7 +2385,11 @@ enum JobCreationResult {
     Duplicate(Uuid), // Existing job found (duplicate)
 }
 
-async fn create_job_internal(job_req: &CreateJobRequest, pool: &PgPool) -> std::result::Result<JobCreationResult, sqlx::Error> {
+async fn create_job_internal(
+    job_req: &CreateJobRequest,
+    pool: &PgPool,
+    date_email_sent: Option<DateTime<Utc>>
+) -> std::result::Result<JobCreationResult, sqlx::Error> {
     let job_id = Uuid::new_v4();
 
     // Apply filtering
@@ -2400,8 +2408,8 @@ async fn create_job_internal(job_req: &CreateJobRequest, pool: &PgPool) -> std::
     sqlx::query!(
         r#"
         INSERT INTO jobs (job_id, title, company, location, source, salary, commute_time,
-                         status, description, url, raw_data, filter_reason)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                         status, description, url, raw_data, filter_reason, date_email_sent)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, COALESCE($13, NOW()))
         "#,
         job_id,
         job_req.title,
@@ -2414,7 +2422,8 @@ async fn create_job_internal(job_req: &CreateJobRequest, pool: &PgPool) -> std::
         job_req.description,
         job_req.url,
         raw_data,
-        if filter_result.reasons.is_empty() { None } else { Some(filter_result.reasons.join("; ")) }
+        if filter_result.reasons.is_empty() { None } else { Some(filter_result.reasons.join("; ")) },
+        date_email_sent
     )
     .execute(pool)
     .await?;
@@ -2531,7 +2540,7 @@ async fn refilter_jobs(
                 SELECT MAX(sync_started_at) as last_sync
                 FROM job_intake_logs
                 WHERE sync_status = 'completed'
-            ) ls ON j.date_collected >= ls.last_sync
+            ) ls ON j.date_email_sent >= ls.last_sync
             WHERE j.source = 'gmail'
             "#
         }
@@ -2752,7 +2761,7 @@ async fn process_linkedin_jobs(
         // Extract job information from LinkedIn response
         if let Some(job_extraction) = extract_job_from_linkedin(&job_data) {
             if job_extraction.confidence > 0.7 { // Higher confidence threshold for API data
-                match create_job_from_extraction(&job_extraction, source, pool).await {
+                match create_job_from_extraction(&job_extraction, source, pool, None).await {
                     Ok(JobCreationResult::Created(job_id)) | Ok(JobCreationResult::Duplicate(job_id)) => {
                         processed_count += 1;
 
