@@ -48,6 +48,20 @@
   - [✅ COMPLETED (2025-10-11)](#-completed-2025-10-11)
   - [How the System Works](#how-the-system-works)
   - [Expected Improvements](#expected-improvements)
+- [Phase 5.3.1: MECE Counter System](#phase-531-mece-counter-system)
+  - [✅ COMPLETED (2025-10-13)](#-completed-2025-10-13)
+  - [Implementation Details](#implementation-details-phase-531)
+  - [Database Changes](#database-changes-phase-531)
+  - [Backend Changes](#backend-changes-phase-531)
+  - [Frontend Changes](#frontend-changes-phase-531)
+  - [Testing](#testing-phase-531)
+- [Phase 5.3.2: Progressive Email Processing](#phase-532-progressive-email-processing)
+  - [✅ COMPLETED (2025-10-13)](#-completed-2025-10-13-1)
+  - [Implementation Details](#implementation-details-phase-532)
+  - [OAuth Scope Enhancement](#oauth-scope-enhancement)
+  - [Mark-as-Read Implementation](#mark-as-read-implementation)
+  - [Progressive Query Filter](#progressive-query-filter)
+  - [Testing](#testing-phase-532)
 - [Next Steps](#next-steps)
 - [Appendix A: Sample Extraction Prompt](#appendix-a-sample-extraction-prompt)
 - [Appendix B: Current Regex Patterns (For Reference)](#appendix-b-current-regex-patterns-for-reference)
@@ -1107,13 +1121,366 @@ When Gmail sync runs:
 - **Cost**: ~$1-2/month for daily syncs
 - **Quality**: Better company detection, salary ranges, confidence
 
+## Phase 5.3.1: MECE Counter System
+
+### ✅ COMPLETED (2025-10-13)
+
+**Status**: ✅ **IMPLEMENTATION COMPLETE**
+
+Phase 5.3.1 implemented Mutually Exclusive and Collectively Exhaustive (MECE) tracking for complete transparency and accountability in job intake processing.
+
+**Problem Statement**: When 50 emails were discovered but only 43 jobs appeared in the UI, users had no visibility into what happened to the missing 7 emails. Were they duplicates? Did they fail processing? The system lacked comprehensive, accountable metrics.
+
+**Solution**: Implement MECE counter system where every discovered email is categorized into exactly one bucket, and all buckets sum to the total.
+
+### Implementation Details (Phase 5.3.1)
+
+**MECE Architecture**:
+```
+discovered = jobs_failed_processing + jobs_duplicated + jobs_created
+
+Example:
+50 discovered = 2 failed + 5 duplicated + 43 created ✅
+```
+
+**Counter Definitions**:
+- **`jobs_discovered`**: Total emails fetched from Gmail (unchanged)
+- **`jobs_failed_processing`**: Emails that failed extraction or had confidence < 0.3
+- **`jobs_duplicated`**: Emails matching existing jobs (deduplication)
+- **`jobs_created`**: New unique jobs added to database
+
+**Validation**: Backend automatically validates MECE invariant and reports `validation_error` if counters don't sum correctly.
+
+### Database Changes (Phase 5.3.1)
+
+**File**: `database/migrations/add_intake_tracking_fields.sql`
+
+```sql
+-- Add MECE counter fields to job_intake_logs
+ALTER TABLE job_intake_logs
+  ADD COLUMN jobs_failed_processing INTEGER DEFAULT 0,
+  ADD COLUMN jobs_duplicated INTEGER DEFAULT 0,
+  ADD COLUMN jobs_created INTEGER DEFAULT 0,
+  ADD COLUMN validation_error TEXT;
+
+-- Update existing records to maintain data integrity
+UPDATE job_intake_logs
+SET jobs_created = jobs_discovered - COALESCE(jobs_failed_processing, 0) - COALESCE(jobs_duplicated, 0)
+WHERE jobs_created IS NULL;
+```
+
+**Schema Update**: `database/schema.sql` updated with new columns.
+
+### Backend Changes (Phase 5.3.1)
+
+**File**: `backend/src/main.rs`
+
+**1. Created `JobCreationResult` enum** (lines 1850-1854):
+```rust
+enum JobCreationResult {
+    Created(Uuid),      // New job was created
+    Duplicate(Uuid),    // Job already exists (deduped)
+}
+```
+
+**2. Updated counter tracking** (lines 1855-1975):
+```rust
+// Count already-processed emails as duplicates
+if existing.is_some() {
+    metrics.duplicated += 1;
+
+    // Still mark as read even if already processed
+    if let Err(e) = mark_gmail_message_as_read(&client, access_token, &message.id).await {
+        log_debug(&format!("Warning: Failed to mark message {} as read: {}", message.id, e));
+    }
+
+    continue; // Skip already processed messages
+}
+
+// Attempt to create job from extraction
+match create_job_from_extraction(&extraction, &gmail_source, &pool).await {
+    Ok(JobCreationResult::Created(_)) => {
+        metrics.created += 1;
+    }
+    Ok(JobCreationResult::Duplicate(_)) => {
+        metrics.duplicated += 1;
+    }
+    Err(e) => {
+        metrics.failed_processing += 1;
+        log_debug(&format!("Failed to create job: {}", e));
+    }
+}
+```
+
+**3. Added MECE validation** (lines 2020-2030):
+```rust
+// Validate MECE invariant: discovered = failed + duplicated + created
+let sum = metrics.failed_processing + metrics.duplicated + metrics.created;
+let validation_error = if sum != metrics.discovered {
+    Some(format!(
+        "Counter mismatch: discovered={} but failed+duplicated+created={}+{}+{}={}",
+        metrics.discovered, metrics.failed_processing, metrics.duplicated, metrics.created, sum
+    ))
+} else {
+    None
+};
+```
+
+### Frontend Changes (Phase 5.3.1)
+
+**File**: `frontend/src/IntakeTab.tsx` (lines 1003-1018)
+
+**Enhanced Activity Log Display**:
+```typescript
+<div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+  <span style={{ color: '#f97316' }}>⚠ {log.jobs_created || 0} filtered</span>
+  {' • '}
+  <span style={{ color: '#f59e0b' }}>⊕ {log.jobs_duplicated || 0} dupes</span>
+  {' • '}
+  <span style={{ color: '#ef4444' }}>✗ {log.jobs_failed_processing || 0} failed</span>
+</div>
+```
+
+**Detailed View** (expandable on click):
+```typescript
+<p><strong>Total Discovered:</strong> {log.jobs_discovered}</p>
+<p style={{ color: '#10b981' }}><strong>✓ Jobs Created:</strong> {log.jobs_created || 0}</p>
+<p style={{ color: '#f59e0b' }}><strong>⊕ Duplicates Skipped:</strong> {log.jobs_duplicated || 0}</p>
+<p style={{ color: '#ef4444' }}><strong>✗ Failed Processing:</strong> {log.jobs_failed_processing || 0}</p>
+{log.validation_error && (
+  <p style={{ color: '#dc2626', fontWeight: 'bold' }}>
+    <strong>⚠️  Validation Error:</strong> {log.validation_error}
+  </p>
+)}
+```
+
+**Updated Total Counter** (`frontend/src/App.tsx:880`):
+```typescript
+// Total = Filtered + Duplicates + Failed (cumulative intake metrics)
+{(stats.filtered || 0) + (stats.duplicated || 0) + (stats.failed || 0)}
+```
+
+### Testing (Phase 5.3.1)
+
+**Test Scripts Created**:
+
+1. **`backend/tests/test_mece_counters.sh`** (117 lines)
+   - Validates MECE invariant: discovered = failed + duplicated + created
+   - Fetches most recent intake log from API
+   - Checks arithmetic and reports pass/fail
+
+2. **`backend/tests/test_total_calculation.sh`** (73 lines)
+   - Verifies Total counter matches intake logic
+   - Compares API values with database values
+
+3. **`backend/tests/test_ui_total.sh`** (79 lines)
+   - Comprehensive validation of UI Total display
+   - Verifies Total = Filtered + Duplicates + Failed
+
+**Test Results**:
+```bash
+$ backend/tests/test_mece_counters.sh
+
+🧪 Testing MECE Counter System
+
+✅ Backend is running
+
+📊 Fetching most recent intake log...
+Counter Values:
+  📧 Discovered:        50
+  ✗ Failed Processing:  1
+  ⊕ Duplicated:         18
+  ✓ Created:            31
+
+Validation:
+  Sum (F+D+C):          50
+  Expected:             50
+
+✅ MECE Counter Test: PASSED
+   The counters are Mutually Exclusive and Collectively Exhaustive
+   Formula: Discovered (50) = Failed (1) + Duplicated (18) + Created (31)
+```
+
+**Benefits**:
+- ✅ Complete transparency - every email accounted for
+- ✅ Automatic validation - catches counter bugs immediately
+- ✅ User confidence - clear understanding of sync results
+- ✅ Debugging aid - easy identification of processing issues
+- ✅ Audit trail - full accountability in job intake logs
+
+---
+
+## Phase 5.3.2: Progressive Email Processing
+
+### ✅ COMPLETED (2025-10-13)
+
+**Status**: ✅ **IMPLEMENTATION COMPLETE**
+
+Phase 5.3.2 implemented mark-as-read functionality to enable progressive batching through Gmail inbox, preventing duplicate processing and allowing continuous advancement through email backlog.
+
+**Problem Statement**: Without mark-as-read, Gmail sync repeatedly fetched the same 50 emails. Users with 200+ unread job emails couldn't progressively process them 50 at a time.
+
+**Solution**: Mark processed emails as read in Gmail, use `is:unread` filter to fetch only unread emails, enabling automatic progression through inbox.
+
+### Implementation Details (Phase 5.3.2)
+
+**Progressive Workflow**:
+```
+Sync 1: Fetch 50 unread (1-50)   → Process → Mark as read → 150 remain unread
+Sync 2: Fetch 50 unread (51-100) → Process → Mark as read → 100 remain unread
+Sync 3: Fetch 50 unread (101-150)→ Process → Mark as read → 50 remain unread
+Sync 4: Fetch 50 unread (151-200)→ Process → Mark as read → 0 remain unread
+Sync 5: 0 unread emails → No new emails to process
+```
+
+**Manual Reprocessing**: Users can mark any email as unread in Gmail to reprocess it in the next sync.
+
+### OAuth Scope Enhancement
+
+**File**: `backend/src/main.rs:1516`
+
+**Updated OAuth Request**:
+```rust
+// Request both readonly (to fetch emails) and modify (to mark as read) scopes
+let scope = "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.modify";
+```
+
+**Before**: Only requested `gmail.readonly`
+**After**: Requests both `gmail.readonly` and `gmail.modify`
+
+**User Action Required**: Re-authenticate via gear button in Intake tab to get updated token with both scopes.
+
+### Mark-as-Read Implementation
+
+**File**: `backend/src/main.rs:1768-1798`
+
+**Created `mark_gmail_message_as_read()` function**:
+```rust
+async fn mark_gmail_message_as_read(
+    client: &reqwest::Client,
+    access_token: &str,
+    message_id: &str,
+) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let url = format!(
+        "https://gmail.googleapis.com/gmail/v1/users/me/messages/{}/modify",
+        message_id
+    );
+
+    let body = serde_json::json!({
+        "removeLabelIds": ["UNREAD"]
+    });
+
+    let response = client
+        .post(&url)
+        .bearer_auth(access_token)
+        .json(&body)
+        .send()
+        .await?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_default();
+        log_debug(&format!("Failed to mark message {} as read. Status: {}, Error: {}",
+            message_id, status, error_text));
+        return Err(format!("Failed to mark message as read: {}", status).into());
+    }
+
+    Ok(())
+}
+```
+
+**Integration** (lines 1968-1973):
+```rust
+// Mark email as read in Gmail so it won't be fetched again
+// (User can manually mark as unread in Gmail to reprocess if needed)
+if let Err(e) = mark_gmail_message_as_read(&client, access_token, &message.id).await {
+    log_debug(&format!("Warning: Failed to mark message {} as read: {}", message.id, e));
+    // Continue processing even if mark-as-read fails
+}
+```
+
+**Error Handling**: Graceful degradation - continues processing even if mark-as-read fails.
+
+### Progressive Query Filter
+
+**File**: `backend/src/main.rs:1782`
+
+**Enhanced Gmail Query**:
+```rust
+// OLD: Fetched all job-related emails (repeated same 50)
+let query = "subject:(job OR position OR opportunity OR career OR hiring OR opening)";
+
+// NEW: Fetches only UNREAD job-related emails (progressive batching)
+let query = "is:unread subject:(job OR position OR opportunity OR career OR hiring OR opening)";
+```
+
+**Impact**: Each sync automatically fetches the next batch of 50 unread emails.
+
+### Frontend Re-authentication
+
+**File**: `frontend/src/IntakeTab.tsx:678`
+
+**Gear Button Enhancement**:
+```typescript
+<button
+  onClick={handleGmailAuth}
+  title="Re-authenticate Gmail"
+  style={{
+    padding: '10px 12px',
+    borderRadius: '6px',
+    border: '1px solid #d1d5db',
+    backgroundColor: 'white',
+    color: '#6b7280',
+    cursor: 'pointer',
+    fontSize: '14px'
+  }}
+>
+  <Settings style={{ width: '16px', height: '16px' }} />
+</button>
+```
+
+**Purpose**: Allows users to re-authenticate to get updated OAuth token with `gmail.modify` scope.
+
+### Testing (Phase 5.3.2)
+
+**Manual Testing Results**:
+- ✅ Tested with 200+ real Gmail job emails
+- ✅ OAuth scope update verified (no more 403 errors)
+- ✅ Mark-as-read API calls succeed
+- ✅ Emails marked as read in Gmail web interface
+- ✅ Progressive batching validated:
+  - First sync: 50 emails → 31 created, 18 duplicated, 1 failed
+  - Second sync: Next 50 emails (different batch)
+  - Third sync: Next 50 emails (continuing progression)
+- ✅ Manual reprocessing tested (marked email as unread → appeared in next sync)
+
+**Error Resolution**:
+- **Issue**: Initial 403 Forbidden errors when marking as read
+- **Root Cause**: Backend only requested `gmail.readonly` scope
+- **Fix**: Updated OAuth scope request to include `gmail.modify`
+- **Resolution**: Users must re-authenticate via gear button
+
+**Benefits**:
+- ✅ **Progressive Batching**: Process large inboxes 50 emails at a time
+- ✅ **No Duplicate Processing**: Emails marked read after processing
+- ✅ **Manual Control**: Mark emails as unread to reprocess them
+- ✅ **Clean Inbox**: Processed job emails automatically marked as read
+- ✅ **Continuous Progress**: Each sync advances through inbox automatically
+- ✅ **Cost Optimization**: Avoid reprocessing same emails with LLM
+
+**Cost Savings**: With mark-as-read, LLM extraction only happens once per email instead of repeatedly processing the same 50 emails.
+
+---
+
 ## Next Steps
 
-1. **Add Anthropic API key** ← YOU ARE HERE
-2. **Test extraction on existing 50 emails**
-3. **Monitor extraction quality**
-4. **Iterate on prompt if needed**
-5. **Deploy to production**
+1. **✅ Phase 5.3 Complete** - LLM-based extraction with Claude Haiku
+2. **✅ Phase 5.3.1 Complete** - MECE Counter System with validation
+3. **✅ Phase 5.3.2 Complete** - Progressive email processing with mark-as-read
+4. **Ongoing**: Monitor extraction quality and iterate on prompt if needed
+5. **Ongoing**: Track API costs and optimize if necessary
+6. **Future**: Consider additional job sources (LinkedIn, Indeed APIs)
+7. **Future**: Implement automated prompt A/B testing for continuous improvement
 
 ## Appendix A: Sample Extraction Prompt
 
@@ -1188,10 +1555,10 @@ After implementation, we expect to successfully extract jobs like:
 
 ---
 
-**Document Version**: 2.1
-**Last Updated**: 2025-10-12
+**Document Version**: 3.0
+**Last Updated**: 2025-10-13
 **Author**: Claude Code
-**Status**: ✅ Implementation Complete - Ready for User Testing with API Key
+**Status**: ✅ All Phases Complete - Phase 5.3, 5.3.1 (MECE Counters), and 5.3.2 (Progressive Email Processing)
 
 ## Quick Start for Testing
 
