@@ -8,7 +8,9 @@ JobHunter is a comprehensive job application management system that automates an
 
 **Key Features:**
 - **Automated Job Intake**: New UI tab for managing Gmail/LinkedIn/Indeed integrations with one-click OAuth and sync
+- **Progressive Email Processing**: Gmail integration marks processed emails as read, enabling progressive batching through inbox (50 emails at a time)
 - **LLM-Powered Job Extraction**: Claude Haiku integration for intelligent job extraction from emails (85%+ success rate, up from 30%)
+- **MECE Counter System**: Mutually Exclusive and Collectively Exhaustive tracking ensures discovered = failed + duplicated + created with validation
 - **Intelligent Job Filtering**: Automatically filters jobs based on salary ($130K+), location (remote/≤45min commute), and domain (Testing, AI, Firmware)
 - **Advanced Deduplication**: Uses SHA256 hashing to prevent processing duplicate job postings
 - **Automated Content Generation**: Creates customized resumes and cover letters for each approved job
@@ -56,6 +58,8 @@ JobHunter is a comprehensive job application management system that automates an
   - [Helper Scripts](#helper-scripts)
     - [start.sh](#startsh)
     - [stop.sh](#stopsh)
+    - [clear-job-data.sh](#clear-job-datash)
+    - [test_mece_counters.sh](#backendteststest_mece_counterssh)
     - [switch-to-personal.sh](#switch-to-personalsh)
     - [switch-to-dev.sh](#switch-to-devsh)
     - [restart-db.sh](#restart-dbsh)
@@ -79,6 +83,7 @@ JobHunter is a comprehensive job application management system that automates an
   - [Phase 5.1 - Calendar Integration & Follow-ups](#phase-51---calendar-integration--follow-ups--complete)
   - [Phase 5.2 - Email Composition & Sending](#phase-52---email-composition--sending--complete)
   - [Phase 5.3 - LLM-based Job Extraction](#phase-53---llm-based-job-extraction--complete)
+    - [Phase 5.3.1 - MECE Counter System](#phase-531---mece-counter-system--complete)
   - [What NOT to Build](#what-not-to-build-for-now)
   - [Phase 5.4+ - Future Considerations](#phase-54---future-considerations-not-currently-planned)
 - [Project Structure](#project-structure)
@@ -279,6 +284,7 @@ Gmail/LinkedIn/API Sources → Intelligent Extraction → Automatic Filtering �
 
 **Features:**
 - **Fully Automated**: Gmail email monitoring and LinkedIn job discovery
+- **Progressive Email Processing**: Marks processed emails as read in Gmail for continuous batch progression
 - **LLM-Powered Extraction**: Claude Haiku API for intelligent job parsing from emails (85%+ success rate)
 - **Smart HTML Processing**: Automatic HTML-to-text conversion for clean extraction
 - **Live Prompt Editing**: Update extraction prompts in real-time via UI without backend restart
@@ -293,6 +299,25 @@ Gmail/LinkedIn/API Sources → Intelligent Extraction → Automatic Filtering �
 - Click "Authenticate with Gmail" (first time only) to set up automated email monitoring
 - Click "Sync Now" to manually trigger job discovery
 - Or use "Sync All Sources" to pull from all connected sources at once
+
+**How Gmail Syncing Works:**
+1. **First Sync**: Fetches up to 50 unread job-related emails (using `is:unread` filter)
+2. **Processing**: Each email is processed (LLM extraction → filtering → deduplication)
+3. **Mark as Read**: After processing, each email is marked as read in Gmail
+4. **Second Sync**: Fetches the NEXT batch of up to 50 unread emails (51-100)
+5. **Continuous Progress**: Each sync automatically moves forward through your inbox
+
+**Benefits:**
+- No duplicate processing - emails are marked read after processing
+- Progressive batching - work through large inboxes 50 emails at a time
+- Manual control - mark any email as unread in Gmail to reprocess it
+- Clean inbox - processed job emails are automatically marked as read
+
+**Example:**
+- Day 1: You have 200 unread job emails. First sync processes 50 (emails 1-50)
+- Day 2: Second sync processes next 50 (emails 51-100), first 50 remain marked as read
+- Day 3: Third sync processes next 50 (emails 101-150)
+- If you need to reprocess an email: Just mark it as unread in Gmail and run sync again
 
 #### 2. Job Review & Approval
 
@@ -434,12 +459,17 @@ JobHunter provides a comprehensive web interface to manage your entire job searc
 ### Dashboard Overview
 
 The dashboard displays real-time statistics across the top (ordered by workflow progression):
-- **Filtered**: Auto-filtered by criteria (status: `filtered`)
+- **Filtered**: Jobs created but didn't meet criteria (status: `filtered`)
+- **Ignored**: Emails that were ignored entirely (not processed)
+- **Failed**: Emails that failed processing or extraction
+- **Duplicates**: Jobs that matched existing entries (deduped)
 - **New Jobs**: Pending review (status: `new`)
 - **Approved**: Ready for application (status: `approved`)
 - **Applied**: Applications submitted (status: `applied`)
 - **Rejected**: Jobs you've declined (status: `rejected`)
-- **Total**: All jobs in the system
+- **Total**: Total emails discovered across all syncs (Filtered + Duplicates + Failed)
+
+**Note on Total**: The Total counter represents cumulative intake metrics from all Gmail syncs. It shows Filtered + Duplicates + Failed to give you a complete picture of all job emails discovered. For example, if you sync 50 emails and see "Total: 50" with "Filtered: 43, Duplicates: 5, Failed: 2", you know all 50 emails were accounted for.
 
 ### Navigation Tabs
 
@@ -472,10 +502,15 @@ The dashboard displays real-time statistics across the top (ordered by workflow 
    - Shows loading state with spinner during sync operations
    - Disabled during active sync to prevent conflicts
 
-5. **Recent Intake Activity Log**
+5. **Recent Intake Activity Log with MECE Counters**
    - Displays last 10-20 sync operations across all sources
    - **Click to Expand**: See detailed information about each sync
-   - Shows: Operation type, source name, jobs discovered, jobs added, timestamp
+   - **MECE Counter Display**: Shows complete breakdown for every sync
+     - Total Discovered: All emails found
+     - ✓ Created (green): New jobs added to database
+     - ⊕ Duplicates (yellow): Jobs that matched existing entries
+     - ✗ Failed (red): Emails that couldn't be processed
+   - **Automatic Validation**: Reports errors if counters don't sum correctly
    - Status indicators: ✓ Success, ⚠ Warning, ✗ Error
    - Auto-refreshes every 5 seconds during active syncs
 
@@ -968,6 +1003,87 @@ This script:
 
 The script is robust and handles edge cases like processes that don't respond to graceful shutdown. See [Properly Managing Your PostgreSQL Database](#understanding-your-workflow-properly-managing-your-postgresql-database) for guidance on when to use `--full`.
 
+#### [`clear-job-data.sh`](clear-job-data.sh)
+Clears all job-related data while preserving configuration settings.
+
+**Usage:**
+```bash
+./clear-job-data.sh
+```
+
+This script:
+- Automatically detects which database is active (personal or dev) from `backend/.env`
+- Prompts for confirmation before deleting data
+- Clears job-related tables: `jobs`, `email_jobs`, `job_intake_logs`, `job_deduplication`, `api_job_sources`
+- Also clears dependent tables via CASCADE: `applications`, `communications`, `interviews`, `follow_up_schedule`, `email_drafts`
+- **Preserves** all configuration:
+  - Job criteria settings
+  - Resume versions
+  - Cover letter templates
+  - OAuth credentials
+  - Job sources configuration
+  - LLM extraction prompts
+- Shows verification counts after clearing
+
+**When to use:**
+- Testing new Gmail sync cycles without old data
+- Starting fresh with job hunting after a break
+- Clearing test data from your personal database
+- Resetting after testing features
+
+**Note:** This is safer than `reset-dev-db.sh` because it only clears job data without dropping/recreating the entire database. Works with both `jobhunter_personal` and `jobhunter_dev`.
+
+#### [`backend/tests/test_mece_counters.sh`](backend/tests/test_mece_counters.sh)
+Tests and validates the MECE (Mutually Exclusive and Collectively Exhaustive) counter system.
+
+**Usage:**
+```bash
+backend/tests/test_mece_counters.sh
+```
+
+This test script:
+- Fetches the most recent intake log from the running backend
+- Extracts all counter values (discovered, failed, duplicated, created)
+- Validates the MECE property: `discovered = failed + duplicated + created`
+- Reports pass/fail with detailed breakdown
+- Displays any validation errors from the backend
+
+**Example Output:**
+```
+🧪 Testing MECE Counter System
+
+✅ Backend is running
+
+📊 Fetching most recent intake log...
+Counter Values:
+  📧 Discovered:        50
+  ✗ Failed Processing:  2
+  ⊕ Duplicated:         5
+  ✓ Created:            43
+
+Validation:
+  Sum (F+D+C):          50
+  Expected:             50
+
+✅ MECE Counter Test: PASSED
+   The counters are Mutually Exclusive and Collectively Exhaustive
+   Formula: Discovered (50) = Failed (2) + Duplicated (5) + Created (43)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ All tests passed!
+```
+
+**When to use:**
+- After implementing changes to sync logic
+- Verifying counter accuracy after Gmail sync
+- Debugging discrepancies in job counts
+- Validating MECE invariant holds across code changes
+
+**Requirements:**
+- Backend must be running (`./start.sh`)
+- At least one sync log must exist in the database
+- Python 3 installed for JSON parsing
+
 #### [`switch-to-personal.sh`](switch-to-personal.sh)
 Switches your environment to use the personal database for real job hunting.
 
@@ -1222,7 +1338,10 @@ See [`DATABASE_SETUP.md`](DATABASE_SETUP.md) for detailed database setup instruc
 
 **Gmail API Integration** ✅
 - **OAuth 2.0 Flow**: Complete authentication with automatic token refresh
-- **Email Parsing**: Intelligent job extraction from recruiter emails using regex patterns
+- **Progressive Email Processing**: Queries only unread emails (`is:unread` filter) and marks processed emails as read
+- **Batch Processing**: Processes up to 50 unread emails per sync, automatically advancing to next batch on subsequent syncs
+- **Manual Reprocessing**: Users can mark emails as unread in Gmail to reprocess them in the next sync
+- **Email Parsing**: Intelligent job extraction from recruiter emails using LLM and regex patterns
 - **Job Discovery**: Automatic monitoring of Gmail inbox for job-related emails
 - **Base64 Decoding**: Full email body parsing including attachments
 - **Confidence Scoring**: Quality assessment of extracted job information (0.0-1.0)
@@ -1501,6 +1620,73 @@ See [`DATABASE_SETUP.md`](DATABASE_SETUP.md) for detailed database setup instruc
 
 **Phase 5.3 Complete** - The system now uses state-of-the-art LLM technology for job extraction, dramatically improving data quality and success rates while maintaining low costs through efficient prompt engineering and Claude Haiku usage.
 
+#### Phase 5.3.1 - MECE Counter System ✅ **COMPLETE**
+**Completion Date**: October 13, 2025
+**Status**: Fully implemented and tested
+
+**Goal**: Implement Mutually Exclusive and Collectively Exhaustive (MECE) counters for job intake tracking to provide complete transparency and accountability in the sync process.
+
+**Problem Solved**: Previous tracking was ambiguous - when 50 emails were discovered but only 45 jobs appeared in the UI, users had no visibility into what happened to the missing 5. Were they duplicates? Did they fail processing? The system needed comprehensive, accountable metrics.
+
+**Implemented Features**
+
+**1. MECE Counter Architecture** ✅
+- **Mutually Exclusive Categories**: Each email goes into exactly one bucket
+  - `jobs_created`: New unique jobs added to database
+  - `jobs_duplicated`: Matched existing jobs via deduplication
+  - `jobs_failed_processing`: Failed extraction or below confidence threshold
+- **Collectively Exhaustive**: All emails accounted for
+  - **Invariant**: `jobs_discovered = jobs_failed_processing + jobs_duplicated + jobs_created`
+- **Automatic Validation**: Backend checks math and reports errors if counters don't sum correctly
+
+**2. Enhanced Job Tracking** ✅
+- `JobCreationResult` enum distinguishes between new jobs and duplicates
+- All paths through sync process tracked with appropriate counter increments
+- Failed extractions counted separately from successful duplicates
+- Low confidence emails (<0.3) counted as failed processing
+
+**3. Database Schema Updates** ✅
+- Added fields to `job_intake_logs`:
+  - `jobs_failed_processing INTEGER` - Failed extraction or low confidence
+  - `jobs_duplicated INTEGER` - Matched existing jobs (deduped)
+  - `jobs_created INTEGER` - New jobs actually created
+  - `validation_error TEXT` - Error message if counters don't add up
+- Migration applied to existing `jobhunter_personal` database
+
+**4. UI Enhancements** ✅
+- **Summary View**: Color-coded metrics at a glance
+  - `✓ X created` (green) - New jobs added
+  - `⊕ X dupes` (yellow) - Jobs that matched existing entries
+  - `✗ X failed` (red) - Emails that couldn't be processed
+- **Detail View**: Complete breakdown when clicking log entry
+  - Full accounting of all discovered emails
+  - Validation error display if math doesn't add up
+  - Clear visual indicators for each category
+
+**Example Sync Breakdown**:
+```
+Total Discovered: 50
+├─ ✓ Jobs Created: 43 (new unique jobs)
+├─ ⊕ Duplicates: 5 (matched existing)
+└─ ✗ Failed: 2 (low confidence/extraction failed)
+```
+
+**Technical Implementation** ✅
+- **Backend Changes**: `JobCreationResult` enum, enhanced tracking in `process_gmail_messages`
+- **Validation Logic**: Automatic counter verification with error reporting
+- **Database Migration**: `/database/migrations/add_intake_tracking_fields.sql`
+- **Frontend Updates**: Enhanced `IntakeTab.tsx` with comprehensive metric display
+- **Testing**: Backend compilation validated, integration tested with real Gmail sync
+
+**Benefits**:
+- ✅ **Complete Transparency**: Every discovered email accounted for
+- ✅ **Validation**: Automatic error detection if counters don't add up
+- ✅ **User Confidence**: Clear understanding of sync results
+- ✅ **Debugging Aid**: Easy identification of processing issues
+- ✅ **Audit Trail**: Full accountability in job intake logs
+
+**Phase 5.3.1 Complete** - The system now provides complete transparency and accountability in job intake tracking, ensuring users understand exactly what happened to every discovered email with mathematically validated MECE counters.
+
 ---
 
 ### What NOT to Build (For Now)
@@ -1618,6 +1804,7 @@ JobHuntAI/
 
 ### System Performance
 - **LLM-Powered Extraction**: Claude Haiku integration achieving 85%+ success rate (up from 30%)
+- **MECE Counter Validation**: Mutually Exclusive and Collectively Exhaustive tracking with automatic validation (discovered = failed + duplicated + created)
 - **Automated Job Discovery**: Multi-source intake with Gmail and LinkedIn integration
 - **Zero Duplicate Processing**: SHA256 hashing prevents duplicate job entries across all sources
 - **Real-time Filtering**: Jobs filtered in <100ms with detailed reasoning and confidence scoring
@@ -1636,12 +1823,13 @@ JobHuntAI/
 - ✅ **Fully Automated Job Lifecycle**: From discovery to content generation without manual intervention
 - ✅ **Multi-source Integration**: Gmail, LinkedIn, and API-based job discovery
 - ✅ **LLM-Powered Extraction**: Claude Haiku integration with 85%+ success rate and live prompt editing
+- ✅ **MECE Counter System**: Mutually Exclusive and Collectively Exhaustive tracking with automatic validation
 - ✅ **Intelligent Automation**: Multi-criteria filtering with domain analysis and confidence scoring
 - ✅ **Advanced Email Processing**: Gmail OAuth integration with LLM-based job extraction
 - ✅ **Professional UI**: Dashboard with real-time updates and responsive design
 - ✅ **Content Personalization**: Context-aware resume and cover letter generation
 - ✅ **Cross-source Data Integrity**: Comprehensive deduplication and validation systems
-- ✅ **Complete Audit Trail**: Full logging and monitoring of automated job processing
+- ✅ **Complete Audit Trail**: Full logging and monitoring of automated job processing with mathematically validated counters
 - ✅ **Hot-Reload Prompts**: Edit extraction prompts without restarting backend
 
 ### Development Stats

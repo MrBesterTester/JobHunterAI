@@ -5,6 +5,8 @@
 This guide provides everything developers need to understand, run, and contribute to JobHunter's comprehensive test suite.
 
 **Latest Updates**:
+- ✅ **Phase 5.3.2 Complete** (Oct 13, 2025): Progressive email processing with mark-as-read functionality
+- ✅ **Phase 5.3.1 Complete** (Oct 13, 2025): MECE Counter System with automatic validation
 - ✅ **Phase 5.3 Complete** (Oct 11, 2025): LLM-based job extraction with Claude Haiku (85%+ success rate)
 - ✅ **Phase 4 Complete**: Gmail integration with draft creation and email composition
 - ✅ **237+ E2E tests** covering complete user workflows including Intake tab and Email Composer
@@ -238,6 +240,55 @@ Phase 5.3 replaced regex-based email extraction with Claude Haiku LLM integratio
 3. Add E2E tests for prompt editor UI (save, cancel, validation)
 4. Add integration tests for extraction confidence scoring
 5. Add performance tests for LLM response time monitoring
+
+#### Phase 5.3.1: MECE Counter System (NEW - October 13, 2025) ✅
+
+Phase 5.3.1 implemented Mutually Exclusive and Collectively Exhaustive (MECE) tracking for complete transparency in job intake processing.
+
+**Implementation Highlights**:
+- **MECE Architecture**: discovered = failed + duplicated + created (automatic validation)
+- **Enhanced Tracking**: `jobs_created`, `jobs_duplicated`, `jobs_failed_processing` counters
+- **Validation Errors**: `validation_error` field reports counter mismatches
+- **UI Enhancements**: Color-coded metrics (✓ created, ⊕ dupes, ✗ failed)
+
+**Files Modified**:
+- `database/migrations/add_intake_tracking_fields.sql` - Added MECE counter fields
+- `backend/src/main.rs` (Lines 1850-1875) - Enhanced counter tracking with `JobCreationResult` enum
+- `frontend/src/IntakeTab.tsx` (Lines 1003-1018) - UI display of MECE metrics
+
+**Testing Status**:
+- ✅ Backend validation logic tested with real Gmail syncs
+- ✅ MECE invariant tested via `backend/tests/test_mece_counters.sh`
+- ✅ UI display verified with multiple sync scenarios
+- ✅ Database migration applied to `jobhunter_personal`
+
+#### Phase 5.3.2: Progressive Email Processing with Mark-as-Read (NEW - October 13, 2025) ✅
+
+Phase 5.3.2 added mark-as-read functionality to enable progressive batching through Gmail inbox.
+
+**Implementation Highlights**:
+- **Gmail OAuth Scope Enhancement**: Added `gmail.modify` scope request
+- **Mark-as-Read API**: `mark_gmail_message_as_read()` function using Gmail API v1
+- **Progressive Query**: `is:unread` filter in Gmail query for batch advancement
+- **Manual Reprocessing**: Users can mark emails as unread to reprocess them
+
+**Files Modified**:
+- `backend/src/main.rs` (Lines 1768-1798, 1516, 1782, 1855-1864, 1968-1973)
+- `frontend/src/IntakeTab.tsx` (Line 678) - Gear button triggers re-authentication
+
+**Benefits**:
+- Process 200+ emails progressively (50 at a time)
+- No duplicate processing with automatic mark-as-read
+- Manual control via Gmail unread markers
+- Clean inbox as emails are processed
+
+**Testing Status**:
+- ✅ Manual testing with 200+ real Gmail emails
+- ✅ OAuth scope verified (gmail.readonly + gmail.modify)
+- ✅ Mark-as-read API calls succeed
+- ✅ Progressive batching validated (each sync fetches new batch)
+- ✅ Manual reprocessing tested
+- 🔄 **Recommended**: Automated E2E tests for mark-as-read workflow
 
 **Example Test**:
 ```rust

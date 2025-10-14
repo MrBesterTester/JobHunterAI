@@ -20,11 +20,15 @@ interface IntakeLog {
   source_id: string;
   sync_status: string;
   jobs_discovered: number;
-  jobs_approved: number;
-  jobs_filtered: number;
-  jobs_deduplicated: number;
+  jobs_failed_processing: number;
+  jobs_duplicated: number;
+  jobs_created: number;
+  jobs_approved: number; // DEPRECATED
+  jobs_filtered: number; // DEPRECATED
+  jobs_deduplicated: number; // DEPRECATED
   errors_count: number;
   error_details?: any;
+  validation_error?: string;
   sync_started_at: string;
   sync_completed_at?: string;
   created_at: string;
@@ -671,6 +675,8 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
               </button>
             )}
             <button
+              onClick={handleGmailAuth}
+              title="Re-authenticate Gmail"
               style={{
                 padding: '10px 12px',
                 borderRadius: '6px',
@@ -1001,8 +1007,15 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <p style={{ fontSize: '14px', fontWeight: '500', margin: 0 }}>
-                      {log.jobs_discovered} discovered, {log.jobs_approved} approved
+                      {log.jobs_discovered} Total
                     </p>
+                    <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                      <span style={{ color: '#f97316' }}>⚠ {log.jobs_created || 0} filtered</span>
+                      {' • '}
+                      <span style={{ color: '#f59e0b' }}>⊕ {log.jobs_duplicated || 0} dupes</span>
+                      {' • '}
+                      <span style={{ color: '#ef4444' }}>✗ {log.jobs_failed_processing || 0} failed</span>
+                    </div>
                   </div>
                 </div>
 
@@ -1018,8 +1031,15 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
                     {log.sync_completed_at && (
                       <p><strong>Completed:</strong> {new Date(log.sync_completed_at).toLocaleString()}</p>
                     )}
+                    <p><strong>Total Discovered:</strong> {log.jobs_discovered}</p>
+                    <p style={{ color: '#10b981' }}><strong>✓ Jobs Created:</strong> {log.jobs_created || 0}</p>
+                    <p style={{ color: '#f59e0b' }}><strong>⊕ Duplicates Skipped:</strong> {log.jobs_duplicated || 0}</p>
+                    <p style={{ color: '#ef4444' }}><strong>✗ Failed Processing:</strong> {log.jobs_failed_processing || 0}</p>
+                    {log.validation_error && (
+                      <p style={{ color: '#dc2626', fontWeight: 'bold' }}><strong>⚠️  Validation Error:</strong> {log.validation_error}</p>
+                    )}
                     {log.error_details && (
-                      <p style={{ color: '#dc2626' }}><strong>Error:</strong> {JSON.stringify(log.error_details)}</p>
+                      <p style={{ color: '#dc2626' }}><strong>Error Details:</strong> {JSON.stringify(log.error_details)}</p>
                     )}
                   </div>
                 )}

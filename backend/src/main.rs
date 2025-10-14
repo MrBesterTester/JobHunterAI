@@ -211,11 +211,17 @@ pub struct JobIntakeLog {
     pub sync_started_at: DateTime<Utc>,
     pub sync_completed_at: Option<DateTime<Utc>>,
     pub jobs_discovered: i32,
+    // MECE counters (Mutually Exclusive, Collectively Exhaustive)
+    pub jobs_failed_processing: i32,
+    pub jobs_duplicated: i32,
+    pub jobs_created: i32,
+    // Deprecated fields (kept for backward compatibility)
     pub jobs_filtered: i32,
     pub jobs_deduplicated: i32,
     pub jobs_approved: i32,
     pub errors_count: i32,
     pub error_details: Option<serde_json::Value>,
+    pub validation_error: Option<String>,
     pub sync_status: String,
     pub created_at: DateTime<Utc>,
 }
@@ -1188,6 +1194,23 @@ async fn get_job_stats(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     stats_map.entry("applied".to_string()).or_insert(0);
     stats_map.entry("filtered".to_string()).or_insert(0);
 
+    // Add failed and duplicated counts from job_intake_logs
+    let intake_stats = sqlx::query!(
+        r#"
+        SELECT
+            COALESCE(SUM(jobs_failed_processing), 0) as total_failed,
+            COALESCE(SUM(jobs_duplicated), 0) as total_duplicated
+        FROM job_intake_logs
+        WHERE sync_status = 'completed'
+        "#
+    )
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    stats_map.insert("failed".to_string(), intake_stats.total_failed.unwrap_or(0));
+    stats_map.insert("duplicated".to_string(), intake_stats.total_duplicated.unwrap_or(0));
+
     Ok(HttpResponse::Ok().json(stats_map))
 }
 
@@ -1489,7 +1512,8 @@ async fn get_gmail_oauth_url() -> Result<HttpResponse> {
     let redirect_uri = std::env::var("GMAIL_REDIRECT_URI")
         .unwrap_or_else(|_| "http://localhost:8080/auth/gmail/callback".to_string());
 
-    let scope = "https://www.googleapis.com/auth/gmail.readonly";
+    // Request both readonly (to fetch emails) and modify (to mark as read) scopes
+    let scope = "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.modify";
     let auth_url = format!(
         "https://accounts.google.com/o/oauth2/v2/auth?client_id={}&redirect_uri={}&scope={}&response_type=code&access_type=offline&prompt=consent",
         urlencoding::encode(&client_id),
@@ -1623,16 +1647,41 @@ async fn sync_gmail_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     };
 
     match process_gmail_messages(&token, &source, pool.get_ref(), log_id).await {
-        Ok((discovered, processed)) => {
-            // Update log as completed
+        Ok(metrics) => {
+            // Validate counters (mutually exclusive and collectively exhaustive)
+            let expected_total = metrics.failed_processing + metrics.duplicated + metrics.created;
+            let validation_error = if expected_total != metrics.discovered {
+                Some(format!(
+                    "Counter mismatch: discovered={} but failed+duplicated+created={}+{}+{}={}",
+                    metrics.discovered, metrics.failed_processing, metrics.duplicated,
+                    metrics.created, expected_total
+                ))
+            } else {
+                None
+            };
+
+            if let Some(ref error_msg) = validation_error {
+                log_debug(&format!("⚠️  VALIDATION ERROR: {}", error_msg));
+            }
+
+            // Update log as completed with all metrics
             sqlx::query!(
                 r#"
                 UPDATE job_intake_logs
-                SET sync_completed_at = NOW(), jobs_discovered = $1, jobs_approved = $2, sync_status = 'completed'
-                WHERE log_id = $3
+                SET sync_completed_at = NOW(),
+                    jobs_discovered = $1,
+                    jobs_failed_processing = $2,
+                    jobs_duplicated = $3,
+                    jobs_created = $4,
+                    validation_error = $5,
+                    sync_status = 'completed'
+                WHERE log_id = $6
                 "#,
-                discovered,
-                processed,
+                metrics.discovered,
+                metrics.failed_processing,
+                metrics.duplicated,
+                metrics.created,
+                validation_error,
                 log_id
             )
             .execute(pool.get_ref())
@@ -1641,8 +1690,13 @@ async fn sync_gmail_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
 
             Ok(HttpResponse::Ok().json(serde_json::json!({
                 "message": "Gmail sync completed successfully",
-                "jobs_discovered": discovered,
-                "jobs_processed": processed
+                "metrics": {
+                    "jobs_discovered": metrics.discovered,
+                    "jobs_failed_processing": metrics.failed_processing,
+                    "jobs_duplicated": metrics.duplicated,
+                    "jobs_created": metrics.created
+                },
+                "validation_error": validation_error
             })))
         }
         Err(e) => {
@@ -1704,18 +1758,62 @@ async fn refresh_gmail_token(credentials: &OAuthCredential, pool: &PgPool) -> ac
     Ok(token_data.access_token)
 }
 
+struct SyncMetrics {
+    discovered: i32,
+    failed_processing: i32,
+    duplicated: i32,
+    created: i32,
+}
+
+/// Mark a Gmail message as read by removing the UNREAD label
+async fn mark_gmail_message_as_read(
+    client: &reqwest::Client,
+    access_token: &str,
+    message_id: &str,
+) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let url = format!(
+        "https://gmail.googleapis.com/gmail/v1/users/me/messages/{}/modify",
+        message_id
+    );
+
+    let body = serde_json::json!({
+        "removeLabelIds": ["UNREAD"]
+    });
+
+    let response = client
+        .post(&url)
+        .bearer_auth(access_token)
+        .json(&body)
+        .send()
+        .await?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_default();
+        log_debug(&format!("Failed to mark message {} as read. Status: {}, Error: {}",
+            message_id, status, error_text));
+        return Err(format!("Failed to mark message as read: {}", status).into());
+    }
+
+    Ok(())
+}
+
 async fn process_gmail_messages(
     access_token: &str,
     source: &JobSource,
     pool: &PgPool,
     _log_id: Uuid,
-) -> std::result::Result<(i32, i32), Box<dyn std::error::Error + Send + Sync>> {
+) -> std::result::Result<SyncMetrics, Box<dyn std::error::Error + Send + Sync>> {
     let client = reqwest::Client::new();
-    let mut discovered_count = 0;
-    let mut processed_count = 0;
+    let mut metrics = SyncMetrics {
+        discovered: 0,
+        failed_processing: 0,
+        duplicated: 0,
+        created: 0,
+    };
 
-    // Search for job-related emails
-    let query = "subject:(job OR position OR opportunity OR career OR hiring OR opening)";
+    // Search for job-related emails (unread only)
+    let query = "is:unread subject:(job OR position OR opportunity OR career OR hiring OR opening)";
     let url = format!(
         "https://gmail.googleapis.com/gmail/v1/users/me/messages?q={}",
         urlencoding::encode(query)
@@ -1731,7 +1829,7 @@ async fn process_gmail_messages(
 
     if let Some(messages) = list_response.messages {
         for message_ref in messages.iter().take(50) { // Process up to 50 messages per sync
-            discovered_count += 1;
+            metrics.discovered += 1;
 
             // Get full message details
             let message_url = format!(
@@ -1756,6 +1854,13 @@ async fn process_gmail_messages(
             .await?;
 
             if existing.is_some() {
+                metrics.duplicated += 1;
+
+                // Still mark as read even if already processed
+                if let Err(e) = mark_gmail_message_as_read(&client, access_token, &message.id).await {
+                    log_debug(&format!("Warning: Failed to mark message {} as read: {}", message.id, e));
+                }
+
                 continue; // Skip already processed messages
             }
 
@@ -1819,8 +1924,8 @@ async fn process_gmail_messages(
 
                 if job_data.confidence > 0.3 { // Lowered threshold to process more jobs
                     match create_job_from_extraction(&job_data, source, pool).await {
-                        Ok(_) => {
-                            processed_count += 1;
+                        Ok(JobCreationResult::Created(_job_id)) => {
+                            metrics.created += 1;
 
                             // Mark email as processed
                             sqlx::query!(
@@ -1832,7 +1937,21 @@ async fn process_gmail_messages(
                             .execute(pool)
                             .await?;
                         }
+                        Ok(JobCreationResult::Duplicate(_job_id)) => {
+                            metrics.duplicated += 1;
+
+                            // Mark email as processed (duplicate)
+                            sqlx::query!(
+                                "UPDATE email_jobs SET processed = true, processed_at = NOW(), extraction_confidence = $1, extracted_data = $2 WHERE email_job_id = $3",
+                                BigDecimal::try_from(job_data.confidence).unwrap_or_default(),
+                                serde_json::to_value(&job_data).unwrap(),
+                                email_job_id
+                            )
+                            .execute(pool)
+                            .await?;
+                        }
                         Err(e) => {
+                            metrics.failed_processing += 1;
                             log_debug(&format!("Failed to create job from email: {}", e));
 
                             // Store processing error
@@ -1846,16 +1965,26 @@ async fn process_gmail_messages(
                         }
                     }
                 } else {
+                    metrics.failed_processing += 1;
                     log_debug(&format!("Skipping job due to low confidence: {:.2}", job_data.confidence));
                 }
             } else {
+                metrics.failed_processing += 1;
                 log_debug(&format!("Failed to extract job data from email - Subject: {:?}", subject));
+            }
+
+            // Mark email as read in Gmail so it won't be fetched again
+            // (User can manually mark as unread in Gmail to reprocess if needed)
+            if let Err(e) = mark_gmail_message_as_read(&client, access_token, &message.id).await {
+                log_debug(&format!("Warning: Failed to mark message {} as read: {}", message.id, e));
+                // Continue processing even if mark-as-read fails
             }
         }
     }
 
-    log_debug(&format!("Gmail sync complete - Discovered: {}, Processed: {}", discovered_count, processed_count));
-    Ok((discovered_count, processed_count))
+    log_debug(&format!("Gmail sync complete - Discovered: {}, Failed: {}, Duplicated: {}, Created: {}",
+        metrics.discovered, metrics.failed_processing, metrics.duplicated, metrics.created));
+    Ok(metrics)
 }
 
 fn extract_email_body(payload: &GmailPayload) -> Option<String> {
@@ -2204,7 +2333,7 @@ async fn create_job_from_extraction(
     extraction: &JobExtractionResult,
     source: &JobSource,
     pool: &PgPool,
-) -> std::result::Result<Uuid, sqlx::Error> {
+) -> std::result::Result<JobCreationResult, sqlx::Error> {
     // Generate better fallback title from description if available
     let fallback_title = if let Some(desc) = &extraction.description {
         // Try to extract first meaningful line from description as title
@@ -2247,7 +2376,12 @@ async fn create_job_from_extraction(
     create_job_internal(&job_req, pool).await
 }
 
-async fn create_job_internal(job_req: &CreateJobRequest, pool: &PgPool) -> std::result::Result<Uuid, sqlx::Error> {
+enum JobCreationResult {
+    Created(Uuid),  // New job was created
+    Duplicate(Uuid), // Existing job found (duplicate)
+}
+
+async fn create_job_internal(job_req: &CreateJobRequest, pool: &PgPool) -> std::result::Result<JobCreationResult, sqlx::Error> {
     let job_id = Uuid::new_v4();
 
     // Apply filtering
@@ -2257,7 +2391,7 @@ async fn create_job_internal(job_req: &CreateJobRequest, pool: &PgPool) -> std::
 
     // Check for duplicates
     if let Ok(Some(existing_job_id)) = check_duplicate(job_req, pool).await {
-        return Ok(existing_job_id);
+        return Ok(JobCreationResult::Duplicate(existing_job_id));
     }
 
     // Create job with appropriate status
@@ -2288,7 +2422,7 @@ async fn create_job_internal(job_req: &CreateJobRequest, pool: &PgPool) -> std::
     // Store deduplication hash
     create_deduplication_entry(job_id, job_req, pool).await?;
 
-    Ok(job_id)
+    Ok(JobCreationResult::Created(job_id))
 }
 
 async fn get_job_sources(pool: web::Data<PgPool>) -> Result<HttpResponse> {
@@ -2619,7 +2753,7 @@ async fn process_linkedin_jobs(
         if let Some(job_extraction) = extract_job_from_linkedin(&job_data) {
             if job_extraction.confidence > 0.7 { // Higher confidence threshold for API data
                 match create_job_from_extraction(&job_extraction, source, pool).await {
-                    Ok(job_id) => {
+                    Ok(JobCreationResult::Created(job_id)) | Ok(JobCreationResult::Duplicate(job_id)) => {
                         processed_count += 1;
 
                         // Mark API job as processed and link to created job
@@ -2871,7 +3005,9 @@ async fn sync_single_gmail_source(
         access_token
     };
 
-    process_gmail_messages(&token, source, pool, Uuid::new_v4()).await
+    let metrics = process_gmail_messages(&token, source, pool, Uuid::new_v4()).await?;
+    // Return discovered and created for backwards compatibility
+    Ok((metrics.discovered, metrics.created))
 }
 
 async fn sync_single_linkedin_source(

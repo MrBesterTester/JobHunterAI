@@ -41,6 +41,8 @@ interface JobStats {
   rejected?: number;
   filtered?: number;
   ignored?: number;
+  failed?: number;
+  duplicated?: number;
 }
 
 interface Application {
@@ -849,6 +851,14 @@ const JobHunterDashboard: React.FC = () => {
               <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#dc2626' }}>{stats.ignored || 0}</p>
               <p style={{ fontSize: '14px', color: '#6b7280' }}>Ignored</p>
             </div>
+            <div style={{ textAlign: 'center' }} data-testid="stat-failed">
+              <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#ef4444' }}>{stats.failed || 0}</p>
+              <p style={{ fontSize: '14px', color: '#6b7280' }}>Failed</p>
+            </div>
+            <div style={{ textAlign: 'center' }} data-testid="stat-duplicated">
+              <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#f59e0b' }}>{stats.duplicated || 0}</p>
+              <p style={{ fontSize: '14px', color: '#6b7280' }}>Duplicates</p>
+            </div>
             <div style={{ textAlign: 'center' }} data-testid="stat-new">
               <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#3b82f6' }}>{stats.new || 0}</p>
               <p style={{ fontSize: '14px', color: '#6b7280' }}>New</p>
@@ -866,7 +876,9 @@ const JobHunterDashboard: React.FC = () => {
               <p style={{ fontSize: '14px', color: '#6b7280' }}>Rejected</p>
             </div>
             <div style={{ textAlign: 'center' }}>
-              <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#6b7280' }}>{Object.values(stats).reduce((a, b) => a + b, 0)}</p>
+              <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#6b7280' }}>
+                {(stats.filtered || 0) + (stats.duplicated || 0) + (stats.failed || 0)}
+              </p>
               <p style={{ fontSize: '14px', color: '#6b7280' }}>Total</p>
             </div>
           </div>

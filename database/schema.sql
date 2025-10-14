@@ -229,18 +229,24 @@ CREATE TABLE oauth_credentials (
 );
 
 -- Job Intake Logs Table
+-- Tracking metrics are mutually exclusive and collectively exhaustive:
+-- jobs_discovered = jobs_failed_processing + jobs_duplicated + jobs_created
 CREATE TABLE job_intake_logs (
     log_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     source_id UUID NOT NULL REFERENCES job_sources(source_id) ON DELETE CASCADE,
     sync_started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     sync_completed_at TIMESTAMP WITH TIME ZONE,
-    jobs_discovered INTEGER DEFAULT 0,
-    jobs_filtered INTEGER DEFAULT 0,
-    jobs_deduplicated INTEGER DEFAULT 0,
-    jobs_approved INTEGER DEFAULT 0,
+    jobs_discovered INTEGER DEFAULT 0,           -- Total emails/items discovered
+    jobs_failed_processing INTEGER DEFAULT 0,    -- Failed extraction or low confidence
+    jobs_duplicated INTEGER DEFAULT 0,           -- Matched existing jobs (deduped)
+    jobs_created INTEGER DEFAULT 0,              -- New jobs actually created
+    jobs_filtered INTEGER DEFAULT 0,             -- DEPRECATED: use jobs_created status instead
+    jobs_deduplicated INTEGER DEFAULT 0,         -- DEPRECATED: use jobs_duplicated instead
+    jobs_approved INTEGER DEFAULT 0,             -- DEPRECATED: use jobs_created instead
     errors_count INTEGER DEFAULT 0,
     error_details JSONB,
-    sync_status VARCHAR(20) DEFAULT 'running', -- 'running', 'completed', 'failed'
+    validation_error TEXT,                       -- Error if counters don't sum correctly
+    sync_status VARCHAR(20) DEFAULT 'running',   -- 'running', 'completed', 'failed'
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
