@@ -1254,14 +1254,15 @@ async fn get_job_stats(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     stats_map.entry("new".to_string()).or_insert(0);
     stats_map.entry("approved".to_string()).or_insert(0);
     stats_map.entry("applied".to_string()).or_insert(0);
-    stats_map.entry("filtered".to_string()).or_insert(0);
+    // Note: "filtered" is set from job_intake_logs below, not from job status
 
-    // Add failed and duplicated counts from job_intake_logs
+    // Add failed, duplicated, and filtered counts from job_intake_logs (MECE counters)
     let intake_stats = sqlx::query!(
         r#"
         SELECT
             COALESCE(SUM(jobs_failed_processing), 0) as total_failed,
-            COALESCE(SUM(jobs_duplicated), 0) as total_duplicated
+            COALESCE(SUM(jobs_duplicated), 0) as total_duplicated,
+            COALESCE(SUM(jobs_filtered_out), 0) as total_filtered
         FROM job_intake_logs
         WHERE sync_status = 'completed'
         "#
@@ -1272,6 +1273,7 @@ async fn get_job_stats(pool: web::Data<PgPool>) -> Result<HttpResponse> {
 
     stats_map.insert("failed".to_string(), intake_stats.total_failed.unwrap_or(0));
     stats_map.insert("duplicated".to_string(), intake_stats.total_duplicated.unwrap_or(0));
+    stats_map.insert("filtered".to_string(), intake_stats.total_filtered.unwrap_or(0));
 
     Ok(HttpResponse::Ok().json(stats_map))
 }

@@ -1010,7 +1010,7 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
                       {log.jobs_discovered} Total
                     </p>
                     <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
-                      <span style={{ color: '#f97316' }}>⚠ {log.jobs_created || 0} filtered</span>
+                      <span style={{ color: '#10b981' }}>✓ {log.jobs_created || 0} created</span>
                       {' • '}
                       <span style={{ color: '#f59e0b' }}>⊕ {log.jobs_duplicated || 0} dupes</span>
                       {' • '}
