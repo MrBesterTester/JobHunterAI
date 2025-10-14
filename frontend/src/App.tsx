@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, CheckCircle, XCircle, Clock, Briefcase, DollarSign, MapPin, Filter, FileText, Mail, Calendar as CalendarIcon, Download, Send, ExternalLink } from 'lucide-react';
+import { AlertCircle, CheckCircle, XCircle, Clock, Briefcase, DollarSign, MapPin, Filter, FileText, Mail, Calendar as CalendarIcon, Download, Send, ExternalLink, AlertTriangle, Copy } from 'lucide-react';
 import ResumeManagement from './ResumeManagement';
 import CalendarTab from './CalendarTab';
 import FollowupsTab from './FollowupsTab';
@@ -149,7 +149,7 @@ interface CoverLetterTemplate {
   updated_at: string;
 }
 
-type TabType = 'approved' | 'applied' | 'filtered' | 'all' | 'intake' | 'calendar' | 'follow-ups' | 'ignored';
+type TabType = 'approved' | 'applied' | 'filtered' | 'failed' | 'duplicates' | 'all' | 'intake' | 'calendar' | 'follow-ups' | 'ignored';
 
 const JobHunterDashboard: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -494,6 +494,12 @@ const JobHunterDashboard: React.FC = () => {
   const getAllActiveJobs = (): Job[] => {
     // Exclude rejected jobs from "All" tab - show only active workflow jobs
     return jobs.filter(job => job.status !== 'rejected');
+  };
+
+  // Helper function to get display label for tabs
+  const getTabLabel = (tab: TabType): string => {
+    if (tab === 'ignored') return 'Non-Job Emails';
+    return tab.charAt(0).toUpperCase() + tab.slice(1);
   };
 
   useEffect(() => {
@@ -1331,7 +1337,7 @@ const JobHunterDashboard: React.FC = () => {
 
       <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 16px', boxSizing: 'border-box', width: '100%' }}>
         <nav style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid #e5e7eb', overflowX: 'auto' }}>
-          {(['intake', 'filtered', 'ignored', 'approved', 'applied', 'follow-ups', 'calendar', 'all'] as TabType[]).map(tab => (
+          {(['ignored', 'intake', 'filtered', 'failed', 'duplicates', 'approved', 'applied', 'follow-ups', 'calendar', 'all'] as TabType[]).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -1340,7 +1346,6 @@ const JobHunterDashboard: React.FC = () => {
               style={{
                 padding: '8px 16px',
                 fontWeight: 500,
-                textTransform: 'capitalize',
                 background: 'none',
                 border: 'none',
                 borderBottom: activeTab === tab ? '2px solid #3b82f6' : 'none',
@@ -1348,14 +1353,18 @@ const JobHunterDashboard: React.FC = () => {
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px'
+                gap: '6px',
+                whiteSpace: 'nowrap'
               }}
             >
+              {tab === 'ignored' && <XCircle style={{ width: '16px', height: '16px' }} />}
               {tab === 'intake' && <Download style={{ width: '16px', height: '16px' }} />}
+              {tab === 'filtered' && <Filter style={{ width: '16px', height: '16px' }} />}
+              {tab === 'failed' && <AlertTriangle style={{ width: '16px', height: '16px' }} />}
+              {tab === 'duplicates' && <Copy style={{ width: '16px', height: '16px' }} />}
               {tab === 'calendar' && <CalendarIcon style={{ width: '16px', height: '16px' }} />}
               {tab === 'follow-ups' && <Mail style={{ width: '16px', height: '16px' }} />}
-              {tab === 'ignored' && <XCircle style={{ width: '16px', height: '16px' }} />}
-              {tab}
+              {getTabLabel(tab)}
             </button>
           ))}
         </nav>
@@ -1368,6 +1377,20 @@ const JobHunterDashboard: React.FC = () => {
           <FollowupsTab />
         ) : activeTab === 'ignored' ? (
           <IgnoredTab />
+        ) : activeTab === 'failed' ? (
+          <div style={{ textAlign: 'center', padding: '48px 0' }}>
+            <AlertTriangle style={{ width: '64px', height: '64px', color: '#ef4444', margin: '0 auto 16px' }} />
+            <h3 style={{ fontSize: '20px', fontWeight: '600', color: '#111827', marginBottom: '8px' }}>Failed Processing</h3>
+            <p style={{ color: '#6b7280', marginBottom: '4px' }}>This tab will show emails that failed during processing.</p>
+            <p style={{ fontSize: '14px', color: '#9ca3af' }}>Count: {stats.failed || 0}</p>
+          </div>
+        ) : activeTab === 'duplicates' ? (
+          <div style={{ textAlign: 'center', padding: '48px 0' }}>
+            <Copy style={{ width: '64px', height: '64px', color: '#f59e0b', margin: '0 auto 16px' }} />
+            <h3 style={{ fontSize: '20px', fontWeight: '600', color: '#111827', marginBottom: '8px' }}>Duplicate Jobs</h3>
+            <p style={{ color: '#6b7280', marginBottom: '4px' }}>This tab will show jobs that matched existing entries.</p>
+            <p style={{ fontSize: '14px', color: '#9ca3af' }}>Count: {stats.duplicated || 0}</p>
+          </div>
         ) : (
           <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))', gap: '16px', width: '100%' }}>
