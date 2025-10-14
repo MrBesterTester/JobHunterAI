@@ -2407,6 +2407,11 @@ fn extract_job_from_email(subject: &Option<String>, body: &Option<String>) -> Op
         url: None,
         confidence: 0.0,
         extraction_method: "regex".to_string(),
+        compensation: None,
+        employment: None,
+        remote_work: None,
+        commute: None,
+        job_domain: None,
     };
 
     // Extract job title from subject
@@ -3083,6 +3088,11 @@ fn extract_job_from_linkedin(job_data: &serde_json::Value) -> Option<JobExtracti
         url,
         confidence: confidence.min(1.0),
         extraction_method: "linkedin_api".to_string(),
+        compensation: None,
+        employment: None,
+        remote_work: None,
+        commute: None,
+        job_domain: None,
     })
 }
 
