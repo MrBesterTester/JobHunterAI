@@ -183,6 +183,7 @@ const IgnoredTab: React.FC = () => {
             {ignoredEmails.map(email => (
               <div
                 key={email.email_job_id}
+                data-testid="ignored-email-card"
                 style={{
                   padding: '16px',
                   backgroundColor: '#f9fafb',

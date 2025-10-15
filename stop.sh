@@ -16,6 +16,24 @@ else
 fi
 echo ""
 
+# Cancel any running syncs before stopping
+echo "🔄 Cancelling any running syncs..."
+if brew services list | grep postgresql@14 | grep started > /dev/null 2>&1; then
+    # Check jobhunter_personal database first (default for this app)
+    RUNNING_SYNCS=$(psql -U jobhunter_user -d jobhunter_personal -tAc "SELECT COUNT(*) FROM job_intake_logs WHERE sync_status = 'running'" 2>/dev/null || echo "0")
+
+    if [ "$RUNNING_SYNCS" != "0" ] && [ "$RUNNING_SYNCS" -gt 0 ]; then
+        echo "   Found $RUNNING_SYNCS running sync(s) in jobhunter_personal, cancelling..."
+        psql -U jobhunter_user -d jobhunter_personal -c "UPDATE job_intake_logs SET sync_status = 'cancelled', sync_completed_at = NOW(), error_details = jsonb_set(COALESCE(error_details, '{}'::jsonb), '{cancellation_reason}', '\"Application shutdown\"') WHERE sync_status = 'running'" > /dev/null 2>&1
+        echo "   ✅ Cancelled $RUNNING_SYNCS sync(s)"
+    else
+        echo "   ℹ️  No running syncs in jobhunter_personal"
+    fi
+else
+    echo "   ℹ️  PostgreSQL not running, skipping sync cleanup"
+fi
+echo ""
+
 # Function to check if process is running
 check_process() {
     local pattern=$1

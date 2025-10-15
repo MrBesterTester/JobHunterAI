@@ -1256,37 +1256,48 @@ async fn get_job_stats(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     stats_map.entry("applied".to_string()).or_insert(0);
     stats_map.entry("filtered".to_string()).or_insert(0); // Jobs with status='filtered' from jobs table
 
-    // Add failed, duplicated, filtered, created, and discovered counts from job_intake_logs (MECE counters)
-    let intake_stats = sqlx::query!(
+    // Query email_jobs table directly to get counts that match what the tabs display
+    let email_stats = sqlx::query!(
         r#"
         SELECT
-            COALESCE(SUM(jobs_failed_processing), 0) as total_failed,
-            COALESCE(SUM(jobs_duplicated), 0) as total_duplicated,
-            COALESCE(SUM(jobs_filtered_out), 0) as total_filtered,
-            COALESCE(SUM(jobs_created), 0) as total_created,
-            COALESCE(SUM(jobs_discovered), 0) as total_discovered
-        FROM job_intake_logs
-        WHERE sync_status = 'completed'
+            -- Failed: emails with processing errors OR failed extraction
+            COUNT(*) FILTER (WHERE processing_errors IS NOT NULL OR (processed = false AND extraction_confidence IS NULL)) as total_failed,
+            -- Duplicates: high-confidence emails that were processed but didn't create jobs (and have complete data)
+            COUNT(*) FILTER (WHERE processed = true AND job_id IS NULL AND processing_errors IS NULL
+                            AND extraction_confidence >= 0.7
+                            AND extracted_data->>'title' IS NOT NULL AND extracted_data->>'title' != ''
+                            AND extracted_data->>'company' IS NOT NULL AND extracted_data->>'company' != '') as total_duplicated,
+            -- Filtered/Ignored: low-confidence emails OR emails with incomplete data (missing title or company)
+            -- IMPORTANT: Exclude emails that created jobs (job_id IS NOT NULL) to maintain MECE
+            COUNT(*) FILTER (WHERE processed = true AND processing_errors IS NULL
+                            AND job_id IS NULL
+                            AND extraction_confidence IS NOT NULL
+                            AND (extraction_confidence < 0.3
+                                 OR extracted_data->>'title' IS NULL OR extracted_data->>'title' = ''
+                                 OR extracted_data->>'company' IS NULL OR extracted_data->>'company' = '')) as total_filtered,
+            -- Created: emails that successfully created jobs (have job_id set)
+            COUNT(*) FILTER (WHERE job_id IS NOT NULL) as total_created,
+            -- Total discovered (all emails)
+            COUNT(*) as total_discovered
+        FROM email_jobs
         "#
     )
     .fetch_one(pool.get_ref())
     .await
     .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
 
-    stats_map.insert("failed".to_string(), intake_stats.total_failed.unwrap_or(0));
-    stats_map.insert("duplicated".to_string(), intake_stats.total_duplicated.unwrap_or(0));
-    // Note: "filtered" count comes from jobs table (jobs with status='filtered'), not intake logs
-    // stats_map.insert("filtered".to_string(), intake_stats.total_filtered.unwrap_or(0)); // This was overwriting the jobs table count
-    stats_map.insert("filtered_during_intake".to_string(), intake_stats.total_filtered.unwrap_or(0)); // Jobs filtered during email processing
-    stats_map.insert("created".to_string(), intake_stats.total_created.unwrap_or(0));
-    stats_map.insert("discovered".to_string(), intake_stats.total_discovered.unwrap_or(0));
+    stats_map.insert("failed".to_string(), email_stats.total_failed.unwrap_or(0));
+    stats_map.insert("duplicated".to_string(), email_stats.total_duplicated.unwrap_or(0));
+    stats_map.insert("filtered_during_intake".to_string(), email_stats.total_filtered.unwrap_or(0)); // Jobs filtered during email processing
+    stats_map.insert("created".to_string(), email_stats.total_created.unwrap_or(0));
+    stats_map.insert("discovered".to_string(), email_stats.total_discovered.unwrap_or(0));
 
     // MECE Validation: discovered = failed + filtered + duplicated + created
-    let discovered = intake_stats.total_discovered.unwrap_or(0);
-    let failed = intake_stats.total_failed.unwrap_or(0);
-    let filtered = intake_stats.total_filtered.unwrap_or(0);
-    let duplicated = intake_stats.total_duplicated.unwrap_or(0);
-    let created = intake_stats.total_created.unwrap_or(0);
+    let discovered = email_stats.total_discovered.unwrap_or(0);
+    let failed = email_stats.total_failed.unwrap_or(0);
+    let filtered = email_stats.total_filtered.unwrap_or(0);
+    let duplicated = email_stats.total_duplicated.unwrap_or(0);
+    let created = email_stats.total_created.unwrap_or(0);
 
     let sum = failed + filtered + duplicated + created;
     let mece_valid = discovered == sum;
@@ -2016,7 +2027,7 @@ async fn process_gmail_messages(
     // This allows the LLM to classify ALL emails, not just subject-matched ones
     let query = "is:unread -label:JobOp";
     let url = format!(
-        "https://gmail.googleapis.com/gmail/v1/users/me/messages?q={}",
+        "https://gmail.googleapis.com/gmail/v1/users/me/messages?q={}&maxResults=50",
         urlencoding::encode(query)
     );
 
@@ -2113,86 +2124,149 @@ async fn process_gmail_messages(
             .execute(pool)
             .await?;
 
-            // Extract job information
-            if let Some(mut job_data) = extract_job_from_email_async(&subject, &body_text, pool).await {
-                log_debug(&format!("Extracted job data - Title: {:?}, Company: {:?}, Confidence: {:.2}, Method: {}",
-                    job_data.title, job_data.company, job_data.confidence, job_data.extraction_method));
+            // Process each email with timeout and error handling
+            // Wrap the entire processing block so individual failures don't stop the sync
+            log_debug(&format!("Processing email {}/{}: {:?}", metrics.discovered, messages.len(), subject));
 
-                // Replace LLM summary with full email body for better user visibility
-                if let Some(full_body) = &body_text {
-                    job_data.description = Some(full_body.clone());
-                } else if job_data.description.is_none() {
-                    // Fallback: if no body text and no description from extraction, use subject
-                    job_data.description = subject.clone().or(Some("(No email content available)".to_string()));
+            let processing_result = tokio::time::timeout(
+                std::time::Duration::from_secs(45), // 45 second timeout per email (30s for LLM + 15s buffer)
+                async {
+                    // Extract job information
+                    if let Some(mut job_data) = extract_job_from_email_async(&subject, &body_text, pool).await {
+                        log_debug(&format!("Extracted job data - Title: {:?}, Company: {:?}, Confidence: {:.2}, Method: {}",
+                            job_data.title, job_data.company, job_data.confidence, job_data.extraction_method));
+
+                        // Replace LLM summary with full email body for better user visibility
+                        if let Some(full_body) = &body_text {
+                            job_data.description = Some(full_body.clone());
+                        } else if job_data.description.is_none() {
+                            // Fallback: if no body text and no description from extraction, use subject
+                            job_data.description = subject.clone().or(Some("(No email content available)".to_string()));
+                        }
+
+                        if job_data.confidence > 0.3 { // Real job opportunity - add label and mark as read
+                            // Add "JobOp" label to email
+                            if !jobop_label_id.is_empty() {
+                                if let Err(e) = add_jobop_label(&client, access_token, &message.id, &jobop_label_id).await {
+                                    log_debug(&format!("Warning: Failed to add JobOp label to message {}: {}", message.id, e));
+                                }
+                            }
+
+                            // Mark email as read in Gmail
+                            if let Err(e) = mark_gmail_message_as_read(&client, access_token, &message.id).await {
+                                log_debug(&format!("Warning: Failed to mark message {} as read: {}", message.id, e));
+                            }
+
+                            match create_job_from_extraction(&job_data, source, pool, Some(received_date)).await {
+                                Ok(JobCreationResult::Created(job_id)) => {
+                                    // Mark email as processed and link to created job
+                                    if let Err(e) = sqlx::query!(
+                                        "UPDATE email_jobs SET processed = true, processed_at = NOW(), job_id = $1, extraction_confidence = $2, extracted_data = $3 WHERE email_job_id = $4",
+                                        job_id,
+                                        BigDecimal::try_from(job_data.confidence).unwrap_or_default(),
+                                        serde_json::to_value(&job_data).unwrap(),
+                                        email_job_id
+                                    )
+                                    .execute(pool)
+                                    .await {
+                                        log_debug(&format!("Warning: Failed to update email_jobs for created job: {}", e));
+                                    }
+                                    Ok(("created", None))
+                                }
+                                Ok(JobCreationResult::Duplicate(_job_id)) => {
+                                    // Mark email as processed (duplicate)
+                                    if let Err(e) = sqlx::query!(
+                                        "UPDATE email_jobs SET processed = true, processed_at = NOW(), extraction_confidence = $1, extracted_data = $2 WHERE email_job_id = $3",
+                                        BigDecimal::try_from(job_data.confidence).unwrap_or_default(),
+                                        serde_json::to_value(&job_data).unwrap(),
+                                        email_job_id
+                                    )
+                                    .execute(pool)
+                                    .await {
+                                        log_debug(&format!("Warning: Failed to update email_jobs for duplicate: {}", e));
+                                    }
+                                    Ok(("duplicated", None))
+                                }
+                                Err(e) => {
+                                    log_debug(&format!("Failed to create job from email: {}", e));
+
+                                    // Store processing error
+                                    if let Err(db_err) = sqlx::query!(
+                                        "UPDATE email_jobs SET processing_errors = $1 WHERE email_job_id = $2",
+                                        serde_json::json!({"error": e.to_string()}),
+                                        email_job_id
+                                    )
+                                    .execute(pool)
+                                    .await {
+                                        log_debug(&format!("Warning: Failed to store processing error: {}", db_err));
+                                    }
+                                    Ok(("failed", Some(e.to_string())))
+                                }
+                            }
+                        } else {
+                            // Low confidence - not a real job opportunity
+                            // Leave unread in Gmail inbox for manual review
+                            log_debug(&format!("Email filtered out (confidence {:.2}) - leaving unread in Gmail: {:?}",
+                                job_data.confidence, subject));
+                            // DO NOT mark as read
+                            // DO NOT add JobOp label
+
+                            // Mark email as processed (filtered)
+                            if let Err(e) = sqlx::query!(
+                                "UPDATE email_jobs SET processed = true, processed_at = NOW(), extraction_confidence = $1, extracted_data = $2 WHERE email_job_id = $3",
+                                BigDecimal::try_from(job_data.confidence).unwrap_or_default(),
+                                serde_json::to_value(&job_data).unwrap(),
+                                email_job_id
+                            )
+                            .execute(pool)
+                            .await {
+                                log_debug(&format!("Warning: Failed to update email_jobs for filtered email: {}", e));
+                            }
+                            Ok(("filtered", None))
+                        }
+                    } else {
+                        log_debug(&format!("Failed to extract job data from email - Subject: {:?}", subject));
+                        // Leave unread for manual review
+                        Ok::<(&str, Option<String>), Box<dyn std::error::Error + Send + Sync>>(("failed_extraction", None))
+                    }
                 }
+            ).await;
 
-                if job_data.confidence > 0.3 { // Real job opportunity - add label and mark as read
-                    // Add "JobOp" label to email
-                    if !jobop_label_id.is_empty() {
-                        if let Err(e) = add_jobop_label(&client, access_token, &message.id, &jobop_label_id).await {
-                            log_debug(&format!("Warning: Failed to add JobOp label to message {}: {}", message.id, e));
-                        }
-                    }
-
-                    // Mark email as read in Gmail
-                    if let Err(e) = mark_gmail_message_as_read(&client, access_token, &message.id).await {
-                        log_debug(&format!("Warning: Failed to mark message {} as read: {}", message.id, e));
-                    }
-
-                    match create_job_from_extraction(&job_data, source, pool, Some(received_date)).await {
-                        Ok(JobCreationResult::Created(_job_id)) => {
-                            metrics.created += 1;
-
-                            // Mark email as processed
-                            sqlx::query!(
-                                "UPDATE email_jobs SET processed = true, processed_at = NOW(), extraction_confidence = $1, extracted_data = $2 WHERE email_job_id = $3",
-                                BigDecimal::try_from(job_data.confidence).unwrap_or_default(),
-                                serde_json::to_value(&job_data).unwrap(),
-                                email_job_id
-                            )
-                            .execute(pool)
-                            .await?;
-                        }
-                        Ok(JobCreationResult::Duplicate(_job_id)) => {
-                            metrics.duplicated += 1;
-
-                            // Mark email as processed (duplicate)
-                            sqlx::query!(
-                                "UPDATE email_jobs SET processed = true, processed_at = NOW(), extraction_confidence = $1, extracted_data = $2 WHERE email_job_id = $3",
-                                BigDecimal::try_from(job_data.confidence).unwrap_or_default(),
-                                serde_json::to_value(&job_data).unwrap(),
-                                email_job_id
-                            )
-                            .execute(pool)
-                            .await?;
-                        }
-                        Err(e) => {
+            // Handle timeout and processing result
+            match processing_result {
+                Ok(Ok((result_type, error_msg))) => {
+                    match result_type {
+                        "created" => metrics.created += 1,
+                        "duplicated" => metrics.duplicated += 1,
+                        "filtered" => metrics.filtered_out += 1,
+                        "failed" | "failed_extraction" => {
                             metrics.failed_processing += 1;
-                            log_debug(&format!("Failed to create job from email: {}", e));
-
-                            // Store processing error
-                            sqlx::query!(
-                                "UPDATE email_jobs SET processing_errors = $1 WHERE email_job_id = $2",
-                                serde_json::json!({"error": e.to_string()}),
-                                email_job_id
-                            )
-                            .execute(pool)
-                            .await?;
+                            if let Some(err) = error_msg {
+                                log_debug(&format!("Email processing failed: {}", err));
+                            }
                         }
+                        _ => log_debug(&format!("Unknown result type: {}", result_type)),
                     }
-                } else {
-                    // Low confidence - not a real job opportunity
-                    // Leave unread in Gmail inbox for manual review
-                    metrics.filtered_out += 1;
-                    log_debug(&format!("Email filtered out (confidence {:.2}) - leaving unread in Gmail: {:?}",
-                        job_data.confidence, subject));
-                    // DO NOT mark as read
-                    // DO NOT add JobOp label
                 }
-            } else {
-                metrics.failed_processing += 1;
-                log_debug(&format!("Failed to extract job data from email - Subject: {:?}", subject));
-                // Leave unread for manual review
+                Ok(Err(e)) => {
+                    metrics.failed_processing += 1;
+                    log_debug(&format!("Email processing error: {}", e));
+                }
+                Err(_) => {
+                    metrics.failed_processing += 1;
+                    log_debug(&format!("Email processing TIMEOUT after 45 seconds - Subject: {:?}", subject));
+
+                    // Store timeout error
+                    if let Err(e) = sqlx::query!(
+                        "UPDATE email_jobs SET processing_errors = $1 WHERE email_job_id = $2",
+                        serde_json::json!({"error": "Processing timeout after 45 seconds"}),
+                        email_job_id
+                    )
+                    .execute(pool)
+                    .await {
+                        log_debug(&format!("Warning: Failed to store timeout error: {}", e));
+                    }
+                }
             }
         }
     }
@@ -2307,7 +2381,10 @@ async fn call_claude_api(
     email_subject: &str,
     email_body: &str,
 ) -> Result<JobExtractionResult, String> {
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))  // 30 second timeout for LLM calls
+        .build()
+        .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
 
     // Convert HTML to text if needed
     let clean_body = if email_body.contains("<html") || email_body.contains("<body") {
@@ -2724,7 +2801,13 @@ async fn get_ignored_emails(pool: web::Data<PgPool>) -> Result<HttpResponse> {
             extraction_confidence,
             processing_errors
         FROM email_jobs
-        WHERE processed = false OR extraction_confidence < 0.3
+        WHERE processed = true
+          AND processing_errors IS NULL
+          AND job_id IS NULL
+          AND extraction_confidence IS NOT NULL
+          AND (extraction_confidence < 0.3
+               OR extracted_data->>'title' IS NULL OR extracted_data->>'title' = ''
+               OR extracted_data->>'company' IS NULL OR extracted_data->>'company' = '')
         ORDER BY received_date DESC
         LIMIT 100
         "#
@@ -2751,7 +2834,7 @@ async fn get_ignored_emails(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     Ok(HttpResponse::Ok().json(result))
 }
 
-// Get failed emails (emails with processing errors)
+// Get failed emails (emails with processing errors or failed extraction)
 async fn get_failed_emails(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     let failed = sqlx::query!(
         r#"
@@ -2768,6 +2851,7 @@ async fn get_failed_emails(pool: web::Data<PgPool>) -> Result<HttpResponse> {
             processing_errors
         FROM email_jobs
         WHERE processing_errors IS NOT NULL
+           OR (processed = false AND extraction_confidence IS NULL)
         ORDER BY received_date DESC
         LIMIT 100
         "#
@@ -2794,7 +2878,7 @@ async fn get_failed_emails(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     Ok(HttpResponse::Ok().json(result))
 }
 
-// Get duplicate emails (processed but no job created, high confidence)
+// Get duplicate emails (processed but no job created due to duplication, high confidence only)
 async fn get_duplicate_emails(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     let duplicates = sqlx::query!(
         r#"
@@ -2813,7 +2897,11 @@ async fn get_duplicate_emails(pool: web::Data<PgPool>) -> Result<HttpResponse> {
         WHERE processed = true
           AND job_id IS NULL
           AND processing_errors IS NULL
-          AND (extraction_confidence IS NULL OR extraction_confidence >= 0.3)
+          AND extraction_confidence >= 0.7
+          AND extracted_data->>'title' IS NOT NULL
+          AND extracted_data->>'title' != ''
+          AND extracted_data->>'company' IS NOT NULL
+          AND extracted_data->>'company' != ''
         ORDER BY received_date DESC
         LIMIT 100
         "#

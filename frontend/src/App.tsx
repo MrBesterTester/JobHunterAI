@@ -542,9 +542,9 @@ const JobHunterDashboard: React.FC = () => {
       data-testid="job-card"
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-        <div style={{ flex: 1 }}>
-          <h3 style={{ fontWeight: 600, fontSize: '18px', color: '#111827' }} data-testid="job-title">{job.title}</h3>
-          <p style={{ color: '#6b7280' }} data-testid="job-company">{job.company}</p>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h3 style={{ fontWeight: 600, fontSize: '18px', color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} data-testid="job-title">{job.title}</h3>
+          <p style={{ color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} data-testid="job-company">{job.company}</p>
         </div>
         {getStatusIcon(job.status)}
       </div>

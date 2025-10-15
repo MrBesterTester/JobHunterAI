@@ -171,6 +171,7 @@ const DuplicatesTab: React.FC = () => {
             {duplicateEmails.map(email => (
               <div
                 key={email.email_job_id}
+                data-testid="duplicate-email-card"
                 style={{
                   padding: '16px',
                   backgroundColor: '#fffbeb',

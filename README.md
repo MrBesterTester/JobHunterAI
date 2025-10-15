@@ -41,6 +41,9 @@ JobHunter is a comprehensive job application management system that automates an
     - [Inbox Tab](#inbox-tab)
     - [Approved Tab](#approved-tab)
     - [Applied Tab](#applied-tab)
+    - [Failed Tab](#-failed-tab)
+    - [Duplicates Tab](#-duplicates-tab)
+    - [Non-Job Emails Tab](#-non-job-emails-tab)
     - [Filtered Tab](#filtered-tab)
     - [All Tab](#all-tab)
     - [Calendar Tab](#calendar-tab)
@@ -589,6 +592,83 @@ The dashboard displays real-time statistics across the top (ordered by workflow 
 - Track application dates
 - Monitor follow-up requirements
 - Integrated with Calendar and Follow-ups tabs
+
+#### ❌ Failed Tab
+
+**Purpose**: Monitor emails that failed during the intake processing pipeline.
+
+**Features**:
+- **Processing Errors**: View emails that encountered errors during job creation
+- **Extraction Failures**: See emails where LLM extraction returned no data or failed completely
+- **Email Content Display**: Click any card to expand and view full email details (subject, sender, date, body text)
+- **Troubleshooting**: Identify patterns in failed extractions to improve prompts or data quality
+- **Counter Accuracy**: Failed counter matches the actual count of emails in this tab
+
+**Common Failed Email Types**:
+- Non-job emails: Webinars, security alerts, course recommendations
+- Malformed emails: Missing required fields (title, company)
+- Processing exceptions: Database errors, API failures
+
+**SQL Logic** (for reference):
+```sql
+WHERE processing_errors IS NOT NULL
+   OR (processed = false AND extraction_confidence IS NULL)
+```
+
+#### ⊕ Duplicates Tab
+
+**Purpose**: Monitor job opportunities that matched existing entries in the database.
+
+**Features**:
+- **Duplicate Detection**: View emails that were successfully extracted but matched existing jobs
+- **High-Confidence Matches**: Only shows emails with extraction confidence ≥ 0.3
+- **Email Content Display**: Click any card to expand and view full email details
+- **Deduplication Insight**: Understand which recruiters/sources send repeat opportunities
+- **Counter Accuracy**: Duplicates counter matches the actual count of emails in this tab
+
+**Why Emails Become Duplicates**:
+- Same job posted by multiple recruiters
+- Job reposted after editing/updating
+- Cross-source duplicates (Gmail + LinkedIn)
+- SHA256 hash matching on company+title or URL
+
+**SQL Logic** (for reference):
+```sql
+WHERE processed = true
+  AND job_id IS NULL
+  AND processing_errors IS NULL
+  AND extraction_confidence >= 0.3
+```
+
+#### 🚫 Non-Job Emails Tab
+
+**Purpose**: Monitor emails that were determined to be non-job-related during intake.
+
+**Features**:
+- **Low Confidence Emails**: View emails with extraction confidence < 0.3
+- **Incomplete Extractions**: See emails missing title or company information
+- **Email Content Display**: Click any card to expand and view full email details
+- **Filter Tuning**: Identify false negatives to improve LLM filtering prompts
+- **Counter Accuracy**: Non-Job Emails counter matches the actual count in this tab
+
+**Common Non-Job Email Types**:
+- Marketing emails from job boards
+- Newsletter subscriptions
+- Account notifications
+- Spam or irrelevant content
+
+**SQL Logic** (for reference):
+```sql
+WHERE processed = true
+  AND processing_errors IS NULL
+  AND job_id IS NULL
+  AND extraction_confidence IS NOT NULL
+  AND (extraction_confidence < 0.3
+       OR extracted_data->>'title' IS NULL OR extracted_data->>'title' = ''
+       OR extracted_data->>'company' IS NULL OR extracted_data->>'company' = '')
+```
+
+**Note**: These three monitoring tabs (Failed, Duplicates, Non-Job Emails) are part of the MECE (Mutually Exclusive, Collectively Exhaustive) counter system. Together with Processed jobs, they account for all discovered emails: `Total = Failed + Duplicates + Filtered + Processed`
 
 #### 🔍 Filtered Tab
 

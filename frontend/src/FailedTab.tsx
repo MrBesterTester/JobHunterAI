@@ -180,6 +180,7 @@ const FailedTab: React.FC = () => {
             {failedEmails.map(email => (
               <div
                 key={email.email_job_id}
+                data-testid="failed-email-card"
                 style={{
                   padding: '16px',
                   backgroundColor: '#fef2f2',
