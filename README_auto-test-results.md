@@ -1,5 +1,30 @@
 # Automated Test Results Dashboard - JobHunter
 
+## Table of Contents
+
+- [Test Suite Status Overview](#test-suite-status-overview)
+- [Quick Health Check](#quick-health-check)
+- [Phase-by-Phase Testing Status](#phase-by-phase-testing-status)
+  - [Phase 1 - Core System Testing](#phase-1---core-system-testing)
+  - [Phase 2 - Intelligent Automation Testing](#phase-2---intelligent-automation-testing--complete)
+  - [Phase 3 - Content Generation Testing](#phase-3---content-generation-testing--complete)
+  - [Phase 4 - Automated Job Intake Testing](#phase-4---automated-job-intake-testing--complete)
+  - [Phase 5.2 - Email Composition & Sending](#phase-52---email-composition--sending--complete-new---october-9-2025-)
+  - [Phase 5.3.4 - Trade-off Based Job Evaluation Display](#phase-534---trade-off-based-job-evaluation-display--complete-new---october-14-2025-)
+  - [MECE Monitoring Tabs](#mece-monitoring-tabs---failedduplicatesnon-job-emails--complete-new---october-14-2025-)
+- [Performance Benchmarks](#performance-benchmarks)
+- [Security Testing Status](#security-testing-status)
+- [Test Environment Status](#test-environment-status)
+- [Known Issues & Remediation](#known-issues--remediation)
+- [Historical Test Data](#historical-test-data)
+- [Test Execution Summary](#test-execution-summary)
+  - [Latest Test Run Results](#latest-test-run-results-phase-534-trade-off-display---october-14-2025-)
+  - [Previous Test Run Results](#previous-test-run-results-phase-52-email-composer---october-9-2025-)
+- [Dashboard Legend](#dashboard-legend)
+- [Recent Feature Additions](#recent-feature-additions-october-2025)
+- [API & Core Tests Implementation Summary](#api--core-tests-implementation-summary)
+- [Phase 2 Implementation Summary](#phase-2-implementation-summary)
+
 ## Test Suite Status Overview
 
 | Component | Status | Coverage | Last Run | Duration | Trends |
