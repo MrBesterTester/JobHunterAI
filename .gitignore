@@ -47,3 +47,4 @@ Thumbs.db
 # Test results
 test-results/
 backend/test-results/
+node_modules/
