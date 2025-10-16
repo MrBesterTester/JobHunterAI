@@ -30,6 +30,7 @@
       - [📅 Calendar Tab](#-calendar-tab)
       - [📧 Follow-ups Tab](#-follow-ups-tab)
     - [Job Detail Modal](#job-detail-modal)
+    - [Job Card Summary Section](#job-card-summary-section)
     - [Resume Management](#resume-management)
     - [Responsive Design](#responsive-design)
     - [Keyboard Navigation](#keyboard-navigation)
@@ -763,6 +764,31 @@ Click any job card to open a detailed modal showing:
 - Date collected
 - Status history
 - Action buttons (Approve/Reject/Generate Content)
+
+### Job Card Summary Section
+
+**NEW**: Each job card now includes a comprehensive Summary section displaying trade-off information to support approve/reject decisions without clicking into the modal.
+
+**Summary Content** (displayed only when data is available):
+- **Employment**: Relationship type (direct hire/staffing agency/consulting), benefits details
+- **Remote Work**: Eligible states, timezone requirements
+- **Technical**: Primary category, testing level, automation focus, test equipment
+- **AI Tools**: Specific tools mentioned (ChatGPT, Claude, Copilot, etc.)
+- **Commute**: Office location, commute perks (FasTrak, parking, transit), schedule flexibility
+- **Filtered Reasons**: For filtered jobs, shows why the job didn't pass automatic criteria
+
+**Key Features**:
+- Smart display logic: Only shows sections with non-null data
+- Appears for ALL jobs (not just filtered ones)
+- Compact, scannable format for quick decision-making
+- Complete trade-off visibility without modal clicks
+- Filtered reasons preserved as subsection for filtered jobs
+
+**Visual Design**:
+- Light gray background (#f9fafb) with blue left border
+- Grouped by category (Employment, Remote Work, Technical, etc.)
+- Concise bullet-point format with clear labels
+- 11px font for space efficiency while maintaining readability
 
 ### Resume Management
 

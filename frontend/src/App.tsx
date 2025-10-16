@@ -265,6 +265,18 @@ const JobHunterDashboard: React.FC = () => {
     return seniority ? (seniorityMap[seniority] || seniority) : 'Not specified';
   };
 
+  const formatPrimaryCategory = (category?: string): string => {
+    const categoryMap: Record<string, string> = {
+      'software_engineering': 'Software Engineering',
+      'firmware_engineering': 'Firmware Engineering',
+      'qa_testing': 'QA/Testing',
+      'test_automation': 'Test Automation',
+      'devops': 'DevOps',
+      'other': 'Other'
+    };
+    return category ? (categoryMap[category] || category) : 'Not specified';
+  };
+
   const formatSalaryRange = (comp?: CompensationDetails): string => {
     if (!comp) return 'Not specified';
 
@@ -889,24 +901,109 @@ const JobHunterDashboard: React.FC = () => {
         )}
       </div>
 
-      {job.filter_reason && (
+      {/* Job Summary Section - Show for ALL jobs with raw_data or filter_reason */}
+      {(job.raw_data || job.filter_reason) && (
         <div
-          data-testid="filtered-reasons"
+          data-testid="job-summary"
           style={{
             marginTop: '8px',
-            padding: '8px',
-            backgroundColor: '#fef2f2',
+            padding: '12px',
+            backgroundColor: '#f9fafb',
             borderRadius: '4px',
-            borderLeft: '4px solid #ef4444'
+            borderLeft: '4px solid #3b82f6',
+            fontSize: '11px'
           }}>
-          <div style={{ fontSize: '12px', fontWeight: '500', color: '#dc2626', marginBottom: '4px' }}>
-            Filtered Reasons:
+          <div style={{ fontSize: '12px', fontWeight: '600', color: '#1f2937', marginBottom: '8px' }}>
+            Summary
           </div>
-          <ul style={{ fontSize: '12px', color: '#7f1d1d', margin: 0, paddingLeft: '20px' }}>
-            {job.filter_reason.split(';').map((reason, idx) => (
-              <li key={idx} className="reason">{reason.trim()}</li>
-            ))}
-          </ul>
+
+          {/* Employment Details */}
+          {(job.raw_data?.employment?.relationship || job.raw_data?.employment?.benefits) && (
+            <div style={{ marginBottom: '6px', lineHeight: '1.4' }}>
+              <strong style={{ color: '#374151' }}>Employment:</strong>
+              <span style={{ color: '#6b7280', marginLeft: '4px' }}>
+                {job.raw_data.employment.relationship && formatEmploymentRelationship(job.raw_data.employment.relationship)}
+                {job.raw_data.employment.benefits && ` • Benefits: ${job.raw_data.employment.benefits}`}
+              </span>
+            </div>
+          )}
+
+          {/* Remote Work Details */}
+          {((job.raw_data?.remote_work?.remote_eligible_states?.length ?? 0) > 0 ||
+            job.raw_data?.remote_work?.timezone_requirement) && (
+            <div style={{ marginBottom: '6px', lineHeight: '1.4' }}>
+              <strong style={{ color: '#374151' }}>Remote Work:</strong>
+              <span style={{ color: '#6b7280', marginLeft: '4px' }}>
+                {job.raw_data?.remote_work?.remote_eligible_states &&
+                 ` States: ${job.raw_data.remote_work.remote_eligible_states.join(', ')}`}
+                {job.raw_data?.remote_work?.timezone_requirement &&
+                 ` • TZ: ${job.raw_data.remote_work.timezone_requirement}`}
+              </span>
+            </div>
+          )}
+
+          {/* Technical Details */}
+          {(job.raw_data?.job_domain?.primary_category ||
+            job.raw_data?.job_domain?.testing_level ||
+            job.raw_data?.job_domain?.automation_focus !== null ||
+            job.raw_data?.job_domain?.test_equipment) && (
+            <div style={{ marginBottom: '6px', lineHeight: '1.4' }}>
+              <strong style={{ color: '#374151' }}>Technical:</strong>
+              <span style={{ color: '#6b7280', marginLeft: '4px' }}>
+                {job.raw_data?.job_domain?.primary_category &&
+                 formatPrimaryCategory(job.raw_data.job_domain.primary_category)}
+                {job.raw_data?.job_domain?.testing_level &&
+                 ` • Level: ${job.raw_data.job_domain.testing_level}`}
+                {job.raw_data?.job_domain?.automation_focus !== null &&
+                 job.raw_data?.job_domain?.automation_focus !== undefined &&
+                 ` • Automation: ${job.raw_data.job_domain.automation_focus ? 'Yes' : 'No'}`}
+                {job.raw_data?.job_domain?.test_equipment &&
+                 ` • Equipment: ${job.raw_data.job_domain.test_equipment}`}
+              </span>
+            </div>
+          )}
+
+          {/* AI Tools */}
+          {(job.raw_data?.job_domain?.ai_tools_mentioned?.length ?? 0) > 0 && (
+            <div style={{ marginBottom: '6px', lineHeight: '1.4' }}>
+              <strong style={{ color: '#374151' }}>AI Tools:</strong>
+              <span style={{ color: '#6b7280', marginLeft: '4px' }}>
+                {job.raw_data?.job_domain?.ai_tools_mentioned?.join(', ')}
+              </span>
+            </div>
+          )}
+
+          {/* Commute Details */}
+          {(job.raw_data?.commute?.office_location ||
+            job.raw_data?.commute?.commute_perks ||
+            job.raw_data?.commute?.schedule_flexibility) && (
+            <div style={{ marginBottom: '6px', lineHeight: '1.4' }}>
+              <strong style={{ color: '#374151' }}>Commute:</strong>
+              <span style={{ color: '#6b7280', marginLeft: '4px' }}>
+                {job.raw_data.commute.office_location}
+                {job.raw_data.commute.commute_perks &&
+                 ` • Perks: ${job.raw_data.commute.commute_perks}`}
+                {job.raw_data.commute.schedule_flexibility &&
+                 ` • ${job.raw_data.commute.schedule_flexibility}`}
+              </span>
+            </div>
+          )}
+
+          {/* Filtered Reasons (if applicable) */}
+          {job.filter_reason && (
+            <div style={{
+              marginTop: '8px',
+              paddingTop: '8px',
+              borderTop: '1px solid #e5e7eb'
+            }}>
+              <strong style={{ color: '#dc2626', fontSize: '11px' }}>Filtered Reasons:</strong>
+              <ul style={{ fontSize: '11px', color: '#991b1b', margin: '4px 0 0 0', paddingLeft: '20px' }}>
+                {job.filter_reason.split(';').map((reason, idx) => (
+                  <li key={idx} className="reason">{reason.trim()}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
 

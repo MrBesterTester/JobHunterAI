@@ -41,6 +41,17 @@
     - [Phase 3: Location & Work Badges](#phase-3-location--work-badges)
     - [Phase 4: Technical Badges](#phase-4-technical-badges)
     - [Phase 5: Polish & Testing](#phase-5-polish--testing)
+  - [Phase 6: Summary Section Enhancement 🔄 In Progress](#phase-6-summary-section-enhancement--in-progress)
+    - [Objective](#objective)
+    - [Current State](#current-state)
+    - [Missing Fields on Job Cards](#missing-fields-on-job-cards)
+    - [Proposed Changes](#proposed-changes)
+      - [1. Rename & Expand Section](#1-rename--expand-section)
+      - [2. Summary Content Structure](#2-summary-content-structure)
+      - [3. Helper Functions Needed](#3-helper-functions-needed)
+    - [Benefits of Summary Section](#benefits-of-summary-section)
+    - [Implementation Location](#implementation-location)
+    - [Testing Requirements](#testing-requirements)
   - [Future Enhancements](#future-enhancements)
   - [References](#references)
 
@@ -48,9 +59,9 @@
 
 # Job Card Trade-Off Information Enhancement Plan
 
-**Version:** 1.0
+**Version:** 1.1
 **Date:** 2025-10-16
-**Status:** ✅ Implemented
+**Status:** ✅ Badge Implementation Complete | 🔄 Summary Section In Progress
 
 ## Overview
 
@@ -476,6 +487,179 @@ Colors should align with decision-making and trade-offs:
 - Accessibility improvements
 - Comprehensive testing
 - User feedback incorporation
+
+## Phase 6: Summary Section Enhancement 🔄 In Progress
+
+### Objective
+Replace the filtered-only "Filtered Reasons" section with a comprehensive "Summary" section that displays detailed trade-off information for ALL jobs, not just filtered ones.
+
+### Current State
+- Job cards currently show "Filtered Reasons" only for filtered jobs (lines 892-911 in App.tsx)
+- This section explains WHY a job was filtered (e.g., "Salary below minimum", "Location too far")
+- Many LLM-extracted fields are NOT displayed on the card, requiring users to click into the modal
+
+### Missing Fields on Job Cards
+Fields currently only in the modal that should be in Summary:
+- `employment.relationship` (direct_hire/staffing_agency/consulting/contract_to_hire)
+- `employment.benefits` (health insurance, 401k, PTO details)
+- `remote_work.remote_eligible_states` (which states allow remote work)
+- `remote_work.timezone_requirement` (timezone constraints)
+- `job_domain.primary_category` (software_engineering/qa_testing/firmware/devops/other)
+- `job_domain.testing_level` (BIOS/POST, chip-level, board-level, integration, system, web UI, e2e)
+- `job_domain.automation_focus` (boolean indicating automation emphasis)
+- `job_domain.ai_tools_mentioned` (specific AI tools like ChatGPT, Claude, Copilot)
+- `job_domain.test_equipment` (ATE, oscilloscopes, cellular testing, multimeters)
+- `commute.office_location` (specific office address)
+- `commute.commute_perks` (FasTrak, parking, transit pass, flexible hours)
+- `commute.schedule_flexibility` (flexible start/end times, core hours)
+
+### Proposed Changes
+
+#### 1. Rename & Expand Section
+- Change title from "Filtered Reasons" to "Summary"
+- Display for ALL jobs, not just filtered ones
+- Keep filtered reasons as a subsection within Summary for filtered jobs
+
+#### 2. Summary Content Structure
+```tsx
+{/* Job Summary Section - Show for ALL jobs */}
+{(job.raw_data || job.filter_reason) && (
+  <div style={{
+    marginTop: '8px',
+    padding: '12px',
+    backgroundColor: '#f9fafb',
+    borderRadius: '4px',
+    borderLeft: '4px solid #3b82f6'
+  }}>
+    <div style={{ fontSize: '12px', fontWeight: '600', color: '#1f2937', marginBottom: '8px' }}>
+      Summary
+    </div>
+
+    {/* Employment Details */}
+    {(job.raw_data?.employment?.relationship || job.raw_data?.employment?.benefits) && (
+      <div style={{ marginBottom: '6px' }}>
+        <strong style={{ color: '#374151' }}>Employment:</strong>
+        <span style={{ color: '#6b7280', fontSize: '11px', marginLeft: '4px' }}>
+          {job.raw_data.employment.relationship && formatEmploymentRelationship(job.raw_data.employment.relationship)}
+          {job.raw_data.employment.benefits && ` • Benefits: ${job.raw_data.employment.benefits}`}
+        </span>
+      </div>
+    )}
+
+    {/* Remote Work Details */}
+    {(job.raw_data?.remote_work?.remote_eligible_states?.length > 0 ||
+      job.raw_data?.remote_work?.timezone_requirement) && (
+      <div style={{ marginBottom: '6px' }}>
+        <strong style={{ color: '#374151' }}>Remote Work:</strong>
+        <span style={{ color: '#6b7280', fontSize: '11px', marginLeft: '4px' }}>
+          {job.raw_data.remote_work.remote_eligible_states &&
+           ` States: ${job.raw_data.remote_work.remote_eligible_states.join(', ')}`}
+          {job.raw_data.remote_work.timezone_requirement &&
+           ` • TZ: ${job.raw_data.remote_work.timezone_requirement}`}
+        </span>
+      </div>
+    )}
+
+    {/* Technical Details */}
+    {(job.raw_data?.job_domain?.primary_category ||
+      job.raw_data?.job_domain?.testing_level ||
+      job.raw_data?.job_domain?.test_equipment) && (
+      <div style={{ marginBottom: '6px' }}>
+        <strong style={{ color: '#374151' }}>Technical:</strong>
+        <span style={{ color: '#6b7280', fontSize: '11px', marginLeft: '4px' }}>
+          {job.raw_data.job_domain.primary_category &&
+           formatPrimaryCategory(job.raw_data.job_domain.primary_category)}
+          {job.raw_data.job_domain.testing_level &&
+           ` • Level: ${job.raw_data.job_domain.testing_level}`}
+          {job.raw_data.job_domain.test_equipment &&
+           ` • Equipment: ${job.raw_data.job_domain.test_equipment}`}
+        </span>
+      </div>
+    )}
+
+    {/* AI Tools */}
+    {job.raw_data?.job_domain?.ai_tools_mentioned?.length > 0 && (
+      <div style={{ marginBottom: '6px' }}>
+        <strong style={{ color: '#374151' }}>AI Tools:</strong>
+        <span style={{ color: '#6b7280', fontSize: '11px', marginLeft: '4px' }}>
+          {job.raw_data.job_domain.ai_tools_mentioned.join(', ')}
+        </span>
+      </div>
+    )}
+
+    {/* Commute Details */}
+    {(job.raw_data?.commute?.office_location ||
+      job.raw_data?.commute?.commute_perks ||
+      job.raw_data?.commute?.schedule_flexibility) && (
+      <div style={{ marginBottom: '6px' }}>
+        <strong style={{ color: '#374151' }}>Commute:</strong>
+        <span style={{ color: '#6b7280', fontSize: '11px', marginLeft: '4px' }}>
+          {job.raw_data.commute.office_location}
+          {job.raw_data.commute.commute_perks &&
+           ` • Perks: ${job.raw_data.commute.commute_perks}`}
+          {job.raw_data.commute.schedule_flexibility &&
+           ` • ${job.raw_data.commute.schedule_flexibility}`}
+        </span>
+      </div>
+    )}
+
+    {/* Filtered Reasons (if applicable) */}
+    {job.filter_reason && (
+      <div style={{
+        marginTop: '8px',
+        paddingTop: '8px',
+        borderTop: '1px solid #e5e7eb'
+      }}>
+        <strong style={{ color: '#dc2626', fontSize: '11px' }}>Filtered Reasons:</strong>
+        <ul style={{ fontSize: '11px', color: '#991b1b', margin: '4px 0 0 0', paddingLeft: '20px' }}>
+          {job.filter_reason.split(';').map((reason, idx) => (
+            <li key={idx}>{reason.trim()}</li>
+          ))}
+        </ul>
+      </div>
+    )}
+  </div>
+)}
+```
+
+#### 3. Helper Functions Needed
+Add formatting functions for new fields:
+```tsx
+const formatPrimaryCategory = (category?: string): string => {
+  const categoryMap: Record<string, string> = {
+    'software_engineering': 'Software Engineering',
+    'firmware_engineering': 'Firmware Engineering',
+    'qa_testing': 'QA/Testing',
+    'test_automation': 'Test Automation',
+    'devops': 'DevOps',
+    'other': 'Other'
+  };
+  return category ? (categoryMap[category] || category) : 'Not specified';
+};
+```
+
+### Benefits of Summary Section
+1. **Complete Trade-Off View**: All decision-relevant information visible without clicking modal
+2. **Faster Decision Making**: Can approve/reject based on comprehensive card-level info
+3. **Better Context**: Understand job requirements, perks, and constraints at a glance
+4. **Preserved Filtering Info**: Filtered reasons still shown for filtered jobs
+5. **Consistent Experience**: All jobs get the same level of detail, not just filtered ones
+
+### Implementation Location
+- **File**: `frontend/src/App.tsx`
+- **Current Lines**: 892-911 (Filtered Reasons section)
+- **New Lines**: Will expand to ~950-1050 (Summary section with all fields)
+
+### Testing Requirements
+- ✅ Summary displays for jobs with status: new
+- ✅ Summary displays for jobs with status: approved
+- ✅ Summary displays for jobs with status: applied
+- ✅ Summary displays for jobs with status: filtered (with Filtered Reasons subsection)
+- ✅ Summary shows only non-null fields (smart display logic)
+- ✅ Filtered Reasons subsection appears only for filtered jobs
+- ✅ Summary section is scrollable if content is long
+- ✅ Text is readable and properly formatted
+- ✅ No visual regressions on job cards
 
 ## Future Enhancements
 
