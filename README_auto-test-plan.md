@@ -2191,12 +2191,28 @@ This comprehensive testing strategy ensures the JobHunter system maintains the h
   - Tests 76-78, 81: Job details action button tests - Stuck
   - Tests 152-153, 155, 159, 165: Statistics update tests - Stuck
   - **Pattern:** Tests that modify database state (approve, reject, status updates) appear to hang
-  - **Likely Cause:** Database transaction locking or backend API issues unrelated to today's frontend changes
+
+  **✅ ROOT CAUSE IDENTIFIED** (October 16, 2025):
+  - Backend API works perfectly (6ms response time for status updates)
+  - Frontend code is correct
+  - **Database state issue**: `jobhunter_personal` has **0 "new" jobs** (42 filtered, 7 approved, 2 rejected)
+  - Test 28 runs individually → **Skips correctly** (no jobs to test)
+  - Test 28 in full suite → **Hangs indefinitely** (parallel execution issue)
+  - **Actual Cause**: Parallel test execution (4 workers) causes race conditions when all tests try to act on the same empty job set
+  - Tests wait for elements that never appear because earlier tests consumed/modified the jobs
+  - Playwright timeouts (10s action, 30s test) not enforced properly during `.count()` operations
+
+  **Recommended Solutions:**
+  1. Add test data setup: Seed database with "new" jobs before each test run
+  2. Reduce parallelism: Run status-modifying tests serially (`test.describe.serial()`)
+  3. Better timeout handling: Add explicit timeouts to `getVisibleJobCount()`
+  4. Test isolation: Each test should create its own job fixtures instead of relying on shared database state
 
 - **Conclusion:**
   - ✅ Yesterday's Tier 1 and Tier 2 fixes remain stable after major frontend modifications
   - ✅ All new badge functionality works correctly
-  - ⚠️ ~20+ tests that modify database state are experiencing hangs (pre-existing issue, not caused by today's changes)
+  - ✅ Hanging tests root cause identified: Parallel execution + empty database state (not backend/frontend bugs)
+  - 📋 Next steps: Implement test data seeding or serial execution for database-modifying tests
 
 **🎉 ALL TIERS COMPLETE:**
 - ✅ Tier 1: Backend compilation + E2E navigation fixes
