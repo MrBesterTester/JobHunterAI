@@ -34,10 +34,71 @@
 | 🗄️ Database Schema | ✅ **No Schema Changes** | 100% (Phase 5.3.4) | Oct 14, 2025 | - | ✅ JSONB raw_data usage |
 | 🔗 System Integration | ✅ **Full Stack** | Backend: 100%, Frontend: 100% | Oct 14, 2025 | - | 🎉 Trade-off Evaluation Complete ✨ |
 
-## Quick Health Check
+## 🚨 LATEST COMPREHENSIVE TEST RUN (October 15, 2025) - Claude 3.5 Haiku Upgrade
+
+### Test Suite Summary
+
+**Overall Status:** 334/456 tests passing (73.2% pass rate)
+- Backend Unit Tests: 76/78 passing (97.4%)
+- E2E Tests: 258/378 passing (68.3%)
+- Compilation Failures: 2 test files
+- Skipped Tests: 71 E2E tests
+- Flaky Tests: 1 E2E test
+
+### ❌ Critical Issues Identified
+
+#### **Backend Failures (3 failures)**
+
+1. **`test_email_tabs.rs` - Compilation Failure**
+   - **Type:** Documentation syntax errors
+   - **Location:** `backend/tests/test_email_tabs.rs:2-4, 91`
+   - **Errors:** 4 compilation errors (inner doc comments `//!` used incorrectly)
+   - **Impact:** Entire test file cannot compile
+
+2. **`analytics_tests.rs` - Compilation Failure**
+   - **Type:** Database schema mismatch
+   - **Location:** `backend/tests/analytics_tests.rs:514, 531`
+   - **Errors:** Column `date_collected` does not exist in `jobs` table
+   - **Impact:** Entire test file cannot compile
+
+3. **`test_url_based_deduplication` - Runtime Failure**
+   - **Type:** Logic/assertion failure
+   - **Location:** `backend/tests/deduplication_tests.rs:177`
+   - **Issue:** Returns wrong `job_id` (UUID mismatch)
+   - **Status:** Compiles successfully, fails at runtime
+
+#### **E2E Failures (48 failures)**
+
+**Primary Root Cause:** Missing `data-testid="job-card"` elements - affects 46/48 failures
+
+**Affected Test Suites:**
+1. **`05-job-details.spec.ts`** - 2 failures
+   - Modal cannot be found (`expect(locator).toBeVisible()` failed)
+
+2. **`05-job-tradeoff-display.spec.ts`** - 26 failures
+   - All tests timeout waiting for job cards (10s timeout)
+   - Badge display tests (5 failures)
+   - Modal section tests (4 failures)
+   - Data handling tests (3 failures)
+   - Edge case tests (1 failure)
+   - Modal interaction tests (3 failures)
+
+3. **`06-job-badge-styling.spec.ts`** - 20 failures
+   - All tests timeout waiting for job cards
+   - Badge color tests (5 failures)
+   - Badge consistency tests (3 failures)
+   - Backward compatibility tests (2 failures)
+   - Layout tests (2 failures)
+   - Modal styling tests (4 failures)
+
+### ⚠️ Warnings (Non-blocking)
+- 4 unused variable warnings in backend tests
+- No impact on test execution
+
+### Quick Health Check
 ```
-✅ BACKEND TESTING: 61/61 tests passing (100%) - Phase 5.3.4 Complete ✨
-🎉 FRONTEND TESTING: 274/274 Playwright tests passing (100%) - Failed/Duplicates Tabs Tests Added ✨
+⚠️ BACKEND TESTING: 76/78 tests passing (97.4%) - 2 compilation failures, 1 runtime failure
+⚠️ FRONTEND TESTING: 258/378 E2E tests passing (68.3%) - 48 failures, 71 skipped, 1 flaky
 ✅ PHASE 2 INTELLIGENT AUTOMATION: COMPLETE (27 tests - 100% passing)
 ✅ PHASE 3 CONTENT GENERATION: COMPLETE (16 tests - 100% passing)
 ✅ PHASE 4 JOB INTAKE AUTOMATION: COMPLETE (18 tests - 100% passing)
