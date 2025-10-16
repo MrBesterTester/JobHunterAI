@@ -19,6 +19,8 @@ interface CompensationDetails {
   hourly_rate?: number;
   daily_rate?: number;
   equity_offered?: boolean;
+  equity_details?: string;
+  bonus?: string;
   bonus_structure?: string;
 }
 
@@ -29,6 +31,7 @@ interface EmploymentDetails {
   agency_name?: string;
   benefits?: string;
   employment_type?: string;
+  employment_type_source?: 'extracted' | 'inferred' | null;
 }
 
 interface RemoteWorkDetails {
@@ -77,6 +80,8 @@ interface Job {
     remote_work?: RemoteWorkDetails;
     commute?: CommuteDetails;
     job_domain?: JobDomainDetails;
+    company_industry?: string;
+    company_industry_source?: 'extracted' | 'inferred' | null;
     description?: string;  // Full email body
   };
 }
@@ -695,6 +700,191 @@ const JobHunterDashboard: React.FC = () => {
               color: '#92400e'
             }}>
             Testing Focus
+          </span>
+        )}
+
+        {/* Employment Type Badge */}
+        {job.raw_data?.employment?.employment_type && (
+          <span
+            data-testid="employment-type-badge"
+            style={{
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontSize: '12px',
+              fontWeight: '500',
+              backgroundColor:
+                job.raw_data.employment.employment_type === 'full-time' ? '#d1fae5' :
+                job.raw_data.employment.employment_type === 'part-time' ? '#fed7aa' :
+                job.raw_data.employment.employment_type === 'contract' ? '#fef3c7' : '#fed7aa',
+              color:
+                job.raw_data.employment.employment_type === 'full-time' ? '#065f46' :
+                job.raw_data.employment.employment_type === 'part-time' ? '#c2410c' :
+                job.raw_data.employment.employment_type === 'contract' ? '#92400e' : '#c2410c'
+            }}>
+            {job.raw_data.employment.employment_type.split('-').map(word =>
+              word.charAt(0).toUpperCase() + word.slice(1)
+            ).join('-')}
+            {job.raw_data.employment.employment_type_source === 'inferred' && ' (inferred)'}
+          </span>
+        )}
+
+        {/* Contract Duration Badge */}
+        {job.raw_data?.employment?.contract_duration && (
+          <span
+            data-testid="contract-duration-badge"
+            style={{
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontSize: '12px',
+              fontWeight: '500',
+              backgroundColor: '#fef3c7',
+              color: '#92400e'
+            }}>
+            ⏱️ {job.raw_data.employment.contract_duration}
+          </span>
+        )}
+
+        {/* Agency Name Badge */}
+        {job.raw_data?.employment?.agency_name && (
+          <span
+            data-testid="agency-badge"
+            style={{
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontSize: '12px',
+              fontWeight: '500',
+              backgroundColor: '#fed7aa',
+              color: '#c2410c'
+            }}>
+            🏢 via {job.raw_data.employment.agency_name}
+          </span>
+        )}
+
+        {/* Seniority Level Badge */}
+        {job.raw_data?.job_domain?.seniority && (
+          <span
+            data-testid="seniority-badge"
+            style={{
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontSize: '12px',
+              fontWeight: '500',
+              backgroundColor: '#dbeafe',
+              color: '#1e40af'
+            }}>
+            📊 {formatSeniority(job.raw_data.job_domain.seniority)}
+          </span>
+        )}
+
+        {/* Days Onsite Badge */}
+        {job.raw_data?.remote_work?.days_onsite_per_week !== null &&
+         job.raw_data?.remote_work?.days_onsite_per_week !== undefined && (
+          <span
+            data-testid="days-onsite-badge"
+            style={{
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontSize: '12px',
+              fontWeight: '500',
+              backgroundColor: '#dbeafe',
+              color: '#1e40af'
+            }}>
+            📅 {job.raw_data.remote_work.days_onsite_per_week} days/week onsite
+          </span>
+        )}
+
+        {/* Company Industry Badge */}
+        {job.raw_data?.company_industry && (
+          <span
+            data-testid="industry-badge"
+            style={{
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontSize: '12px',
+              fontWeight: '500',
+              backgroundColor: '#eef2ff',
+              color: '#4f46e5'
+            }}>
+            🏢 {job.raw_data.company_industry}
+            {job.raw_data.company_industry_source === 'inferred' && ' (inferred)'}
+          </span>
+        )}
+
+        {/* Equity Offered Badge */}
+        {(job.raw_data?.compensation?.equity_offered || job.raw_data?.compensation?.equity_details) && (
+          <span
+            data-testid="equity-badge"
+            style={{
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontSize: '12px',
+              fontWeight: '500',
+              backgroundColor: '#d1fae5',
+              color: '#065f46'
+            }}>
+            💰 {job.raw_data.compensation.equity_details || 'Equity'}
+          </span>
+        )}
+
+        {/* Bonus Structure Badge */}
+        {(job.raw_data?.compensation?.bonus || job.raw_data?.compensation?.bonus_structure) && (
+          <span
+            data-testid="bonus-badge"
+            style={{
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontSize: '12px',
+              fontWeight: '500',
+              backgroundColor: '#d1fae5',
+              color: '#065f46'
+            }}>
+            💵 {job.raw_data.compensation.bonus || job.raw_data.compensation.bonus_structure}
+          </span>
+        )}
+
+        {/* Tech Stack Badge */}
+        {job.raw_data?.job_domain?.tech_stack && job.raw_data.job_domain.tech_stack.length > 0 && (
+          <span
+            data-testid="tech-stack-badge"
+            style={{
+              display: 'inline-block',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontSize: '12px',
+              fontWeight: '500',
+              backgroundColor: '#f3e8ff',
+              color: '#7c3aed',
+              maxWidth: '300px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}
+            title={job.raw_data.job_domain.tech_stack.join(', ')}>
+            ⚙️ {job.raw_data.job_domain.tech_stack.slice(0, 3).join(', ')}
+            {job.raw_data.job_domain.tech_stack.length > 3 && ` +${job.raw_data.job_domain.tech_stack.length - 3} more`}
+          </span>
+        )}
+
+        {/* Automation Tools Badge */}
+        {job.raw_data?.job_domain?.test_automation_tools && job.raw_data.job_domain.test_automation_tools.length > 0 && (
+          <span
+            data-testid="automation-tools-badge"
+            style={{
+              display: 'inline-block',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontSize: '12px',
+              fontWeight: '500',
+              backgroundColor: '#f3e8ff',
+              color: '#7c3aed',
+              maxWidth: '300px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}
+            title={job.raw_data.job_domain.test_automation_tools.join(', ')}>
+            🤖 {job.raw_data.job_domain.test_automation_tools.slice(0, 3).join(', ')}
+            {job.raw_data.job_domain.test_automation_tools.length > 3 && ` +${job.raw_data.job_domain.test_automation_tools.length - 3} more`}
           </span>
         )}
       </div>
