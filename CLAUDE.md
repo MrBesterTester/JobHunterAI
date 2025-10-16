@@ -14,11 +14,11 @@ JobHunter is a workflow-driven job application management system built to stream
 ## Developer Preferences
 
 ### Notifications
-**IMPORTANT**: Always send macOS notifications when completing long-running tasks (>30 seconds).
+**IMPORTANT**: Always show dialog notifications when completing long-running tasks (>30 seconds).
 
 **Command to use:**
 ```bash
-osascript -e "display notification \"[message]\" with title \"Claude Code\""
+osascript -e 'display dialog "[message]" with title "Claude Code" buttons {"OK"} default button "OK" with icon note'
 ```
 
 **When to send notifications:**
@@ -27,16 +27,22 @@ osascript -e "display notification \"[message]\" with title \"Claude Code\""
 - After extended operations that take >30 seconds
 - When waiting for user input after completing a complex multi-step task
 
+**Why dialog boxes instead of silent notifications:**
+- More visible (appears front and center)
+- Requires user acknowledgment
+- Not affected by Focus mode or notification permissions
+- Works reliably across all macOS versions
+
 **Example usage:**
 ```bash
 # After tests complete
-osascript -e "display notification \"Test suite completed - 334/456 tests passed\" with title \"Claude Code\""
+osascript -e 'display dialog "Test suite completed:\n\n✅ Backend: 77/78 passing (98.7%)\n✅ E2E: +30 tests fixed\n\nAll changes committed to git." with title "Claude Code - Tests Complete" buttons {"OK"} default button "OK" with icon note'
 
 # After build
-osascript -e "display notification \"Build completed successfully\" with title \"Claude Code\""
+osascript -e 'display dialog "Build completed successfully" with title "Claude Code" buttons {"OK"} default button "OK" with icon note'
 
 # Ready for input
-osascript -e "display notification \"Task completed - ready for input\" with title \"Claude Code\""
+osascript -e 'display dialog "Task completed - ready for input" with title "Claude Code" buttons {"OK"} default button "OK" with icon note'
 ```
 
 ## Development Commands
