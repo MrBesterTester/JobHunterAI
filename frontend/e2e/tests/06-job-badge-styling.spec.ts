@@ -18,6 +18,9 @@ import { test, expect } from '@playwright/test';
 test.describe('Job Badge Styling', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:3000');
+    // Click on "All" tab to display job cards
+    await page.click('button:has-text("All")');
+    // Wait for job cards to load
     await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
   });
 

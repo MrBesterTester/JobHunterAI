@@ -12,7 +12,9 @@ import { test, expect } from '@playwright/test';
 test.describe('Job Trade-off Display', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:3000');
-    // Wait for the app to load
+    // Click on "All" tab to display job cards
+    await page.click('button:has-text("All")');
+    // Wait for job cards to load
     await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
   });
 
