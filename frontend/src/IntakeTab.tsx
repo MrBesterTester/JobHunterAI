@@ -54,9 +54,18 @@ interface GmailAuthResponse {
 
 interface SyncResponse {
   message: string;
-  jobs_discovered: number;
-  jobs_added: number;
-  duplicates_skipped: number;
+  metrics?: {
+    jobs_discovered: number;
+    jobs_failed_processing: number;
+    jobs_filtered_out: number;
+    jobs_duplicated: number;
+    jobs_created: number;
+  };
+  validation_error?: string | null;
+  // Legacy fields for backward compatibility
+  jobs_discovered?: number;
+  jobs_added?: number;
+  duplicates_skipped?: number;
 }
 
 interface ExtractionPrompt {
@@ -555,19 +564,45 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
       {/* Success notification */}
       {lastSyncResult && !syncingSource && !syncingAll && (
         <div style={{
-          backgroundColor: '#d1fae5',
-          border: '1px solid #10b981',
+          backgroundColor: lastSyncResult.validation_error ? '#fee2e2' : '#d1fae5',
+          border: `1px solid ${lastSyncResult.validation_error ? '#ef4444' : '#10b981'}`,
           borderRadius: '6px',
           padding: '12px 16px',
-          marginBottom: '24px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
+          marginBottom: '24px'
         }}>
-          <CheckCircle style={{ width: '20px', height: '20px', color: '#059669' }} />
-          <span style={{ color: '#065f46', fontSize: '14px' }}>
-            {lastSyncResult.message} - {lastSyncResult.jobs_added} new jobs added, {lastSyncResult.duplicates_skipped} duplicates skipped
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: lastSyncResult.validation_error ? '8px' : '0' }}>
+            {lastSyncResult.validation_error ? (
+              <XCircle style={{ width: '20px', height: '20px', color: '#dc2626' }} />
+            ) : (
+              <CheckCircle style={{ width: '20px', height: '20px', color: '#059669' }} />
+            )}
+            <span style={{ color: lastSyncResult.validation_error ? '#991b1b' : '#065f46', fontSize: '14px' }}>
+              {lastSyncResult.message}
+              {lastSyncResult.metrics && (
+                <> - {lastSyncResult.metrics.jobs_created} new jobs, {lastSyncResult.metrics.jobs_duplicated} duplicates, {lastSyncResult.metrics.jobs_filtered_out} filtered, {lastSyncResult.metrics.jobs_failed_processing} failed</>
+              )}
+              {!lastSyncResult.metrics && lastSyncResult.jobs_added !== undefined && (
+                <> - {lastSyncResult.jobs_added} new jobs added, {lastSyncResult.duplicates_skipped} duplicates skipped</>
+              )}
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {lastSyncResult.validation_error ? (
+              <>
+                <AlertCircle style={{ width: '16px', height: '16px', color: '#dc2626' }} />
+                <span style={{ color: '#991b1b', fontSize: '13px', fontWeight: '600' }}>
+                  ⚠️ MECE Check Failed: {lastSyncResult.validation_error}
+                </span>
+              </>
+            ) : (
+              <>
+                <CheckCircle style={{ width: '16px', height: '16px', color: '#059669' }} />
+                <span style={{ color: '#065f46', fontSize: '13px', fontWeight: '600' }}>
+                  ✓ MECE Check Passed (all emails accounted for)
+                </span>
+              </>
+            )}
+          </div>
         </div>
       )}
 
