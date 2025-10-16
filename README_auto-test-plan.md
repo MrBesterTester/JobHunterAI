@@ -125,7 +125,6 @@
       - [3.1 Fix URL-Based Deduplication Logic ✅ **COMPLETE**](#31-fix-url-based-deduplication-logic--complete)
     - [TIER 4: LOW PRIORITY ✅ **COMPLETE** (10 minutes)](#tier-4-low-priority--complete-10-minutes)
       - [4.1 Fix Unused Variable Warnings ✅ **COMPLETE**](#41-fix-unused-variable-warnings--complete)
-  - [📋 RECOMMENDED FIX ORDER](#-recommended-fix-order)
   - [🎯 SUCCESS CRITERIA](#-success-criteria)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -2405,35 +2404,6 @@ use actix_web::{test, App};  →  (removed)
 **Estimated Time:** 10 minutes | **Actual Time:** ~10 minutes ✅
 **Impact:** ✅ Zero compiler warnings, 100% clean build output
 **Git Commit:** Pending
-
----
-
-## 📋 RECOMMENDED FIX ORDER
-
-1. ✅ **Backend Compilation Fixes** (15 min) - Tier 1.1, 1.2 **COMPLETE**
-   - Unblocked backend test suite
-   - Quick wins with high impact
-   - Git commits: 3ef8b0a
-
-2. ✅ **E2E Job Card Investigation** (5 min) - Tier 1.3 **COMPLETE**
-   - Fixed 30/32 E2E failures (bonus Tier 1 fix)
-   - Highest E2E impact achieved
-   - Git commits: d3fe56d
-
-3. **E2E Badge Container Selectors** (15 min) - Tier 2.1 **REMAINING**
-   - Fixes final 2 E2E styling test failures
-   - Low priority (visual styling tests)
-
-4. **Deduplication Logic Fix** (45 min) - Tier 3.1 **REMAINING**
-   - Validates critical business logic
-   - May reveal production bugs
-
-5. **Cleanup Warnings** (10 min) - Tier 4.1 **REMAINING**
-   - Polish, non-critical
-
-**Progress:** ✅ 30/51 failures fixed (59% complete)
-**Time Spent:** 15 minutes (estimate: 15 minutes)
-**Remaining Estimated Time:** ~1.5 hours
 
 ---
 
