@@ -94,6 +94,7 @@
       - [Phase 5.3.2 - Progressive Email Processing & Date Tracking ✅ **COMPLETE**](#phase-532---progressive-email-processing--date-tracking--complete)
       - [Phase 5.3.3 - LLM-Based Email Filtering with Gmail Labels ✅ **COMPLETE**](#phase-533---llm-based-email-filtering-with-gmail-labels--complete)
       - [Phase 5.3.4 - Trade-off Based Job Evaluation Display ✅ **COMPLETE**](#phase-534---trade-off-based-job-evaluation-display--complete)
+      - [Phase 5.3.5 - Enhanced Extraction: Industry & Employment Type Tracking ✅ **COMPLETE**](#phase-535---enhanced-extraction-industry--employment-type-tracking--complete)
     - [What NOT to Build (For Now)](#what-not-to-build-for-now)
       - [❌ Apple Mail Integration](#-apple-mail-integration)
       - [❌ Apple Messages/iMessage Integration](#-apple-messagesimessage-integration)
@@ -133,7 +134,7 @@ JobHunter is a comprehensive job application management system that automates an
 
 **Key Features:**
 - **Automated Job Intake**: New UI tab for managing Gmail/LinkedIn/Indeed integrations with one-click OAuth and sync
-- **Trade-off Based Job Evaluation**: Multi-dimensional decision support with 25+ extracted fields across compensation, employment, remote work, commute, and technical domains. Color-coded badges (1099/Schedule C green, W-2 yellow, fully remote blue) and comprehensive modal sections enable informed manual decisions
+- **Trade-off Based Job Evaluation**: Multi-dimensional decision support with 25+ extracted fields across compensation, employment, remote work, commute, and technical domains. Color-coded badges (1099/Schedule C green, W-2 yellow, fully remote blue) and comprehensive modal sections enable informed manual decisions. **NEW**: Company industry and employment type (full-time/part-time/contract) with extraction/inference source tracking
 - **LLM-Based Email Filtering**: Claude 3.5 Haiku analyzes ALL unread emails, not just subject-matched ones. Real job opportunities get "JobOp" label + marked read, non-jobs stay unread for manual review
 - **Progressive Email Processing**: Gmail integration marks processed emails as read, enabling progressive batching through inbox (50 emails at a time)
 - **LLM-Powered Job Extraction**: Claude 3.5 Haiku integration for intelligent job extraction from emails (85%+ success rate, up from 30%)
@@ -217,6 +218,7 @@ JobHunter is a comprehensive job application management system that automates an
     - [Phase 5.3.2 - Progressive Email Processing & Date Tracking](#phase-532---progressive-email-processing--date-tracking--complete)
     - [Phase 5.3.3 - LLM-Based Email Filtering with Gmail Labels](#phase-533---llm-based-email-filtering-with-gmail-labels--complete)
     - [Phase 5.3.4 - Trade-off Based Job Evaluation Display](#phase-534---trade-off-based-job-evaluation-display--complete)
+    - [Phase 5.3.5 - Enhanced Extraction: Industry & Employment Type Tracking](#phase-535---enhanced-extraction-industry--employment-type-tracking--complete)
   - [What NOT to Build](#what-not-to-build-for-now)
   - [Phase 5.4+ - Future Considerations](#phase-54---future-considerations-not-currently-planned)
 - [Project Structure](#project-structure)
@@ -419,6 +421,9 @@ Gmail/LinkedIn/API Sources → Intelligent Extraction → Automatic Filtering �
 - **Fully Automated**: Gmail email monitoring and LinkedIn job discovery
 - **Progressive Email Processing**: Marks processed emails as read in Gmail for continuous batch progression
 - **LLM-Powered Extraction**: Claude 3.5 Haiku API for intelligent job parsing from emails (85%+ success rate)
+  - Extracts: title, company, location, salary, URL, description
+  - **NEW**: Company industry detection with inference tracking (extracted vs. inferred)
+  - **NEW**: Employment type classification (full-time/part-time/contract/temporary) with source tracking
 - **Smart HTML Processing**: Automatic HTML-to-text conversion for clean extraction
 - **Live Prompt Editing**: Update extraction prompts in real-time via UI without backend restart
 - **Multi-source Deduplication**: SHA256-based prevention of duplicates across all sources
@@ -1778,6 +1783,15 @@ See [`DATABASE_SETUP.md`](DATABASE_SETUP.md) for detailed database setup instruc
 
 **4. Enhanced Job Extraction** ✅
 - Multi-field extraction: title, company, location, salary_min, salary_max, URL, description
+- **NEW (v1.2)**: Company industry extraction with source tracking (`company_industry`, `company_industry_source`)
+  - Extracts from explicit statements: "fintech company" → "Financial Services"
+  - Infers from context: company name "Goldman Sachs" → "Financial Services" (marked as "inferred")
+  - Supports 15+ industry categories (Financial Services, Healthcare, Technology, Manufacturing, etc.)
+- **NEW (v1.2)**: Employment type classification with source tracking (`employment_type`, `employment_type_source`)
+  - Extracts from explicit statements: "full-time position" → "full_time"
+  - Infers from context: "permanent role with benefits" → "full_time" (marked as "inferred")
+  - Supports: full_time, part_time, contract, temporary
+- **NEW (v1.2)**: Comprehensive null handling policy - all fields set to `null` when information cannot be extracted or inferred (no empty strings or zero values)
 - Smart company detection (distinguishes recruiter from actual employer)
 - Location normalization ("City, ST" or "Remote")
 - Annual salary parsing with range support
@@ -2229,6 +2243,78 @@ LLM Analysis (Claude 3.5 Haiku on subject + body)
 - ✅ Graceful handling of missing data (sections only appear if data exists)
 
 **Phase 5.3.4 Complete** - The system now provides comprehensive trade-off based job evaluation with color-coded visual indicators and detailed data display, enabling informed manual decisions based on the complete picture across compensation, employment, remote work, commute, and technical dimensions.
+
+#### Phase 5.3.5 - Enhanced Extraction: Industry & Employment Type Tracking ✅ **COMPLETE**
+**Completion Date**: October 16, 2025
+**Status**: Fully implemented and tested
+**Prompt Version**: 1.2
+
+**Goal**: Enhance job extraction to capture company industry and employment type (full-time/part-time/contract/temporary) with source tracking to distinguish between extracted and inferred information.
+
+**Implemented Features**
+
+**1. Company Industry Extraction with Source Tracking** ✅
+- `company_industry`: The industry the company operates in (e.g., "Financial Services", "Healthcare", "Technology")
+- `company_industry_source`: Tracks whether industry was:
+  - `"extracted"` - Explicitly stated in email: "We're a fintech company..." → "Financial Services"
+  - `"inferred"` - Derived from context: Company name "JPMorgan Chase" → "Financial Services"
+  - `null` - Could not be determined
+- Supports 15+ industry categories: Financial Services, Healthcare, Technology, Manufacturing, Biotechnology, E-commerce, Telecommunications, Automotive, Aerospace/Defense, Energy, Consulting, Education/EdTech, Media/Entertainment, Real Estate/PropTech, Government/Public Sector
+
+**2. Employment Type Classification with Source Tracking** ✅
+- `employment_type`: Classification of the position type (full_time, part_time, contract, temporary)
+- `employment_type_source`: Tracks whether type was:
+  - `"extracted"` - Explicitly stated: "This is a full-time position" → "full_time"
+  - `"inferred"` - Derived from context: "Permanent role with benefits" → "full_time"
+  - `null` - Could not be determined
+- Inference examples:
+  - "40 hours/week" → inferred as "full_time"
+  - "6-month contract" → inferred as "contract"
+  - "W2 position with 401k, health insurance" → inferred as "full_time"
+
+**3. Comprehensive Null Handling Policy** ✅
+- **All fields** set to `null` when information cannot be extracted or inferred
+- No empty strings, no zero values, no empty arrays
+- Conservative inference - only infer when confident
+- Examples:
+  - Staffing agency email with no company details → `company_industry: null`, `company_industry_source: null`
+  - No mention of hours or employment type → `employment_type: null`, `employment_type_source: null`
+
+**4. Updated Extraction Prompt (v1.2)** ✅
+- Added "General Field Extraction Principles" section documenting null policy and inference tracking
+- Added "Company Industry Extraction" rules with extraction/inference examples
+- Added "Employment Type Extraction" rules with extraction/inference examples
+- Enhanced examples to demonstrate null handling and source tracking
+- Updated all edge cases with complete JSON structure
+- File: `prompts/job_extraction_default.md`
+
+**Technical Implementation** ✅
+- **Prompt Updates**: Updated extraction prompt with new fields and comprehensive rules
+- **Storage**: New fields stored in `raw_data` JSONB column in `jobs` table
+- **Backward Compatible**: Existing jobs unaffected, new fields added to extraction results
+- **No Schema Changes**: JSONB handles new fields automatically
+
+**Benefits**
+- **Better Job Classification**: Industry information helps with domain filtering and job categorization
+- **Employment Type Transparency**: Clear indication of full-time vs. part-time vs. contract positions
+- **Data Provenance**: Source tracking shows which information was explicit vs. inferred
+- **Quality Control**: Null handling prevents guessing and maintains data integrity
+- **Decision Support**: Additional context for evaluating job opportunities
+
+**Code Locations**
+- **Extraction Prompt**: `prompts/job_extraction_default.md` (v1.2, lines 59-60, 83-84, 118-265)
+- **Extraction Logic**: `backend/src/main.rs` (unchanged - JSONB handles new fields)
+- **Documentation**: `README.md` (this section)
+
+**Changelog v1.2**
+- Added `company_industry` and `company_industry_source` fields
+- Added `employment_type_source` field (employment_type already existed)
+- Introduced comprehensive "Null/Void/Empty Policy" for all fields
+- Added "Field Inference and Source Tracking" system with `_source` fields
+- Enhanced examples to demonstrate null handling and inference tracking
+- Updated all edge case examples to show complete JSON structure
+
+**Phase 5.3.5 Complete** - The job extraction system now captures company industry and employment type with transparent source tracking, enabling better job classification and decision support while maintaining data integrity through comprehensive null handling.
 
 ---
 

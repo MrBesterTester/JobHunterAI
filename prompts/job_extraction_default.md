@@ -6,12 +6,15 @@
   - [Task](#task)
   - [Output Format](#output-format)
   - [Extraction Rules](#extraction-rules)
+    - [General Field Extraction Principles](#general-field-extraction-principles)
     - [Confidence Scoring](#confidence-scoring)
     - [Company Extraction](#company-extraction)
     - [Location Normalization](#location-normalization)
     - [Salary Extraction](#salary-extraction)
     - [URL Extraction](#url-extraction)
     - [Description](#description)
+    - [Company Industry Extraction](#company-industry-extraction)
+    - [Employment Type Extraction](#employment-type-extraction)
   - [Advanced Extraction Rules](#advanced-extraction-rules)
     - [Compensation Type Detection](#compensation-type-detection)
     - [Tax Structure & Employment Relationship](#tax-structure--employment-relationship)
@@ -56,6 +59,8 @@ Return ONLY valid JSON in this exact structure:
 {
   "title": "string - exact job title",
   "company": "string - actual hiring company name",
+  "company_industry": "string or null - industry the company operates in (e.g., 'Financial Services', 'Healthcare', 'Technology', 'Manufacturing', 'Biotechnology')",
+  "company_industry_source": "extracted|inferred|null - indicates if industry was extracted from email, inferred from context/company name, or unknown",
   "location": "string - 'City, ST' format or 'Remote'",
   "url": "string - application URL or null",
   "description": "string - 2-3 sentence summary focusing on key responsibilities, required skills, and what makes role unique",
@@ -78,7 +83,8 @@ Return ONLY valid JSON in this exact structure:
     "contract_duration": "string or null - 'permanent', '6 months', '1 year contract', 'contract-to-hire'",
     "agency_name": "string or null - staffing agency name if applicable",
     "benefits": "string or null - health insurance, 401k, PTO, etc.",
-    "employment_type": "full_time|part_time|contract|temporary"
+    "employment_type": "full_time|part_time|contract|temporary|null",
+    "employment_type_source": "extracted|inferred|null - indicates if employment type was explicitly stated in the email or inferred from context"
   },
 
   "remote_work": {
@@ -111,6 +117,37 @@ Return ONLY valid JSON in this exact structure:
 ```
 
 ## Extraction Rules
+
+### General Field Extraction Principles
+
+**CRITICAL: Null/Void/Empty Policy**
+- **All fields** must be set to `null` if the information cannot be extracted OR inferred from the email
+- Never guess or make up information - if uncertain, use `null`
+- Empty strings are NOT allowed - use `null` instead
+- For numeric fields, use `null` (not 0) if the value is unknown
+- For array fields, use `null` (not empty array `[]`) if no items can be extracted
+
+**Field Inference and Source Tracking**
+- Some fields support **inference** - deriving information from context rather than explicit statements
+- Fields that support inference have a companion `_source` field to track the information source
+- `_source` values:
+  - `"extracted"` - Information was explicitly stated in the email
+  - `"inferred"` - Information was derived from context, company name, or other clues
+  - `null` - Information could not be determined (parent field must also be `null`)
+- When inferring information, use **conservative logic** - only infer if confident
+- **Fields with source tracking:**
+  - `company_industry` + `company_industry_source`
+  - `employment.employment_type` + `employment.employment_type_source`
+
+**Examples of Inference:**
+- `company_industry`:
+  - Extracted: "We're a fintech startup..." → `"company_industry": "Financial Services"`, `"company_industry_source": "extracted"`
+  - Inferred: Company name "JPMorgan Chase" → `"company_industry": "Financial Services"`, `"company_industry_source": "inferred"`
+  - Unknown: Generic recruiter email → `"company_industry": null`, `"company_industry_source": null`
+- `employment.employment_type`:
+  - Extracted: "This is a full-time position" → `"employment_type": "full_time"`, `"employment_type_source": "extracted"`
+  - Inferred: "Permanent role with benefits" → `"employment_type": "full_time"`, `"employment_type_source": "inferred"`
+  - Unknown: No mention of hours or type → `"employment_type": null`, `"employment_type_source": null`
 
 ### Confidence Scoring
 - **0.9-1.0**: Clear job posting with all key fields (title, company, location)
@@ -171,6 +208,64 @@ Return ONLY valid JSON in this exact structure:
   - What makes this role unique
 - Pull from job description section, not recruiter introduction
 - Keep concise and factual
+
+### Company Industry Extraction
+
+**Extraction (Explicit Statements):**
+Look for direct statements about the company's industry:
+- "We're a leading fintech company..." → `"Financial Services"`, source: `"extracted"`
+- "Healthcare technology startup..." → `"Healthcare Technology"`, source: `"extracted"`
+- "Manufacturing firm specializing in..." → `"Manufacturing"`, source: `"extracted"`
+- "B2B SaaS platform for..." → `"Software/SaaS"`, source: `"extracted"`
+
+**Inference (Context Clues):**
+If industry is not explicitly stated, infer from:
+- **Company name**: "Goldman Sachs" → `"Financial Services"`, source: `"inferred"`
+- **Product/service description**: "building trading algorithms" → `"Financial Services"`, source: `"inferred"`
+- **Domain knowledge**: "FDA compliance", "clinical trials" → `"Biotechnology/Pharmaceuticals"`, source: `"inferred"`
+- **Technology stack clues**: "medical devices", "patient data" → `"Healthcare"`, source: `"inferred"`
+
+**Common Industry Categories:**
+- Financial Services (banks, fintech, trading, payments)
+- Healthcare / Healthcare Technology
+- Biotechnology / Pharmaceuticals
+- Technology / Software / SaaS
+- E-commerce / Retail
+- Manufacturing / Industrial
+- Telecommunications
+- Automotive
+- Aerospace / Defense
+- Energy / Utilities
+- Consulting
+- Education / EdTech
+- Media / Entertainment
+- Real Estate / PropTech
+- Government / Public Sector
+
+**When to use null:**
+- Staffing agency email with no company details → `null`, source: `null`
+- Generic recruiter outreach with "stealth mode startup" → `null`, source: `null`
+- No industry clues from company name or description → `null`, source: `null`
+
+### Employment Type Extraction
+
+**Extraction (Explicit Statements):**
+- "Full-time position" → `"full_time"`, source: `"extracted"`
+- "Part-time role, 20 hours/week" → `"part_time"`, source: `"extracted"`
+- "Contract position" → `"contract"`, source: `"extracted"`
+- "Temporary assignment" → `"temporary"`, source: `"extracted"`
+
+**Inference (Context Clues):**
+- "Permanent role with full benefits" → `"full_time"`, source: `"inferred"`
+- "6-month contract" → `"contract"`, source: `"inferred"`
+- "40 hours/week" → `"full_time"`, source: `"inferred"`
+- "Flexible hours, 15-20 hrs/week" → `"part_time"`, source: `"inferred"`
+- "W2 position with 401k, health insurance" → `"full_time"`, source: `"inferred"`
+- "1099 independent contractor" → `"contract"`, source: `"inferred"`
+
+**When to use null:**
+- No mention of employment type or hours → `null`, source: `null`
+- Ambiguous: "flexible arrangement" without details → `null`, source: `null`
 
 ## Advanced Extraction Rules
 
@@ -296,12 +391,60 @@ Apply here: https://techcorp.com/careers/sdet-senior
 {
   "title": "Senior SDET",
   "company": "TechCorp",
+  "company_industry": "Financial Services",
+  "company_industry_source": "inferred",
   "location": "Remote",
-  "salary_min": 140000,
-  "salary_max": 160000,
   "url": "https://techcorp.com/careers/sdet-senior",
   "description": "Building test automation frameworks with Python, CI/CD expertise. Mentoring junior engineers and improving release quality. 5+ years experience required.",
-  "confidence": 0.95
+  "confidence": 0.95,
+
+  "compensation": {
+    "type": "annual_salary",
+    "salary_min": 140000,
+    "salary_max": 160000,
+    "currency": "USD",
+    "hourly_rate": null,
+    "daily_rate": null,
+    "equity_offered": null,
+    "bonus_structure": null
+  },
+
+  "employment": {
+    "relationship": "staffing_agency",
+    "tax_structure": "W2",
+    "contract_duration": null,
+    "agency_name": "Pyramid Consulting",
+    "benefits": null,
+    "employment_type": "full_time",
+    "employment_type_source": "inferred"
+  },
+
+  "remote_work": {
+    "policy": "fully_remote",
+    "days_onsite_per_week": null,
+    "remote_eligible_states": null,
+    "timezone_requirement": null
+  },
+
+  "commute": {
+    "office_location": null,
+    "company_shuttle": null,
+    "commute_perks": null,
+    "schedule_flexibility": null
+  },
+
+  "job_domain": {
+    "primary_category": "qa_testing",
+    "testing_focus": true,
+    "testing_level": null,
+    "automation_focus": true,
+    "test_automation_tools": ["Python", "CI/CD"],
+    "generative_ai_usage": null,
+    "ai_tools_mentioned": null,
+    "test_equipment": null,
+    "tech_stack": ["Python"],
+    "seniority": "senior"
+  }
 }
 ```
 
@@ -311,17 +454,60 @@ Apply here: https://techcorp.com/careers/sdet-senior
 Extract the **primary/first** job mentioned. Ignore others.
 
 ### Vague/Generic Emails
-If email is too vague ("we have several opportunities"), return low confidence (< 0.5):
+If email is too vague ("we have several opportunities"), return low confidence (< 0.5) and null for unknown fields:
 ```json
 {
   "title": "Software Engineer",
   "company": "Unknown Company",
+  "company_industry": null,
+  "company_industry_source": null,
   "location": null,
-  "salary_min": null,
-  "salary_max": null,
   "url": null,
   "description": "General recruiter outreach about multiple positions.",
-  "confidence": 0.4
+  "confidence": 0.4,
+  "compensation": {
+    "type": "annual_salary",
+    "salary_min": null,
+    "salary_max": null,
+    "currency": "USD",
+    "hourly_rate": null,
+    "daily_rate": null,
+    "equity_offered": null,
+    "bonus_structure": null
+  },
+  "employment": {
+    "relationship": "staffing_agency",
+    "tax_structure": "unknown",
+    "contract_duration": null,
+    "agency_name": null,
+    "benefits": null,
+    "employment_type": null,
+    "employment_type_source": null
+  },
+  "remote_work": {
+    "policy": "flexible",
+    "days_onsite_per_week": null,
+    "remote_eligible_states": null,
+    "timezone_requirement": null
+  },
+  "commute": {
+    "office_location": null,
+    "company_shuttle": null,
+    "commute_perks": null,
+    "schedule_flexibility": null
+  },
+  "job_domain": {
+    "primary_category": "software_engineering",
+    "testing_focus": null,
+    "testing_level": null,
+    "automation_focus": null,
+    "test_automation_tools": null,
+    "generative_ai_usage": null,
+    "ai_tools_mentioned": null,
+    "test_equipment": null,
+    "tech_stack": null,
+    "seniority": "mid"
+  }
 }
 ```
 
@@ -331,21 +517,67 @@ Include employment type in description if clear:
 - "Full-time permanent role..."
 
 ### Incomplete Information
-It's OK to have null values. Set appropriate confidence score:
+It's OK to have null values - use them liberally when information is missing. Set appropriate confidence score:
 - Missing salary: confidence 0.7-0.8
 - Missing company: confidence 0.5-0.6
 - Missing title: confidence 0.3-0.4
+- Missing industry or employment type does NOT lower confidence (these are optional inference fields)
+
+**Example with partial information:**
+```json
+{
+  "title": "QA Engineer",
+  "company": "Acme Corp",
+  "company_industry": "Manufacturing",
+  "company_industry_source": "inferred",
+  "location": "San Jose, CA (Hybrid)",
+  "url": null,
+  "description": "Testing automation for manufacturing systems. Experience with Python and hardware testing required.",
+  "confidence": 0.75,
+  "compensation": {
+    "type": "annual_salary",
+    "salary_min": null,
+    "salary_max": null,
+    "currency": "USD",
+    "hourly_rate": null,
+    "daily_rate": null,
+    "equity_offered": null,
+    "bonus_structure": null
+  },
+  "employment": {
+    "relationship": "direct_hire",
+    "tax_structure": "W2",
+    "contract_duration": "permanent",
+    "agency_name": null,
+    "benefits": null,
+    "employment_type": "full_time",
+    "employment_type_source": "inferred"
+  }
+}
+```
 
 ## Important Notes
 
 1. **JSON only**: Return nothing but valid JSON
 2. **No markdown**: Don't wrap in ```json blocks
-3. **Confidence matters**: Be honest about extraction certainty
-4. **Hiring company > Recruiter**: Always try to find actual employer
-5. **Quality over quantity**: Better to return low confidence than incorrect data
+3. **Null policy**: Use `null` for ALL unknown fields - never guess, never use empty strings or arrays
+4. **Inference tracking**: Mark inferred fields with `"inferred"` in the `_source` field, extracted fields with `"extracted"`
+5. **Confidence matters**: Be honest about extraction certainty
+6. **Hiring company > Recruiter**: Always try to find actual employer
+7. **Quality over quantity**: Better to return low confidence than incorrect data
+8. **Conservative inference**: Only infer when confident - when in doubt, use `null`
 
 ---
 
-**Version**: 1.1
-**Last Updated**: 2025-10-15
+**Version**: 1.2
+**Last Updated**: 2025-10-16
 **Model**: Claude 3.5 Haiku (claude-3-5-haiku-20241022)
+
+**Changelog v1.2:**
+- Added `company_industry` and `company_industry_source` fields to track company industry with extraction/inference tracking
+- Added `employment_type_source` field to track whether employment type was extracted or inferred
+- Introduced comprehensive "Null/Void/Empty Policy" for all fields
+- Added "Field Inference and Source Tracking" system with `_source` fields
+- Added detailed extraction rules for company industry and employment type
+- Enhanced examples to demonstrate null handling and inference tracking
+- Updated all edge case examples to show complete JSON structure with proper null handling
