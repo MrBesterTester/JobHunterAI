@@ -1,5 +1,27 @@
 # Comprehensive Automated Test Suite Plan - JobHunter
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Test Architecture](#test-architecture)
+- [Phase-by-Phase Testing Coverage](#phase-by-phase-testing-coverage)
+- [Test Infrastructure & Dependencies](#test-infrastructure--dependencies)
+- [Test Database Setup](#test-database-setup)
+- [Performance & Security Testing](#performance--security-testing)
+- [CI/CD Integration](#cicd-integration)
+- [Test Categories & Scenarios](#test-categories--scenarios)
+- [Success Criteria](#success-criteria)
+- [Manual Frontend Testing Checklist](#manual-frontend-testing-checklist)
+- [Maintenance & Evolution](#maintenance--evolution)
+- [🔧 Test Failure Remediation Plan (October 15, 2025)](#-test-failure-remediation-plan-october-15-2025)
+  - [Progress Tracking](#progress-tracking)
+  - [TIER 1: QUICK WINS ✅ COMPLETE](#tier-1-quick-wins--complete-15-minutes)
+  - [TIER 2: MODERATE COMPLEXITY](#tier-2-moderate-complexity-60-90-minutes)
+  - [TIER 3: COMPLEX ISSUES](#tier-3-complex-issues-30-60-minutes)
+  - [TIER 4: LOW PRIORITY](#tier-4-low-priority-optional---15-minutes)
+  - [📋 Recommended Fix Order](#-recommended-fix-order)
+  - [🎯 Success Criteria](#-success-criteria)
+
 ## Overview
 
 This document outlines the comprehensive testing strategy for the JobHunter autonomous job application management system. Our testing approach ensures reliability, performance, and correctness across all 4 phases of the platform, from core functionality through automated job intake and content generation.

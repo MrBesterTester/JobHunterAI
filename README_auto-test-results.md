@@ -3,6 +3,11 @@
 ## Table of Contents
 
 - [Test Suite Status Overview](#test-suite-status-overview)
+- [🚨 Latest Comprehensive Test Run (October 15, 2025)](#-latest-comprehensive-test-run-october-15-2025---claude-35-haiku-upgrade--tier-1-fixes)
+  - [Test Suite Summary](#test-suite-summary)
+  - [✅ Tier 1 Fixes Complete](#-tier-1-fixes-complete-october-15-2025)
+  - [Remaining Issues](#-remaining-issues-1-backend-2-e2e)
+  - [Warnings (Non-blocking)](#️-warnings-non-blocking)
 - [Quick Health Check](#quick-health-check)
 - [Phase-by-Phase Testing Status](#phase-by-phase-testing-status)
   - [Phase 1 - Core System Testing](#phase-1---core-system-testing)
