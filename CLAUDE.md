@@ -11,6 +11,34 @@ JobHunter is a workflow-driven job application management system built to stream
 - Frontend: TypeScript/React with Create React App
 - Database: PostgreSQL
 
+## Developer Preferences
+
+### Notifications
+**IMPORTANT**: Always send macOS notifications when completing long-running tasks (>30 seconds).
+
+**Command to use:**
+```bash
+osascript -e "display notification \"[message]\" with title \"Claude Code\""
+```
+
+**When to send notifications:**
+- After running test suites (backend cargo test, E2E playwright tests)
+- After build operations (cargo build, npm build)
+- After extended operations that take >30 seconds
+- When waiting for user input after completing a complex multi-step task
+
+**Example usage:**
+```bash
+# After tests complete
+osascript -e "display notification \"Test suite completed - 334/456 tests passed\" with title \"Claude Code\""
+
+# After build
+osascript -e "display notification \"Build completed successfully\" with title \"Claude Code\""
+
+# Ready for input
+osascript -e "display notification \"Task completed - ready for input\" with title \"Claude Code\""
+```
+
 ## Development Commands
 
 ### Database Setup
