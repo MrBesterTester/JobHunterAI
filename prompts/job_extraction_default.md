@@ -316,6 +316,6 @@ It's OK to have null values. Set appropriate confidence score:
 
 ---
 
-**Version**: 1.0
-**Last Updated**: 2025-10-11
-**Model**: Claude Haiku (claude-3-haiku-20240307)
+**Version**: 1.1
+**Last Updated**: 2025-10-15
+**Model**: Claude 3.5 Haiku (claude-3-5-haiku-20241022)

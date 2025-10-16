@@ -9,9 +9,9 @@ JobHunter is a comprehensive job application management system that automates an
 **Key Features:**
 - **Automated Job Intake**: New UI tab for managing Gmail/LinkedIn/Indeed integrations with one-click OAuth and sync
 - **Trade-off Based Job Evaluation**: Multi-dimensional decision support with 25+ extracted fields across compensation, employment, remote work, commute, and technical domains. Color-coded badges (1099/Schedule C green, W-2 yellow, fully remote blue) and comprehensive modal sections enable informed manual decisions
-- **LLM-Based Email Filtering**: Claude Haiku analyzes ALL unread emails, not just subject-matched ones. Real job opportunities get "JobOp" label + marked read, non-jobs stay unread for manual review
+- **LLM-Based Email Filtering**: Claude 3.5 Haiku analyzes ALL unread emails, not just subject-matched ones. Real job opportunities get "JobOp" label + marked read, non-jobs stay unread for manual review
 - **Progressive Email Processing**: Gmail integration marks processed emails as read, enabling progressive batching through inbox (50 emails at a time)
-- **LLM-Powered Job Extraction**: Claude Haiku integration for intelligent job extraction from emails (85%+ success rate, up from 30%)
+- **LLM-Powered Job Extraction**: Claude 3.5 Haiku integration for intelligent job extraction from emails (85%+ success rate, up from 30%)
 - **MECE Counter System**: Mutually Exclusive and Collectively Exhaustive tracking ensures discovered = failed + filtered + duplicated + processed with validation
 - **Intelligent Job Filtering**: Automatically filters jobs based on salary ($130K+), location (remote/≤45min commute), and domain (Testing, AI, Firmware)
 - **Advanced Deduplication**: Uses SHA256 hashing to prevent processing duplicate job postings
@@ -293,7 +293,7 @@ Gmail/LinkedIn/API Sources → Intelligent Extraction → Automatic Filtering �
 **Features:**
 - **Fully Automated**: Gmail email monitoring and LinkedIn job discovery
 - **Progressive Email Processing**: Marks processed emails as read in Gmail for continuous batch progression
-- **LLM-Powered Extraction**: Claude Haiku API for intelligent job parsing from emails (85%+ success rate)
+- **LLM-Powered Extraction**: Claude 3.5 Haiku API for intelligent job parsing from emails (85%+ success rate)
 - **Smart HTML Processing**: Automatic HTML-to-text conversion for clean extraction
 - **Live Prompt Editing**: Update extraction prompts in real-time via UI without backend restart
 - **Multi-source Deduplication**: SHA256-based prevention of duplicates across all sources
@@ -310,7 +310,7 @@ Gmail/LinkedIn/API Sources → Intelligent Extraction → Automatic Filtering �
 
 **How Gmail Syncing Works:**
 1. **First Sync**: Fetches up to 50 unread emails WITHOUT the "JobOp" label (using `is:unread -label:JobOp` filter)
-2. **LLM Classification**: Each email analyzed by Claude Haiku (subject + body) to determine if it's a real job opportunity
+2. **LLM Classification**: Each email analyzed by Claude 3.5 Haiku (subject + body) to determine if it's a real job opportunity
 3. **Smart Labeling**:
    - **Real jobs (confidence ≥ 0.3)**: Add "JobOp" label + mark as read + create job in database
    - **Non-jobs (confidence < 0.3)**: Leave unread + no label + no job created (stays in inbox for manual review)
@@ -1623,11 +1623,11 @@ See [`DATABASE_SETUP.md`](DATABASE_SETUP.md) for detailed database setup instruc
 **Status**: Fully implemented and tested
 **Achievement**: 🎉 **85%+ extraction success rate** (up from 30%)
 
-**Goal**: Replace regex-based email extraction with Claude Haiku LLM integration for dramatically improved job data extraction quality and success rate.
+**Goal**: Replace regex-based email extraction with Claude 3.5 Haiku LLM integration for dramatically improved job data extraction quality and success rate.
 
 #### Implemented Features
 
-**1. Claude Haiku API Integration** ✅
+**1. Claude 3.5 Haiku API Integration** ✅
 - Direct integration with Anthropic Claude API for job information extraction
 - Structured JSON output with salary ranges (salary_min/salary_max)
 - Confidence scoring (0.0-1.0) for extraction quality assessment
@@ -1708,7 +1708,7 @@ See [`DATABASE_SETUP.md`](DATABASE_SETUP.md) for detailed database setup instruc
 - ✅ Fast processing: <2 seconds per email
 
 #### Cost Analysis
-**Claude Haiku Pricing**:
+**Claude 3.5 Haiku Pricing**:
 - Input: ~$0.25 per 1M tokens
 - Output: ~$1.25 per 1M tokens
 - Average email: ~2,000 tokens input, ~200 tokens output
@@ -1723,7 +1723,7 @@ See [`DATABASE_SETUP.md`](DATABASE_SETUP.md) for detailed database setup instruc
 - **Confidence threshold**: ≥0.3 for job creation
 - **Fallback rate**: <5% (API failures are rare)
 
-**Phase 5.3 Complete** - The system now uses state-of-the-art LLM technology for job extraction, dramatically improving data quality and success rates while maintaining low costs through efficient prompt engineering and Claude Haiku usage.
+**Phase 5.3 Complete** - The system now uses state-of-the-art LLM technology for job extraction, dramatically improving data quality and success rates while maintaining low costs through efficient prompt engineering and Claude 3.5 Haiku usage.
 
 #### Phase 5.3.1 - MECE Counter System ✅ **COMPLETE**
 **Completion Date**: October 13, 2025
@@ -1877,7 +1877,7 @@ Sync 3: Fetch next 50 unread emails (101-150) → Process → Mark as read
 **Completion Date**: October 13, 2025
 **Status**: Fully implemented and tested
 
-**Goal**: Move email filtering logic from deterministic subject-line matching into the Claude Haiku LLM for more accurate classification, and use Gmail labels to mark real job opportunities while leaving non-jobs unread for manual review.
+**Goal**: Move email filtering logic from deterministic subject-line matching into the Claude 3.5 Haiku LLM for more accurate classification, and use Gmail labels to mark real job opportunities while leaving non-jobs unread for manual review.
 
 **Problem Solved**:
 1. **Inaccurate Subject-Line Filter**: The deterministic query `is:unread subject:(job OR position...)` caught too many false positives (marketing emails, unsubscribe confirmations, newsletters)
@@ -1914,7 +1914,7 @@ Fetch up to 50 unread emails (excluding JobOp-labeled)
     ↓
 For each email:
     ↓
-LLM Analysis (Claude Haiku on subject + body)
+LLM Analysis (Claude 3.5 Haiku on subject + body)
     ↓
     ├─ Confidence ≥ 0.3 (Real Job)
     │   ├─ Add "JobOp" label
@@ -1978,7 +1978,7 @@ LLM Analysis (Claude Haiku on subject + body)
 - **5 Nested Structures**: compensation, employment, remote_work, commute, job_domain
 - **25+ Total Fields**: Comprehensive data capture across all trade-off dimensions
 - **Enhanced JSON Schema**: Nested structure in extraction prompt (prompts/job_extraction_default.md)
-- **200+ Lines of Extraction Rules**: Detailed instructions for Claude Haiku on how to extract each field
+- **200+ Lines of Extraction Rules**: Detailed instructions for Claude 3.5 Haiku on how to extract each field
 
 **Trade-off Dimensions:**
 
@@ -2213,7 +2213,7 @@ JobHuntAI/
 - **Backend**: 2,400+ lines of Rust with LLM integration, automated job intake, filtering, deduplication, and content generation
 - **Frontend**: 950+ lines of TypeScript React with professional UI, content management, and live prompt editing
 - **Database**: Fully normalized schema with 13 tables supporting complete automated job lifecycle and LLM prompt versioning
-- **LLM Integration**: Claude Haiku API with HTML processing, prompt management, and automatic fallback (85%+ extraction success)
+- **LLM Integration**: Claude 3.5 Haiku API with HTML processing, prompt management, and automatic fallback (85%+ extraction success)
 - **Content Engine**: Handlebars templating with intelligent resume/cover letter generation
 - **Resume Management**: File-based storage with database integration and complete UI management
 - **Automated Intake**: Multi-source job discovery with Gmail/LinkedIn integration and LLM-powered extraction
@@ -2221,7 +2221,7 @@ JobHuntAI/
 ## Technical Achievements
 
 ### System Performance
-- **LLM-Powered Extraction**: Claude Haiku integration achieving 85%+ success rate (up from 30%)
+- **LLM-Powered Extraction**: Claude 3.5 Haiku integration achieving 85%+ success rate (up from 30%)
 - **LLM-Based Email Filtering**: Smart classification with Gmail labels - real jobs get "JobOp" label + marked read, non-jobs stay unread
 - **MECE Counter Validation**: Mutually Exclusive and Collectively Exhaustive tracking with automatic validation (discovered = failed + filtered + duplicated + processed)
 - **Automated Job Discovery**: Multi-source intake with Gmail and LinkedIn integration
@@ -2241,7 +2241,7 @@ JobHuntAI/
 ### Feature Completeness
 - ✅ **Fully Automated Job Lifecycle**: From discovery to content generation without manual intervention
 - ✅ **Multi-source Integration**: Gmail, LinkedIn, and API-based job discovery
-- ✅ **LLM-Powered Extraction**: Claude Haiku integration with 85%+ success rate and live prompt editing
+- ✅ **LLM-Powered Extraction**: Claude 3.5 Haiku integration with 85%+ success rate and live prompt editing
 - ✅ **LLM-Based Email Filtering**: Smart classification with Gmail labels for accurate job vs. non-job distinction
 - ✅ **MECE Counter System**: Mutually Exclusive and Collectively Exhaustive tracking with automatic validation (failed + filtered + duplicated + processed)
 - ✅ **Intelligent Automation**: Multi-criteria filtering with domain analysis and confidence scoring
@@ -2257,7 +2257,7 @@ JobHuntAI/
 - **Frontend**: 950+ lines of TypeScript React with strict type checking
 - **Database**: 13-table schema supporting complete automated workflow with LLM prompt versioning
 - **API Endpoints**: 22+ endpoints covering jobs, applications, criteria, content generation, automated intake, and LLM prompts
-- **LLM Integration**: Claude Haiku API with HTML processing, prompt management, and automatic fallback
+- **LLM Integration**: Claude 3.5 Haiku API with HTML processing, prompt management, and automatic fallback
 - **Gmail Integration**: Full OAuth 2.0 flow with LLM-based job extraction (85%+ success rate)
 - **LinkedIn Integration**: Mock API implementation ready for production LinkedIn API
 - **Multi-source Processing**: Unified intake system with comprehensive error handling and logging
