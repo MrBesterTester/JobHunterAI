@@ -21,7 +21,7 @@
   - [iOS 26-Specific Features](#ios-26-specific-features)
     - [Enhanced Notification Sync](#enhanced-notification-sync)
     - [Managing Notification Delivery](#managing-notification-delivery)
-  - [Optional: Enhanced iPhone Push Notifications](#optional-enhanced-iphone-push-notifications)
+  - [iPhone Push Notifications via Pushover](#iphone-push-notifications-via-pushover)
     - [Why Pushover?](#why-pushover)
     - [Setup Pushover](#setup-pushover)
     - [Pushover Priority Levels](#pushover-priority-levels)
@@ -51,27 +51,32 @@ This guide configures Claude Code to send notifications to both your Mac and iPh
 - Claude finishes a task (Stop event)
 - Claude needs your attention/input (Notification event)
 
-With iOS 26's enhanced Continuity features, notifications will automatically sync between devices with the new Liquid Glass design integration.
+**⚠️ IMPORTANT: Apple Continuity Limitation**
+
+Apple's Continuity features (Handoff, etc.) sync **iPhone notifications → Mac**, but **NOT Mac notifications → iPhone**. This means:
+- ✅ iPhone app notifications appear on your Mac
+- ❌ Mac notifications (like `terminal-notifier`) do NOT appear on your iPhone via Continuity
+
+**Solution:** This guide includes **Pushover** setup (optional, $5 one-time fee) which sends push notifications directly to your iPhone. This is the only reliable way to get Claude Code notifications on your iPhone.
 
 ## What's In This Guide
 
-✅ **Complete Setup Instructions** for iOS 26 + macOS Sequoia 15.7.1:
-- Apple Continuity configuration (Handoff, notification sync)
+✅ **Mac Notification Setup** (Basic):
 - terminal-notifier installation
 - Claude Code hooks configuration in `~/.claude/settings.json`
-- Step-by-step testing procedures
+- Mac notification testing
+
+✅ **iPhone Notification Setup** (Requires Pushover):
+- Pushover account setup ($5 one-time fee)
+- Dual notification script (Mac + iPhone)
+- Priority level configuration
+- Testing iPhone push notifications
 
 ✅ **iOS 26-Specific Features**:
-- Liquid Glass design integration notes
-- Enhanced notification continuity
-- Smart device routing
-- Cross-device dismissal
+- Pushover app with Liquid Glass design
+- iPhone notification history
+- Custom sounds and priority levels
 - Focus mode integration
-
-✅ **Optional Pushover Setup**:
-- For more persistent iPhone push notifications
-- Complete script with dual notification support (Mac + iPhone)
-- Priority level configuration
 
 ✅ **Comprehensive Troubleshooting Section**:
 - Handoff verification
@@ -95,6 +100,8 @@ With iOS 26's enhanced Continuity features, notifications will automatically syn
 
 ## Step 1: Enable Apple Continuity
 
+**Note:** This step enables iPhone→Mac notifications only. For Mac→iPhone notifications (Claude Code alerts on your iPhone), skip to the **Pushover Setup** section below.
+
 ### On macOS Sequoia 15.7.1
 
 1. **Enable Handoff:**
@@ -103,17 +110,23 @@ With iOS 26's enhanced Continuity features, notifications will automatically syn
    ✓ Allow Handoff between This Mac and your iCloud devices
    ```
 
-2. **Enable iPhone notifications on Mac:**
+2. **Enable iPhone Mirroring & Notifications:**
    ```
    System Settings → Desktop & Dock
-   → Select your iPhone under "Show items from iPhone"
+   → Scroll to "Widgets" section
+   → Check "Use iPhone widgets" (this enables iPhone Mirroring)
+
+   Then go to:
+   System Settings → Notifications
+   ✓ Toggle ON "Allow notifications from iPhone"
    ```
 
-3. **Configure notification settings:**
+3. **Configure Terminal notification settings:**
    ```
    System Settings → Notifications
-   ✓ Allow notifications when mirroring or sharing the display
-   ✓ Enable notifications for "Terminal" (or your terminal app)
+   → Scroll down and find "Terminal" (or your terminal app)
+   ✓ Allow notifications
+   → Alert style: Alerts or Banners (not "None")
    ```
 
 ### On iOS 26
@@ -290,17 +303,18 @@ iOS 26: Settings → Focus → [Your Focus Mode]
 → Allow Notifications From: Terminal
 ```
 
-## Optional: Enhanced iPhone Push Notifications
+## iPhone Push Notifications via Pushover
 
-If you want more persistent iPhone notifications that work even when your Mac is active, use Pushover.
+**Required for iPhone notifications.** Apple Continuity does not sync Mac notifications to iPhone, so we need a third-party service.
 
 ### Why Pushover?
 
-- Notifications persist on iPhone even when Mac is in use
-- More reliable cross-device delivery
-- Notification history
+- Direct push notifications to iPhone (bypasses Continuity limitation)
+- Works even when your Mac is active or locked
+- Notification history on your iPhone
 - Custom sounds and priority levels
-- $5 one-time purchase (no subscription)
+- Reliable delivery
+- $5 one-time purchase (no subscription required)
 
 ### Setup Pushover
 
