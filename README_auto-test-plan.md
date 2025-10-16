@@ -1989,3 +1989,197 @@ Screenshot: [Attach if applicable]
 - **Coverage Evolution**: Track coverage improvements over time
 
 This comprehensive testing strategy ensures the JobHunter system maintains the highest standards of quality, performance, and reliability as it evolves from a manual job management tool to a fully autonomous job application platform.
+
+---
+
+## 🔧 Test Failure Remediation Plan (October 15, 2025)
+
+**Context:** After upgrading to Claude 3.5 Haiku and running comprehensive test suite
+**Status:** 334/456 tests passing (73.2% pass rate)
+**Total Failures:** 51 (3 backend + 48 E2E)
+
+### Overview
+- **Total Failures:** 51 (3 backend + 48 E2E)
+- **Estimated Total Time:** 2-4 hours
+- **Priority:** Fix backend compilation first (blocks other backend tests), then E2E failures
+
+---
+
+### TIER 1: QUICK WINS (30-60 minutes)
+
+#### 1.1 Fix `test_email_tabs.rs` Documentation Syntax ✅ EASY
+**Issue:** Inner doc comments (`//!`) used incorrectly
+**Location:** `backend/tests/test_email_tabs.rs:2-4, 91`
+**Fix:**
+```rust
+// Lines 2-4: Change //! to //
+//! This file...    →    // This file...
+
+// Line 91: Remove orphaned doc comment or add code after it
+```
+**Estimated Time:** 5 minutes
+**Impact:** Unlocks entire test file compilation
+
+---
+
+#### 1.2 Fix `analytics_tests.rs` Database Column Reference ✅ EASY
+**Issue:** Column `date_collected` doesn't exist in `jobs` table
+**Location:** `backend/tests/analytics_tests.rs:514, 531`
+**Fix:** Replace `date_collected` with actual column name:
+```rust
+// Check database schema first
+SELECT * FROM jobs LIMIT 1;
+
+// Likely fix:
+date_collected  →  created_at or date_email_sent
+```
+**Estimated Time:** 10 minutes (5 min to check schema, 5 min to fix)
+**Impact:** Unlocks 2 analytics tests
+
+---
+
+### TIER 2: MODERATE COMPLEXITY (60-90 minutes)
+
+#### 2.1 Fix E2E Job Card Rendering Issues ⚠️ MODERATE
+**Issue:** 46/48 E2E failures caused by missing `data-testid="job-card"` elements
+**Root Cause:** Likely data setup issue - job cards not rendering in test environment
+
+**Investigation Steps:**
+1. Check if test database has jobs with proper `raw_data` field populated
+2. Verify `05-job-tradeoff-display.spec.ts` and `06-job-badge-styling.spec.ts` test setup
+3. Check if tests are looking for jobs in correct tabs
+
+**Potential Fixes:**
+```typescript
+// Option A: Add test data setup in beforeEach
+beforeEach(async () => {
+  // Ensure at least 1 job with trade-off data exists
+  await page.request.post('http://localhost:8080/api/jobs', {
+    data: { /* job with raw_data */ }
+  });
+});
+
+// Option B: Navigate to correct tab before searching for job cards
+await page.getByRole('button', { name: /^all$/i }).click();
+await page.waitForTimeout(1000);
+
+// Option C: Fix data-testid attribute in App.tsx
+// Ensure job cards have data-testid="job-card"
+```
+
+**Estimated Time:** 45 minutes
+**Impact:** Fixes 46 E2E tests
+
+---
+
+#### 2.2 Fix Job Details Modal Visibility ⚠️ MODERATE
+**Issue:** 2 failures in `05-job-details.spec.ts` - modal selector not found
+**Location:** Modal selectors: `[data-testid="modal"], [role="dialog"], .modal`
+
+**Fix:**
+1. Check if modal is actually opening in test environment
+2. Verify modal has correct `data-testid` or `role="dialog"` attribute
+3. Add explicit wait for modal animation
+
+```typescript
+// Potential fix:
+await page.getByTestId('job-card').first().click();
+await page.waitForSelector('[data-testid="job-details-modal"]', {
+  state: 'visible',
+  timeout: 5000
+});
+```
+
+**Estimated Time:** 30 minutes
+**Impact:** Fixes 2 E2E tests
+
+---
+
+### TIER 3: COMPLEX ISSUES (30-60 minutes)
+
+#### 3.1 Fix URL-Based Deduplication Logic 🔴 COMPLEX
+**Issue:** `test_url_based_deduplication` returns wrong `job_id`
+**Location:** `backend/tests/deduplication_tests.rs:177`
+**Expected:** `baaef574-e532-457d-af5b-debf8c6de440`
+**Actual:** `61081213-0c0b-411d-8877-da89d59706fd`
+
+**Investigation Needed:**
+1. Review deduplication logic in `backend/src/main.rs`
+2. Check if URL hashing is working correctly
+3. Verify test expectations are correct (maybe test is wrong, not logic)
+4. Check database state before/after test
+
+**Potential Fixes:**
+- Fix: Deduplication should return **first** inserted job_id, not most recent
+- Or: Update test expectations to match actual behavior
+
+**Estimated Time:** 45 minutes
+**Impact:** Fixes 1 backend test, validates deduplication correctness
+
+---
+
+### TIER 4: LOW PRIORITY (Optional - 15 minutes)
+
+#### 4.1 Fix Unused Variable Warnings ⚠️ LOW
+**Warnings:** 4 unused variables in backend tests
+**Files:**
+- `job_filtering_tests.rs:24` - Unused fields
+- `content_generation_tests.rs:334, 477, 483` - Unused variables
+
+**Fix:**
+```rust
+// Prefix with underscore to indicate intentionally unused
+let template = ...  →  let _template = ...
+```
+
+**Estimated Time:** 10 minutes
+**Impact:** Cleaner build output (non-blocking)
+
+---
+
+## 📋 RECOMMENDED FIX ORDER
+
+1. **Backend Compilation Fixes** (15 min) - Tier 1.1, 1.2
+   - Unblocks backend test suite
+   - Quick wins with high impact
+
+2. **E2E Job Card Investigation** (45 min) - Tier 2.1
+   - Fixes 46/48 E2E failures
+   - Highest E2E impact
+
+3. **E2E Modal Fixes** (30 min) - Tier 2.2
+   - Fixes remaining 2 E2E failures
+   - Completes E2E test suite
+
+4. **Deduplication Logic Fix** (45 min) - Tier 3.1
+   - Validates critical business logic
+   - May reveal production bugs
+
+5. **Cleanup Warnings** (10 min) - Tier 4.1
+   - Polish, non-critical
+
+**Total Estimated Time:** 2 hours 25 minutes
+
+---
+
+## 🎯 SUCCESS CRITERIA
+
+**Backend Tests:**
+- ✅ 78/78 tests passing (100%)
+- ✅ All compilation errors resolved
+- ✅ Deduplication logic validated
+
+**E2E Tests:**
+- ✅ 306/378 tests passing (81%+) - accounting for 71 skipped + 1 flaky
+- ✅ All job card rendering issues resolved
+- ✅ Modal visibility issues fixed
+
+**Overall:**
+- ✅ 384/456 tests passing (84%+)
+- ✅ No compilation failures
+- ✅ Only intentionally skipped tests remaining
+
+---
+
+**Last Updated:** October 15, 2025 (After Claude 3.5 Haiku upgrade)
+**See Also:** [Test Results Dashboard](README_auto-test-results.md) for latest test run details
