@@ -1,3 +1,41 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+- [JobHunter Frontend E2E Tests](#jobhunter-frontend-e2e-tests)
+  - [Overview](#overview)
+  - [Test Structure](#test-structure)
+  - [Prerequisites](#prerequisites)
+  - [Running Tests](#running-tests)
+    - [Local Development (Chromium only)](#local-development-chromium-only)
+    - [Multi-Browser Testing](#multi-browser-testing)
+    - [View Test Results](#view-test-results)
+  - [Test Coverage](#test-coverage)
+    - [Phase 5 - Complete Test Suite (Implemented)](#phase-5---complete-test-suite-implemented)
+    - [Total: 163 Automated Tests Implemented (100% Coverage) 🎉](#total-163-automated-tests-implemented-100%25-coverage-)
+  - [Test Patterns](#test-patterns)
+    - [Page Object Model (POM)](#page-object-model-pom)
+    - [Test Isolation](#test-isolation)
+    - [Retries](#retries)
+  - [Configuration](#configuration)
+    - [playwright.config.ts](#playwrightconfigts)
+    - [Environment Variables](#environment-variables)
+  - [Debugging](#debugging)
+    - [Visual Debugging](#visual-debugging)
+    - [Screenshots & Videos](#screenshots--videos)
+    - [Console Logs](#console-logs)
+  - [CI/CD Integration](#cicd-integration)
+  - [Performance Targets](#performance-targets)
+  - [Troubleshooting](#troubleshooting)
+    - ["Page didn't load in time"](#page-didnt-load-in-time)
+    - ["Element not found"](#element-not-found)
+    - ["Flaky tests"](#flaky-tests)
+    - ["Tests pass locally but fail in CI"](#tests-pass-locally-but-fail-in-ci)
+  - [Best Practices](#best-practices)
+  - [Contributing](#contributing)
+  - [Resources](#resources)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # JobHunter Frontend E2E Tests
 
 Playwright-based end-to-end tests for JobHunter's React frontend.

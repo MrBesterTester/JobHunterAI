@@ -1,3 +1,25 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+- [Samuel Kirk - Software Test Engineer](#samuel-kirk---software-test-engineer)
+  - [Professional Summary](#professional-summary)
+  - [Core Competencies](#core-competencies)
+  - [Professional Experience](#professional-experience)
+    - [Senior Test Automation Engineer | Tech Innovation Corp](#senior-test-automation-engineer--tech-innovation-corp)
+    - [Test Automation Engineer | Quality Systems Inc](#test-automation-engineer--quality-systems-inc)
+    - [QA Engineer | Software Solutions Ltd](#qa-engineer--software-solutions-ltd)
+  - [Education](#education)
+  - [Certifications](#certifications)
+  - [Notable Projects](#notable-projects)
+    - [JobHunter - AI-Powered Job Application Management System](#jobhunter---ai-powered-job-application-management-system)
+    - [AI Test Generator - LLM-Based Testing Tool](#ai-test-generator---llm-based-testing-tool)
+    - [Distributed Testing Framework](#distributed-testing-framework)
+  - [Technical Publications & Speaking](#technical-publications--speaking)
+  - [Professional Affiliations](#professional-affiliations)
+  - [Additional Skills](#additional-skills)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Samuel Kirk - Software Test Engineer
 
 **Email**: sam@samkirk.com

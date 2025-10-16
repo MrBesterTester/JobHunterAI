@@ -1,3 +1,33 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+- [Job Email Extraction Prompt](#job-email-extraction-prompt)
+  - [Input](#input)
+  - [Task](#task)
+  - [Output Format](#output-format)
+  - [Extraction Rules](#extraction-rules)
+    - [Confidence Scoring](#confidence-scoring)
+    - [Company Extraction](#company-extraction)
+    - [Location Normalization](#location-normalization)
+    - [Salary Extraction](#salary-extraction)
+    - [URL Extraction](#url-extraction)
+    - [Description](#description)
+  - [Advanced Extraction Rules](#advanced-extraction-rules)
+    - [Compensation Type Detection](#compensation-type-detection)
+    - [Tax Structure & Employment Relationship](#tax-structure--employment-relationship)
+    - [Remote Work Policy Parsing](#remote-work-policy-parsing)
+    - [Commute Perks Detection](#commute-perks-detection)
+    - [Job Domain Classification](#job-domain-classification)
+  - [Example Extraction](#example-extraction)
+  - [Edge Cases](#edge-cases)
+    - [Multiple Jobs in One Email](#multiple-jobs-in-one-email)
+    - [Vague/Generic Emails](#vaguegeneric-emails)
+    - [Contract vs Full-Time](#contract-vs-full-time)
+    - [Incomplete Information](#incomplete-information)
+  - [Important Notes](#important-notes)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Job Email Extraction Prompt
 
 You are a job information extraction assistant analyzing recruiter emails to extract structured job posting data.

@@ -1,3 +1,24 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+- [CLAUDE.md](#claudemd)
+  - [Project Overview](#project-overview)
+  - [Developer Preferences](#developer-preferences)
+    - [Notifications](#notifications)
+  - [Development Commands](#development-commands)
+    - [Database Setup](#database-setup)
+    - [Backend (Rust)](#backend-rust)
+    - [Frontend (React/TypeScript)](#frontend-reacttypescript)
+  - [Architecture](#architecture)
+    - [Core Data Models](#core-data-models)
+    - [Database Schema Key Features](#database-schema-key-features)
+    - [Job Filtering Criteria](#job-filtering-criteria)
+    - [Development Phases](#development-phases)
+  - [File Structure](#file-structure)
+  - [API Endpoints](#api-endpoints)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.

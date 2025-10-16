@@ -1,3 +1,39 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+- [Phase 5.1 Implementation Progress](#phase-51-implementation-progress)
+  - [Implementation Roadmap](#implementation-roadmap)
+    - [✅ Week 1 - Days 1-2: Database & Infrastructure](#-week-1---days-1-2-database--infrastructure)
+    - [✅ Backend API Implementation (Completed Ahead of Schedule)](#-backend-api-implementation-completed-ahead-of-schedule)
+    - [✅ Frontend Implementation (Completed Ahead of Schedule)](#-frontend-implementation-completed-ahead-of-schedule)
+    - [🔄 Week 1 - Days 3-5: Google Calendar Integration (In Progress)](#-week-1---days-3-5-google-calendar-integration-in-progress)
+    - [⏳ Week 2 - Days 1-3: Email Follow-up System](#-week-2---days-1-3-email-follow-up-system)
+    - [⏳ Week 2 - Days 4-5: Application Tracking Enhancements](#-week-2---days-4-5-application-tracking-enhancements)
+    - [⏳ Week 3 - Days 4-5: Testing & Documentation](#-week-3---days-4-5-testing--documentation)
+  - [Technical Architecture](#technical-architecture)
+    - [Backend Structure](#backend-structure)
+    - [Frontend Structure](#frontend-structure)
+    - [Database Tables](#database-tables)
+    - [API Endpoints](#api-endpoints)
+      - [Calendar Endpoints](#calendar-endpoints)
+      - [Follow-up Endpoints](#follow-up-endpoints)
+      - [Timeline Endpoints](#timeline-endpoints)
+      - [OAuth Endpoints](#oauth-endpoints)
+  - [Configuration](#configuration)
+    - [Environment Variables (.env)](#environment-variables-env)
+    - [Google Calendar API Setup](#google-calendar-api-setup)
+  - [Testing Strategy](#testing-strategy)
+    - [Backend Tests (cargo test)](#backend-tests-cargo-test)
+    - [Frontend Tests (Playwright)](#frontend-tests-playwright)
+    - [Manual Testing Checklist](#manual-testing-checklist)
+  - [Known Challenges](#known-challenges)
+  - [Success Criteria](#success-criteria)
+  - [Progress Log](#progress-log)
+    - [October 1, 2025 - Session 1: Infrastructure & Backend](#october-1-2025---session-1-infrastructure--backend)
+    - [Next Session](#next-session)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Phase 5.1 Implementation Progress
 
 **Status**: In Progress

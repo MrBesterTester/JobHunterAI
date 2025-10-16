@@ -1,3 +1,53 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+- [Claude Code Permissions Guide - JobHunter Project](#claude-code-permissions-guide---jobhunter-project)
+  - [Overview](#overview)
+  - [Permission System Structure](#permission-system-structure)
+  - [How It Works](#how-it-works)
+    - [1. Allow List](#1-allow-list)
+    - [2. Deny List](#2-deny-list)
+    - [3. Ask List](#3-ask-list)
+    - [Default Behavior](#default-behavior)
+  - [Pattern Matching](#pattern-matching)
+    - [Bash Command Patterns](#bash-command-patterns)
+    - [File Operation Patterns](#file-operation-patterns)
+    - [Tool Names](#tool-names)
+  - [Built-in Safety Features](#built-in-safety-features)
+  - [Recommended Configurations](#recommended-configurations)
+    - [Configuration 1: Full Development Freedom (Project-Only)](#configuration-1-full-development-freedom-project-only)
+    - [Configuration 2: Balanced (Recommended)](#configuration-2-balanced-recommended)
+    - [Configuration 3: Maximum Safety (Paranoid Mode)](#configuration-3-maximum-safety-paranoid-mode)
+  - [Current Configuration (JobHunter Project)](#current-configuration-jobhunter-project)
+  - [Common Scenarios](#common-scenarios)
+    - [Scenario 1: Allow All File Operations in Project](#scenario-1-allow-all-file-operations-in-project)
+    - [Scenario 2: Allow Git Commits But Ask for Pushes](#scenario-2-allow-git-commits-but-ask-for-pushes)
+    - [Scenario 3: Allow Running Tests Without Approval](#scenario-3-allow-running-tests-without-approval)
+    - [Scenario 4: Block Network Operations](#scenario-4-block-network-operations)
+    - [Scenario 5: Allow Database Operations (Local Development)](#scenario-5-allow-database-operations-local-development)
+  - [Security Best Practices](#security-best-practices)
+    - [✅ DO:](#-do)
+    - [❌ DON'T:](#-dont)
+  - [Troubleshooting](#troubleshooting)
+    - [Issue: "I'm constantly approving the same action"](#issue-im-constantly-approving-the-same-action)
+    - [Issue: "Claude Code is asking about reading my own project files"](#issue-claude-code-is-asking-about-reading-my-own-project-files)
+    - [Issue: "I want to allow one git command but not others"](#issue-i-want-to-allow-one-git-command-but-not-others)
+    - [Issue: "My configuration isn't working"](#issue-my-configuration-isnt-working)
+    - [Issue: "I accidentally denied something I need"](#issue-i-accidentally-denied-something-i-need)
+  - [Examples from JobHunter Development](#examples-from-jobhunter-development)
+    - [What We've Allowed So Far](#what-weve-allowed-so-far)
+    - [What We've Asked For](#what-weve-asked-for)
+    - [Lessons Learned](#lessons-learned)
+  - [Upgrading Your Configuration](#upgrading-your-configuration)
+    - [From Current → Full Development Freedom](#from-current-%E2%86%92-full-development-freedom)
+  - [Quick Reference](#quick-reference)
+    - [Essential Patterns](#essential-patterns)
+    - [File Location](#file-location)
+    - [Applying Changes](#applying-changes)
+  - [Additional Resources](#additional-resources)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Claude Code Permissions Guide - JobHunter Project
 
 ## Overview

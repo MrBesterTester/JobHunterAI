@@ -1,3 +1,36 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+- [Product Requirements Document (PRD)](#product-requirements-document-prd)
+  - [Table of Contents](#table-of-contents)
+  - [1. Overview](#1-overview)
+  - [2. Goals & Objectives](#2-goals--objectives)
+  - [3. Job Criteria](#3-job-criteria)
+    - [3.1 Job Domain & Technical Focus](#31-job-domain--technical-focus)
+    - [3.2 Compensation Structure](#32-compensation-structure)
+    - [3.3 Employment Relationship](#33-employment-relationship)
+    - [3.4 Work Location & Remote Policy](#34-work-location--remote-policy)
+    - [3.5 Commute Considerations (for hybrid/onsite roles)](#35-commute-considerations-for-hybridonsite-roles)
+    - [3.6 Job Evaluation Framework](#36-job-evaluation-framework)
+  - [4. Workflow](#4-workflow)
+    - [4.1 Intake Sources](#41-intake-sources)
+    - [4.2 Processing Pipeline](#42-processing-pipeline)
+    - [4.3 Resume & Cover Letter Generation](#43-resume--cover-letter-generation)
+    - [4.4 Email Composition & Sending](#44-email-composition--sending)
+    - [4.5 Application & Tracking](#45-application--tracking)
+  - [5. Database Schema](#5-database-schema)
+  - [6. User Interface](#6-user-interface)
+    - [6.1 Dashboard (Frontend: TypeScript)](#61-dashboard-frontend-typescript)
+  - [7. Technical Implementation](#7-technical-implementation)
+    - [7.1 Frontend](#71-frontend)
+    - [7.2 Backend](#72-backend)
+    - [7.3 Database](#73-database)
+  - [8. Success Metrics](#8-success-metrics)
+  - [9. Risks & Mitigations](#9-risks--mitigations)
+  - [10. Next Steps](#10-next-steps)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Product Requirements Document (PRD)
 **Project Name:** JobHunter
 **Prepared by:** Sam Kirk

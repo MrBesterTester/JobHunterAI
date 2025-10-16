@@ -1,3 +1,26 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+- [Database Setup Guide](#database-setup-guide)
+  - [Initial Setup](#initial-setup)
+    - [1. Create the Development Database](#1-create-the-development-database)
+    - [2. Create the Personal Database](#2-create-the-personal-database)
+    - [3. Initialize Personal Database (Schema Only)](#3-initialize-personal-database-schema-only)
+    - [4. Configure Your Environment](#4-configure-your-environment)
+  - [Helper Scripts](#helper-scripts)
+    - [Switch Between Databases](#switch-between-databases)
+    - [Reset Development Database](#reset-development-database)
+    - [Backup Personal Database](#backup-personal-database)
+    - [Restore Personal Database](#restore-personal-database)
+  - [Security Notes](#security-notes)
+  - [Workflow Recommendations](#workflow-recommendations)
+    - [For Development/Testing](#for-developmenttesting)
+    - [For Personal Use](#for-personal-use)
+    - [Before Pushing to GitHub](#before-pushing-to-github)
+  - [Current Database Status](#current-database-status)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Database Setup Guide
 
 JobHunter uses two separate PostgreSQL databases to keep test data separate from your personal data:
