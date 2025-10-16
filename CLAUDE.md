@@ -35,6 +35,9 @@ JobHunter is a workflow-driven job application management system built to stream
 ## Developer Preferences
 
 ### Notifications
+
+**✅ IMPLEMENTED**: iPhone notification setup is active! See [README_iPhone-notify-setup.md](README_iPhone-notify-setup.md) for configuration details.
+
 **IMPORTANT**: Always show dialog boxes WITH SOUND when completing long-running tasks (>30 seconds).
 
 **Command to use (two commands - sound then dialog):**
