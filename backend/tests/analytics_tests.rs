@@ -516,7 +516,7 @@ mod analytics_tests {
             SELECT COUNT(*) as count
             FROM jobs
             WHERE company LIKE $1
-            AND DATE(date_collected) = CURRENT_DATE
+            AND DATE(created_at) = CURRENT_DATE
             "#,
             format!("{}%", company_prefix)
         )
@@ -533,7 +533,7 @@ mod analytics_tests {
             SELECT COUNT(*) as count
             FROM jobs
             WHERE company LIKE $1
-            AND date_collected >= CURRENT_DATE - INTERVAL '7 days'
+            AND created_at >= CURRENT_DATE - INTERVAL '7 days'
             "#,
             format!("{}%", company_prefix)
         )

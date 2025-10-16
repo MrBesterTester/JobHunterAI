@@ -1,7 +1,7 @@
-///! Integration tests for Failed and Duplicates email tabs endpoints
-//!
-//! These tests verify that the /api/intake/failed-emails and /api/intake/duplicate-emails
-//! endpoints correctly categorize emails based on their processing state.
+// Integration tests for Failed and Duplicates email tabs endpoints
+//
+// These tests verify that the /api/intake/failed-emails and /api/intake/duplicate-emails
+// endpoints correctly categorize emails based on their processing state.
 
 #[cfg(test)]
 mod tests {
@@ -68,24 +68,24 @@ mod tests {
     }
 }
 
-/// Manual Verification Results
-///
-/// Database: jobhunter_personal
-/// Total emails: 60
-///
-/// Failed emails (24):
-/// - Non-job content that couldn't be parsed as job opportunities
-/// - Examples: "[Webinar]...", "Security alert", "Recommended: Machine Learning"
-/// - Query: processing_errors IS NOT NULL OR (processed = false AND extraction_confidence IS NULL)
-///
-/// Duplicate emails (36):
-/// - Real job postings with high confidence (>= 0.3)
-/// - Successfully extracted but matched existing jobs
-/// - Examples: "Hardware Engineer", "SDET with Java Selenium", "QA Automation"
-/// - Query: processed = true AND job_id IS NULL AND processing_errors IS NULL AND extraction_confidence >= 0.3
-///
-/// The queries correctly categorize emails based on their processing outcome.
-/// The discrepancy between job_intake_logs stats (6 failed, 1 duplicate) and
-/// actual tab counts (24 failed, 36 duplicates) is because:
-/// - job_intake_logs tracks only COMPLETED syncs
-/// - Tabs show ALL emails in email_jobs table (including partial/running syncs)
+// Manual Verification Results
+//
+// Database: jobhunter_personal
+// Total emails: 60
+//
+// Failed emails (24):
+// - Non-job content that couldn't be parsed as job opportunities
+// - Examples: "[Webinar]...", "Security alert", "Recommended: Machine Learning"
+// - Query: processing_errors IS NOT NULL OR (processed = false AND extraction_confidence IS NULL)
+//
+// Duplicate emails (36):
+// - Real job postings with high confidence (>= 0.3)
+// - Successfully extracted but matched existing jobs
+// - Examples: "Hardware Engineer", "SDET with Java Selenium", "QA Automation"
+// - Query: processed = true AND job_id IS NULL AND processing_errors IS NULL AND extraction_confidence >= 0.3
+//
+// The queries correctly categorize emails based on their processing outcome.
+// The discrepancy between job_intake_logs stats (6 failed, 1 duplicate) and
+// actual tab counts (24 failed, 36 duplicates) is because:
+// - job_intake_logs tracks only COMPLETED syncs
+// - Tabs show ALL emails in email_jobs table (including partial/running syncs)
