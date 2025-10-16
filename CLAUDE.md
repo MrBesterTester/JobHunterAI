@@ -14,11 +14,11 @@ JobHunter is a workflow-driven job application management system built to stream
 ## Developer Preferences
 
 ### Notifications
-**IMPORTANT**: Always send macOS notifications WITH SOUND when completing long-running tasks (>30 seconds).
+**IMPORTANT**: Always show dialog boxes WITH SOUND when completing long-running tasks (>30 seconds).
 
-**Command to use:**
+**Command to use (two commands - sound then dialog):**
 ```bash
-osascript -e "display notification \"[message]\" with title \"Claude Code\" sound name \"Glass\""
+afplay /System/Library/Sounds/Glass.aiff & osascript -e 'display dialog "[message]" with title "Claude Code" buttons {"OK"} default button "OK" with icon note'
 ```
 
 **When to send notifications:**
@@ -27,21 +27,23 @@ osascript -e "display notification \"[message]\" with title \"Claude Code\" soun
 - After extended operations that take >30 seconds
 - When waiting for user input after completing a complex multi-step task
 
-**Important notes:**
-- ALWAYS include `sound name "Glass"` parameter for audible notification
-- Sound helps ensure notification is noticed even if visual is missed
-- Appears in macOS Notification Center (top-right corner, click clock/date to view)
+**Why dialog boxes with sound:**
+- Dialog box appears front and center (not in Notification Center)
+- Requires user acknowledgment (must click OK)
+- Sound alert plays immediately so you know task is done
+- Not affected by Focus mode or notification settings
+- More visible and reliable than banner notifications
 
 **Example usage:**
 ```bash
 # After tests complete
-osascript -e "display notification \"Test suite completed - 77/78 backend tests passing, +30 E2E tests fixed\" with title \"Claude Code - Tests Complete\" sound name \"Glass\""
+afplay /System/Library/Sounds/Glass.aiff & osascript -e 'display dialog "Test suite completed:\n\n✅ Backend: 77/78 passing (98.7%)\n✅ E2E: +30 tests fixed\n\nAll changes committed to git." with title "Claude Code - Tests Complete" buttons {"OK"} default button "OK" with icon note'
 
 # After build
-osascript -e "display notification \"Build completed successfully\" with title \"Claude Code\" sound name \"Glass\""
+afplay /System/Library/Sounds/Glass.aiff & osascript -e 'display dialog "Build completed successfully" with title "Claude Code" buttons {"OK"} default button "OK" with icon note'
 
 # Ready for input
-osascript -e "display notification \"Task completed - ready for your input\" with title \"Claude Code\" sound name \"Glass\""
+afplay /System/Library/Sounds/Glass.aiff & osascript -e 'display dialog "Task completed - ready for your input" with title "Claude Code" buttons {"OK"} default button "OK" with icon note'
 ```
 
 ## Development Commands
