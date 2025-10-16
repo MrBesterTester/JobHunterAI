@@ -324,20 +324,7 @@ iOS 26: Settings → Focus → [Your Focus Mode]
    - **User Key**: Found on your account dashboard
    - **API Token**: Create a new application, copy the token
 
-3. **Set environment variables:**
-
-   Edit `~/.zshrc` (or `~/.bash_profile` if using bash):
-   ```bash
-   export PUSHOVER_APP_TOKEN="your_app_token_here"
-   export PUSHOVER_USER_KEY="your_user_key_here"
-   ```
-
-   Then reload:
-   ```bash
-   source ~/.zshrc
-   ```
-
-4. **Create notification script:**
+3. **Create notification script:**
 
    ```bash
    # Create bin directory if it doesn't exist
@@ -347,7 +334,7 @@ iOS 26: Settings → Focus → [Your Focus Mode]
    nano ~/bin/notify_claude.sh
    ```
 
-   Add this content:
+   Add this content (replace with your actual Pushover credentials):
 
    ```bash
    #!/bin/bash
@@ -355,10 +342,14 @@ iOS 26: Settings → Focus → [Your Focus Mode]
    MESSAGE="${1:-Claude Code notification}"
    SOUND="${2:-default}"
 
+   # Pushover credentials (replace with your actual keys)
+   PUSHOVER_USER_KEY="your_user_key_here"
+   PUSHOVER_APP_TOKEN="your_app_token_here"
+
    # Send to Mac (always)
    terminal-notifier -title "Claude Code" -message "$MESSAGE" -sound "$SOUND" -group "claude-code"
 
-   # Also send to iPhone via Pushover (if configured)
+   # Also send to iPhone via Pushover
    if [ -n "$PUSHOVER_APP_TOKEN" ] && [ -n "$PUSHOVER_USER_KEY" ]; then
        curl -s \
          --form-string "token=$PUSHOVER_APP_TOKEN" \
@@ -376,7 +367,7 @@ iOS 26: Settings → Focus → [Your Focus Mode]
    chmod +x ~/bin/notify_claude.sh
    ```
 
-5. **Update Claude Code settings** (`~/.claude/settings.json`):
+4. **Update Claude Code settings** (`~/.claude/settings.json`):
 
    ```json
    {
@@ -407,12 +398,14 @@ iOS 26: Settings → Focus → [Your Focus Mode]
    }
    ```
 
-6. **Install Pushover app** on your iPhone from the App Store
+5. **Install Pushover app** on your iPhone from the App Store
 
-7. **Test the setup:**
+6. **Test the setup:**
    ```bash
    ~/bin/notify_claude.sh "Test from Pushover!" "Glass"
    ```
+
+   You should receive the notification on both your Mac and iPhone!
 
 ### Pushover Priority Levels
 
@@ -521,13 +514,7 @@ You can customize notification priority in the curl command:
 
    Should return: `{"status":1, ...}`
 
-2. **Verify environment variables are set:**
-   ```bash
-   echo $PUSHOVER_APP_TOKEN
-   echo $PUSHOVER_USER_KEY
-   ```
-
-3. **Check script permissions:**
+2. **Check script permissions:**
    ```bash
    ls -la ~/bin/notify_claude.sh
    # Should show: -rwxr-xr-x (executable)
@@ -546,13 +533,17 @@ Only notify when terminal is not in focus:
 MESSAGE="${1:-Claude Code notification}"
 SOUND="${2:-default}"
 
+# Pushover credentials
+PUSHOVER_USER_KEY="your_user_key_here"
+PUSHOVER_APP_TOKEN="your_app_token_here"
+
 # Check if terminal is focused
 FRONTMOST=$(osascript -e 'tell application "System Events" to get name of first application process whose frontmost is true')
 
 if [ "$FRONTMOST" != "Terminal" ] && [ "$FRONTMOST" != "iTerm2" ]; then
     terminal-notifier -title "Claude Code" -message "$MESSAGE" -sound "$SOUND"
 
-    # Also send to Pushover if configured
+    # Also send to Pushover
     if [ -n "$PUSHOVER_APP_TOKEN" ] && [ -n "$PUSHOVER_USER_KEY" ]; then
         curl -s \
           --form-string "token=$PUSHOVER_APP_TOKEN" \

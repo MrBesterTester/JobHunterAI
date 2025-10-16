@@ -72,7 +72,8 @@
       "Bash(npx tsc:*)",
       "Bash(./stop.sh)",
       "Read(//Users/sam/.cargo/bin/**)",
-      "Bash(export PATH=\"$HOME/.cargo/bin:$PATH\")"
+      "Bash(export PATH=\"$HOME/.cargo/bin:$PATH\")",
+      "WebFetch(domain:khromov.se)"
     ],
     "deny": [],
     "ask": [
