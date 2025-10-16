@@ -19,7 +19,8 @@ test.describe('Statistics & Real-time Updates', () => {
     await dashboardPage.goto();
   });
 
-  test.describe('Section 11: Statistics Display Test', () => {
+  // Run serially to avoid race conditions with shared database state
+  test.describe.serial('Section 11: Statistics Display Test', () => {
     test('should display correct count of "new" status jobs', async ({ page }) => {
       // Get statistics count
       const statsNewCount = await dashboardPage.getStatCount('new');
@@ -340,7 +341,8 @@ test.describe('Statistics & Real-time Updates', () => {
     });
   });
 
-  test.describe('Real-time Updates Validation', () => {
+  // Run serially to avoid race conditions with shared database state
+  test.describe.serial('Real-time Updates Validation', () => {
     test('should handle concurrent statistic updates', async ({ page }) => {
       await dashboardPage.clickTab('inbox');
       await dashboardPage.waitForJobsUpdate();

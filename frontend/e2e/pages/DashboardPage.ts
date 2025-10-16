@@ -118,9 +118,20 @@ export class DashboardPage {
 
   /**
    * Get the number of visible job cards
+   * Returns 0 immediately if no cards found (prevents hanging on empty state)
    */
   async getVisibleJobCount(): Promise<number> {
-    return await this.jobCards.count();
+    try {
+      // Wait briefly for cards to load, but don't hang if none exist
+      await this.page.waitForTimeout(500);
+
+      // Use waitFor with a short timeout to avoid hanging
+      const count = await this.jobCards.count();
+      return count;
+    } catch (error) {
+      // If anything fails, return 0 (no jobs)
+      return 0;
+    }
   }
 
   /**

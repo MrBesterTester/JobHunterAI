@@ -19,7 +19,8 @@ test.describe('Job Status Updates', () => {
     await dashboardPage.goto();
   });
 
-  test.describe('Section 5: Approve/Reject Workflow Test', () => {
+  // Run serially to avoid race conditions with shared database state
+  test.describe.serial('Section 5: Approve/Reject Workflow Test', () => {
     test('should move job from Inbox to Approved when approved', async ({ page }) => {
       // Navigate to Inbox
       await dashboardPage.clickTab('inbox');
@@ -195,7 +196,8 @@ test.describe('Job Status Updates', () => {
     });
   });
 
-  test.describe('Section 6: Status Update API Validation', () => {
+  // Run serially to avoid race conditions with shared database state
+  test.describe.serial('Section 6: Status Update API Validation', () => {
     test('should send PUT /api/jobs/{id}/status request on approval', async ({ page }) => {
       await dashboardPage.clickTab('inbox');
       await dashboardPage.waitForJobsUpdate();
@@ -376,7 +378,8 @@ test.describe('Job Status Updates', () => {
     });
   });
 
-  test.describe('Edge Cases & Error Handling', () => {
+  // Run serially to avoid race conditions with shared database state
+  test.describe.serial('Edge Cases & Error Handling', () => {
     test('should handle rapid sequential approvals', async ({ page }) => {
       await dashboardPage.clickTab('inbox');
       await dashboardPage.waitForJobsUpdate();

@@ -295,7 +295,8 @@ test.describe('Job Details View', () => {
     });
   });
 
-  test.describe('Section 10: Job Details Action Buttons', () => {
+  // Run serially to avoid race conditions with shared database state
+  test.describe.serial('Section 10: Job Details Action Buttons', () => {
     test('should show Approve and Reject buttons for "new" status jobs', async ({ page }) => {
       await dashboardPage.clickTab('inbox');
       await dashboardPage.waitForJobsUpdate();
