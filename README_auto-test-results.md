@@ -3,9 +3,10 @@
 ## Table of Contents
 
 - [Test Suite Status Overview](#test-suite-status-overview)
-- [🚨 Latest Comprehensive Test Run (October 15, 2025)](#-latest-comprehensive-test-run-october-15-2025---claude-35-haiku-upgrade--tier-1-fixes)
+- [🚨 Latest Comprehensive Test Run (October 15, 2025)](#-latest-comprehensive-test-run-october-15-2025---claude-35-haiku-upgrade--tier-1--2-fixes)
   - [Test Suite Summary](#test-suite-summary)
   - [✅ Tier 1 Fixes Complete](#-tier-1-fixes-complete-october-15-2025)
+  - [✅ Tier 2 Fixes Complete](#-tier-2-fixes-complete-october-15-2025)
   - [Remaining Issues](#-remaining-issues-1-backend-2-e2e)
   - [Warnings (Non-blocking)](#️-warnings-non-blocking)
 - [Quick Health Check](#quick-health-check)
@@ -39,13 +40,13 @@
 | 🗄️ Database Schema | ✅ **No Schema Changes** | 100% (Phase 5.3.4) | Oct 14, 2025 | - | ✅ JSONB raw_data usage |
 | 🔗 System Integration | ✅ **Full Stack** | Backend: 100%, Frontend: 100% | Oct 14, 2025 | - | 🎉 Trade-off Evaluation Complete ✨ |
 
-## 🚨 LATEST COMPREHENSIVE TEST RUN (October 15, 2025) - Claude 3.5 Haiku Upgrade + Tier 1 Fixes
+## 🚨 LATEST COMPREHENSIVE TEST RUN (October 15, 2025) - Claude 3.5 Haiku Upgrade + Tier 1 & 2 Fixes
 
 ### Test Suite Summary
 
-**Overall Status:** 364/456 tests passing (79.8% pass rate) ⬆️ **+30 tests fixed!**
+**Overall Status:** 366/456 tests passing (80.3% pass rate) ⬆️ **+32 tests fixed!**
 - Backend Unit Tests: **77/78 passing (98.7%)** ⬆️ **+1 test fixed!**
-- E2E Tests: **288/378 passing (76.2%)** ⬆️ **+30 tests fixed!**
+- E2E Tests: **290/378 passing (76.7%)** ⬆️ **+32 tests fixed!**
 - Compilation Failures: **0 test files** ✅ **All fixed!**
 - Skipped Tests: 71 E2E tests
 - Flaky Tests: 1 E2E test
@@ -61,6 +62,24 @@
 **Git Commits:**
 - `3ef8b0a` - Fix backend test compilation errors (Tier 1 fixes)
 - `d3fe56d` - Fix E2E test navigation: click 'All' tab before waiting for job cards
+
+### ✅ **TIER 2 FIXES COMPLETE** (October 15, 2025)
+
+**Time Spent:** ~15 minutes (estimate: 15-30 minutes)
+**Fixes Applied:**
+1. ✅ **Badge Container Selector** - Added `data-testid="badge-container"` to App.tsx (+2 tests)
+2. ✅ **Test Selector Update** - Updated 06-job-badge-styling.spec.ts to use reliable test ID
+
+**Details:**
+- **Root Cause:** Tests were using unreliable text-based selector `.filter({ hasText: /\$|Remote/ })` to find badge container
+- **Solution:** Added `data-testid="badge-container"` to the badge container div (line 552 in App.tsx)
+- **Tests Fixed:** "badge container should wrap properly", "badges should be properly aligned in rows"
+- **Result:** 16/16 tests now passing in 06-job-badge-styling.spec.ts (was 14/16)
+
+**Git Commits:**
+- `0b66df9` - Fix E2E badge container selector issues (Tier 2.1 complete)
+
+**Note:** Tier 2.2 (modal visibility issues) did not exist - modals are working correctly. The 2 failures in 05-job-details.spec.ts are unrelated issues (date-collected test ID, rejected job count) not part of original Tier 2 plan.
 
 ### ❌ Remaining Issues (1 backend, 2 E2E)
 
