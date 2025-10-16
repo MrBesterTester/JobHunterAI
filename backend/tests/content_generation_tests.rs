@@ -331,7 +331,7 @@ Best regards,
     async fn test_cover_letter_domain_specific_content() {
         let handlebars = Handlebars::new();
 
-        let template = r#"
+        let _template = r#"
 I am particularly skilled in {{domain}}-related technologies.
 {{#if_eq domain "Testing"}}
 My expertise includes Test Automation, CI/CD pipelines, and Quality Engineering.
@@ -474,13 +474,13 @@ My expertise includes LLM integration, Prompt Engineering, and AI-powered system
         // Insert base resume
         let base_content = "Base resume content";
         let base_name = format!("Test Base v1 {}", unique_id);
-        let base_id = insert_test_resume(&pool, &base_name, base_content, false).await
+        let _base_id = insert_test_resume(&pool, &base_name, base_content, false).await
             .expect("Should insert base");
 
         // Update resume (simulate versioning)
         let updated_content = "Updated resume content";
         let updated_name = format!("Test Base v2 {}", unique_id);
-        let updated_id = insert_test_resume(&pool, &updated_name, updated_content, false).await
+        let _updated_id = insert_test_resume(&pool, &updated_name, updated_content, false).await
             .expect("Should insert updated version");
 
         // Verify both versions exist

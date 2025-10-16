@@ -5,9 +5,6 @@
 
 #[cfg(test)]
 mod tests {
-    use actix_web::{test, App};
-    use sqlx::PgPool;
-
     /// Test that failed emails endpoint returns emails with processing errors
     /// OR emails where extraction failed (processed=false, extraction_confidence=NULL)
     #[actix_web::test]

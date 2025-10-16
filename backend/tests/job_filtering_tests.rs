@@ -21,9 +21,9 @@ mod job_filtering_tests {
     struct JobCriteria {
         min_salary: i32,
         max_commute_time: i32,
-        max_commute_days_per_week: i32,
+        _max_commute_days_per_week: i32,
         preferred_domains: Vec<String>,
-        remote_preference: String,
+        _remote_preference: String,
     }
 
     impl Default for JobCriteria {
@@ -31,7 +31,7 @@ mod job_filtering_tests {
             Self {
                 min_salary: 130000,
                 max_commute_time: 45,
-                max_commute_days_per_week: 3,
+                _max_commute_days_per_week: 3,
                 preferred_domains: vec![
                     "Software Testing".to_string(),
                     "Test Automation".to_string(),
@@ -39,7 +39,7 @@ mod job_filtering_tests {
                     "Generative AI".to_string(),
                     "Prompt Engineering".to_string(),
                 ],
-                remote_preference: "preferred".to_string(),
+                _remote_preference: "preferred".to_string(),
             }
         }
     }
