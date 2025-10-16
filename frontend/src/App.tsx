@@ -945,7 +945,6 @@ const JobHunterDashboard: React.FC = () => {
           {/* Technical Details */}
           {(job.raw_data?.job_domain?.primary_category ||
             job.raw_data?.job_domain?.testing_level ||
-            job.raw_data?.job_domain?.automation_focus !== null ||
             job.raw_data?.job_domain?.test_equipment) && (
             <div style={{ marginBottom: '6px', lineHeight: '1.4' }}>
               <strong style={{ color: '#374151' }}>Technical:</strong>
