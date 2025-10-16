@@ -3,6 +3,7 @@
 
 - [Claude Code iPhone Notification Setup](#claude-code-iphone-notification-setup)
   - [Overview](#overview)
+  - [What's In This Guide](#whats-in-this-guide)
   - [Prerequisites](#prerequisites)
   - [Step 1: Enable Apple Continuity](#step-1-enable-apple-continuity)
     - [On macOS Sequoia 15.7.1](#on-macos-sequoia-1571)
@@ -51,6 +52,38 @@ This guide configures Claude Code to send notifications to both your Mac and iPh
 - Claude needs your attention/input (Notification event)
 
 With iOS 26's enhanced Continuity features, notifications will automatically sync between devices with the new Liquid Glass design integration.
+
+## What's In This Guide
+
+✅ **Complete Setup Instructions** for iOS 26 + macOS Sequoia 15.7.1:
+- Apple Continuity configuration (Handoff, notification sync)
+- terminal-notifier installation
+- Claude Code hooks configuration in `~/.claude/settings.json`
+- Step-by-step testing procedures
+
+✅ **iOS 26-Specific Features**:
+- Liquid Glass design integration notes
+- Enhanced notification continuity
+- Smart device routing
+- Cross-device dismissal
+- Focus mode integration
+
+✅ **Optional Pushover Setup**:
+- For more persistent iPhone push notifications
+- Complete script with dual notification support (Mac + iPhone)
+- Priority level configuration
+
+✅ **Comprehensive Troubleshooting Section**:
+- Handoff verification
+- Bluetooth/Wi-Fi checks
+- Focus mode configuration
+- Notification service restarts
+
+✅ **Advanced Configuration**:
+- Context-aware notifications (only when terminal not focused)
+- Custom sounds
+- Notification grouping
+- Actionable notifications with buttons
 
 ## Prerequisites
 
