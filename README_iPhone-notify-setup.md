@@ -369,6 +369,8 @@ iOS 26: Settings → Focus → [Your Focus Mode]
 
 4. **Update Claude Code settings** (`~/.claude/settings.json`):
 
+   **Important:** Use the **absolute path** to the script (replace `/Users/sam` with your home directory):
+
    ```json
    {
      "hooks": {
@@ -378,7 +380,7 @@ iOS 26: Settings → Focus → [Your Focus Mode]
            "hooks": [
              {
                "type": "command",
-               "command": "~/bin/notify_claude.sh 'Task complete!' 'Glass'"
+               "command": "/Users/sam/bin/notify_claude.sh 'Task complete! Claude has finished working.' 'Glass'"
              }
            ]
          }
@@ -389,7 +391,7 @@ iOS 26: Settings → Focus → [Your Focus Mode]
            "hooks": [
              {
                "type": "command",
-               "command": "~/bin/notify_claude.sh 'Claude needs your attention' 'Basso'"
+               "command": "/Users/sam/bin/notify_claude.sh 'Claude needs your attention' 'Basso'"
              }
            ]
          }
@@ -397,6 +399,8 @@ iOS 26: Settings → Focus → [Your Focus Mode]
      }
    }
    ```
+
+   **Note:** After updating settings, you must **restart Claude Code** for the hooks to take effect.
 
 5. **Install Pushover app** on your iPhone from the App Store
 
