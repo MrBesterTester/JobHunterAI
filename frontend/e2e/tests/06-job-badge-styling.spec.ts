@@ -194,7 +194,7 @@ test.describe('Job Badge Styling', () => {
 
   test('badge container should wrap properly', async ({ page }) => {
     const jobCard = page.locator('[data-testid="job-card"]').first();
-    const badgeContainer = jobCard.locator('div').filter({ hasText: /\$|Remote/ }).first();
+    const badgeContainer = jobCard.locator('[data-testid="badge-container"]');
 
     // Verify flex wrap
     const flexWrap = await badgeContainer.evaluate(el => window.getComputedStyle(el).flexWrap);
@@ -207,7 +207,7 @@ test.describe('Job Badge Styling', () => {
 
   test('badges should be properly aligned in rows', async ({ page }) => {
     const jobCard = page.locator('[data-testid="job-card"]').first();
-    const badgeContainer = jobCard.locator('div').filter({ hasText: /\$|Remote/ }).first();
+    const badgeContainer = jobCard.locator('[data-testid="badge-container"]');
 
     // Verify display flex
     const display = await badgeContainer.evaluate(el => window.getComputedStyle(el).display);

@@ -549,7 +549,7 @@ const JobHunterDashboard: React.FC = () => {
         {getStatusIcon(job.status)}
       </div>
       
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '12px', fontSize: '14px' }}>
+      <div data-testid="badge-container" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '12px', fontSize: '14px' }}>
         {job.salary && (
           <span
             data-testid="salary-badge"
