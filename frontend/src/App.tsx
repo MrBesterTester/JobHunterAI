@@ -74,6 +74,7 @@ interface Job {
   description?: string;
   url?: string;
   filter_reason?: string;
+  extraction_method?: 'llm' | 'regex' | null;
   raw_data?: {
     compensation?: CompensationDetails;
     employment?: EmploymentDetails;
@@ -902,22 +903,43 @@ const JobHunterDashboard: React.FC = () => {
       </div>
 
       {/* Job Summary Section - Show for ALL jobs with raw_data or filter_reason */}
-      {(job.raw_data || job.filter_reason) && (
-        <div
-          data-testid="job-summary"
-          style={{
-            marginTop: '8px',
-            padding: '12px',
-            backgroundColor: '#f9fafb',
-            borderRadius: '4px',
-            borderLeft: '4px solid #3b82f6',
-            fontSize: '11px'
-          }}>
-          <div style={{ fontSize: '12px', fontWeight: '600', color: '#1f2937', marginBottom: '8px' }}>
-            Summary
-          </div>
+      {(() => {
+        // Check if there's any actual raw_data content to display
+        const hasRawDataContent =
+          job.raw_data?.employment?.relationship ||
+          job.raw_data?.employment?.benefits ||
+          (job.raw_data?.remote_work?.remote_eligible_states?.length ?? 0) > 0 ||
+          job.raw_data?.remote_work?.timezone_requirement ||
+          job.raw_data?.job_domain?.primary_category ||
+          job.raw_data?.job_domain?.testing_level ||
+          job.raw_data?.job_domain?.test_equipment ||
+          (job.raw_data?.job_domain?.ai_tools_mentioned?.length ?? 0) > 0 ||
+          job.raw_data?.commute?.office_location ||
+          job.raw_data?.commute?.commute_perks ||
+          job.raw_data?.commute?.schedule_flexibility;
 
-          {/* Employment Details */}
+        // Only render if there's content OR filter_reason
+        if (!hasRawDataContent && !job.filter_reason) return null;
+
+        return (
+          <div
+            data-testid="job-summary"
+            style={{
+              marginTop: '8px',
+              padding: '12px',
+              backgroundColor: '#f9fafb',
+              borderRadius: '4px',
+              borderLeft: '4px solid #3b82f6',
+              fontSize: '11px'
+            }}>
+            {/* Only show Summary header if there's raw_data content */}
+            {hasRawDataContent && (
+              <div style={{ fontSize: '12px', fontWeight: '600', color: '#1f2937', marginBottom: '8px' }}>
+                Summary
+              </div>
+            )}
+
+            {/* Employment Details */}
           {(job.raw_data?.employment?.relationship || job.raw_data?.employment?.benefits) && (
             <div style={{ marginBottom: '6px', lineHeight: '1.4' }}>
               <strong style={{ color: '#374151' }}>Employment:</strong>
@@ -1004,7 +1026,58 @@ const JobHunterDashboard: React.FC = () => {
             </div>
           )}
         </div>
-      )}
+      );
+    })()}
+
+      {/* Debug Section - Raw Data & Extraction Method */}
+      <div
+        style={{
+          marginTop: '8px',
+          padding: '12px',
+          backgroundColor: '#fef3c7',
+          borderRadius: '4px',
+          borderLeft: '4px solid #f59e0b',
+          fontSize: '10px'
+        }}>
+        <div style={{ fontSize: '11px', fontWeight: '600', color: '#92400e', marginBottom: '8px' }}>
+          🔧 Debug Info
+        </div>
+
+        {/* Extraction Method */}
+        <div style={{ marginBottom: '8px' }}>
+          <strong style={{ color: '#92400e' }}>Extraction Method:</strong>
+          <span style={{
+            marginLeft: '6px',
+            padding: '2px 6px',
+            borderRadius: '3px',
+            backgroundColor: (job.extraction_method === 'llm' || (job.raw_data as any)?.extraction_method === 'llm') ? '#dbeafe' : '#fed7aa',
+            color: (job.extraction_method === 'llm' || (job.raw_data as any)?.extraction_method === 'llm') ? '#1e40af' : '#c2410c',
+            fontWeight: '500'
+          }}>
+            {(job.extraction_method || (job.raw_data as any)?.extraction_method)?.toUpperCase() || 'UNKNOWN'}
+          </span>
+        </div>
+
+        {/* Raw Data JSON Dump */}
+        <div>
+          <strong style={{ color: '#92400e' }}>Raw Data JSON:</strong>
+          <pre style={{
+            marginTop: '6px',
+            padding: '8px',
+            backgroundColor: '#fff',
+            border: '1px solid #fbbf24',
+            borderRadius: '4px',
+            fontSize: '9px',
+            lineHeight: '1.4',
+            maxHeight: '200px',
+            overflow: 'auto',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word'
+          }}>
+            {JSON.stringify(job.raw_data, null, 2)}
+          </pre>
+        </div>
+      </div>
 
       {(() => {
         const application = getApplicationForJob(job.job_id);

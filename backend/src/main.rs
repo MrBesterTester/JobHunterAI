@@ -50,6 +50,8 @@ pub struct Job {
     pub description: Option<String>,
     pub url: Option<String>,
     pub filter_reason: Option<String>,
+    pub extraction_method: Option<String>,
+    pub raw_data: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
@@ -1007,7 +1009,7 @@ async fn generate_content_for_job(job: &Job, pool: &PgPool) -> Result<GeneratedC
 
 async fn get_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     let jobs = sqlx::query_as::<_, Job>(
-        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, url, filter_reason FROM jobs ORDER BY date_email_sent DESC"
+        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, url, filter_reason, extraction_method, raw_data FROM jobs ORDER BY date_email_sent DESC"
     )
     .fetch_all(pool.get_ref())
     .await
@@ -1021,7 +1023,7 @@ async fn get_job(
     job_id: web::Path<Uuid>,
 ) -> Result<HttpResponse> {
     let job = sqlx::query_as::<_, Job>(
-        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, url, filter_reason FROM jobs WHERE job_id = $1"
+        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, url, filter_reason, extraction_method, raw_data FROM jobs WHERE job_id = $1"
     )
     .bind(*job_id)
     .fetch_optional(pool.get_ref())
@@ -1121,7 +1123,7 @@ async fn get_jobs_by_status(
     status: web::Path<String>,
 ) -> Result<HttpResponse> {
     let jobs = sqlx::query_as::<_, Job>(
-        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, url, filter_reason FROM jobs WHERE status = $1 ORDER BY date_email_sent DESC"
+        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, url, filter_reason, extraction_method, raw_data FROM jobs WHERE status = $1 ORDER BY date_email_sent DESC"
     )
     .bind(status.as_str())
     .fetch_all(pool.get_ref())
@@ -1222,7 +1224,7 @@ async fn update_criteria(
 
 async fn get_filtered_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     let jobs = sqlx::query_as::<_, Job>(
-        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, url, filter_reason FROM jobs WHERE status = 'filtered' ORDER BY date_email_sent DESC"
+        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, url, filter_reason, extraction_method, raw_data FROM jobs WHERE status = 'filtered' ORDER BY date_email_sent DESC"
     )
     .fetch_all(pool.get_ref())
     .await
@@ -1482,7 +1484,7 @@ async fn generate_content_handler(
 
     // Get job details
     let job = sqlx::query_as::<_, Job>(
-        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, url, filter_reason FROM jobs WHERE job_id = $1"
+        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, url, filter_reason, extraction_method, raw_data FROM jobs WHERE job_id = $1"
     )
     .bind(job_id)
     .fetch_one(pool.get_ref())
@@ -1548,7 +1550,7 @@ async fn generate_content_with_options_handler(
 
     // Get job details
     let job = sqlx::query_as::<_, Job>(
-        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, url, filter_reason FROM jobs WHERE job_id = $1"
+        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, url, filter_reason, extraction_method, raw_data FROM jobs WHERE job_id = $1"
     )
     .bind(job_id)
     .fetch_one(pool.get_ref())

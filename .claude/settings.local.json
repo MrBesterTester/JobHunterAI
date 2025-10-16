@@ -73,7 +73,11 @@
       "Bash(./stop.sh)",
       "Read(//Users/sam/.cargo/bin/**)",
       "Bash(export PATH=\"$HOME/.cargo/bin:$PATH\")",
-      "WebFetch(domain:khromov.se)"
+      "WebFetch(domain:khromov.se)",
+      "Bash(afplay:*)",
+      "Bash(osascript:*)",
+      "Bash(xargs kill:*)",
+      "Bash(sed:*)"
     ],
     "deny": [],
     "ask": [
