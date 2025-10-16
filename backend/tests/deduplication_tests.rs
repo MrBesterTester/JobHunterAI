@@ -153,7 +153,7 @@ mod deduplication_tests {
         let company = "TestDedup2Corp";
         let title1 = "Engineer Position A";
         let title2 = "Engineer Position B";
-        let url = "https://jobs.example.com/posting/12345";
+        let url = "https://jobs.example.com/posting/test-dedup-2-unique-url";
 
         // Cleanup any existing test data
         cleanup_test_jobs(&pool, company).await;
