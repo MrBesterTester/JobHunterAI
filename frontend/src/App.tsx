@@ -1157,6 +1157,25 @@ const JobHunterDashboard: React.FC = () => {
           {new Date(job.date_email_sent).toLocaleDateString()}
         </span>
 
+        {/* Job ID badge */}
+        <span
+          data-testid="job-id-badge"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            backgroundColor: '#e0e7ff',
+            color: '#4338ca',
+            fontSize: '12px',
+            fontWeight: '500',
+            fontFamily: 'monospace'
+          }}
+          title="Job ID (for reference in chat)">
+          ID: {job.job_id.substring(0, 8)}
+        </span>
+
         {/* Trade-off badges */}
         {job.raw_data?.employment?.tax_structure && (
           <span
