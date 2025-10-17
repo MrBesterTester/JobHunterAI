@@ -4,6 +4,7 @@
 - [CLAUDE.md](#claudemd)
   - [Project Overview](#project-overview)
   - [Developer Preferences](#developer-preferences)
+    - [Database Configuration](#database-configuration)
     - [Notifications](#notifications)
   - [Development Commands](#development-commands)
     - [Database Setup](#database-setup)
@@ -33,6 +34,28 @@ JobHunter is a workflow-driven job application management system built to stream
 - Database: PostgreSQL
 
 ## Developer Preferences
+
+### Database Configuration
+
+**✅ IMPLEMENTED**: Automatic personal database selection via SessionStart hook!
+
+At the start of every Claude Code session, a SessionStart hook automatically:
+- Runs `./switch-to-personal.sh` to configure the personal development database
+- Displays which database is being used: `jobhunter_personal`
+- Provides context that all database operations will use the personal database
+
+**Hook configuration**: `.claude/session-start-hook.sh` (runs automatically)
+
+**Manual database switching** (if needed):
+```bash
+# Switch to personal database (default)
+./switch-to-personal.sh
+
+# Switch to shared dev database
+./switch-to-dev.sh
+```
+
+**Current database**: `jobhunter_personal` (automatically set at session start)
 
 ### Notifications
 
