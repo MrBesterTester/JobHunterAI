@@ -21,6 +21,19 @@ else
 fi
 
 echo ""
+echo "🔍 Checking database configuration..."
+if [ -f backend/.env ]; then
+    DB_NAME=$(grep "^DATABASE_URL=" backend/.env | sed 's/.*\/\([^?]*\).*/\1/')
+    if [ -n "$DB_NAME" ]; then
+        echo "🔒 Active database: $DB_NAME"
+    else
+        echo "⚠️  Could not determine database name from .env"
+    fi
+else
+    echo "⚠️  backend/.env not found"
+fi
+
+echo ""
 echo "🦀 Starting backend (Rust/Actix-web)..."
 cd backend
 # Set TMPDIR to avoid permission issues with system temp directories
