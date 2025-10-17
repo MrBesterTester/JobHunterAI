@@ -1693,7 +1693,14 @@ async fn condense_text_with_claude(
         &clean_text
     };
 
-    let prompt = "Condense the following job description to approximately 100 words. Focus on the key responsibilities, requirements, and important details. Be concise but informative.";
+    // Load prompt from file
+    let prompt = match std::fs::read_to_string("prompts/job_condensed_description.md") {
+        Ok(content) => content,
+        Err(_) => {
+            // Fallback prompt if file doesn't exist
+            "Condense the following job description to approximately 100 words. Focus on the key responsibilities, requirements, and important details. Be concise but informative.\n\nIMPORTANT: If the text does not contain a meaningful job description (e.g., it's just a generic message, signature, disclaimer, or lacks actual job details), respond ONLY with: \"No job description to be extracted.\"".to_string()
+        }
+    };
 
     let request = ClaudeRequest {
         model: "claude-3-5-haiku-20241022".to_string(),
