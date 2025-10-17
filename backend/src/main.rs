@@ -1693,8 +1693,8 @@ async fn condense_text_with_claude(
         &clean_text
     };
 
-    // Load prompt from file
-    let prompt = match std::fs::read_to_string("prompts/job_condensed_description.md") {
+    // Load prompt from file (relative to project root, since backend runs from backend/ dir)
+    let prompt = match std::fs::read_to_string("../prompts/job_condensed_description.md") {
         Ok(content) => content,
         Err(_) => {
             // Fallback prompt if file doesn't exist
