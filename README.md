@@ -105,6 +105,10 @@
       - [❌ AI-Powered Interview Prep](#-ai-powered-interview-prep)
     - [Phase 5.4+ - Future Considerations (Not Currently Planned)](#phase-54---future-considerations-not-currently-planned)
   - [Project Structure](#project-structure)
+  - [LLM Prompt Architecture](#llm-prompt-architecture)
+    - [1. Job Extraction Prompt (`job_extraction_default.md`)](#1-job-extraction-prompt-job_extraction_defaultmd)
+    - [2. Condensed Description Prompt (`job_condensed_description.md`)](#2-condensed-description-prompt-job_condensed_descriptionmd)
+    - [Key Differences](#key-differences)
   - [Technical Achievements](#technical-achievements)
     - [System Performance](#system-performance)
     - [Code Quality & Architecture](#code-quality--architecture)
@@ -2344,7 +2348,8 @@ JobHuntAI/
 │   ├── schema.sql             # 12 tables: jobs, deduplication, resume, templates, intake
 │   └── migration_phase5.3.sql # Phase 5.3: extraction_prompts table
 ├── prompts/                   # LLM Prompts
-│   └── job_extraction_default.md  # Default job extraction prompt (5.7KB)
+│   ├── job_extraction_default.md  # Job extraction prompt template (5.7KB, loaded into DB)
+│   └── job_condensed_description.md  # Condensed summary prompt (file-based)
 ├── data/                      # User Data
 │   └── resumes/
 │       └── master_resume.md   # Master resume template (markdown format)
@@ -2363,6 +2368,63 @@ JobHuntAI/
 - **Content Engine**: Handlebars templating with intelligent resume/cover letter generation
 - **Resume Management**: File-based storage with database integration and complete UI management
 - **Automated Intake**: Multi-source job discovery with Gmail/LinkedIn integration and LLM-powered extraction
+
+## LLM Prompt Architecture
+
+The system uses **two separate Claude 3.5 Haiku prompts** for different purposes:
+
+### 1. Job Extraction Prompt (`job_extraction_default.md`)
+
+**Purpose**: Extract structured job information from recruiter emails
+
+**Storage & Management**:
+- Stored in PostgreSQL `extraction_prompts` table
+- Editable via the **Intake Tab UI** in real-time (no backend restart needed)
+- Versioned automatically with change history and notes
+- Initial template located in `prompts/job_extraction_default.md` (loaded during database setup)
+
+**Usage**:
+- Called when processing incoming Gmail emails
+- Analyzes email subject + body to extract job details
+- Returns structured JSON with 20+ fields (title, company, salary, requirements, etc.)
+
+**Output**: JSON object with detailed job information
+
+**API Endpoints**:
+- `GET /api/extraction/prompts` - Get active prompt
+- `PUT /api/extraction/prompts/active` - Update prompt (creates new version)
+
+### 2. Condensed Description Prompt (`job_condensed_description.md`)
+
+**Purpose**: Create ~100 word summaries for job card display in the UI
+
+**Storage & Management**:
+- Stored as a **file** in `prompts/job_condensed_description.md`
+- Loaded from filesystem each time (can be edited directly)
+- Has fallback prompt embedded in code if file missing
+
+**Usage**:
+- Called when displaying job cards in the frontend
+- Takes the full email body and creates a concise summary
+- Outputs "No job description to be extracted." for non-descriptive emails
+
+**Output**: Plain text summary (~100 words) or "No job description to be extracted."
+
+**API Endpoint**:
+- `GET /api/jobs/{id}/condense-description` - Generate condensed summary
+
+### Key Differences
+
+| Feature | Job Extraction | Condensed Description |
+|---------|---------------|----------------------|
+| **Storage** | Database (versioned) | Filesystem (file) |
+| **Editable Via** | UI (Intake Tab) | Direct file edit |
+| **When Called** | During email sync | When displaying jobs |
+| **Output Format** | Structured JSON | Plain text |
+| **Token Usage** | ~1024 tokens | ~300 tokens |
+| **Purpose** | Data extraction | UI display |
+
+Both prompts use **Claude 3.5 Haiku** for fast, cost-effective processing (<$0.001 per job).
 
 ## Technical Achievements
 
