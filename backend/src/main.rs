@@ -1746,6 +1746,51 @@ async fn condense_text_with_claude(
     Ok(condensed_text)
 }
 
+// Handler to get the original email body for a job
+async fn get_job_email_body_handler(
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse> {
+    let job_id = path.into_inner();
+
+    // Get the email body from email_jobs table
+    let email_job = sqlx::query!(
+        r#"
+        SELECT body_text, body_html, subject, sender_email, sender_name, received_date
+        FROM email_jobs
+        WHERE job_id = $1
+        "#,
+        job_id
+    )
+    .fetch_optional(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    match email_job {
+        Some(email) => {
+            Ok(HttpResponse::Ok().json(serde_json::json!({
+                "body_text": email.body_text,
+                "body_html": email.body_html,
+                "subject": email.subject,
+                "sender_email": email.sender_email,
+                "sender_name": email.sender_name,
+                "received_date": email.received_date
+            })))
+        }
+        None => {
+            // No email job found - job might have been manually created
+            Ok(HttpResponse::Ok().json(serde_json::json!({
+                "body_text": null,
+                "body_html": null,
+                "subject": null,
+                "sender_email": null,
+                "sender_name": null,
+                "received_date": null
+            })))
+        }
+    }
+}
+
 // ============================================================================
 // Phase 4: Gmail API Integration
 // ============================================================================
@@ -4391,6 +4436,7 @@ async fn main() -> std::io::Result<()> {
             .route("/api/jobs/{id}/generate-content", web::get().to(generate_content_handler))
             .route("/api/jobs/{id}/generate-content", web::post().to(generate_content_with_options_handler))
             .route("/api/jobs/{id}/condense-description", web::get().to(condense_description_handler))
+            .route("/api/jobs/{id}/email-body", web::get().to(get_job_email_body_handler))
             // Phase 4: Automated Job Intake APIs
             .route("/api/auth/gmail/url", web::get().to(get_gmail_oauth_url))
             .route("/auth/gmail/callback", web::get().to(handle_gmail_oauth_callback))

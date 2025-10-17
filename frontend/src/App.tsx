@@ -320,6 +320,32 @@ const JobDetails: React.FC<{
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   const savedScrollPosition = React.useRef<number>(0);
 
+  // State for email body
+  const [emailBody, setEmailBody] = React.useState<{
+    body_text: string | null;
+    body_html: string | null;
+    subject: string | null;
+    sender_email: string | null;
+    sender_name: string | null;
+  } | null>(null);
+
+  // Fetch email body when modal opens
+  React.useEffect(() => {
+    const fetchEmailBody = async () => {
+      try {
+        const response = await fetch(`${(window as any).API_URL || 'http://localhost:8080'}/api/jobs/${job.job_id}/email-body`);
+        if (response.ok) {
+          const data = await response.json();
+          setEmailBody(data);
+        }
+      } catch (error) {
+        console.error('Error fetching email body:', error);
+      }
+    };
+
+    fetchEmailBody();
+  }, [job.job_id]);
+
   // Lock body scroll when modal is open
   React.useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -681,12 +707,31 @@ const JobDetails: React.FC<{
           </div>
         )}
 
-        {/* Enhanced Description Section - prefer raw_data.description (full email body) */}
-        {(job.raw_data?.description || job.description) && (
+        {/* Enhanced Description Section - prefer email body from email_jobs */}
+        {(emailBody?.body_text || emailBody?.body_html || job.raw_data?.description || job.description) && (
           <div style={{ marginBottom: '24px' }}>
-            <h3 style={{ fontWeight: 600, marginBottom: '8px' }}>Full Email Body</h3>
+            <h3 style={{ fontWeight: 600, marginBottom: '8px' }}>
+              Full Email Body
+              {emailBody && (
+                <span style={{ fontSize: '14px', fontWeight: 'normal', color: '#6b7280', marginLeft: '8px' }}>
+                  {emailBody.sender_name || emailBody.sender_email ? `from ${emailBody.sender_name || emailBody.sender_email}` : ''}
+                </span>
+              )}
+            </h3>
             <div data-testid="job-description">
-              {renderDescription(job.raw_data?.description || job.description || '')}
+              {emailBody?.body_text ? (
+                renderDescription(emailBody.body_text)
+              ) : emailBody?.body_html ? (
+                <div dangerouslySetInnerHTML={{ __html: emailBody.body_html }} style={{
+                  maxHeight: '400px',
+                  overflow: 'auto',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '4px',
+                  padding: '12px'
+                }} />
+              ) : (
+                renderDescription(job.raw_data?.description || job.description || '')
+              )}
             </div>
           </div>
         )}
