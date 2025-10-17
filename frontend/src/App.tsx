@@ -178,6 +178,7 @@ const JobHunterDashboard: React.FC = () => {
   const [resumeUploadError, setResumeUploadError] = useState<string | null>(null);
   const [showEmailComposer, setShowEmailComposer] = useState<boolean>(false);
   const [emailComposerJob, setEmailComposerJob] = useState<Job | null>(null);
+  const [condensedDescriptions, setCondensedDescriptions] = useState<Record<string, string>>({});
 
   // Helper function to detect if content is HTML
   const isHtmlContent = (text: string): boolean => {
@@ -476,6 +477,24 @@ const JobHunterDashboard: React.FC = () => {
     }, 100);
   };
 
+  const fetchCondensedDescription = async (jobId: string): Promise<void> => {
+    // Check if already fetched
+    if (condensedDescriptions[jobId]) return;
+
+    try {
+      const response = await fetch(`${API_URL}/jobs/${jobId}/condense-description`);
+      if (response.ok) {
+        const data = await response.json();
+        setCondensedDescriptions(prev => ({
+          ...prev,
+          [jobId]: data.condensed_description
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching condensed description:', error);
+    }
+  };
+
   const openEmailComposer = (job: Job): void => {
     setEmailComposerJob(job);
     setShowEmailComposer(true);
@@ -552,7 +571,13 @@ const JobHunterDashboard: React.FC = () => {
   const isRemote = (job: Job): boolean => job.location?.toLowerCase().includes('remote') || false;
   const withinCommute = (job: Job): boolean => !job.commute_time || job.commute_time <= 45;
 
-  const JobCard: React.FC<{ job: Job }> = ({ job }) => (
+  const JobCard: React.FC<{ job: Job }> = ({ job }) => {
+    // Fetch condensed description when card renders
+    React.useEffect(() => {
+      fetchCondensedDescription(job.job_id);
+    }, [job.job_id]);
+
+    return (
     <div
       className="bg-white border rounded-lg p-4 mb-3 hover:shadow-md transition-shadow cursor-pointer"
       onClick={() => setSelectedJob(job)}
@@ -1058,24 +1083,23 @@ const JobHunterDashboard: React.FC = () => {
           </span>
         </div>
 
-        {/* Raw Data JSON Dump */}
+        {/* Condensed Description */}
         <div>
-          <strong style={{ color: '#92400e' }}>Raw Data JSON:</strong>
-          <pre style={{
+          <strong style={{ color: '#92400e' }}>Condensed Description:</strong>
+          <div style={{
             marginTop: '6px',
             padding: '8px',
             backgroundColor: '#fff',
             border: '1px solid #fbbf24',
             borderRadius: '4px',
-            fontSize: '9px',
-            lineHeight: '1.4',
-            maxHeight: '200px',
-            overflow: 'auto',
+            fontSize: '11px',
+            lineHeight: '1.5',
             whiteSpace: 'pre-wrap',
-            wordBreak: 'break-word'
+            wordBreak: 'break-word',
+            color: '#374151'
           }}>
-            {JSON.stringify(job.raw_data, null, 2)}
-          </pre>
+            {condensedDescriptions[job.job_id] || 'Loading description...'}
+          </div>
         </div>
       </div>
 
@@ -1200,6 +1224,7 @@ const JobHunterDashboard: React.FC = () => {
       )}
     </div>
   );
+  };
 
   const JobDetails: React.FC<{ job: Job; onClose: () => void }> = ({ job, onClose }) => (
     <div

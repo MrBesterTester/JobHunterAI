@@ -77,7 +77,8 @@
       "Bash(afplay:*)",
       "Bash(osascript:*)",
       "Bash(xargs kill:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(NO_BROWSER=1 ./start.sh:*)"
     ],
     "deny": [],
     "ask": [

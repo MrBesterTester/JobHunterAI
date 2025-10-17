@@ -1600,6 +1600,144 @@ async fn generate_content_with_options_handler(
     }
 }
 
+// Handler to condense job description
+async fn condense_description_handler(
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse> {
+    let job_id = path.into_inner();
+
+    // Get job details
+    let job = sqlx::query_as::<_, Job>(
+        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, url, filter_reason, extraction_method, raw_data FROM jobs WHERE job_id = $1"
+    )
+    .bind(job_id)
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Job not found: {}", e)))?;
+
+    // Extract description from raw_data or use job.description
+    let description = if let Some(raw_data) = &job.raw_data {
+        raw_data.get("description")
+            .and_then(|v| v.as_str())
+            .or(job.description.as_deref())
+    } else {
+        job.description.as_deref()
+    };
+
+    let description_text = match description {
+        Some(desc) => desc,
+        None => {
+            return Ok(HttpResponse::Ok().json(serde_json::json!({
+                "condensed_description": "No description available"
+            })));
+        }
+    };
+
+    // Get API key
+    let api_key = match std::env::var("ANTHROPIC_API_KEY") {
+        Ok(key) if !key.is_empty() => key,
+        _ => {
+            return Ok(HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "ANTHROPIC_API_KEY not configured"
+            })));
+        }
+    };
+
+    // Call helper to condense description
+    match condense_text_with_claude(&api_key, description_text).await {
+        Ok(condensed) => {
+            Ok(HttpResponse::Ok().json(serde_json::json!({
+                "condensed_description": condensed
+            })))
+        },
+        Err(e) => {
+            Ok(HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Failed to condense description: {}", e)
+            })))
+        }
+    }
+}
+
+// Helper function to condense text using Claude API
+async fn condense_text_with_claude(
+    api_key: &str,
+    text: &str,
+) -> Result<String, String> {
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()
+        .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
+
+    // Convert HTML to text if needed
+    let clean_text = if text.contains("<html") || text.contains("<body") {
+        html_to_text(text)
+    } else {
+        text.to_string()
+    };
+
+    // Truncate if too long (Claude has token limits)
+    // Use char_indices to find a safe truncation point at a character boundary
+    let truncated_text = if clean_text.len() > 10000 {
+        let mut truncate_at = 10000;
+        // Find the last character boundary before or at 10000 bytes
+        for (idx, _) in clean_text.char_indices() {
+            if idx > 10000 {
+                break;
+            }
+            truncate_at = idx;
+        }
+        &clean_text[..truncate_at]
+    } else {
+        &clean_text
+    };
+
+    let prompt = "Condense the following job description to approximately 100 words. Focus on the key responsibilities, requirements, and important details. Be concise but informative.";
+
+    let request = ClaudeRequest {
+        model: "claude-3-5-haiku-20241022".to_string(),
+        max_tokens: 300,
+        messages: vec![
+            ClaudeMessage {
+                role: "user".to_string(),
+                content: format!("{}\n\n{}", prompt, truncated_text),
+            }
+        ],
+    };
+
+    let response = client
+        .post("https://api.anthropic.com/v1/messages")
+        .header("x-api-key", api_key)
+        .header("anthropic-version", "2023-06-01")
+        .header("content-type", "application/json")
+        .json(&request)
+        .send()
+        .await
+        .map_err(|e| format!("Failed to call Claude API: {}", e))?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_default();
+        return Err(format!("Claude API error {}: {}", status, error_text));
+    }
+
+    let claude_response: ClaudeResponse = response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse Claude response: {}", e))?;
+
+    // Extract text from response
+    let condensed_text = claude_response
+        .content
+        .first()
+        .ok_or("No content in Claude response")?
+        .text
+        .trim()
+        .to_string();
+
+    Ok(condensed_text)
+}
+
 // ============================================================================
 // Phase 4: Gmail API Integration
 // ============================================================================
@@ -4376,6 +4514,7 @@ async fn main() -> std::io::Result<()> {
             .route("/api/templates/cover-letters", web::get().to(get_cover_letter_templates_handler))
             .route("/api/jobs/{id}/generate-content", web::get().to(generate_content_handler))
             .route("/api/jobs/{id}/generate-content", web::post().to(generate_content_with_options_handler))
+            .route("/api/jobs/{id}/condense-description", web::get().to(condense_description_handler))
             // Phase 4: Automated Job Intake APIs
             .route("/api/auth/gmail/url", web::get().to(get_gmail_oauth_url))
             .route("/auth/gmail/callback", web::get().to(handle_gmail_oauth_callback))
