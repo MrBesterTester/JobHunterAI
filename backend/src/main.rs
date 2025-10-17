@@ -1264,9 +1264,10 @@ async fn get_job_stats(pool: web::Data<PgPool>) -> Result<HttpResponse> {
         SELECT
             -- Failed: emails with processing errors OR failed extraction
             COUNT(*) FILTER (WHERE processing_errors IS NOT NULL OR (processed = false AND extraction_confidence IS NULL)) as total_failed,
-            -- Duplicates: high-confidence emails that were processed but didn't create jobs (and have complete data)
+            -- Duplicates: medium-to-high confidence emails that were processed but didn't create jobs (and have complete data)
+            -- Changed from >= 0.7 to >= 0.3 to capture medium-confidence emails with complete data
             COUNT(*) FILTER (WHERE processed = true AND job_id IS NULL AND processing_errors IS NULL
-                            AND extraction_confidence >= 0.7
+                            AND extraction_confidence >= 0.3
                             AND extracted_data->>'title' IS NOT NULL AND extracted_data->>'title' != ''
                             AND extracted_data->>'company' IS NOT NULL AND extracted_data->>'company' != '') as total_duplicated,
             -- Filtered/Ignored: low-confidence emails OR emails with incomplete data (missing title or company)
