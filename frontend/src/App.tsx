@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { AlertCircle, CheckCircle, XCircle, Clock, Briefcase, DollarSign, MapPin, Filter, FileText, Mail, Calendar as CalendarIcon, Download, Send, ExternalLink, AlertTriangle, Copy } from 'lucide-react';
+import { AlertCircle, CheckCircle, XCircle, Clock, Briefcase, DollarSign, MapPin, Filter, FileText, Mail, Calendar as CalendarIcon, Download, Send, ExternalLink, AlertTriangle, Copy, RefreshCw } from 'lucide-react';
 import ResumeManagement from './ResumeManagement';
 import CalendarTab from './CalendarTab';
 import FollowupsTab from './FollowupsTab';
@@ -1014,6 +1014,35 @@ const JobHunterDashboard: React.FC = () => {
     }
   };
 
+  // Clear all cached condensed descriptions
+  const clearAllDescriptions = (): void => {
+    setCondensedDescriptions({});
+  };
+
+  // Refresh a single job's condensed description
+  const refreshSingleDescription = async (jobId: string): Promise<void> => {
+    // Remove from cache
+    setCondensedDescriptions(prev => {
+      const newDescriptions = { ...prev };
+      delete newDescriptions[jobId];
+      return newDescriptions;
+    });
+
+    // Re-fetch immediately
+    try {
+      const response = await fetch(`${API_URL}/jobs/${jobId}/condense-description`);
+      if (response.ok) {
+        const data = await response.json();
+        setCondensedDescriptions(prev => ({
+          ...prev,
+          [jobId]: data.condensed_description
+        }));
+      }
+    } catch (error) {
+      console.error('Error refreshing condensed description:', error);
+    }
+  };
+
   const openEmailComposer = (job: Job): void => {
     setEmailComposerJob(job);
     setShowEmailComposer(true);
@@ -1617,9 +1646,38 @@ const JobHunterDashboard: React.FC = () => {
 
         {/* Condensed Description */}
         <div>
-          <strong style={{ color: '#92400e' }}>Condensed Description:</strong>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+            <strong style={{ color: '#92400e' }}>Condensed Description:</strong>
+            <button
+              onClick={() => refreshSingleDescription(job.job_id)}
+              style={{
+                padding: '4px 8px',
+                borderRadius: '4px',
+                border: '1px solid #10b981',
+                backgroundColor: 'white',
+                color: '#10b981',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '10px',
+                fontWeight: '500',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#10b981';
+                e.currentTarget.style.color = 'white';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'white';
+                e.currentTarget.style.color = '#10b981';
+              }}
+              title="Refresh this job's description"
+            >
+              <RefreshCw style={{ width: '12px', height: '12px' }} />
+            </button>
+          </div>
           <div style={{
-            marginTop: '6px',
             padding: '8px',
             backgroundColor: '#fff',
             border: '1px solid #fbbf24',
@@ -1783,25 +1841,56 @@ const JobHunterDashboard: React.FC = () => {
             <h1 style={{ fontSize: '30px', fontWeight: 'bold', color: '#111827' }}>JobHunter</h1>
             <p style={{ color: '#6b7280' }}>Streamline your job search workflow</p>
           </div>
-          <button
-            onClick={() => setShowResumeManagement(true)}
-            style={{
-              padding: '10px 20px',
-              borderRadius: '6px',
-              border: '1px solid #3b82f6',
-              backgroundColor: '#3b82f6',
-              color: 'white',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '14px'
-            }}
-          >
-            <FileText style={{ width: '18px', height: '18px' }} />
-            Manage Resume
-          </button>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button
+              onClick={clearAllDescriptions}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '6px',
+                border: '1px solid #10b981',
+                backgroundColor: 'white',
+                color: '#10b981',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '14px',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#10b981';
+                e.currentTarget.style.color = 'white';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'white';
+                e.currentTarget.style.color = '#10b981';
+              }}
+              title="Clear all cached descriptions and refresh"
+            >
+              <RefreshCw style={{ width: '18px', height: '18px' }} />
+              Refresh Descriptions
+            </button>
+            <button
+              onClick={() => setShowResumeManagement(true)}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '6px',
+                border: '1px solid #3b82f6',
+                backgroundColor: '#3b82f6',
+                color: 'white',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '14px'
+              }}
+            >
+              <FileText style={{ width: '18px', height: '18px' }} />
+              Manage Resume
+            </button>
+          </div>
         </div>
       </header>
 
