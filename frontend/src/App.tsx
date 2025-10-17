@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { AlertCircle, CheckCircle, XCircle, Clock, Briefcase, DollarSign, MapPin, Filter, FileText, Mail, Calendar as CalendarIcon, Download, Send, ExternalLink, AlertTriangle, Copy } from 'lucide-react';
 import ResumeManagement from './ResumeManagement';
 import CalendarTab from './CalendarTab';
@@ -159,6 +159,622 @@ interface CoverLetterTemplate {
 
 type TabType = 'approved' | 'applied' | 'filtered' | 'failed' | 'duplicates' | 'new' | 'all' | 'intake' | 'calendar' | 'follow-ups' | 'ignored';
 
+// Helper functions moved outside component to prevent recreation on re-renders
+const isHtmlContent = (text: string): boolean => {
+  return /<\/?[a-z][\s\S]*>/i.test(text);
+};
+
+const renderDescription = (description: string): JSX.Element => {
+  if (isHtmlContent(description)) {
+    return (
+      <div
+        style={{
+          color: '#374151',
+          lineHeight: '1.6'
+        }}
+        dangerouslySetInnerHTML={{ __html: description }}
+      />
+    );
+  } else {
+    return (
+      <p style={{ color: '#374151', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
+        {description}
+      </p>
+    );
+  }
+};
+
+const formatCompensationType = (type?: string): string => {
+  const typeMap: Record<string, string> = {
+    'annual_salary': 'Annual Salary',
+    'hourly': 'Hourly Rate',
+    'daily_rate': 'Daily Rate',
+    'consulting_contract': 'Consulting Contract',
+    'retainer': 'Retainer',
+    'equity_heavy': 'Equity Heavy',
+    'commission_based': 'Commission Based'
+  };
+  return type ? (typeMap[type] || type) : 'Not specified';
+};
+
+const formatTaxStructure = (taxStructure?: string): string => {
+  const taxMap: Record<string, string> = {
+    'W2': 'W-2 Employee',
+    '1099': '1099 Contractor',
+    'corp_to_corp': 'Corp-to-Corp',
+    'schedule_c': 'Schedule C (Consulting)',
+    'unknown': 'Unknown'
+  };
+  return taxStructure ? (taxMap[taxStructure] || taxStructure) : 'Not specified';
+};
+
+const formatEmploymentRelationship = (relationship?: string): string => {
+  const relMap: Record<string, string> = {
+    'direct_hire': 'Direct Hire',
+    'staffing_agency': 'Staffing Agency',
+    'consulting': 'Consulting',
+    'contract_to_hire': 'Contract-to-Hire',
+    'independent_contractor': 'Independent Contractor'
+  };
+  return relationship ? (relMap[relationship] || relationship) : 'Not specified';
+};
+
+const formatRemotePolicy = (policy?: string): string => {
+  const policyMap: Record<string, string> = {
+    'fully_remote': 'Fully Remote',
+    'hybrid': 'Hybrid',
+    'onsite': 'Onsite',
+    'flexible': 'Flexible',
+    'remote_optional': 'Remote Optional'
+  };
+  return policy ? (policyMap[policy] || policy) : 'Not specified';
+};
+
+const formatSeniority = (seniority?: string): string => {
+  const seniorityMap: Record<string, string> = {
+    'junior': 'Junior',
+    'mid': 'Mid-Level',
+    'senior': 'Senior',
+    'staff': 'Staff',
+    'principal': 'Principal',
+    'lead': 'Lead',
+    'manager': 'Manager',
+    'director': 'Director'
+  };
+  return seniority ? (seniorityMap[seniority] || seniority) : 'Not specified';
+};
+
+const formatPrimaryCategory = (category?: string): string => {
+  const categoryMap: Record<string, string> = {
+    'software_engineering': 'Software Engineering',
+    'firmware_engineering': 'Firmware Engineering',
+    'qa_testing': 'QA/Testing',
+    'test_automation': 'Test Automation',
+    'devops': 'DevOps',
+    'other': 'Other'
+  };
+  return category ? (categoryMap[category] || category) : 'Not specified';
+};
+
+const formatSalaryRange = (comp?: CompensationDetails): string => {
+  if (!comp) return 'Not specified';
+
+  if (comp.salary_min && comp.salary_max) {
+    if (comp.salary_min === comp.salary_max) {
+      return `$${comp.salary_min.toLocaleString()}`;
+    }
+    return `$${comp.salary_min.toLocaleString()} - $${comp.salary_max.toLocaleString()}`;
+  } else if (comp.salary_min) {
+    return `$${comp.salary_min.toLocaleString()}+`;
+  } else if (comp.salary_max) {
+    return `Up to $${comp.salary_max.toLocaleString()}`;
+  } else if (comp.hourly_rate) {
+    return `$${comp.hourly_rate}/hr`;
+  } else if (comp.daily_rate) {
+    return `$${comp.daily_rate}/day`;
+  }
+
+  return 'Not specified';
+};
+
+const getStatusColor = (status: string): string => {
+  switch (status) {
+    case 'new': return 'bg-blue-100 text-blue-800';
+    case 'approved': return 'bg-green-100 text-green-800';
+    case 'rejected': return 'bg-red-100 text-red-800';
+    case 'applied': return 'bg-yellow-100 text-yellow-800';
+    case 'filtered': return 'bg-orange-100 text-orange-800';
+    default: return 'bg-gray-100 text-gray-800';
+  }
+};
+
+// JobDetails component moved outside to prevent recreation on parent re-renders
+const JobDetails: React.FC<{
+  job: Job;
+  onClose: () => void;
+  updateJobStatus: (jobId: string, newStatus: string) => Promise<void>;
+  generateContent: (jobId: string) => Promise<void>;
+  renderDescription: (description: string) => JSX.Element;
+  formatCompensationType: (type?: string) => string;
+  formatSalaryRange: (comp?: CompensationDetails) => string;
+  formatTaxStructure: (taxStructure?: string) => string;
+  formatEmploymentRelationship: (relationship?: string) => string;
+  formatRemotePolicy: (policy?: string) => string;
+  formatSeniority: (seniority?: string) => string;
+  getStatusColor: (status: string) => string;
+}> = React.memo(({
+  job,
+  onClose,
+  updateJobStatus,
+  generateContent,
+  renderDescription,
+  formatCompensationType,
+  formatSalaryRange,
+  formatTaxStructure,
+  formatEmploymentRelationship,
+  formatRemotePolicy,
+  formatSeniority,
+  getStatusColor
+}) => {
+  // Ref to preserve scroll position across re-renders
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const savedScrollPosition = React.useRef<number>(0);
+
+  // Lock body scroll when modal is open
+  React.useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
+
+  // Prevent buttons from receiving focus and triggering auto-scroll
+  React.useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const preventButtonFocus = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'BUTTON') {
+        // Blur the button immediately to prevent scroll-into-view
+        target.blur();
+      }
+    };
+
+    container.addEventListener('focus', preventButtonFocus, true);
+    return () => {
+      container.removeEventListener('focus', preventButtonFocus, true);
+    };
+  }, []);
+
+  // Preserve scroll position on every render
+  React.useLayoutEffect(() => {
+    if (scrollContainerRef.current) {
+      // Restore scroll position after render
+      scrollContainerRef.current.scrollTop = savedScrollPosition.current;
+    }
+  });
+
+  // Save scroll position when user scrolls
+  const handleScroll = () => {
+    if (scrollContainerRef.current) {
+      savedScrollPosition.current = scrollContainerRef.current.scrollTop;
+    }
+  };
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '40px 16px',
+        zIndex: 50
+      }}
+      data-testid="modal-overlay"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        style={{
+          backgroundColor: 'white',
+          borderRadius: '8px',
+          maxWidth: '672px',
+          width: '100%',
+          maxHeight: 'calc(100vh - 80px)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden'
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          ref={scrollContainerRef}
+          onScroll={handleScroll}
+          style={{
+            padding: '24px',
+            overflowY: 'auto',
+            flex: 1,
+            overflowAnchor: 'none'
+          }}
+        >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+          <div>
+            <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827' }} data-testid="modal-job-title">{job.title}</h2>
+            <p style={{ fontSize: '20px', color: '#6b7280' }} data-testid="modal-company">{job.company}</p>
+          </div>
+          <button
+            data-testid="modal-close-x"
+            onClick={onClose}
+            style={{
+              color: '#6b7280',
+              background: 'none',
+              border: 'none',
+              fontSize: '20px',
+              cursor: 'pointer'
+            }}
+          >
+            ✕
+          </button>
+        </div>
+
+        <div style={{ marginBottom: '16px' }}>
+          <span
+            data-testid="modal-status"
+            style={{
+              padding: '4px 12px',
+              borderRadius: '4px',
+              fontSize: '14px',
+              fontWeight: 500,
+              ...(() => {
+                const color = getStatusColor(job.status);
+                const bgColor = color.includes('blue') ? '#dbeafe' :
+                               color.includes('green') ? '#d1fae5' :
+                               color.includes('red') ? '#fee2e2' : '#fef3c7';
+                const textColor = color.includes('blue') ? '#1e40af' :
+                                 color.includes('green') ? '#065f46' :
+                                 color.includes('red') ? '#991b1b' : '#92400e';
+                return { backgroundColor: bgColor, color: textColor };
+              })()
+            }}>
+            {job.status}
+          </span>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: '24px' }}>
+          {job.salary && (
+            <div>
+              <p style={{ fontSize: '14px', color: '#6b7280' }}>Salary</p>
+              <p style={{ fontWeight: 600 }} data-testid="modal-salary">${job.salary.toLocaleString()}</p>
+            </div>
+          )}
+          {job.location && (
+            <div>
+              <p style={{ fontSize: '14px', color: '#6b7280' }}>Location</p>
+              <p style={{ fontWeight: 600 }} data-testid="modal-location">{job.location}</p>
+            </div>
+          )}
+          {job.commute_time && (
+            <div>
+              <p style={{ fontSize: '14px', color: '#6b7280' }}>Commute Time</p>
+              <p style={{ fontWeight: 600 }}>{job.commute_time} minutes</p>
+            </div>
+          )}
+          <div>
+            <p style={{ fontSize: '14px', color: '#6b7280' }}>Source</p>
+            <p style={{ fontWeight: 600 }} data-testid="modal-source">{job.source}</p>
+          </div>
+          <div>
+            <p style={{ fontSize: '14px', color: '#6b7280' }}>Date Email Sent</p>
+            <p style={{ fontWeight: 600 }} data-testid="date-email-sent">{new Date(job.date_email_sent).toLocaleDateString()}</p>
+          </div>
+        </div>
+
+        {job.url && (
+          <div style={{ marginBottom: '24px' }}>
+            <h3 style={{ fontWeight: 600, marginBottom: '8px' }}>Job Link</h3>
+            <a
+              href={job.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="job-url"
+              style={{ color: '#3b82f6', textDecoration: 'underline' }}
+            >
+              {job.url}
+            </a>
+          </div>
+        )}
+
+        {/* Compensation Details Section */}
+        {job.raw_data?.compensation && (
+          <div style={{ marginBottom: '24px' }} data-testid="compensation-section">
+            <h3 style={{ fontWeight: 600, marginBottom: '12px', color: '#111827' }}>Compensation Details</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', fontSize: '14px' }}>
+              {job.raw_data.compensation.type && (
+                <div>
+                  <p style={{ color: '#6b7280', marginBottom: '4px' }}>Type</p>
+                  <p style={{ fontWeight: 500, color: '#374151' }} data-testid="comp-type">{formatCompensationType(job.raw_data.compensation.type)}</p>
+                </div>
+              )}
+              <div>
+                <p style={{ color: '#6b7280', marginBottom: '4px' }}>Salary Range</p>
+                <p style={{ fontWeight: 500, color: '#374151' }} data-testid="comp-range">{formatSalaryRange(job.raw_data.compensation)}</p>
+              </div>
+              {job.raw_data.compensation.equity_offered !== null && job.raw_data.compensation.equity_offered !== undefined && (
+                <div>
+                  <p style={{ color: '#6b7280', marginBottom: '4px' }}>Equity</p>
+                  <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.compensation.equity_offered ? 'Yes' : 'No'}</p>
+                </div>
+              )}
+              {job.raw_data.compensation.bonus_structure && (
+                <div>
+                  <p style={{ color: '#6b7280', marginBottom: '4px' }}>Bonus Structure</p>
+                  <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.compensation.bonus_structure}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Employment Details Section */}
+        {job.raw_data?.employment && (
+          <div style={{ marginBottom: '24px' }} data-testid="employment-section">
+            <h3 style={{ fontWeight: 600, marginBottom: '12px', color: '#111827' }}>Employment Details</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', fontSize: '14px' }}>
+              {job.raw_data.employment.tax_structure && (
+                <div>
+                  <p style={{ color: '#6b7280', marginBottom: '4px' }}>Tax Structure</p>
+                  <p style={{ fontWeight: 500, color: '#374151' }} data-testid="emp-tax">{formatTaxStructure(job.raw_data.employment.tax_structure)}</p>
+                </div>
+              )}
+              {job.raw_data.employment.relationship && (
+                <div>
+                  <p style={{ color: '#6b7280', marginBottom: '4px' }}>Relationship</p>
+                  <p style={{ fontWeight: 500, color: '#374151' }} data-testid="emp-relationship">{formatEmploymentRelationship(job.raw_data.employment.relationship)}</p>
+                </div>
+              )}
+              {job.raw_data.employment.contract_duration && (
+                <div>
+                  <p style={{ color: '#6b7280', marginBottom: '4px' }}>Duration</p>
+                  <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.employment.contract_duration}</p>
+                </div>
+              )}
+              {job.raw_data.employment.agency_name && (
+                <div>
+                  <p style={{ color: '#6b7280', marginBottom: '4px' }}>Agency</p>
+                  <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.employment.agency_name}</p>
+                </div>
+              )}
+              {job.raw_data.employment.benefits && (
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <p style={{ color: '#6b7280', marginBottom: '4px' }}>Benefits</p>
+                  <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.employment.benefits}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Location & Commute Section */}
+        {(job.raw_data?.remote_work || job.raw_data?.commute) && (
+          <div style={{ marginBottom: '24px' }} data-testid="location-commute-section">
+            <h3 style={{ fontWeight: 600, marginBottom: '12px', color: '#111827' }}>Location & Commute</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', fontSize: '14px' }}>
+              {job.raw_data.remote_work?.policy && (
+                <div>
+                  <p style={{ color: '#6b7280', marginBottom: '4px' }}>Remote Policy</p>
+                  <p style={{ fontWeight: 500, color: '#374151' }} data-testid="remote-policy">{formatRemotePolicy(job.raw_data.remote_work.policy)}</p>
+                </div>
+              )}
+              {job.raw_data.remote_work?.days_onsite_per_week !== null && job.raw_data.remote_work?.days_onsite_per_week !== undefined && (
+                <div>
+                  <p style={{ color: '#6b7280', marginBottom: '4px' }}>Days Onsite</p>
+                  <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.remote_work.days_onsite_per_week} days/week</p>
+                </div>
+              )}
+              {job.raw_data.commute?.office_location && (
+                <div>
+                  <p style={{ color: '#6b7280', marginBottom: '4px' }}>Office Location</p>
+                  <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.commute.office_location}</p>
+                </div>
+              )}
+              {job.raw_data.commute?.company_shuttle !== null && job.raw_data.commute?.company_shuttle !== undefined && (
+                <div>
+                  <p style={{ color: '#6b7280', marginBottom: '4px' }}>Company Shuttle</p>
+                  <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.commute.company_shuttle ? 'Yes' : 'No'}</p>
+                </div>
+              )}
+              {job.raw_data.commute?.commute_perks && (
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <p style={{ color: '#6b7280', marginBottom: '4px' }}>Commute Perks</p>
+                  <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.commute.commute_perks}</p>
+                </div>
+              )}
+              {job.raw_data.commute?.schedule_flexibility && (
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <p style={{ color: '#6b7280', marginBottom: '4px' }}>Schedule Flexibility</p>
+                  <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.commute.schedule_flexibility}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Technical Details Section */}
+        {job.raw_data?.job_domain && (
+          <div style={{ marginBottom: '24px' }} data-testid="technical-section">
+            <h3 style={{ fontWeight: 600, marginBottom: '12px', color: '#111827' }}>Technical Details</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', fontSize: '14px' }}>
+              {job.raw_data.job_domain.primary_category && (
+                <div>
+                  <p style={{ color: '#6b7280', marginBottom: '4px' }}>Category</p>
+                  <p style={{ fontWeight: 500, color: '#374151' }} data-testid="tech-category">{job.raw_data.job_domain.primary_category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</p>
+                </div>
+              )}
+              {job.raw_data.job_domain.seniority && (
+                <div>
+                  <p style={{ color: '#6b7280', marginBottom: '4px' }}>Seniority</p>
+                  <p style={{ fontWeight: 500, color: '#374151' }} data-testid="tech-seniority">{formatSeniority(job.raw_data.job_domain.seniority)}</p>
+                </div>
+              )}
+              {job.raw_data.job_domain.testing_focus !== null && job.raw_data.job_domain.testing_focus !== undefined && (
+                <div>
+                  <p style={{ color: '#6b7280', marginBottom: '4px' }}>Testing Focus</p>
+                  <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.job_domain.testing_focus ? 'Yes' : 'No'}</p>
+                </div>
+              )}
+              {job.raw_data.job_domain.automation_focus !== null && job.raw_data.job_domain.automation_focus !== undefined && (
+                <div>
+                  <p style={{ color: '#6b7280', marginBottom: '4px' }}>Automation Focus</p>
+                  <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.job_domain.automation_focus ? 'Yes' : 'No'}</p>
+                </div>
+              )}
+              {job.raw_data.job_domain.generative_ai_usage !== null && job.raw_data.job_domain.generative_ai_usage !== undefined && (
+                <div>
+                  <p style={{ color: '#6b7280', marginBottom: '4px' }}>Generative AI</p>
+                  <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.job_domain.generative_ai_usage ? 'Yes' : 'No'}</p>
+                </div>
+              )}
+              {job.raw_data.job_domain.testing_level && (
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <p style={{ color: '#6b7280', marginBottom: '4px' }}>Testing Level</p>
+                  <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.job_domain.testing_level}</p>
+                </div>
+              )}
+              {job.raw_data.job_domain.test_equipment && (
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <p style={{ color: '#6b7280', marginBottom: '4px' }}>Test Equipment</p>
+                  <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.job_domain.test_equipment}</p>
+                </div>
+              )}
+              {job.raw_data.job_domain.tech_stack && job.raw_data.job_domain.tech_stack.length > 0 && (
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <p style={{ color: '#6b7280', marginBottom: '4px' }}>Tech Stack</p>
+                  <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.job_domain.tech_stack.join(', ')}</p>
+                </div>
+              )}
+              {job.raw_data.job_domain.test_automation_tools && job.raw_data.job_domain.test_automation_tools.length > 0 && (
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <p style={{ color: '#6b7280', marginBottom: '4px' }}>Automation Tools</p>
+                  <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.job_domain.test_automation_tools.join(', ')}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Enhanced Description Section - prefer raw_data.description (full email body) */}
+        {(job.raw_data?.description || job.description) && (
+          <div style={{ marginBottom: '24px' }}>
+            <h3 style={{ fontWeight: 600, marginBottom: '8px' }}>Full Email Body</h3>
+            <div data-testid="job-description">
+              {renderDescription(job.raw_data?.description || job.description || '')}
+            </div>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {(job.status === 'new' || job.status === 'filtered') && (
+            <>
+              <button
+                onClick={() => { updateJobStatus(job.job_id, 'approved'); onClose(); }}
+                style={{
+                  flex: 1,
+                  backgroundColor: '#10b981',
+                  color: 'white',
+                  padding: '8px 16px',
+                  borderRadius: '4px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  scrollMarginTop: '9999px'
+                }}
+              >
+                Approve
+              </button>
+              <button
+                onClick={() => { updateJobStatus(job.job_id, 'rejected'); onClose(); }}
+                style={{
+                  flex: 1,
+                  backgroundColor: '#ef4444',
+                  color: 'white',
+                  padding: '8px 16px',
+                  borderRadius: '4px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  scrollMarginTop: '9999px'
+                }}
+              >
+                Reject
+              </button>
+            </>
+          )}
+          {job.status === 'approved' && (
+            <>
+              <button
+                onClick={async () => {
+                  await generateContent(job.job_id);
+                  onClose();
+                }}
+                style={{
+                  flex: 1,
+                  backgroundColor: '#8b5cf6',
+                  color: 'white',
+                  padding: '8px 16px',
+                  borderRadius: '4px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  scrollMarginTop: '9999px'
+                }}
+              >
+                Generate Resume & Cover Letter
+              </button>
+              <button
+                onClick={() => { updateJobStatus(job.job_id, 'applied'); onClose(); }}
+                style={{
+                  flex: 1,
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  padding: '8px 16px',
+                  borderRadius: '4px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  scrollMarginTop: '9999px'
+                }}
+              >
+                Mark as Applied
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+  );
+}, (prevProps, nextProps) => {
+  // Custom comparison: check job ID and all callback references
+  // This prevents re-renders when the job object reference changes but the data is the same
+  const jobSame = prevProps.job.job_id === nextProps.job.job_id;
+  const callbacksSame =
+    prevProps.onClose === nextProps.onClose &&
+    prevProps.updateJobStatus === nextProps.updateJobStatus &&
+    prevProps.generateContent === nextProps.generateContent &&
+    prevProps.renderDescription === nextProps.renderDescription &&
+    prevProps.formatCompensationType === nextProps.formatCompensationType &&
+    prevProps.formatSalaryRange === nextProps.formatSalaryRange &&
+    prevProps.formatTaxStructure === nextProps.formatTaxStructure &&
+    prevProps.formatEmploymentRelationship === nextProps.formatEmploymentRelationship &&
+    prevProps.formatRemotePolicy === nextProps.formatRemotePolicy &&
+    prevProps.formatSeniority === nextProps.formatSeniority &&
+    prevProps.getStatusColor === nextProps.getStatusColor;
+
+  const shouldSkipRender = jobSame && callbacksSame;
+  console.log('[React.memo] Comparison:', { jobSame, callbacksSame, shouldSkipRender });
+  return shouldSkipRender;
+});
+
 const JobHunterDashboard: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
@@ -166,6 +782,11 @@ const JobHunterDashboard: React.FC = () => {
   const [stats, setStats] = useState<JobStats>({});
   const [activeTab, setActiveTab] = useState<TabType>('intake');
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+
+  // Debug: Log when selectedJob changes
+  React.useEffect(() => {
+    console.log('[Parent] selectedJob changed:', selectedJob ? `Job ID: ${selectedJob.job_id}` : 'null');
+  }, [selectedJob]);
   const [loading, setLoading] = useState<boolean>(true);
   const [showCriteriaConfig, setShowCriteriaConfig] = useState<boolean>(false);
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
@@ -179,127 +800,6 @@ const JobHunterDashboard: React.FC = () => {
   const [showEmailComposer, setShowEmailComposer] = useState<boolean>(false);
   const [emailComposerJob, setEmailComposerJob] = useState<Job | null>(null);
   const [condensedDescriptions, setCondensedDescriptions] = useState<Record<string, string>>({});
-
-  // Helper function to detect if content is HTML
-  const isHtmlContent = (text: string): boolean => {
-    return /<\/?[a-z][\s\S]*>/i.test(text);
-  };
-
-  // Helper function to render description (HTML or plain text)
-  const renderDescription = (description: string) => {
-    if (isHtmlContent(description)) {
-      return (
-        <div
-          style={{
-            color: '#374151',
-            lineHeight: '1.6'
-          }}
-          dangerouslySetInnerHTML={{ __html: description }}
-        />
-      );
-    } else {
-      return (
-        <p style={{ color: '#374151', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
-          {description}
-        </p>
-      );
-    }
-  };
-
-  // Trade-off data formatting helper functions
-  const formatCompensationType = (type?: string): string => {
-    const typeMap: Record<string, string> = {
-      'annual_salary': 'Annual Salary',
-      'hourly': 'Hourly Rate',
-      'daily_rate': 'Daily Rate',
-      'consulting_contract': 'Consulting Contract',
-      'retainer': 'Retainer',
-      'equity_heavy': 'Equity Heavy',
-      'commission_based': 'Commission Based'
-    };
-    return type ? (typeMap[type] || type) : 'Not specified';
-  };
-
-  const formatTaxStructure = (taxStructure?: string): string => {
-    const taxMap: Record<string, string> = {
-      'W2': 'W-2 Employee',
-      '1099': '1099 Contractor',
-      'corp_to_corp': 'Corp-to-Corp',
-      'schedule_c': 'Schedule C (Consulting)',
-      'unknown': 'Unknown'
-    };
-    return taxStructure ? (taxMap[taxStructure] || taxStructure) : 'Not specified';
-  };
-
-  const formatEmploymentRelationship = (relationship?: string): string => {
-    const relMap: Record<string, string> = {
-      'direct_hire': 'Direct Hire',
-      'staffing_agency': 'Staffing Agency',
-      'consulting': 'Consulting',
-      'contract_to_hire': 'Contract-to-Hire',
-      'independent_contractor': 'Independent Contractor'
-    };
-    return relationship ? (relMap[relationship] || relationship) : 'Not specified';
-  };
-
-  const formatRemotePolicy = (policy?: string): string => {
-    const policyMap: Record<string, string> = {
-      'fully_remote': 'Fully Remote',
-      'hybrid': 'Hybrid',
-      'onsite': 'Onsite',
-      'flexible': 'Flexible',
-      'remote_optional': 'Remote Optional'
-    };
-    return policy ? (policyMap[policy] || policy) : 'Not specified';
-  };
-
-  const formatSeniority = (seniority?: string): string => {
-    const seniorityMap: Record<string, string> = {
-      'junior': 'Junior',
-      'mid': 'Mid-Level',
-      'senior': 'Senior',
-      'staff': 'Staff',
-      'principal': 'Principal',
-      'lead': 'Lead',
-      'manager': 'Manager',
-      'director': 'Director'
-    };
-    return seniority ? (seniorityMap[seniority] || seniority) : 'Not specified';
-  };
-
-  const formatPrimaryCategory = (category?: string): string => {
-    const categoryMap: Record<string, string> = {
-      'software_engineering': 'Software Engineering',
-      'firmware_engineering': 'Firmware Engineering',
-      'qa_testing': 'QA/Testing',
-      'test_automation': 'Test Automation',
-      'devops': 'DevOps',
-      'other': 'Other'
-    };
-    return category ? (categoryMap[category] || category) : 'Not specified';
-  };
-
-  const formatSalaryRange = (comp?: CompensationDetails): string => {
-    if (!comp) return 'Not specified';
-
-    if (comp.salary_min && comp.salary_max) {
-      if (comp.salary_min === comp.salary_max) {
-        return `$${comp.salary_min.toLocaleString()}`;
-      }
-      return `$${comp.salary_min.toLocaleString()} - $${comp.salary_max.toLocaleString()}`;
-    } else if (comp.salary_min) {
-      return `$${comp.salary_min.toLocaleString()}+`;
-    } else if (comp.salary_max) {
-      return `Up to $${comp.salary_max.toLocaleString()}`;
-    } else if (comp.hourly_rate) {
-      return `$${comp.hourly_rate}/hr`;
-    } else if (comp.daily_rate) {
-      return `$${comp.daily_rate}/day`;
-    }
-
-    return 'Not specified';
-  };
-
 
   const fetchJobs = async (): Promise<void> => {
     try {
@@ -404,7 +904,7 @@ const JobHunterDashboard: React.FC = () => {
     }
   };
 
-  const updateJobStatus = async (jobId: string, newStatus: string): Promise<void> => {
+  const updateJobStatus = useCallback(async (jobId: string, newStatus: string): Promise<void> => {
     try {
       await fetch(`${API_URL}/jobs/${jobId}/status`, {
         method: 'PUT',
@@ -415,20 +915,24 @@ const JobHunterDashboard: React.FC = () => {
       fetchStats();
     } catch (error) {
       console.error('Error updating job status:', error);
-      setJobs(jobs.map(j => j.job_id === jobId ? {...j, status: newStatus} : j));
+      // Use functional setState to avoid needing jobs in dependency array
+      setJobs(prevJobs => prevJobs.map(j => j.job_id === jobId ? {...j, status: newStatus} : j));
     }
-  };
+  }, []); // Empty dependency array since we use functional setState
 
-  const generateContent = async (jobId: string): Promise<void> => {
+  const generateContent = useCallback(async (jobId: string): Promise<void> => {
     setGeneratingContent(true);
     try {
       const response = await fetch(`${API_URL}/jobs/${jobId}/generate-content`);
       if (response.ok) {
         const content: GeneratedContent = await response.json();
         setGeneratedContent(content);
-        // Store the job for filename generation when downloading
-        const job = jobs.find(j => j.job_id === jobId);
-        setGeneratedContentJob(job || null);
+        // Use functional setState to get the current job
+        setJobs(prevJobs => {
+          const job = prevJobs.find(j => j.job_id === jobId);
+          setGeneratedContentJob(job || null);
+          return prevJobs; // Return unchanged
+        });
         setShowContentGeneration(true);
         // Fetch applications to ensure we have the latest application_id
         await fetchApplications();
@@ -440,7 +944,7 @@ const JobHunterDashboard: React.FC = () => {
     } finally {
       setGeneratingContent(false);
     }
-  };
+  }, []); // Empty dependency array
 
   const downloadGeneratedContent = (): void => {
     if (!generatedContent || !generatedContentJob) return;
@@ -515,17 +1019,6 @@ const JobHunterDashboard: React.FC = () => {
     }
   };
 
-  const getStatusColor = (status: string): string => {
-    switch (status) {
-      case 'new': return 'bg-blue-100 text-blue-800';
-      case 'approved': return 'bg-green-100 text-green-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      case 'applied': return 'bg-yellow-100 text-yellow-800';
-      case 'filtered': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   const filterJobs = (status: string): Job[] => {
     return jobs.filter(job => job.status === status);
   };
@@ -540,6 +1033,11 @@ const JobHunterDashboard: React.FC = () => {
     if (tab === 'ignored') return 'Non-Job Emails';
     return tab.charAt(0).toUpperCase() + tab.slice(1);
   };
+
+  // Memoized close handler for JobDetails modal
+  const handleCloseJobDetails = useCallback(() => {
+    setSelectedJob(null);
+  }, []);
 
   useEffect(() => {
     fetchJobs();
@@ -1226,383 +1724,6 @@ const JobHunterDashboard: React.FC = () => {
   );
   };
 
-  const JobDetails: React.FC<{ job: Job; onClose: () => void }> = ({ job, onClose }) => (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '16px',
-        zIndex: 50
-      }}
-      data-testid="modal-overlay"
-      onClick={onClose}
-    >
-      <div
-        role="dialog"
-        style={{
-          backgroundColor: 'white',
-          borderRadius: '8px',
-          maxWidth: '672px',
-          width: '100%',
-          maxHeight: '90vh',
-          overflowY: 'auto'
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-            <div>
-              <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827' }} data-testid="modal-job-title">{job.title}</h2>
-              <p style={{ fontSize: '20px', color: '#6b7280' }} data-testid="modal-company">{job.company}</p>
-            </div>
-            <button
-              data-testid="modal-close-x"
-              onClick={onClose}
-              style={{
-                color: '#6b7280',
-                background: 'none',
-                border: 'none',
-                fontSize: '20px',
-                cursor: 'pointer'
-              }}
-            >
-              ✕
-            </button>
-          </div>
-
-          <div style={{ marginBottom: '16px' }}>
-            <span
-              data-testid="modal-status"
-              style={{
-                padding: '4px 12px',
-                borderRadius: '4px',
-                fontSize: '14px',
-                fontWeight: 500,
-                ...(() => {
-                  const color = getStatusColor(job.status);
-                  const bgColor = color.includes('blue') ? '#dbeafe' :
-                                 color.includes('green') ? '#d1fae5' :
-                                 color.includes('red') ? '#fee2e2' : '#fef3c7';
-                  const textColor = color.includes('blue') ? '#1e40af' :
-                                   color.includes('green') ? '#065f46' :
-                                   color.includes('red') ? '#991b1b' : '#92400e';
-                  return { backgroundColor: bgColor, color: textColor };
-                })()
-              }}>
-              {job.status}
-            </span>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: '24px' }}>
-            {job.salary && (
-              <div>
-                <p style={{ fontSize: '14px', color: '#6b7280' }}>Salary</p>
-                <p style={{ fontWeight: 600 }} data-testid="modal-salary">${job.salary.toLocaleString()}</p>
-              </div>
-            )}
-            {job.location && (
-              <div>
-                <p style={{ fontSize: '14px', color: '#6b7280' }}>Location</p>
-                <p style={{ fontWeight: 600 }} data-testid="modal-location">{job.location}</p>
-              </div>
-            )}
-            {job.commute_time && (
-              <div>
-                <p style={{ fontSize: '14px', color: '#6b7280' }}>Commute Time</p>
-                <p style={{ fontWeight: 600 }}>{job.commute_time} minutes</p>
-              </div>
-            )}
-            <div>
-              <p style={{ fontSize: '14px', color: '#6b7280' }}>Source</p>
-              <p style={{ fontWeight: 600 }} data-testid="modal-source">{job.source}</p>
-            </div>
-            <div>
-              <p style={{ fontSize: '14px', color: '#6b7280' }}>Date Email Sent</p>
-              <p style={{ fontWeight: 600 }} data-testid="date-email-sent">{new Date(job.date_email_sent).toLocaleDateString()}</p>
-            </div>
-          </div>
-
-          {job.url && (
-            <div style={{ marginBottom: '24px' }}>
-              <h3 style={{ fontWeight: 600, marginBottom: '8px' }}>Job Link</h3>
-              <a
-                href={job.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                data-testid="job-url"
-                style={{ color: '#3b82f6', textDecoration: 'underline' }}
-              >
-                {job.url}
-              </a>
-            </div>
-          )}
-
-          {/* Compensation Details Section */}
-          {job.raw_data?.compensation && (
-            <div style={{ marginBottom: '24px' }} data-testid="compensation-section">
-              <h3 style={{ fontWeight: 600, marginBottom: '12px', color: '#111827' }}>Compensation Details</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', fontSize: '14px' }}>
-                {job.raw_data.compensation.type && (
-                  <div>
-                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Type</p>
-                    <p style={{ fontWeight: 500, color: '#374151' }} data-testid="comp-type">{formatCompensationType(job.raw_data.compensation.type)}</p>
-                  </div>
-                )}
-                <div>
-                  <p style={{ color: '#6b7280', marginBottom: '4px' }}>Salary Range</p>
-                  <p style={{ fontWeight: 500, color: '#374151' }} data-testid="comp-range">{formatSalaryRange(job.raw_data.compensation)}</p>
-                </div>
-                {job.raw_data.compensation.equity_offered !== null && job.raw_data.compensation.equity_offered !== undefined && (
-                  <div>
-                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Equity</p>
-                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.compensation.equity_offered ? 'Yes' : 'No'}</p>
-                  </div>
-                )}
-                {job.raw_data.compensation.bonus_structure && (
-                  <div>
-                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Bonus Structure</p>
-                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.compensation.bonus_structure}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Employment Details Section */}
-          {job.raw_data?.employment && (
-            <div style={{ marginBottom: '24px' }} data-testid="employment-section">
-              <h3 style={{ fontWeight: 600, marginBottom: '12px', color: '#111827' }}>Employment Details</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', fontSize: '14px' }}>
-                {job.raw_data.employment.tax_structure && (
-                  <div>
-                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Tax Structure</p>
-                    <p style={{ fontWeight: 500, color: '#374151' }} data-testid="emp-tax">{formatTaxStructure(job.raw_data.employment.tax_structure)}</p>
-                  </div>
-                )}
-                {job.raw_data.employment.relationship && (
-                  <div>
-                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Relationship</p>
-                    <p style={{ fontWeight: 500, color: '#374151' }} data-testid="emp-relationship">{formatEmploymentRelationship(job.raw_data.employment.relationship)}</p>
-                  </div>
-                )}
-                {job.raw_data.employment.contract_duration && (
-                  <div>
-                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Duration</p>
-                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.employment.contract_duration}</p>
-                  </div>
-                )}
-                {job.raw_data.employment.agency_name && (
-                  <div>
-                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Agency</p>
-                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.employment.agency_name}</p>
-                  </div>
-                )}
-                {job.raw_data.employment.benefits && (
-                  <div style={{ gridColumn: '1 / -1' }}>
-                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Benefits</p>
-                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.employment.benefits}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Location & Commute Section */}
-          {(job.raw_data?.remote_work || job.raw_data?.commute) && (
-            <div style={{ marginBottom: '24px' }} data-testid="location-commute-section">
-              <h3 style={{ fontWeight: 600, marginBottom: '12px', color: '#111827' }}>Location & Commute</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', fontSize: '14px' }}>
-                {job.raw_data.remote_work?.policy && (
-                  <div>
-                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Remote Policy</p>
-                    <p style={{ fontWeight: 500, color: '#374151' }} data-testid="remote-policy">{formatRemotePolicy(job.raw_data.remote_work.policy)}</p>
-                  </div>
-                )}
-                {job.raw_data.remote_work?.days_onsite_per_week !== null && job.raw_data.remote_work?.days_onsite_per_week !== undefined && (
-                  <div>
-                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Days Onsite</p>
-                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.remote_work.days_onsite_per_week} days/week</p>
-                  </div>
-                )}
-                {job.raw_data.commute?.office_location && (
-                  <div>
-                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Office Location</p>
-                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.commute.office_location}</p>
-                  </div>
-                )}
-                {job.raw_data.commute?.company_shuttle !== null && job.raw_data.commute?.company_shuttle !== undefined && (
-                  <div>
-                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Company Shuttle</p>
-                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.commute.company_shuttle ? 'Yes' : 'No'}</p>
-                  </div>
-                )}
-                {job.raw_data.commute?.commute_perks && (
-                  <div style={{ gridColumn: '1 / -1' }}>
-                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Commute Perks</p>
-                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.commute.commute_perks}</p>
-                  </div>
-                )}
-                {job.raw_data.commute?.schedule_flexibility && (
-                  <div style={{ gridColumn: '1 / -1' }}>
-                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Schedule Flexibility</p>
-                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.commute.schedule_flexibility}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Technical Details Section */}
-          {job.raw_data?.job_domain && (
-            <div style={{ marginBottom: '24px' }} data-testid="technical-section">
-              <h3 style={{ fontWeight: 600, marginBottom: '12px', color: '#111827' }}>Technical Details</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', fontSize: '14px' }}>
-                {job.raw_data.job_domain.primary_category && (
-                  <div>
-                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Category</p>
-                    <p style={{ fontWeight: 500, color: '#374151' }} data-testid="tech-category">{job.raw_data.job_domain.primary_category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</p>
-                  </div>
-                )}
-                {job.raw_data.job_domain.seniority && (
-                  <div>
-                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Seniority</p>
-                    <p style={{ fontWeight: 500, color: '#374151' }} data-testid="tech-seniority">{formatSeniority(job.raw_data.job_domain.seniority)}</p>
-                  </div>
-                )}
-                {job.raw_data.job_domain.testing_focus !== null && job.raw_data.job_domain.testing_focus !== undefined && (
-                  <div>
-                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Testing Focus</p>
-                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.job_domain.testing_focus ? 'Yes' : 'No'}</p>
-                  </div>
-                )}
-                {job.raw_data.job_domain.automation_focus !== null && job.raw_data.job_domain.automation_focus !== undefined && (
-                  <div>
-                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Automation Focus</p>
-                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.job_domain.automation_focus ? 'Yes' : 'No'}</p>
-                  </div>
-                )}
-                {job.raw_data.job_domain.generative_ai_usage !== null && job.raw_data.job_domain.generative_ai_usage !== undefined && (
-                  <div>
-                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Generative AI</p>
-                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.job_domain.generative_ai_usage ? 'Yes' : 'No'}</p>
-                  </div>
-                )}
-                {job.raw_data.job_domain.testing_level && (
-                  <div style={{ gridColumn: '1 / -1' }}>
-                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Testing Level</p>
-                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.job_domain.testing_level}</p>
-                  </div>
-                )}
-                {job.raw_data.job_domain.test_equipment && (
-                  <div style={{ gridColumn: '1 / -1' }}>
-                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Test Equipment</p>
-                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.job_domain.test_equipment}</p>
-                  </div>
-                )}
-                {job.raw_data.job_domain.tech_stack && job.raw_data.job_domain.tech_stack.length > 0 && (
-                  <div style={{ gridColumn: '1 / -1' }}>
-                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Tech Stack</p>
-                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.job_domain.tech_stack.join(', ')}</p>
-                  </div>
-                )}
-                {job.raw_data.job_domain.test_automation_tools && job.raw_data.job_domain.test_automation_tools.length > 0 && (
-                  <div style={{ gridColumn: '1 / -1' }}>
-                    <p style={{ color: '#6b7280', marginBottom: '4px' }}>Automation Tools</p>
-                    <p style={{ fontWeight: 500, color: '#374151' }}>{job.raw_data.job_domain.test_automation_tools.join(', ')}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Enhanced Description Section - prefer raw_data.description (full email body) */}
-          {(job.raw_data?.description || job.description) && (
-            <div style={{ marginBottom: '24px' }}>
-              <h3 style={{ fontWeight: 600, marginBottom: '8px' }}>Full Email Body</h3>
-              <div data-testid="job-description">
-                {renderDescription(job.raw_data?.description || job.description || '')}
-              </div>
-            </div>
-          )}
-
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {(job.status === 'new' || job.status === 'filtered') && (
-              <>
-                <button
-                  onClick={() => { updateJobStatus(job.job_id, 'approved'); onClose(); }}
-                  style={{
-                    flex: 1,
-                    backgroundColor: '#10b981',
-                    color: 'white',
-                    padding: '8px 16px',
-                    borderRadius: '4px',
-                    border: 'none',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Approve
-                </button>
-                <button
-                  onClick={() => { updateJobStatus(job.job_id, 'rejected'); onClose(); }}
-                  style={{
-                    flex: 1,
-                    backgroundColor: '#ef4444',
-                    color: 'white',
-                    padding: '8px 16px',
-                    borderRadius: '4px',
-                    border: 'none',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Reject
-                </button>
-              </>
-            )}
-            {job.status === 'approved' && (
-              <>
-                <button
-                  onClick={async () => {
-                    await generateContent(job.job_id);
-                    onClose();
-                  }}
-                  style={{
-                    flex: 1,
-                    backgroundColor: '#8b5cf6',
-                    color: 'white',
-                    padding: '8px 16px',
-                    borderRadius: '4px',
-                    border: 'none',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Generate Resume & Cover Letter
-                </button>
-                <button
-                  onClick={() => { updateJobStatus(job.job_id, 'applied'); onClose(); }}
-                  style={{
-                    flex: 1,
-                    backgroundColor: '#3b82f6',
-                    color: 'white',
-                    padding: '8px 16px',
-                    borderRadius: '4px',
-                    border: 'none',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Mark as Applied
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
   if (loading) {
     return (
       <div style={{
@@ -1797,7 +1918,21 @@ const JobHunterDashboard: React.FC = () => {
       </main>
 
       {selectedJob && (
-        <JobDetails job={selectedJob} onClose={() => setSelectedJob(null)} />
+        <JobDetails
+          key={selectedJob.job_id}
+          job={selectedJob}
+          onClose={handleCloseJobDetails}
+          updateJobStatus={updateJobStatus}
+          generateContent={generateContent}
+          renderDescription={renderDescription}
+          formatCompensationType={formatCompensationType}
+          formatSalaryRange={formatSalaryRange}
+          formatTaxStructure={formatTaxStructure}
+          formatEmploymentRelationship={formatEmploymentRelationship}
+          formatRemotePolicy={formatRemotePolicy}
+          formatSeniority={formatSeniority}
+          getStatusColor={getStatusColor}
+        />
       )}
 
       {showContentGeneration && generatedContent && (
