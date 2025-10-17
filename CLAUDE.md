@@ -40,10 +40,12 @@ JobHunter is a workflow-driven job application management system built to stream
 
 **IMPORTANT**: Always show dialog boxes WITH SOUND when completing long-running tasks (>30 seconds).
 
-**Command to use (two commands - sound then dialog):**
+**Command to use (sound then dialog):**
 ```bash
-afplay /System/Library/Sounds/Glass.aiff & osascript -e 'display dialog "[message]" with title "Claude Code" buttons {"OK"} default button "OK" with icon note'
+afplay /System/Library/Sounds/Glass.aiff && osascript -e "display dialog \"[message]\" with title \"Claude Code\" buttons {\"OK\"} default button \"OK\" with icon note"
 ```
+
+**IMPORTANT**: Use **double quotes** on the outside with **escaped quotes** (`\"`) inside. Single quotes don't work with the curly braces in AppleScript.
 
 **When to send notifications:**
 - After running test suites (backend cargo test, E2E playwright tests)
@@ -61,13 +63,13 @@ afplay /System/Library/Sounds/Glass.aiff & osascript -e 'display dialog "[messag
 **Example usage:**
 ```bash
 # After tests complete
-afplay /System/Library/Sounds/Glass.aiff & osascript -e 'display dialog "Test suite completed:\n\n✅ Backend: 77/78 passing (98.7%)\n✅ E2E: +30 tests fixed\n\nAll changes committed to git." with title "Claude Code - Tests Complete" buttons {"OK"} default button "OK" with icon note'
+afplay /System/Library/Sounds/Glass.aiff && osascript -e "display dialog \"Test suite completed:\n\n✅ Backend: 77/78 passing (98.7%)\n✅ E2E: +30 tests fixed\n\nAll changes committed to git.\" with title \"Claude Code - Tests Complete\" buttons {\"OK\"} default button \"OK\" with icon note"
 
 # After build
-afplay /System/Library/Sounds/Glass.aiff & osascript -e 'display dialog "Build completed successfully" with title "Claude Code" buttons {"OK"} default button "OK" with icon note'
+afplay /System/Library/Sounds/Glass.aiff && osascript -e "display dialog \"Build completed successfully\" with title \"Claude Code\" buttons {\"OK\"} default button \"OK\" with icon note"
 
 # Ready for input
-afplay /System/Library/Sounds/Glass.aiff & osascript -e 'display dialog "Task completed - ready for your input" with title "Claude Code" buttons {"OK"} default button "OK" with icon note'
+afplay /System/Library/Sounds/Glass.aiff && osascript -e "display dialog \"Task completed - ready for your input\" with title \"Claude Code\" buttons {\"OK\"} default button \"OK\" with icon note"
 ```
 
 ## Development Commands
