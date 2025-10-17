@@ -816,6 +816,9 @@ const JobHunterDashboard: React.FC = () => {
   const [emailComposerJob, setEmailComposerJob] = useState<Job | null>(null);
   const [condensedDescriptions, setCondensedDescriptions] = useState<Record<string, string>>({});
 
+  // Track which jobs are currently being fetched to prevent duplicate requests
+  const fetchingJobsRef = React.useRef<Set<string>>(new Set());
+
   const fetchJobs = async (): Promise<void> => {
     try {
       const response = await fetch(`${API_URL}/jobs`);
@@ -1000,6 +1003,12 @@ const JobHunterDashboard: React.FC = () => {
     // Check if already fetched
     if (condensedDescriptions[jobId]) return;
 
+    // Check if already being fetched to prevent duplicate requests
+    if (fetchingJobsRef.current.has(jobId)) return;
+
+    // Mark as being fetched
+    fetchingJobsRef.current.add(jobId);
+
     try {
       const response = await fetch(`${API_URL}/jobs/${jobId}/condense-description`);
       if (response.ok) {
@@ -1011,6 +1020,9 @@ const JobHunterDashboard: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching condensed description:', error);
+    } finally {
+      // Remove from fetching set when done
+      fetchingJobsRef.current.delete(jobId);
     }
   };
 
@@ -1021,7 +1033,13 @@ const JobHunterDashboard: React.FC = () => {
 
   // Refresh a single job's condensed description
   const refreshSingleDescription = async (jobId: string): Promise<void> => {
-    // Remove from cache
+    // Prevent duplicate refresh requests
+    if (fetchingJobsRef.current.has(jobId)) return;
+
+    // Mark as being fetched
+    fetchingJobsRef.current.add(jobId);
+
+    // Remove from cache to show "Loading..." state
     setCondensedDescriptions(prev => {
       const newDescriptions = { ...prev };
       delete newDescriptions[jobId];
@@ -1040,6 +1058,9 @@ const JobHunterDashboard: React.FC = () => {
       }
     } catch (error) {
       console.error('Error refreshing condensed description:', error);
+    } finally {
+      // Remove from fetching set when done
+      fetchingJobsRef.current.delete(jobId);
     }
   };
 
@@ -1649,7 +1670,10 @@ const JobHunterDashboard: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
             <strong style={{ color: '#92400e' }}>Condensed Description:</strong>
             <button
-              onClick={() => refreshSingleDescription(job.job_id)}
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent triggering job card click
+                refreshSingleDescription(job.job_id);
+              }}
               style={{
                 padding: '4px 8px',
                 borderRadius: '4px',
