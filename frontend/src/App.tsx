@@ -404,7 +404,22 @@ const JobDetails: React.FC<{
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
           <div>
             <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827' }} data-testid="modal-job-title">{job.title}</h2>
-            <p style={{ fontSize: '20px', color: '#6b7280' }} data-testid="modal-company">{job.company}</p>
+            <p style={{ fontSize: '20px', color: '#6b7280', marginBottom: '8px' }} data-testid="modal-company">{job.company}</p>
+            <span
+              data-testid="modal-job-id"
+              style={{
+                display: 'inline-block',
+                padding: '4px 10px',
+                borderRadius: '4px',
+                backgroundColor: '#e0e7ff',
+                color: '#4338ca',
+                fontSize: '13px',
+                fontWeight: '500',
+                fontFamily: 'monospace'
+              }}
+              title="Job ID (for reference in chat)">
+              ID: {job.job_id.substring(0, 8)}
+            </span>
           </div>
           <button
             data-testid="modal-close-x"
