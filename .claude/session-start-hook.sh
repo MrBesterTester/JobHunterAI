@@ -31,18 +31,25 @@ echo "========================" >&2
 echo "" >&2
 
 # Output JSON for Claude Code using Python for proper JSON encoding
-python3 <<PYTHON_EOF
-import json
-import sys
+# Pass variables via environment to avoid quoting issues
+export HOOK_DB_NAME="${DB_NAME}"
+export HOOK_SWITCH_OUTPUT="${SWITCH_OUTPUT}"
 
-context = f"""🔒 **Database Configuration**: Using personal development database: \`${DB_NAME}\`
+python3 <<'PYTHON_EOF'
+import json
+import os
+
+db_name = os.environ.get('HOOK_DB_NAME', 'unknown')
+switch_output = os.environ.get('HOOK_SWITCH_OUTPUT', '')
+
+context = f"""🔒 **Database Configuration**: Using personal development database: `{db_name}`
 
 All database operations in this session will use the personal database, not the shared development database.
 
 **Switch Script Output:**
-\`\`\`
-${SWITCH_OUTPUT}
-\`\`\`"""
+```
+{switch_output}
+```"""
 
 output = {
     "hookSpecificOutput": {
