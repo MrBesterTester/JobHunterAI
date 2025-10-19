@@ -105,6 +105,6 @@ export default defineConfig({
   outputDir: 'test-results/',
 
   // Global setup/teardown
-  // globalSetup: require.resolve('./e2e/global-setup.ts'),
+  globalSetup: require.resolve('./e2e/global-setup.ts'),
   // globalTeardown: require.resolve('./e2e/global-teardown.ts'),
 });
