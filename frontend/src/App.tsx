@@ -1664,11 +1664,14 @@ const JobHunterDashboard: React.FC = () => {
 
           {/* Filtered Reasons (if applicable) */}
           {job.filter_reason && (
-            <div style={{
-              marginTop: '8px',
-              paddingTop: '8px',
-              borderTop: '1px solid #e5e7eb'
-            }}>
+            <div
+              data-testid="filtered-reasons"
+              className="filtered-reasons"
+              style={{
+                marginTop: '8px',
+                paddingTop: '8px',
+                borderTop: '1px solid #e5e7eb'
+              }}>
               <strong style={{ color: '#dc2626', fontSize: '11px' }}>Filtered Reasons:</strong>
               <ul style={{ fontSize: '11px', color: '#991b1b', margin: '4px 0 0 0', paddingLeft: '20px' }}>
                 {job.filter_reason.split(';').map((reason, idx) => (
