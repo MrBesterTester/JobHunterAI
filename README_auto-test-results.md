@@ -2,6 +2,24 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Automated Test Results Dashboard - JobHunter](#automated-test-results-dashboard---jobhunter)
+  - [🚨 CRITICAL TEST RUN (October 18, 2025) - Comprehensive Test Suite Analysis](#-critical-test-run-october-18-2025---comprehensive-test-suite-analysis)
+    - [Executive Summary](#executive-summary)
+    - [Test Suite Summary (October 18, 2025 18:16-18:26 PDT)](#test-suite-summary-october-18-2025-1816-1826-pdt)
+    - [Critical Failing Test Categories](#critical-failing-test-categories)
+      - [Priority 1: Console Errors & Network Issues (High Impact)](#priority-1-console-errors--network-issues-high-impact)
+      - [Priority 2: Tab Filtering & Navigation (Medium-High Impact)](#priority-2-tab-filtering--navigation-medium-high-impact)
+      - [Priority 3: Job Status Updates (Medium Impact)](#priority-3-job-status-updates-medium-impact)
+      - [Priority 4: Content Generation (Medium Impact)](#priority-4-content-generation-medium-impact)
+      - [Priority 5: Job Details Display (Low-Medium Impact)](#priority-5-job-details-display-low-medium-impact)
+    - [Root Cause Analysis](#root-cause-analysis)
+    - [Test Execution Metrics](#test-execution-metrics)
+    - [Recommended Actions (DO NOT IMPLEMENT - FOR REVIEW)](#recommended-actions-do-not-implement---for-review)
+      - [Critical (P0) - Must Fix Immediately](#critical-p0---must-fix-immediately)
+      - [High (P1) - Fix Within 24 Hours](#high-p1---fix-within-24-hours)
+      - [Medium (P2) - Fix Within Week](#medium-p2---fix-within-week)
+      - [Low (P3) - Nice to Have](#low-p3---nice-to-have)
+    - [Comparison with Previous Run (October 16, 2025)](#comparison-with-previous-run-october-16-2025)
+    - [Files Requiring Investigation](#files-requiring-investigation)
   - [Table of Contents](#table-of-contents)
   - [Test Suite Status Overview](#test-suite-status-overview)
   - [🚨 LATEST COMPREHENSIVE TEST RUN (October 15, 2025) - Claude 3.5 Haiku Upgrade + Tier 1 & 2 Fixes](#-latest-comprehensive-test-run-october-15-2025---claude-35-haiku-upgrade--tier-1--2-fixes)
@@ -61,6 +79,207 @@
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # Automated Test Results Dashboard - JobHunter
+
+## 🚨 CRITICAL TEST RUN (October 18, 2025) - Comprehensive Test Suite Analysis
+
+### Executive Summary
+
+**Overall Status:** Significant regression detected in E2E test suite
+- Backend Unit Tests: **108/108 passing (100%)** ✅ EXCELLENT
+- Frontend Unit Tests: **0 tests (no unit tests exist)** ⚠️
+- E2E Tests: **Tests still running after 6+ minutes** ⚠️ **Multiple failures detected**
+- Overall Health: ⚠️ **DEGRADED** - Backend solid, E2E tests experiencing failures
+
+### Test Suite Summary (October 18, 2025 18:16-18:26 PDT)
+
+**Backend Tests (Rust) - COMPLETE**
+- ✅ **108/108 tests passing (100%)**
+- Execution Time: ~25 seconds total (including compilation)
+- All test categories passing:
+  - Main tests (Gmail/MIME): 11/11 ✅
+  - Analytics tests: 10/10 ✅
+  - API tests: 9/9 ✅
+  - Content generation tests: 16/16 ✅
+  - Deduplication tests: 10/10 ✅
+  - Job filtering tests: 7/7 ✅
+  - Job intake tests: 19/19 ✅
+  - Phase 5.1 tests (Application tracking): 23/23 ✅
+  - Email tabs tests: 3/3 ✅
+
+**Frontend Unit Tests**
+- ❌ **No unit tests exist** - Tap test infrastructure present but no tests found
+
+**E2E Tests (Playwright) - IN PROGRESS / DEGRADED**
+- ⚠️ **464 tests total** (still running after 6+ minutes)
+- ❌ **50+ failures observed** (tests still running for complete count)
+- ⏭️ **Multiple tests skipped** due to dependent test failures
+- Flaky test behavior: Multiple retries observed
+
+### Critical Failing Test Categories
+
+#### Priority 1: Console Errors & Network Issues (High Impact)
+**File:** `frontend/e2e/tests/01-setup-load.spec.ts`
+- ❌ **Console errors test** (01-setup-load.spec.ts:73) - Failed twice
+  - Issue: Page loading with console errors
+  - Impact: May indicate JavaScript errors affecting functionality
+- ❌ **Network connectivity tests** (multiple failures)
+  - `should make successful API calls on page load` (01-setup-load.spec.ts:103) - Timeout 10.9s+
+  - `should make GET /api/jobs request` (01-setup-load.spec.ts:127) - Timeout 5.6s+
+  - `should make GET /api/jobs/stats request` (01-setup-load.spec.ts:146) - Timeout 11.0s+
+  - `should successfully load with all network requests` (01-setup-load.spec.ts:196) - Failed
+  - `should have proper CORS configuration` (01-setup-load.spec.ts:213) - Failed
+  - Issue: API calls timing out or failing
+  - Impact: **CRITICAL** - Core functionality broken
+
+#### Priority 2: Tab Filtering & Navigation (Medium-High Impact)
+**File:** `frontend/e2e/tests/02-tab-navigation.spec.ts`
+- ❌ **Tab filtering tests failing** (multiple)
+  - `should display only "new" jobs in Inbox tab` (02-tab-navigation.spec.ts:22) - Failed twice
+  - `should display only "approved" jobs in Approved tab` (02-tab-navigation.spec.ts:40) - Failed twice
+  - `should display all jobs in All tab` (02-tab-navigation.spec.ts:82) - Failed twice
+  - `should have job count badges matching displayed jobs` (02-tab-navigation.spec.ts:128) - Failed twice
+  - Issue: Job filtering by status not working correctly
+  - Impact: Users cannot properly navigate job lists
+
+#### Priority 3: Job Status Updates (Medium Impact)
+**File:** `frontend/e2e/tests/03-job-status-updates.spec.ts`
+- ❌ **Approval workflow test** (03-job-status-updates.spec.ts:24)
+  - `should move job from Inbox to Approved when approved` - Failed twice (6.8s, 7.1s)
+  - Issue: Job status updates not persisting or UI not refreshing
+- ❌ **API validation test** (03-job-status-updates.spec.ts:279)
+  - `should receive 200 OK response on successful approval` - Timeout 13.3s+ (failed twice)
+  - Issue: API endpoint timing out
+- ⏭️ **5+ tests skipped** due to dependent test failures (reject workflow, statistics updates, multiple approvals, etc.)
+
+#### Priority 4: Content Generation (Medium Impact)
+**File:** `frontend/e2e/tests/04-content-generation.spec.ts`
+- ❌ **Generation timeout issues** (20+ failures)
+  - All generation tests timing out at 9+ seconds
+  - `should complete content generation within 2 seconds` (04-content-generation.spec.ts:62) - Failed (9.0s timeout)
+  - `should open modal with resume and cover letter` (04-content-generation.spec.ts:87) - Failed (9.0s timeout)
+  - `should display resume content in left panel` (04-content-generation.spec.ts:113) - Failed (9.1s timeout)
+  - `should display cover letter in right panel` (04-content-generation.spec.ts:146) - Failed (9.1s timeout)
+  - Modal interaction tests (8+ failures) - All timing out
+  - Content quality tests (3 failures)
+  - Issue: Content generation not completing or modal not opening
+  - Impact: Critical feature completely broken
+- ⏭️ **1 test skipped**: unique content generation
+
+#### Priority 5: Job Details Display (Low-Medium Impact)
+**File:** `frontend/e2e/tests/05-job-details.spec.ts`
+- ❌ **Date collected display** (05-job-details.spec.ts:219)
+  - Failed twice (8.6s, 9.0s timeouts)
+  - Issue: Date collected field not displaying or selector issue
+- ⏭️ **1 test skipped**: salary display
+
+### Root Cause Analysis
+
+Based on observed patterns:
+
+1. **Backend Server May Not Be Running**
+   - Multiple API timeout failures (10-13 seconds)
+   - Network connectivity tests all failing
+   - Backend tests pass 100%, suggesting backend code is healthy
+   - **Hypothesis**: E2E tests may be starting before backend server is ready
+
+2. **Test Data Issues**
+   - Tab filtering failures suggest database may not have expected job statuses
+   - Job count mismatches indicate data inconsistency
+
+3. **Content Generation Timeout**
+   - Consistent 9-second timeouts suggest:
+     - LLM API calls may be slow or failing
+     - Modal rendering issues
+     - Network/backend connectivity problems
+
+4. **Test Infrastructure Issues**
+   - Playwright may need longer timeouts for API calls
+   - Server startup sequence may need adjustment
+   - Database state between tests may not be properly reset
+
+### Test Execution Metrics
+
+**Backend Tests:**
+- Compilation Time: ~10.5 seconds
+- Execution Time: ~14.5 seconds
+- Total Time: ~25 seconds
+- Workers: Single-threaded
+- Pass Rate: 100% (108/108)
+
+**E2E Tests:**
+- Browser: Chromium (Playwright)
+- Workers: 4 parallel
+- Execution Time: 6+ minutes (still running)
+- Pass Rate: Unknown (tests still executing)
+- Observed Failures: 50+
+- Skipped Tests: 15+ (due to dependent failures)
+
+### Recommended Actions (DO NOT IMPLEMENT - FOR REVIEW)
+
+#### Critical (P0) - Must Fix Immediately
+1. **Verify Backend Server Status**
+   - Check if backend is running before E2E tests start
+   - Add health check endpoint and wait for it before tests
+   - Review Playwright config `webServer` settings
+
+2. **Fix Network Connectivity Tests**
+   - Increase API timeout from default to 15-30 seconds
+   - Add retry logic for network requests
+   - Verify CORS configuration
+
+3. **Resolve Content Generation Timeouts**
+   - Investigate why generation takes 9+ seconds
+   - Check LLM API connectivity
+   - Add better error messages for timeout scenarios
+
+#### High (P1) - Fix Within 24 Hours
+4. **Fix Tab Filtering Tests**
+   - Verify test database has jobs in all statuses (new, approved, applied, filtered)
+   - Check if tab filtering logic matches test expectations
+   - Review tab click/navigation code
+
+5. **Fix Job Status Update Tests**
+   - Verify API endpoint `/api/jobs/{id}/status` is working
+   - Check if UI properly refreshes after status change
+   - Add better state management for status updates
+
+#### Medium (P2) - Fix Within Week
+6. **Add Frontend Unit Tests**
+   - Currently zero unit tests for frontend
+   - Consider adding component-level tests
+   - Reduce reliance on E2E tests for basic functionality
+
+7. **Improve Test Reliability**
+   - Many tests being retried due to flakiness
+   - Add explicit waits for API responses
+   - Improve test data setup/teardown
+
+#### Low (P3) - Nice to Have
+8. **Performance Optimization**
+   - E2E test suite taking 6+ minutes
+   - Consider parallelization improvements
+   - Optimize test data seeding
+
+### Comparison with Previous Run (October 16, 2025)
+
+**Regression Summary:**
+- Backend: No change (was 100%, still 100%) ✅
+- E2E: Significant regression (was 100% in Oct 16, now 50+ failures) ⚠️
+- Likely causes:
+  - Server startup issues in test environment
+  - Database state problems
+  - LLM API connectivity issues
+  - Recent code changes affecting API reliability
+
+### Files Requiring Investigation
+
+Based on failures, these files likely need review:
+1. `backend/src/main.rs` - API endpoints timing out
+2. `frontend/src/App.tsx` - Tab filtering, content generation UI
+3. `frontend/e2e/playwright.config.ts` - Server startup, timeouts
+4. `frontend/e2e/tests/` - Multiple test files with failures
+
+---
 
 ## Table of Contents
 
