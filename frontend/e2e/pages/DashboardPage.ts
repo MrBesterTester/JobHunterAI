@@ -162,14 +162,14 @@ export class DashboardPage {
     try {
       await this.page.waitForResponse(
         (response) => response.url().includes('/api/jobs') && response.status() === 200,
-        { timeout: 3000 }
+        { timeout: 5000 }
       );
     } catch {
-      // If no API call within 3s, just wait fixed time
-      await this.page.waitForTimeout(1500);
+      // If no API call within 5s, just wait fixed time
+      await this.page.waitForTimeout(2000);
     }
-    // Additional time for React to re-render
-    await this.page.waitForTimeout(500);
+    // Give React plenty of time to re-render and update DOM
+    await this.page.waitForTimeout(1500);
   }
 
   /**

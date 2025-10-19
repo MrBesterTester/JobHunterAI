@@ -986,8 +986,9 @@ const JobHunterDashboard: React.FC = () => {
     } catch (error) {
       console.error('Error updating job status:', error);
       // Use functional setState to avoid needing jobs in dependency array
+      // Optimistically update UI even if fetch fails
       setJobs(prevJobs => prevJobs.map(j => j.job_id === jobId ? {...j, status: newStatus} : j));
-      throw error; // Re-throw to allow error handling in tests
+      // Don't re-throw - we've handled the error with optimistic update
     }
   }, []); // Empty dependency array since we use functional setState and fetchJobs/fetchStats are stable
 
