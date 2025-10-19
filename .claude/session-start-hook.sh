@@ -45,7 +45,6 @@ ${SWITCH_OUTPUT}
 \`\`\`"""
 
 output = {
-    "systemMessage": "${USER_MESSAGE}",
     "hookSpecificOutput": {
         "hookEventName": "SessionStart",
         "additionalContext": context

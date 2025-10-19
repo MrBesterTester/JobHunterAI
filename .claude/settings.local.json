@@ -1,16 +1,4 @@
 {
-  "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": ".claude/session-start-hook.sh"
-          }
-        ]
-      }
-    ]
-  },
   "permissions": {
     "allow": [
       "Read",
@@ -90,7 +78,9 @@
       "Bash(osascript:*)",
       "Bash(xargs kill:*)",
       "Bash(sed:*)",
-      "Bash(NO_BROWSER=1 ./start.sh:*)"
+      "Bash(NO_BROWSER=1 ./start.sh:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:piperhaywood.com)"
     ],
     "deny": [],
     "ask": [
@@ -102,5 +92,21 @@
       "Bash(git config --global:*)",
       "WebFetch"
     ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/session-start-hook.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": ".claude/statusline.sh"
   }
 }
