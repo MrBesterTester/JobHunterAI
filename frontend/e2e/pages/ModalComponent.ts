@@ -240,12 +240,11 @@ export class ContentGenerationModal extends ModalComponent {
 
   /**
    * Wait for content generation to complete
+   * Note: The modal only appears AFTER content is loaded, so we just verify content is visible
    */
   async waitForContentGeneration(maxTimeMs: number = 5000) {
-    // Wait for loading indicator to disappear
-    await expect(this.loadingIndicator).not.toBeVisible({ timeout: maxTimeMs });
-
-    // Wait for resume and cover letter to be visible
+    // Since the frontend only shows the modal after content is loaded,
+    // we just need to verify the content is visible (no loading indicator exists)
     await expect(this.resumeContent).toBeVisible({ timeout: maxTimeMs });
     await expect(this.coverLetterContent).toBeVisible({ timeout: maxTimeMs });
   }

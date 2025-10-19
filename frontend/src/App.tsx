@@ -509,8 +509,8 @@ const JobDetails: React.FC<{
             <p style={{ fontWeight: 600 }} data-testid="modal-source">{job.source}</p>
           </div>
           <div>
-            <p style={{ fontSize: '14px', color: '#6b7280' }}>Date Email Sent</p>
-            <p style={{ fontWeight: 600 }} data-testid="date-email-sent">{new Date(job.date_email_sent).toLocaleDateString()}</p>
+            <p style={{ fontSize: '14px', color: '#6b7280' }}>Date Collected</p>
+            <p style={{ fontWeight: 600 }} data-testid="date-collected">{new Date(job.date_email_sent).toLocaleDateString()}</p>
           </div>
         </div>
 
