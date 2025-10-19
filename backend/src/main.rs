@@ -1104,7 +1104,7 @@ async fn update_job_status(
     status_req: web::Json<UpdateJobStatusRequest>,
 ) -> Result<HttpResponse> {
     let job = sqlx::query_as::<_, Job>(
-        "UPDATE jobs SET status = $1 WHERE job_id = $2 RETURNING job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, url, filter_reason"
+        "UPDATE jobs SET status = $1 WHERE job_id = $2 RETURNING job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, url, filter_reason, extraction_method, raw_data"
     )
     .bind(&status_req.status)
     .bind(*job_id)

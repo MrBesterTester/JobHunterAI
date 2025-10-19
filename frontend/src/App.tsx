@@ -969,19 +969,27 @@ const JobHunterDashboard: React.FC = () => {
 
   const updateJobStatus = useCallback(async (jobId: string, newStatus: string): Promise<void> => {
     try {
-      await fetch(`${API_URL}/jobs/${jobId}/status`, {
+      const response = await fetch(`${API_URL}/jobs/${jobId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
       });
-      fetchJobs();
-      fetchStats();
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to update job status: ${response.status} ${response.statusText}. ${errorText}`);
+      }
+
+      // Wait for the status update to complete before refreshing
+      await fetchJobs();
+      await fetchStats();
     } catch (error) {
       console.error('Error updating job status:', error);
       // Use functional setState to avoid needing jobs in dependency array
       setJobs(prevJobs => prevJobs.map(j => j.job_id === jobId ? {...j, status: newStatus} : j));
+      throw error; // Re-throw to allow error handling in tests
     }
-  }, []); // Empty dependency array since we use functional setState
+  }, []); // Empty dependency array since we use functional setState and fetchJobs/fetchStats are stable
 
   const generateContent = useCallback(async (jobId: string): Promise<void> => {
     setGeneratingContent(true);

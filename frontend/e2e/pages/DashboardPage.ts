@@ -158,7 +158,18 @@ export class DashboardPage {
    * Wait for job cards to update after an action
    */
   async waitForJobsUpdate() {
-    await this.page.waitForTimeout(1000); // Wait for API call and re-render
+    // Wait for any pending API requests to complete
+    try {
+      await this.page.waitForResponse(
+        (response) => response.url().includes('/api/jobs') && response.status() === 200,
+        { timeout: 3000 }
+      );
+    } catch {
+      // If no API call within 3s, just wait fixed time
+      await this.page.waitForTimeout(1500);
+    }
+    // Additional time for React to re-render
+    await this.page.waitForTimeout(500);
   }
 
   /**

@@ -38,7 +38,8 @@ async function globalSetup() {
   // Start backend server
   try {
     // Use the start-test-servers.sh script which handles backend startup
-    await execAsync('cd frontend && ./start-test-servers.sh');
+    // Note: This script is in the frontend directory
+    await execAsync('./start-test-servers.sh', { cwd: process.cwd().includes('frontend') ? process.cwd() : `${process.cwd()}/frontend` });
 
     // Wait for backend to be ready
     const isReady = await checkBackendHealth();
