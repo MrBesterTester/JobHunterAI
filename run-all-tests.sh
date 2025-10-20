@@ -1,8 +1,20 @@
 #!/bin/bash
 set -e  # Exit on any error
 
+# JobHunter Complete Test Suite Runner
+#
+# Expected Runtime (based on October 20, 2025 test run):
+# - Backend (Rust): ~0.5 minutes (108 tests)
+# - Frontend Build: ~1-2 minutes
+# - E2E (Playwright): 10.2 minutes (464 tests, 4 workers)
+# - Total: ~12-13 minutes
+#
+# Recommended Timeout: 15 minutes (with buffer for CI/CD)
+# Set timeout in CI/CD with: timeout 15m ./run-all-tests.sh
+
 echo "================================================"
 echo "  JobHunter Complete Test Suite"
+echo "  Expected Duration: ~12-13 minutes"
 echo "================================================"
 
 # Get the directory where this script is located

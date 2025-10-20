@@ -1,5 +1,11 @@
 name: Frontend E2E Tests
 
+# Expected Workflow Timing (based on October 20, 2025 test run):
+# - Setup (install dependencies, build backend): ~3-5 minutes
+# - E2E Tests: 10.2 minutes (464 tests, 4 workers)
+# - Total per job: ~15 minutes
+# - Job timeout: 20-25 minutes (with buffer)
+
 on:
   push:
     branches: [main, samkirk]
@@ -10,6 +16,7 @@ jobs:
   e2e-chromium:
     name: E2E Tests (Chromium)
     runs-on: ubuntu-latest
+    timeout-minutes: 20  # E2E tests: ~10 mins + setup/teardown
 
     services:
       postgres:
@@ -107,6 +114,7 @@ jobs:
   e2e-multi-browser:
     name: E2E Tests (All Browsers)
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 25  # E2E tests: ~10 mins + setup/teardown (longer for multiple browsers)
     strategy:
       fail-fast: false
       matrix:

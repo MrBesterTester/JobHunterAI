@@ -7,13 +7,21 @@ import { defineConfig, devices } from '@playwright/test';
  * - Chromium: Primary target (100% test coverage, every run)
  * - Firefox: CI/CD only (cross-browser validation)
  * - WebKit: CI/CD only (Safari-equivalent testing)
+ *
+ * Test Suite Timing (based on October 20, 2025 test run):
+ * - E2E Tests: 10.2 minutes (464 tests, 4 workers)
+ * - Recommended CI/CD Timeout: 15 minutes (with 35% buffer)
+ * - Global Timeout: 20 minutes (for safety in slower environments)
  */
 export default defineConfig({
   // Test directory structure
   testDir: './e2e/tests',
 
   // Maximum time one test can run
-  timeout: 30 * 1000,
+  timeout: 30 * 1000, // 30 seconds per test
+
+  // Global timeout for entire test suite (all tests must complete within this time)
+  globalTimeout: 20 * 60 * 1000, // 20 minutes (safety buffer for CI/CD)
 
   // Test execution settings
   fullyParallel: true,
