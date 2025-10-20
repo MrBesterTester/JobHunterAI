@@ -40,16 +40,9 @@ import json
 import os
 
 db_name = os.environ.get('HOOK_DB_NAME', 'unknown')
-switch_output = os.environ.get('HOOK_SWITCH_OUTPUT', '')
 
-context = f"""🔒 **Database Configuration**: Using personal development database: `{db_name}`
-
-All database operations in this session will use the personal database, not the shared development database.
-
-**Switch Script Output:**
-```
-{switch_output}
-```"""
+# Keep context minimal for compact mode compatibility
+context = f"Database: Using personal development database `{db_name}`"
 
 output = {
     "hookSpecificOutput": {
