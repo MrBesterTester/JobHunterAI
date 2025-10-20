@@ -284,6 +284,7 @@ pub struct GmailPart {
     pub body: Option<GmailBody>,
     #[serde(rename = "mimeType")]
     pub mime_type: String,
+    pub parts: Option<Vec<GmailPart>>, // Support nested multipart structures
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -2366,10 +2367,11 @@ async fn process_gmail_messages(
                                     }
                                     Ok(("created", None))
                                 }
-                                Ok(JobCreationResult::Duplicate(_job_id)) => {
-                                    // Mark email as processed (duplicate)
+                                Ok(JobCreationResult::Duplicate(job_id)) => {
+                                    // Mark email as processed and link to existing duplicate job
                                     if let Err(e) = sqlx::query!(
-                                        "UPDATE email_jobs SET processed = true, processed_at = NOW(), extraction_confidence = $1, extracted_data = $2 WHERE email_job_id = $3",
+                                        "UPDATE email_jobs SET processed = true, processed_at = NOW(), job_id = $1, extraction_confidence = $2, extracted_data = $3 WHERE email_job_id = $4",
+                                        job_id,
                                         BigDecimal::try_from(job_data.confidence).unwrap_or_default(),
                                         serde_json::to_value(&job_data).unwrap(),
                                         email_job_id
@@ -2472,79 +2474,89 @@ async fn process_gmail_messages(
 fn extract_email_body(payload: &GmailPayload) -> Option<String> {
     // Try to extract from direct body first
     if let Some(body) = &payload.body {
-        if let Some(data) = &body.data {
-            if !data.is_empty() {
-                if let Ok(decoded) = general_purpose::URL_SAFE_NO_PAD.decode(data) {
-                    if let Ok(text) = String::from_utf8(decoded) {
-                        if !text.trim().is_empty() {
-                            return Some(text);
-                        }
-                    }
-                }
-            }
+        if let Some(text) = decode_body_data(body) {
+            return Some(text);
         }
     }
 
-    // Try to extract from parts (handles multipart emails)
+    // Try to extract from parts (handles multipart emails) - recursively search all nested parts
     if let Some(parts) = &payload.parts {
         // First try to find text/plain (preferred for readability)
-        for part in parts {
-            if part.mime_type == "text/plain" {
-                if let Some(body) = &part.body {
-                    if let Some(data) = &body.data {
-                        if !data.is_empty() {
-                            if let Ok(decoded) = general_purpose::URL_SAFE_NO_PAD.decode(data) {
-                                if let Ok(text) = String::from_utf8(decoded) {
-                                    if !text.trim().is_empty() {
-                                        return Some(text);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+        if let Some(text) = find_mime_type_recursive(parts, "text/plain") {
+            return Some(text);
         }
 
         // If no text/plain found, try text/html
-        for part in parts {
-            if part.mime_type == "text/html" {
-                if let Some(body) = &part.body {
-                    if let Some(data) = &body.data {
-                        if !data.is_empty() {
-                            if let Ok(decoded) = general_purpose::URL_SAFE_NO_PAD.decode(data) {
-                                if let Ok(text) = String::from_utf8(decoded) {
-                                    if !text.trim().is_empty() {
-                                        return Some(text);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+        if let Some(text) = find_mime_type_recursive(parts, "text/html") {
+            return Some(text);
         }
 
         // Last resort: try any text/* type
-        for part in parts {
-            if part.mime_type.starts_with("text/") {
-                if let Some(body) = &part.body {
-                    if let Some(data) = &body.data {
-                        if !data.is_empty() {
-                            if let Ok(decoded) = general_purpose::URL_SAFE_NO_PAD.decode(data) {
-                                if let Ok(text) = String::from_utf8(decoded) {
-                                    if !text.trim().is_empty() {
-                                        return Some(text);
-                                    }
-                                }
-                            }
-                        }
+        if let Some(text) = find_any_text_recursive(parts) {
+            return Some(text);
+        }
+    }
+
+    None
+}
+
+// Helper function to decode body data
+fn decode_body_data(body: &GmailBody) -> Option<String> {
+    if let Some(data) = &body.data {
+        if !data.is_empty() {
+            if let Ok(decoded) = general_purpose::URL_SAFE_NO_PAD.decode(data) {
+                if let Ok(text) = String::from_utf8(decoded) {
+                    if !text.trim().is_empty() {
+                        return Some(text);
                     }
                 }
             }
         }
     }
+    None
+}
 
+// Recursively search for a specific MIME type in nested parts
+fn find_mime_type_recursive(parts: &[GmailPart], mime_type: &str) -> Option<String> {
+    for part in parts {
+        // Check if this part has the target MIME type
+        if part.mime_type == mime_type {
+            if let Some(body) = &part.body {
+                if let Some(text) = decode_body_data(body) {
+                    return Some(text);
+                }
+            }
+        }
+
+        // Recursively search nested parts
+        if let Some(nested_parts) = &part.parts {
+            if let Some(text) = find_mime_type_recursive(nested_parts, mime_type) {
+                return Some(text);
+            }
+        }
+    }
+    None
+}
+
+// Recursively search for any text/* MIME type in nested parts
+fn find_any_text_recursive(parts: &[GmailPart]) -> Option<String> {
+    for part in parts {
+        // Check if this part is any text/* type
+        if part.mime_type.starts_with("text/") {
+            if let Some(body) = &part.body {
+                if let Some(text) = decode_body_data(body) {
+                    return Some(text);
+                }
+            }
+        }
+
+        // Recursively search nested parts
+        if let Some(nested_parts) = &part.parts {
+            if let Some(text) = find_any_text_recursive(nested_parts) {
+                return Some(text);
+            }
+        }
+    }
     None
 }
 
@@ -3092,6 +3104,103 @@ async fn refilter_jobs(
             "to_new": to_new,
             "to_filtered": to_filtered,
         }
+    })))
+}
+
+// Reprocess emails with missing bodies by re-fetching from Gmail
+async fn reprocess_empty_email_bodies(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    // Get Gmail OAuth credentials
+    let credentials = sqlx::query_as::<_, OAuthCredential>(
+        "SELECT * FROM oauth_credentials WHERE source_id = (SELECT source_id FROM job_sources WHERE source_name = 'gmail' LIMIT 1) LIMIT 1"
+    )
+    .fetch_optional(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to fetch credentials: {}", e)))?
+    .ok_or_else(|| actix_web::error::ErrorInternalServerError("Gmail OAuth not configured"))?;
+
+    let access_token = credentials.access_token.ok_or_else(||
+        actix_web::error::ErrorInternalServerError("No access token available")
+    )?;
+
+    // Find all emails with missing bodies
+    let emails = sqlx::query!(
+        r#"
+        SELECT email_job_id, message_id, subject
+        FROM email_jobs
+        WHERE body_text IS NULL AND body_html IS NULL
+        "#
+    )
+    .fetch_all(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to fetch emails: {}", e)))?;
+
+    let total_emails = emails.len();
+    let mut updated_count = 0;
+    let mut failed_count = 0;
+
+    let client = reqwest::Client::new();
+
+    for email in emails {
+        // Re-fetch message from Gmail
+        let message_url = format!(
+            "https://gmail.googleapis.com/gmail/v1/users/me/messages/{}",
+            email.message_id
+        );
+
+        let message_result = client
+            .get(&message_url)
+            .bearer_auth(&access_token)
+            .send()
+            .await;
+
+        match message_result {
+            Ok(response) => {
+                match response.json::<GmailMessage>().await {
+                    Ok(message) => {
+                        // Extract body using the new recursive extraction logic
+                        if let Some(body_text) = extract_email_body(&message.payload) {
+                            // Update the database with the extracted body
+                            let update_result = sqlx::query!(
+                                "UPDATE email_jobs SET body_text = $1 WHERE email_job_id = $2",
+                                body_text,
+                                email.email_job_id
+                            )
+                            .execute(pool.get_ref())
+                            .await;
+
+                            match update_result {
+                                Ok(_) => {
+                                    updated_count += 1;
+                                    log_debug(&format!("Updated email body for message_id: {} ({})", email.message_id, email.subject.as_deref().unwrap_or("No subject")));
+                                }
+                                Err(e) => {
+                                    failed_count += 1;
+                                    log_debug(&format!("Failed to update database for message_id {}: {}", email.message_id, e));
+                                }
+                            }
+                        } else {
+                            failed_count += 1;
+                            log_debug(&format!("Still could not extract body for message_id: {} ({})", email.message_id, email.subject.as_deref().unwrap_or("No subject")));
+                        }
+                    }
+                    Err(e) => {
+                        failed_count += 1;
+                        log_debug(&format!("Failed to parse Gmail message {}: {}", email.message_id, e));
+                    }
+                }
+            }
+            Err(e) => {
+                failed_count += 1;
+                log_debug(&format!("Failed to fetch Gmail message {}: {}", email.message_id, e));
+            }
+        }
+    }
+
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "message": "Email body reprocessing completed",
+        "total_emails": total_emails,
+        "updated": updated_count,
+        "failed": failed_count
     })))
 }
 
@@ -4451,6 +4560,7 @@ async fn main() -> std::io::Result<()> {
             .route("/api/intake/failed-emails", web::get().to(get_failed_emails))
             .route("/api/intake/duplicate-emails", web::get().to(get_duplicate_emails))
             .route("/api/jobs/refilter", web::post().to(refilter_jobs))
+            .route("/api/intake/reprocess-empty-bodies", web::post().to(reprocess_empty_email_bodies))
             // Phase 5.1: Calendar & Follow-ups APIs
             .route("/api/interviews", web::post().to(create_interview))
             .route("/api/interviews/upcoming", web::get().to(get_upcoming_interviews))

@@ -708,33 +708,55 @@ const JobDetails: React.FC<{
         )}
 
         {/* Enhanced Description Section - prefer email body from email_jobs */}
-        {(emailBody?.body_text || emailBody?.body_html || job.raw_data?.description || job.description) && (
-          <div style={{ marginBottom: '24px' }}>
-            <h3 style={{ fontWeight: 600, marginBottom: '8px' }}>
-              Full Email Body
-              {emailBody && (
-                <span style={{ fontSize: '14px', fontWeight: 'normal', color: '#6b7280', marginLeft: '8px' }}>
-                  {emailBody.sender_name || emailBody.sender_email ? `from ${emailBody.sender_name || emailBody.sender_email}` : ''}
-                </span>
-              )}
-            </h3>
-            <div data-testid="job-description">
-              {emailBody?.body_text ? (
-                renderDescription(emailBody.body_text)
-              ) : emailBody?.body_html ? (
-                <div dangerouslySetInnerHTML={{ __html: emailBody.body_html }} style={{
-                  maxHeight: '400px',
-                  overflow: 'auto',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '4px',
-                  padding: '12px'
-                }} />
-              ) : (
-                renderDescription(job.raw_data?.description || job.description || '')
-              )}
-            </div>
+        <div style={{ marginBottom: '24px' }}>
+          <h3 style={{ fontWeight: 600, marginBottom: '8px' }}>
+            {job.source === 'gmail' ? 'Full Email Body' : 'Job Description'}
+            {emailBody && (emailBody.sender_name || emailBody.sender_email) && (
+              <span style={{ fontSize: '14px', fontWeight: 'normal', color: '#6b7280', marginLeft: '8px' }}>
+                from {emailBody.sender_name || emailBody.sender_email}
+              </span>
+            )}
+          </h3>
+          <div data-testid="job-description">
+            {emailBody?.body_text ? (
+              renderDescription(emailBody.body_text)
+            ) : emailBody?.body_html ? (
+              <div dangerouslySetInnerHTML={{ __html: emailBody.body_html }} style={{
+                maxHeight: '400px',
+                overflow: 'auto',
+                border: '1px solid #e5e7eb',
+                borderRadius: '4px',
+                padding: '12px'
+              }} />
+            ) : job.raw_data?.description || job.description ? (
+              renderDescription(job.raw_data?.description || job.description || '')
+            ) : job.source === 'gmail' ? (
+              <div style={{
+                padding: '16px',
+                backgroundColor: '#fef3c7',
+                border: '1px solid #f59e0b',
+                borderRadius: '4px',
+                color: '#92400e'
+              }}>
+                <p style={{ margin: '0 0 8px 0', fontWeight: 600 }}>Original email not available</p>
+                <p style={{ margin: 0, fontSize: '14px' }}>
+                  This job may have been marked as a duplicate during import.
+                  If you need to see the original email, please run the database migration script to link orphaned emails.
+                </p>
+              </div>
+            ) : (
+              <div style={{
+                padding: '16px',
+                backgroundColor: '#f3f4f6',
+                border: '1px solid #d1d5db',
+                borderRadius: '4px',
+                color: '#6b7280'
+              }}>
+                <p style={{ margin: 0 }}>No description available</p>
+              </div>
+            )}
           </div>
-        )}
+        </div>
 
         <div style={{ display: 'flex', gap: '8px' }}>
           {(job.status === 'new' || job.status === 'filtered') && (
