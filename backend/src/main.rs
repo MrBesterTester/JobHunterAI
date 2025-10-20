@@ -3275,6 +3275,103 @@ async fn reprocess_empty_email_bodies(pool: web::Data<PgPool>) -> Result<HttpRes
     })))
 }
 
+// Re-extract job descriptions from emails with full bodies
+async fn reextract_job_descriptions(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    // Find jobs with short descriptions that have email bodies
+    // Short description indicates LLM extraction failed due to missing email body
+    let jobs_to_reextract = sqlx::query!(
+        r#"
+        SELECT
+            j.job_id,
+            j.title,
+            j.description,
+            e.subject,
+            e.body_text,
+            e.body_html
+        FROM jobs j
+        JOIN email_jobs e ON j.job_id = e.job_id
+        WHERE j.source = 'gmail'
+          AND e.body_text IS NOT NULL
+          AND (LENGTH(j.description) < 100
+               OR j.description LIKE '%No job description%'
+               OR j.description LIKE '%Urgent need for%')
+        "#
+    )
+    .fetch_all(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to fetch jobs: {}", e)))?;
+
+    let total_jobs = jobs_to_reextract.len();
+    let mut updated_count = 0;
+    let mut failed_count = 0;
+
+    log_debug(&format!("Found {} jobs with short descriptions to re-extract", total_jobs));
+
+    for job in jobs_to_reextract {
+        let job_id = job.job_id;
+        let subject = job.subject;
+        let body = job.body_text.or(job.body_html);
+
+        log_debug(&format!("Re-extracting job description for job_id: {}, subject: {}",
+            job_id, subject.as_deref().unwrap_or("No subject")));
+
+        // Re-run LLM extraction with full email body
+        if let Some(extraction) = extract_job_from_email_async(&subject, &body, pool.get_ref()).await {
+            // Update job with newly extracted data
+            let description_len = extraction.description.as_ref().map(|d| d.len()).unwrap_or(0);
+
+            let result = sqlx::query!(
+                r#"
+                UPDATE jobs SET
+                    title = COALESCE($1, title),
+                    company = COALESCE($2, company),
+                    location = COALESCE($3, location),
+                    salary = COALESCE($4, salary),
+                    description = COALESCE($5, description),
+                    updated_at = NOW()
+                WHERE job_id = $6
+                "#,
+                extraction.title.filter(|t| !t.is_empty()),
+                extraction.company.filter(|c| !c.is_empty()),
+                extraction.location,
+                extraction.compensation.as_ref().and_then(|c| {
+                    match (c.salary_min, c.salary_max) {
+                        (Some(min), Some(max)) => Some((min + max) / 2),
+                        (Some(val), None) | (None, Some(val)) => Some(val),
+                        _ => None
+                    }
+                }),
+                extraction.description.filter(|d| !d.is_empty()),
+                job_id
+            )
+            .execute(pool.get_ref())
+            .await;
+
+            match result {
+                Ok(_) => {
+                    updated_count += 1;
+                    log_debug(&format!("Successfully re-extracted job description for job_id: {}, new description length: {}",
+                        job_id, description_len));
+                }
+                Err(e) => {
+                    failed_count += 1;
+                    log_debug(&format!("Failed to update job {}: {}", job_id, e));
+                }
+            }
+        } else {
+            failed_count += 1;
+            log_debug(&format!("LLM extraction returned None for job_id: {}", job_id));
+        }
+    }
+
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "message": "Job description re-extraction completed",
+        "total_jobs": total_jobs,
+        "updated": updated_count,
+        "failed": failed_count
+    })))
+}
+
 // ============================================================================
 // Phase 4: LinkedIn API Integration
 // ============================================================================
@@ -4632,6 +4729,7 @@ async fn main() -> std::io::Result<()> {
             .route("/api/intake/duplicate-emails", web::get().to(get_duplicate_emails))
             .route("/api/jobs/refilter", web::post().to(refilter_jobs))
             .route("/api/intake/reprocess-empty-bodies", web::post().to(reprocess_empty_email_bodies))
+            .route("/api/intake/reextract-descriptions", web::post().to(reextract_job_descriptions))
             // Phase 5.1: Calendar & Follow-ups APIs
             .route("/api/interviews", web::post().to(create_interview))
             .route("/api/interviews/upcoming", web::get().to(get_upcoming_interviews))
