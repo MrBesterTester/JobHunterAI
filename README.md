@@ -11,6 +11,9 @@
   - [Workflow](#workflow)
     - [Detailed Workflow](#detailed-workflow)
       - [1. Automated Job Intake & Processing](#1-automated-job-intake--processing)
+        - [Intelligent Extraction Logic](#intelligent-extraction-logic)
+        - [Intelligent Filtering Logic](#intelligent-filtering-logic)
+        - [Deduplication Logic](#deduplication-logic)
       - [2. Job Review & Approval](#2-job-review--approval)
       - [3. Resume & Cover Letter Generation](#3-resume--cover-letter-generation)
       - [4. Email Draft Creation](#4-email-draft-creation)
@@ -374,6 +377,153 @@ Gmail/LinkedIn/API Sources → Intelligent Extraction → Automatic Filtering �
 - Day 2: Second sync processes next 50 (emails 51-100), first 50 remain marked as read
 - Day 3: Third sync processes next 50 (emails 101-150)
 - If you need to reprocess an email: Just mark it as unread in Gmail and run sync again
+
+##### Intelligent Extraction Logic
+
+The system uses a sophisticated LLM-based extraction pipeline to parse job information from emails and other sources:
+
+**LLM Analysis (Claude 3.5 Haiku):**
+- Analyzes both email **subject** AND **body content** for comprehensive understanding
+- Uses a 30-second timeout per email with structured JSON response format
+- HTML emails are automatically converted to clean text before analysis
+
+**Confidence Scoring:**
+- Each extraction receives a confidence score (0.0 - 1.0) based on data completeness
+- **Threshold: 0.3** - Emails below this threshold are not imported as jobs
+- **High confidence (≥0.3)**: Email gets "JobOp" Gmail label + marked as read + job created
+- **Low confidence (<0.3)**: Email stays unread + no label + skipped (user can manually review)
+
+**Structured Field Extraction:**
+The LLM extracts and structures 8+ key fields:
+1. **Title**: Job role/position name
+2. **Company**: Employer name
+3. **Location**: City/state or "Remote"
+4. **Salary Range**: Min/max salary (parsed from various formats)
+5. **Job URL**: Link to full posting
+6. **Description**: Full job description text
+7. **Company Industry**: Business sector (with extracted vs. inferred tracking)
+8. **Employment Type**: Full-time/part-time/contract/temporary (with source tracking)
+
+**Fallback Protection:**
+- If LLM extraction fails (API error, timeout, etc.), system falls back to regex pattern matching
+- Regex patterns target common email formats (company names, salary ranges, URLs)
+- Ensures system continues working even if LLM service is unavailable
+
+**Smart Classification:**
+- LLM determines if email is a genuine job opportunity vs. spam/newsletter/update
+- Non-job emails (e.g., "Your application was received", "Weekly job digest") stay unread for manual review
+- Progressive batching allows working through large inboxes without overwhelming the system
+
+##### Intelligent Filtering Logic
+
+After extraction, every job (from any source) goes through automated filtering against your criteria:
+
+**Salary Filter:**
+- **Threshold**: Minimum $130,000 (configurable in `job_criteria` table)
+- **Logic**: Rejects jobs with `salary < $130,000` OR jobs with no salary information
+- **Failure Reason**: "Salary $X below minimum $Y" or "No salary information provided"
+
+**Location Filter (Two-Stage Check):**
+
+*Stage 1 - Remote Detection:*
+- Searches location field for remote patterns (case-insensitive):
+  - Keywords: "remote", "work from home", "wfh", "anywhere", "distributed"
+- If ANY remote keyword found → **Passes location filter** (skip Stage 2)
+
+*Stage 2 - Commute Time (Non-Remote Jobs):*
+- **Threshold**: Maximum 45 minutes commute
+- **Logic**: Rejects non-remote jobs with `commute_time > 45 minutes`
+- **Failure Reasons**:
+  - "Commute time X min exceeds maximum Y min"
+  - "Non-remote position with unknown commute time"
+
+**Domain Matching (Keyword-Based):**
+
+The system searches job title + description for domain-specific keywords:
+
+1. **Testing Domain**:
+   - Keywords: "test", "testing", "qa", "quality assurance", "validation", "verification"
+
+2. **Test Automation Domain**:
+   - Keywords: "automation", "automated testing", "test automation", "selenium", "cypress", "playwright"
+
+3. **AI Domain**:
+   - Keywords: "ai", "artificial intelligence", "machine learning", "ml", "generative ai", "llm"
+
+4. **Firmware Domain**:
+   - Keywords: "firmware", "embedded", "hardware", "microcontroller", "fpga"
+
+5. **Prompt Engineering Domain**:
+   - Keywords: "prompt", "prompt engineering", "llm", "chatgpt", "gpt"
+
+**Matching Logic:**
+- Concatenates job title + description into single text (case-insensitive)
+- Checks if ANY keyword from user's preferred domains appears in text
+- At least ONE domain match required to pass
+
+**Status Assignment:**
+- **Status: "new"** - Passed ALL filters (salary ✓, location ✓, domain ✓)
+- **Status: "filtered"** - Failed ONE OR MORE filters
+  - Stores specific failure reasons (e.g., "Salary $80K below minimum $130K", "Job doesn't match preferred domains")
+  - User can still manually approve filtered jobs from Inbox tab
+
+##### Deduplication Logic
+
+The system prevents duplicate job entries using a two-hash SHA256-based deduplication system:
+
+**Hash Generation (SHA256):**
+
+1. **Company-Title Hash**:
+   - Concatenates `company + title` (e.g., "GoogleSenior Test Engineer")
+   - Converts to lowercase (case-insensitive matching)
+   - Generates SHA256 hash: `generate_hash(input.to_lowercase())`
+   - Stores in `job_deduplication.company_title_hash`
+
+2. **URL Hash** (Optional):
+   - If job includes a URL, generates separate SHA256 hash
+   - Stores in `job_deduplication.url_hash`
+   - Allows duplicate detection even if title/company vary slightly
+
+**Duplicate Lookup (Two-Stage Check):**
+
+*Stage 1 - Company-Title Match:*
+```sql
+SELECT * FROM job_deduplication WHERE company_title_hash = $1
+```
+- Checks if company+title combination already exists
+- Catches: Same job from different recruiters, minor title variations
+
+*Stage 2 - URL Match (if URL provided):*
+```sql
+SELECT * FROM job_deduplication WHERE url_hash = $1
+```
+- Checks if job posting URL already exists
+- Catches: Same posting URL with different email formatting
+
+**Cross-Source Detection:**
+
+The deduplication system catches duplicates across ALL sources:
+- **Same job, multiple recruiters**: Different emails about same Google role
+- **Reposted jobs**: Company edited/updated and reposted same position
+- **Cross-source duplicates**: Same job found via Gmail, LinkedIn, AND Indeed
+- **Title variations**: "Senior Test Engineer" vs "Sr. Test Engineer" (if same URL)
+
+**Database Integration:**
+
+```sql
+CREATE TABLE job_deduplication (
+    dedup_id UUID PRIMARY KEY,
+    job_id UUID REFERENCES jobs(job_id),
+    company_title_hash VARCHAR(64) NOT NULL,  -- Indexed for fast lookups
+    url_hash VARCHAR(64),                      -- Indexed for fast lookups
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**Outcome:**
+- **Duplicate Found**: Returns existing `job_id`, no new job created
+- **New Job**: Creates job record + deduplication entry for future checks
+- **Audit Trail**: All deduplication attempts logged for analytics
 
 #### 2. Job Review & Approval
 
