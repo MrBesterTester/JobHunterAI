@@ -2472,45 +2472,116 @@ async fn process_gmail_messages(
 }
 
 fn extract_email_body(payload: &GmailPayload) -> Option<String> {
+    log_debug(&format!("extract_email_body: starting extraction, has body={}, has parts={}",
+        payload.body.is_some(), payload.parts.is_some()));
+
     // Try to extract from direct body first
     if let Some(body) = &payload.body {
+        log_debug(&format!("extract_email_body: trying direct body extraction, body.size={}", body.size));
         if let Some(text) = decode_body_data(body) {
+            log_debug(&format!("extract_email_body: SUCCESS from direct body, length={}", text.len()));
             return Some(text);
         }
+        log_debug("extract_email_body: direct body extraction returned None");
     }
 
     // Try to extract from parts (handles multipart emails) - recursively search all nested parts
     if let Some(parts) = &payload.parts {
+        log_debug(&format!("extract_email_body: trying parts extraction, parts count={}", parts.len()));
+
         // First try to find text/plain (preferred for readability)
         if let Some(text) = find_mime_type_recursive(parts, "text/plain") {
+            log_debug(&format!("extract_email_body: SUCCESS from text/plain part, length={}", text.len()));
             return Some(text);
         }
 
         // If no text/plain found, try text/html
         if let Some(text) = find_mime_type_recursive(parts, "text/html") {
+            log_debug(&format!("extract_email_body: SUCCESS from text/html part, length={}", text.len()));
             return Some(text);
         }
 
         // Last resort: try any text/* type
         if let Some(text) = find_any_text_recursive(parts) {
+            log_debug(&format!("extract_email_body: SUCCESS from text/* part, length={}", text.len()));
             return Some(text);
         }
+
+        log_debug("extract_email_body: no text content found in parts");
     }
 
+    log_debug("extract_email_body: FAILED - no body extracted");
     None
 }
 
 // Helper function to decode body data
 fn decode_body_data(body: &GmailBody) -> Option<String> {
     if let Some(data) = &body.data {
+        log_debug(&format!("decode_body_data: data present, length={}, empty={}", data.len(), data.is_empty()));
         if !data.is_empty() {
+            // Try multiple Base64 decoding strategies (Gmail encoding can vary)
+
+            // Strategy 1: URL_SAFE_NO_PAD (standard for Gmail)
             if let Ok(decoded) = general_purpose::URL_SAFE_NO_PAD.decode(data) {
-                if let Ok(text) = String::from_utf8(decoded) {
-                    if !text.trim().is_empty() {
-                        return Some(text);
-                    }
+                log_debug(&format!("decode_body_data: URL_SAFE_NO_PAD decoded {} bytes", decoded.len()));
+                if let Some(text) = try_convert_to_string(decoded) {
+                    return Some(text);
                 }
             }
+
+            // Strategy 2: URL_SAFE (with padding)
+            if let Ok(decoded) = general_purpose::URL_SAFE.decode(data) {
+                log_debug(&format!("decode_body_data: URL_SAFE decoded {} bytes", decoded.len()));
+                if let Some(text) = try_convert_to_string(decoded) {
+                    return Some(text);
+                }
+            }
+
+            // Strategy 3: Standard Base64 (fallback)
+            if let Ok(decoded) = general_purpose::STANDARD.decode(data) {
+                log_debug(&format!("decode_body_data: STANDARD decoded {} bytes", decoded.len()));
+                if let Some(text) = try_convert_to_string(decoded) {
+                    return Some(text);
+                }
+            }
+
+            // Strategy 4: Replace URL-safe chars and try with padding normalization
+            let normalized = data.replace('-', "+").replace('_', "/");
+            let padded = match normalized.len() % 4 {
+                0 => normalized,
+                n => normalized + &"=".repeat(4 - n),
+            };
+            if let Ok(decoded) = general_purpose::STANDARD.decode(&padded) {
+                log_debug(&format!("decode_body_data: normalized+padded decoded {} bytes", decoded.len()));
+                if let Some(text) = try_convert_to_string(decoded) {
+                    return Some(text);
+                }
+            }
+
+            log_debug("decode_body_data: all decode strategies failed");
+        } else {
+            log_debug("decode_body_data: data is empty");
+        }
+    } else {
+        log_debug("decode_body_data: no data field");
+    }
+    None
+}
+
+// Helper to convert decoded bytes to string
+fn try_convert_to_string(decoded: Vec<u8>) -> Option<String> {
+    match String::from_utf8(decoded) {
+        Ok(text) => {
+            let trimmed = text.trim();
+            log_debug(&format!("try_convert_to_string: trimmed length={}", trimmed.len()));
+            if !trimmed.is_empty() {
+                return Some(text);
+            } else {
+                log_debug("try_convert_to_string: trimmed text is empty");
+            }
+        }
+        Err(e) => {
+            log_debug(&format!("try_convert_to_string: UTF-8 conversion failed: {}", e));
         }
     }
     None

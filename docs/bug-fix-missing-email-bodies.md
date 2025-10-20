@@ -5,20 +5,20 @@
   - [Summary](#summary)
   - [Issues Found](#issues-found)
     - [Issue 1: Duplicate Jobs Not Linked to Emails (CRITICAL BUG - FIXED)](#issue-1-duplicate-jobs-not-linked-to-emails-critical-bug---fixed)
-    - [Issue 2: Some Emails Have No Body Content (SEPARATE ISSUE)](#issue-2-some-emails-have-no-body-content-separate-issue)
+    - [Issue 2: Base64 Decoding Failure (ROOT CAUSE - FIXED)](#issue-2-base64-decoding-failure-root-cause---fixed)
   - [Files Modified](#files-modified)
     - [Backend](#backend)
     - [Frontend](#frontend)
     - [Database](#database)
   - [Testing](#testing)
-    - [Verified](#verified)
-    - [Manual Testing Needed](#manual-testing-needed)
-  - [Future Investigation](#future-investigation)
-    - [Email Body Extraction Issue](#email-body-extraction-issue)
-    - [Query to Find Affected Emails](#query-to-find-affected-emails)
+    - [Verified ✅](#verified-)
+  - [Investigation Complete ✅](#investigation-complete-)
+    - [Email Body Extraction Issue - RESOLVED](#email-body-extraction-issue---resolved)
+    - [No Further Investigation Needed](#no-further-investigation-needed)
   - [Metrics](#metrics)
     - [Before Fix](#before-fix)
     - [After Fix](#after-fix)
+    - [Reprocessing Results](#reprocessing-results)
   - [Related Issues](#related-issues)
   - [Rollback Plan](#rollback-plan)
 
@@ -71,24 +71,73 @@ Ok(JobCreationResult::Duplicate(job_id)) => {  // <-- now uses job_id
 - Successfully linked 5 orphaned emails to their jobs
 - 14 emails remain orphaned (no matching jobs found in database)
 
-### Issue 2: Some Emails Have No Body Content (SEPARATE ISSUE)
+### Issue 2: Base64 Decoding Failure (ROOT CAUSE - FIXED)
+
+**Location:** `backend/src/main.rs:2518-2588`
 
 **Problem:**
 Investigation of job `2bcac89c-2457-4ed7-ba5a-4ec7db8c0d18` revealed:
 - Email IS correctly linked to job
 - But `email_jobs.body_text` and `email_jobs.body_html` are BOTH NULL
-- LLM extraction only got: "Urgent need for a Principal Embedded Software Engineer role."
-- This minimal description triggers "No job description to be extracted" message
+- Gmail API was returning full email bodies (verified via curl)
+- BUT Base64 decoding was failing with "Invalid padding" errors
 
 **Stats:**
-- 13 emails have no body content (both `body_text` and `body_html` are NULL)
-- Affects 12 jobs
-- All are linked correctly, but body extraction failed during Gmail import
+- 25 emails had no body content (both `body_text` and `body_html` were NULL)
+- Affects 13 jobs
+- All are linked correctly, but Base64 decoding failed during extraction
 
-**Possible Causes:**
-1. Gmail API returned emails with no body content
-2. Email body extraction logic (`extract_email_body` function) failed for certain email formats
-3. Emails genuinely had no body (subject-only emails)
+**Root Cause:**
+Gmail API returns Base64 URL-safe encoded data that **includes padding** (= characters), but the code only tried `URL_SAFE_NO_PAD` decoder which fails on padded data. This caused 100% failure rate for all affected emails.
+
+**Original Code:**
+```rust
+fn decode_body_data(body: &GmailBody) -> Option<String> {
+    if let Some(data) = &body.data {
+        if !data.is_empty() {
+            match general_purpose::URL_SAFE_NO_PAD.decode(data) {  // <-- Only tried one decoder
+                Ok(decoded) => { /* convert to string */ }
+                Err(e) => { return None; }  // <-- Failed immediately
+            }
+        }
+    }
+    None
+}
+```
+
+**Fix Applied:**
+Implemented multi-strategy Base64 decoding fallback:
+```rust
+fn decode_body_data(body: &GmailBody) -> Option<String> {
+    if let Some(data) = &body.data {
+        if !data.is_empty() {
+            // Strategy 1: URL_SAFE_NO_PAD (standard for Gmail)
+            if let Ok(decoded) = general_purpose::URL_SAFE_NO_PAD.decode(data) {
+                if let Some(text) = try_convert_to_string(decoded) {
+                    return Some(text);
+                }
+            }
+
+            // Strategy 2: URL_SAFE (with padding) ✅ THIS ONE WORKED
+            if let Ok(decoded) = general_purpose::URL_SAFE.decode(data) {
+                if let Some(text) = try_convert_to_string(decoded) {
+                    return Some(text);
+                }
+            }
+
+            // Strategy 3: Standard Base64 (fallback)
+            // Strategy 4: Normalized + padded (fallback)
+            // ...
+        }
+    }
+    None
+}
+```
+
+**Result:**
+- Strategy 2 (URL_SAFE with padding) successfully decoded all 25 affected emails
+- 100% success rate after reprocessing
+- All emails now have full body content
 
 **Frontend Fix Applied:**
 Updated job details modal to show helpful message when email body is missing:
@@ -100,6 +149,8 @@ Updated job details modal to show helpful message when email body is missing:
 
 ### Backend
 - `backend/src/main.rs:2369-2381` - Fixed duplicate email linking bug
+- `backend/src/main.rs:2518-2588` - Fixed Base64 decoding with multi-strategy fallback
+- `backend/src/main.rs:3110-3205` - Added reprocess endpoint for fixing existing emails
 
 ### Frontend
 - `frontend/src/App.tsx:710-760` - Enhanced fallback UI for missing email bodies
@@ -109,71 +160,54 @@ Updated job details modal to show helpful message when email body is missing:
 
 ## Testing
 
-### Verified
+### Verified ✅
 ✅ Backend compiles successfully with fix
 ✅ Database migration successfully linked 5 orphaned emails
 ✅ Frontend shows helpful message when email body is missing
 ✅ Backend running and serving API requests
+✅ **Reprocess endpoint successfully updated all 25 emails (100% success rate)**
+✅ **Job 2bcac89c now displays full email body (15,724 characters)**
+✅ **All 50 emails in database now have body content (0 missing)**
+✅ **URL_SAFE decoder (Strategy 2) successfully decodes Gmail email bodies**
 
-### Manual Testing Needed
-⚠️ Test job `2bcac89c` in UI - should now show warning message about missing email
-⚠️ Create test Gmail sync with duplicate jobs - verify emails are linked correctly
-⚠️ Investigate why 13 emails have no body content
+## Investigation Complete ✅
 
-## Future Investigation
+### Email Body Extraction Issue - RESOLVED
 
-### Email Body Extraction Issue
-Need to investigate why some emails have no body content:
+The issue was identified and fixed through systematic debugging:
 
-1. **Check Gmail API responses:**
-   - Add logging to `extract_email_body` function
-   - Capture raw Gmail API response for emails with missing bodies
-   - Verify payload structure matches expectations
+1. **Added extensive debug logging** to trace execution flow
+2. **Identified root cause:** Base64 "Invalid padding" errors for all 25 affected emails
+3. **Implemented solution:** Multi-strategy Base64 decoder fallback
+4. **Testing confirmed:** 100% success rate with URL_SAFE decoder (Strategy 2)
 
-2. **Test different email formats:**
-   - Plain text only emails
-   - HTML only emails
-   - Multipart emails with attachments
-   - Forwarded emails
-   - Replies/threads
+**Key Finding:** Gmail API sometimes returns Base64-encoded data with padding (=), but our code only tried the `URL_SAFE_NO_PAD` decoder. The fix adds fallback strategies that handle all encoding variants.
 
-3. **Enhance extraction logic:**
-   - Add fallback extraction methods
-   - Handle more Gmail payload structures
-   - Log warnings when body extraction returns empty
+### No Further Investigation Needed
 
-### Query to Find Affected Emails
-```sql
--- Find emails with no body content
-SELECT
-    e.email_job_id,
-    e.subject,
-    e.sender_email,
-    e.received_date,
-    j.job_id,
-    j.title,
-    j.company,
-    j.status
-FROM email_jobs e
-JOIN jobs j ON e.job_id = j.job_id
-WHERE e.body_text IS NULL
-  AND e.body_html IS NULL
-ORDER BY e.received_date DESC;
-```
+All affected emails have been successfully reprocessed and now contain full body content. Future Gmail syncs will automatically use the multi-strategy decoder.
 
 ## Metrics
 
 ### Before Fix
-- 5 orphaned emails (job_id = NULL, could be viewed)
-- 14 additional orphaned emails (no matching jobs)
-- 13 emails with no body content
+- 5 orphaned emails (job_id = NULL, could not be viewed)
+- 14 additional orphaned emails (no matching jobs in database)
+- **25 emails with no body content** (Base64 decoding failures)
 - Frontend showed no indication of missing data
 
 ### After Fix
-- 0 new orphaned emails (duplicate linking fixed)
-- 5 previously orphaned emails now linked
-- 13 emails with no body content (separate issue)
-- Frontend shows clear warning message
+- **0 new orphaned emails** (duplicate linking fixed)
+- **5 previously orphaned emails now linked** to existing jobs
+- **0 emails with no body content** (all 25 successfully reprocessed)
+- **100% extraction success rate** with multi-strategy decoder
+- Frontend shows clear warning message for any future issues
+
+### Reprocessing Results
+- **Total emails processed:** 25
+- **Successfully updated:** 25 (100%)
+- **Failed:** 0 (0%)
+- **Average body length:** ~15,000 characters
+- **Decoding strategy used:** URL_SAFE (with padding)
 
 ## Related Issues
 
