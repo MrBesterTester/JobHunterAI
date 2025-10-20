@@ -3320,6 +3320,9 @@ async fn reextract_job_descriptions(pool: web::Data<PgPool>) -> Result<HttpRespo
             // Update job with newly extracted data
             let description_len = extraction.description.as_ref().map(|d| d.len()).unwrap_or(0);
 
+            // Serialize extraction to raw_data
+            let raw_data = serde_json::to_value(&extraction).ok();
+
             let result = sqlx::query!(
                 r#"
                 UPDATE jobs SET
@@ -3328,8 +3331,9 @@ async fn reextract_job_descriptions(pool: web::Data<PgPool>) -> Result<HttpRespo
                     location = COALESCE($3, location),
                     salary = COALESCE($4, salary),
                     description = COALESCE($5, description),
+                    raw_data = COALESCE($6, raw_data),
                     updated_at = NOW()
-                WHERE job_id = $6
+                WHERE job_id = $7
                 "#,
                 extraction.title.filter(|t| !t.is_empty()),
                 extraction.company.filter(|c| !c.is_empty()),
@@ -3342,6 +3346,7 @@ async fn reextract_job_descriptions(pool: web::Data<PgPool>) -> Result<HttpRespo
                     }
                 }),
                 extraction.description.filter(|d| !d.is_empty()),
+                raw_data,
                 job_id
             )
             .execute(pool.get_ref())
