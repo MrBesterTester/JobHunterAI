@@ -788,12 +788,39 @@ The application header includes global action buttons that affect the entire das
    - **Status**: Coming Soon placeholder
    - **Request Implementation**: Link to feature roadmap (planned for Phase 4.1)
 
-4. **Sync All Sources**
+4. **Re-filter Jobs** (Button + Dropdown)
+   - **Purpose**: Re-apply filtering criteria to existing jobs without fetching new data
+   - **Location**: Top-right of Intake tab header, left of "Sync All Sources"
+   - **Dropdown Options**:
+     - **Last Sync Only**: Re-filter only jobs from the most recent sync operation
+     - **All Filtered Jobs**: Re-filter all jobs currently marked as "filtered" status
+   - **What it does**:
+     - Takes jobs already in the database
+     - Re-evaluates them against current filtering criteria (salary, location, remote preferences, etc.)
+     - Can move jobs between "filtered" ↔ "new" status based on updated criteria
+     - Does NOT fetch new emails from sources
+   - **When to use**:
+     - After modifying job filtering criteria in the codebase
+     - When you want to re-evaluate jobs that were previously filtered out
+     - To test changes to filtering logic without running a full sync
+   - **How to use**:
+     1. Select scope from dropdown: "Last Sync Only" or "All Filtered Jobs"
+     2. Click the **"Re-filter Jobs"** button (purple button with filter icon)
+     3. Wait for operation to complete (button shows "Re-filtering..." with spinning icon)
+     4. Review success message showing how many jobs were re-evaluated and status changes
+   - **Visual feedback**:
+     - Purple styling (#8b5cf6) to distinguish from sync operations
+     - Spinning filter icon during operation
+     - Button disabled during re-filtering or active syncs
+     - Success notification shows: jobs re-filtered, moved to New, remained Filtered
+   - **Note**: This is useful when you've updated filtering criteria and want to give previously filtered jobs another chance without re-fetching from Gmail
+
+5. **Sync All Sources**
    - Top-right button to sync all active/connected sources simultaneously
    - Shows loading state with spinner during sync operations
    - Disabled during active sync to prevent conflicts
 
-5. **Recent Intake Activity Log with MECE Counters**
+6. **Recent Intake Activity Log with MECE Counters**
    - Displays last 10-20 sync operations across all sources
    - **Click to Expand**: See detailed information about each sync
    - **MECE Counter Display**: Shows complete breakdown for every sync
@@ -806,7 +833,7 @@ The application header includes global action buttons that affect the entire das
    - Status indicators: ✓ Success, ⚠ Warning, ✗ Error
    - Auto-refreshes every 5 seconds during active syncs
 
-6. **Intake Performance Dashboard**
+7. **Intake Performance Dashboard**
    - **By Source**: Visual progress bars showing discovery breakdown
    - **Statistics Cards**: Total discovered, approved count, sync count, average per sync
    - **Last Sync**: Relative timestamps for each source
