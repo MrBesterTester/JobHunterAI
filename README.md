@@ -63,6 +63,8 @@
       - [`reset-dev-db.sh`](#reset-dev-dbsh)
       - [`backup-personal-db.sh`](#backup-personal-dbsh)
       - [`restore-personal-db.sh`](#restore-personal-dbsh)
+      - [`sync-extraction-prompt-to-db.sh`](#sync-extraction-prompt-to-dbsh)
+      - [`bulk-re-extraction.sh`](#bulk-re-extractionsh)
     - [Security Notes](#security-notes)
   - [API Endpoints](#api-endpoints)
     - [Jobs](#jobs)
@@ -1493,6 +1495,77 @@ The script will:
 - Restore data from the selected backup
 - Confirm successful restoration
 
+#### [`sync-extraction-prompt-to-db.sh`](sync-extraction-prompt-to-db.sh)
+Syncs the LLM job extraction prompt from the markdown file to the database, automatically incrementing the version number.
+
+**Usage:**
+```bash
+./sync-extraction-prompt-to-db.sh
+```
+
+This script will:
+- Read the prompt from `prompts/job_extraction_default.md`
+- Remove the first 33 lines (table of contents) to save tokens
+- Increment the version number in the database
+- Show before/after sizes and bytes saved
+- Update the `extraction_prompts` table with the new prompt
+
+**When to use:**
+- After making changes to the job extraction prompt
+- When testing prompt improvements or modifications
+- Before running bulk re-extraction to ensure latest prompt is active
+
+**Output example:**
+```
+✅ Prompt synced to database:
+   Version: 1.5 → 1.6
+   Size: 26,418 → 25,891 bytes (527 bytes saved by removing TOC)
+```
+
+#### [`bulk-re-extraction.sh`](bulk-re-extraction.sh)
+Bulk re-extracts all Gmail jobs with the updated LLM prompt and fixed backend code. This updates structured fields like `company_industry`, `employment_type_source`, and other enhanced data fields.
+
+**Usage:**
+```bash
+./bulk-re-extraction.sh
+```
+
+This script will:
+- Check if the backend is running on port 8080
+- Count the number of Gmail jobs to re-extract
+- Estimate processing time (approximately 10 seconds per job)
+- Request confirmation before proceeding
+- Trigger bulk re-extraction via the `/api/intake/reextract-all` endpoint
+- Show detailed results including success/failure counts and duration
+- Display a sample of updated fields from the database
+
+**When to use:**
+- After fixing backend extraction logic or struct definitions
+- After syncing an improved extraction prompt to the database
+- When you want to update all jobs with the latest extraction enhancements
+- After adding new fields to the extraction schema
+
+**Requirements:**
+- Backend must be running (`./start.sh` or `cd backend && cargo run`)
+- Database must contain Gmail jobs with email body text
+- Sufficient LLM API credits (uses Claude API for each job)
+
+**Output example:**
+```
+═══════════════════════════════════════════
+✅ Re-extraction Complete!
+═══════════════════════════════════════════
+
+📈 Results:
+   ✅ Updated: 37 jobs
+   ❌ Failed:  0 jobs
+
+⏱️  Duration: 6m 15s
+   End time: 2025-10-20 19:45:32
+
+💡 Refresh your browser to see the updated job cards!
+```
+
 ### Security Notes
 
 ✅ **Safe to commit to Git:**
@@ -2531,7 +2604,34 @@ The system uses **two separate Claude 3.5 Haiku prompts** for different purposes
 - Stored in PostgreSQL `extraction_prompts` table
 - Editable via the **Intake Tab UI** in real-time (no backend restart needed)
 - Versioned automatically with change history and notes
-- Initial template located in `prompts/job_extraction_default.md` (loaded during database setup)
+- Source file: `prompts/job_extraction_default.md` (version-controlled source of truth)
+
+**⚠️ IMPORTANT: Prompt Sync Process**:
+
+The markdown file (`prompts/job_extraction_default.md`) is the **source of truth** for the extraction prompt, but the database stores the **active runtime version**. When you edit the markdown file, you MUST sync it to the database:
+
+```bash
+# Sync prompt from file to database
+cat > /tmp/update_prompt.sql << 'EOF'
+UPDATE extraction_prompts
+SET prompt_content = $$
+EOF
+cat prompts/job_extraction_default.md >> /tmp/update_prompt.sql
+cat >> /tmp/update_prompt.sql << 'EOF'
+$$,
+version = version + 1,
+updated_at = NOW()
+WHERE is_active = true;
+EOF
+
+psql -U jobhunter_user -d jobhunter -f /tmp/update_prompt.sql
+```
+
+**Why This Matters**:
+- The backend reads from the **database**, not the file
+- Editing the markdown file alone won't change extraction behavior
+- Always sync after editing `prompts/job_extraction_default.md`
+- The UI's "Edit Prompt" feature updates the database directly
 
 **Usage**:
 - Called when processing incoming Gmail emails

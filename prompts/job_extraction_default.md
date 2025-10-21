@@ -4,24 +4,7 @@
 - [Job Email Extraction Prompt](#job-email-extraction-prompt)
   - [Input](#input)
   - [Task](#task)
-  - [Output Format](#output-format)
-  - [Extraction Rules](#extraction-rules)
-    - [General Field Extraction Principles](#general-field-extraction-principles)
-    - [Confidence Scoring](#confidence-scoring)
-    - [Company Extraction](#company-extraction)
-    - [Location Normalization](#location-normalization)
-    - [Salary Extraction](#salary-extraction)
-    - [URL Extraction](#url-extraction)
-    - [Description](#description)
-    - [Company Industry Extraction](#company-industry-extraction)
-    - [Employment Type Extraction](#employment-type-extraction)
-  - [Advanced Extraction Rules](#advanced-extraction-rules)
-    - [Compensation Type Detection](#compensation-type-detection)
-    - [Tax Structure & Employment Relationship](#tax-structure--employment-relationship)
-    - [Remote Work Policy Parsing](#remote-work-policy-parsing)
-    - [Commute Perks Detection](#commute-perks-detection)
-    - [Job Domain Classification](#job-domain-classification)
-  - [Example Extraction](#example-extraction)
+  - [⚠️ CRITICAL OUTPUT REQUIREMENTS](#-critical-output-requirements)
   - [Edge Cases](#edge-cases)
     - [Multiple Jobs in One Email](#multiple-jobs-in-one-email)
     - [Vague/Generic Emails](#vaguegeneric-emails)
@@ -51,11 +34,34 @@ Extract job posting information and return it as valid JSON. Analyze both subjec
 - Application URL
 - Brief description
 
+## ⚠️ CRITICAL OUTPUT REQUIREMENTS
+
+**YOU MUST:**
+- Return ONLY raw JSON - NO explanations, NO markdown, NO commentary
+- Do NOT start with "I'll help you extract..." or any explanatory text
+- Do NOT wrap output in ```json code fences or any markdown formatting
+- Start your response with `{` and end with `}`
+- Return valid JSON that exactly matches the schema below
+
+**INCORRECT response example:**
+```
+I'll help you extract the job information from this email. Here's the structured data:
+```json
+{ "title": "Engineer", ... }
+```
+```
+
+**CORRECT response example:**
+```
+{"title":"Engineer","company":"Acme Corp","location":"Remote",...}
+```
+
+---
+
 ## Output Format
 
-Return ONLY valid JSON in this exact structure:
+Return ONLY valid JSON in this exact structure (no markdown code fences):
 
-```json
 {
   "title": "string - exact job title",
   "company": "string - actual hiring company name",
@@ -114,7 +120,14 @@ Return ONLY valid JSON in this exact structure:
     "seniority": "junior|mid|senior|staff|principal|lead|manager|director"
   }
 }
-```
+
+**⚠️ CRITICAL SCHEMA COMPLIANCE:**
+- Your output JSON MUST include **EVERY field** shown in the schema above
+- Do NOT omit any fields - if a value is unknown, set it to `null`
+- This is especially important for `_source` fields:
+  - If `company_industry` has a value, you MUST include `company_industry_source`
+  - If `employment_type` has a value, you MUST include `employment_type_source`
+- Missing fields will cause parsing errors - include ALL fields even if they are `null`
 
 ## Extraction Rules
 
@@ -138,6 +151,12 @@ Return ONLY valid JSON in this exact structure:
 - **Fields with source tracking:**
   - `company_industry` + `company_industry_source`
   - `employment.employment_type` + `employment.employment_type_source`
+
+**⚠️ CRITICAL SOURCE FIELD REQUIREMENT:**
+- When you set `company_industry` to a non-null value, you **MUST ALWAYS** set `company_industry_source` to either `"extracted"` or `"inferred"`
+- When you set `employment_type` to a non-null value, you **MUST ALWAYS** set `employment_type_source` to either `"extracted"` or `"inferred"`
+- **NEVER leave a `_source` field as `null` if its parent field has a value**
+- The only time `_source` should be `null` is when its parent field is also `null`
 
 **Examples of Inference:**
 - `company_industry`:
@@ -211,6 +230,8 @@ Return ONLY valid JSON in this exact structure:
 
 ### Company Industry Extraction
 
+**⚠️ REMEMBER: When you set `company_industry`, you MUST ALWAYS set `company_industry_source` to either `"extracted"` or `"inferred"`. Never leave it as `null` if `company_industry` has a value!**
+
 **Extraction (Explicit Statements):**
 Look for direct statements about the company's industry:
 - "We're a leading fintech company..." → `"Financial Services"`, source: `"extracted"`
@@ -248,6 +269,8 @@ If industry is not explicitly stated, infer from:
 - No industry clues from company name or description → `null`, source: `null`
 
 ### Employment Type Extraction
+
+**⚠️ REMEMBER: When you set `employment_type`, you MUST ALWAYS set `employment_type_source` to either `"extracted"` or `"inferred"`. Never leave it as `null` if `employment_type` has a value!**
 
 **Extraction (Explicit Statements):**
 - "Full-time position" → `"full_time"`, source: `"extracted"`
@@ -366,6 +389,8 @@ If industry is not explicitly stated, infer from:
 - Format as: `"test_equipment": "ATE, oscilloscopes for board-level validation"`
 
 ## Example Extraction
+
+**NOTE**: The examples below use markdown formatting for documentation purposes only. **Your actual response must be raw JSON without any markdown formatting.**
 
 **Input Email:**
 ```
@@ -558,20 +583,43 @@ It's OK to have null values - use them liberally when information is missing. Se
 
 ## Important Notes
 
-1. **JSON only**: Return nothing but valid JSON
-2. **No markdown**: Don't wrap in ```json blocks
-3. **Null policy**: Use `null` for ALL unknown fields - never guess, never use empty strings or arrays
-4. **Inference tracking**: Mark inferred fields with `"inferred"` in the `_source` field, extracted fields with `"extracted"`
-5. **Confidence matters**: Be honest about extraction certainty
-6. **Hiring company > Recruiter**: Always try to find actual employer
-7. **Quality over quantity**: Better to return low confidence than incorrect data
-8. **Conservative inference**: Only infer when confident - when in doubt, use `null`
+1. **JSON only**: Return ONLY raw JSON - start with `{` and end with `}`
+2. **NO markdown**: Do NOT wrap in ```json blocks or any markdown formatting
+3. **NO explanations**: Do NOT add any text before or after the JSON (no "I'll help...", no commentary)
+4. **Null policy**: Use `null` for ALL unknown fields - never guess, never use empty strings or arrays
+5. **Inference tracking**: Mark inferred fields with `"inferred"` in the `_source` field, extracted fields with `"extracted"`
+6. **Confidence matters**: Be honest about extraction certainty
+7. **Hiring company > Recruiter**: Always try to find actual employer
+8. **Quality over quantity**: Better to return low confidence than incorrect data
+9. **Conservative inference**: Only infer when confident - when in doubt, use `null`
 
 ---
 
-**Version**: 1.2
-**Last Updated**: 2025-10-16
+**Version**: 1.5
+**Last Updated**: 2025-10-20
 **Model**: Claude 3.5 Haiku (claude-3-5-haiku-20241022)
+
+**Changelog v1.5:**
+- **CRITICAL FIX**: Added "⚠️ CRITICAL SCHEMA COMPLIANCE" section immediately after schema definition
+- Explicitly requires that ALL fields from the schema MUST be included in output JSON
+- Emphasizes that missing fields cause parsing errors - even null fields must be present
+- Reinforces `_source` field requirements with specific examples
+- Addresses issue where LLM was selectively omitting fields (especially `employment_type_source`)
+
+**Changelog v1.4:**
+- **CRITICAL FIX**: Added emphatic warnings to ensure `_source` fields are ALWAYS populated when parent fields have values
+- Added "⚠️ CRITICAL SOURCE FIELD REQUIREMENT" section in Field Inference and Source Tracking
+- Added warning at Company Industry Extraction section emphasizing `company_industry_source` requirement
+- Added warning at Employment Type Extraction section emphasizing `employment_type_source` requirement
+- Prevents LLM from leaving `_source` fields as null when parent fields are populated
+
+**Changelog v1.3:**
+- **CRITICAL FIX**: Added prominent "⚠️ CRITICAL OUTPUT REQUIREMENTS" section at top of prompt
+- Removed markdown code fences from JSON schema definition to prevent LLM from copying format
+- Added explicit prohibition of explanatory text ("I'll help you extract...")
+- Reinforced "raw JSON only" instruction in multiple locations
+- Added clarifying note to Example Extraction section
+- Updated Important Notes section with stronger formatting requirements
 
 **Changelog v1.2:**
 - Added `company_industry` and `company_industry_source` fields to track company industry with extraction/inference tracking

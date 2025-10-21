@@ -1227,6 +1227,63 @@ const JobHunterDashboard: React.FC = () => {
         <div style={{ flex: 1, minWidth: 0 }}>
           <h3 style={{ fontWeight: 600, fontSize: '18px', color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} data-testid="job-title">{job.title}</h3>
           <p style={{ color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} data-testid="job-company">{job.company}</p>
+
+          {/* Header metadata: Industry, Employment Type, Extraction Method */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px', fontSize: '12px' }}>
+            {/* Company Industry */}
+            {job.raw_data?.company_industry && (
+              <span
+                data-testid="header-industry"
+                style={{
+                  padding: '2px 6px',
+                  borderRadius: '3px',
+                  backgroundColor: '#eef2ff',
+                  color: '#4f46e5',
+                  fontSize: '11px',
+                  fontWeight: '500'
+                }}>
+                🏢 {job.raw_data.company_industry}
+                {job.raw_data.company_industry_source === 'inferred' && ' (inferred)'}
+              </span>
+            )}
+
+            {/* Employment Type */}
+            {job.raw_data?.employment?.employment_type && (
+              <span
+                data-testid="header-employment-type"
+                style={{
+                  padding: '2px 6px',
+                  borderRadius: '3px',
+                  fontSize: '11px',
+                  fontWeight: '500',
+                  backgroundColor:
+                    job.raw_data.employment.employment_type === 'full-time' ? '#d1fae5' :
+                    job.raw_data.employment.employment_type === 'part-time' ? '#fed7aa' :
+                    job.raw_data.employment.employment_type === 'contract' ? '#fef3c7' : '#fed7aa',
+                  color:
+                    job.raw_data.employment.employment_type === 'full-time' ? '#065f46' :
+                    job.raw_data.employment.employment_type === 'part-time' ? '#c2410c' :
+                    job.raw_data.employment.employment_type === 'contract' ? '#92400e' : '#c2410c'
+                }}>
+                {job.raw_data.employment.employment_type.split('-').map(word =>
+                  word.charAt(0).toUpperCase() + word.slice(1)
+                ).join('-')}
+                {job.raw_data.employment.employment_type_source === 'inferred' && ' (inferred)'}
+              </span>
+            )}
+
+            {/* Extraction Method */}
+            <span style={{
+              padding: '2px 6px',
+              borderRadius: '3px',
+              backgroundColor: (job.extraction_method === 'llm' || (job.raw_data as any)?.extraction_method === 'llm') ? '#dbeafe' : '#fed7aa',
+              color: (job.extraction_method === 'llm' || (job.raw_data as any)?.extraction_method === 'llm') ? '#1e40af' : '#c2410c',
+              fontSize: '11px',
+              fontWeight: '500'
+            }}>
+              {(job.extraction_method || (job.raw_data as any)?.extraction_method)?.toUpperCase() || 'UNKNOWN'}
+            </span>
+          </div>
         </div>
         {getStatusIcon(job.status)}
       </div>
@@ -1399,31 +1456,6 @@ const JobHunterDashboard: React.FC = () => {
           </span>
         )}
 
-        {/* Employment Type Badge */}
-        {job.raw_data?.employment?.employment_type && (
-          <span
-            data-testid="employment-type-badge"
-            style={{
-              padding: '4px 8px',
-              borderRadius: '4px',
-              fontSize: '12px',
-              fontWeight: '500',
-              backgroundColor:
-                job.raw_data.employment.employment_type === 'full-time' ? '#d1fae5' :
-                job.raw_data.employment.employment_type === 'part-time' ? '#fed7aa' :
-                job.raw_data.employment.employment_type === 'contract' ? '#fef3c7' : '#fed7aa',
-              color:
-                job.raw_data.employment.employment_type === 'full-time' ? '#065f46' :
-                job.raw_data.employment.employment_type === 'part-time' ? '#c2410c' :
-                job.raw_data.employment.employment_type === 'contract' ? '#92400e' : '#c2410c'
-            }}>
-            {job.raw_data.employment.employment_type.split('-').map(word =>
-              word.charAt(0).toUpperCase() + word.slice(1)
-            ).join('-')}
-            {job.raw_data.employment.employment_type_source === 'inferred' && ' (inferred)'}
-          </span>
-        )}
-
         {/* Contract Duration Badge */}
         {job.raw_data?.employment?.contract_duration && (
           <span
@@ -1486,23 +1518,6 @@ const JobHunterDashboard: React.FC = () => {
               color: '#1e40af'
             }}>
             📅 {job.raw_data.remote_work.days_onsite_per_week} days/week onsite
-          </span>
-        )}
-
-        {/* Company Industry Badge */}
-        {job.raw_data?.company_industry && (
-          <span
-            data-testid="industry-badge"
-            style={{
-              padding: '4px 8px',
-              borderRadius: '4px',
-              fontSize: '12px',
-              fontWeight: '500',
-              backgroundColor: '#eef2ff',
-              color: '#4f46e5'
-            }}>
-            🏢 {job.raw_data.company_industry}
-            {job.raw_data.company_industry_source === 'inferred' && ' (inferred)'}
           </span>
         )}
 
@@ -1715,7 +1730,7 @@ const JobHunterDashboard: React.FC = () => {
       );
     })()}
 
-      {/* Debug Section - Raw Data & Extraction Method */}
+      {/* Condensed Description Section */}
       <div
         style={{
           marginTop: '8px',
@@ -1725,74 +1740,52 @@ const JobHunterDashboard: React.FC = () => {
           borderLeft: '4px solid #f59e0b',
           fontSize: '10px'
         }}>
-        <div style={{ fontSize: '11px', fontWeight: '600', color: '#92400e', marginBottom: '8px' }}>
-          🔧 Debug Info
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+          <strong style={{ color: '#92400e', fontSize: '11px' }}>Condensed Description</strong>
+          <button
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent triggering job card click
+              refreshSingleDescription(job.job_id);
+            }}
+            style={{
+              padding: '4px 8px',
+              borderRadius: '4px',
+              border: '1px solid #10b981',
+              backgroundColor: 'white',
+              color: '#10b981',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              fontSize: '10px',
+              fontWeight: '500',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#10b981';
+              e.currentTarget.style.color = 'white';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'white';
+              e.currentTarget.style.color = '#10b981';
+            }}
+            title="Refresh this job's description"
+          >
+            <RefreshCw style={{ width: '12px', height: '12px' }} />
+          </button>
         </div>
-
-        {/* Extraction Method */}
-        <div style={{ marginBottom: '8px' }}>
-          <strong style={{ color: '#92400e' }}>Extraction Method:</strong>
-          <span style={{
-            marginLeft: '6px',
-            padding: '2px 6px',
-            borderRadius: '3px',
-            backgroundColor: (job.extraction_method === 'llm' || (job.raw_data as any)?.extraction_method === 'llm') ? '#dbeafe' : '#fed7aa',
-            color: (job.extraction_method === 'llm' || (job.raw_data as any)?.extraction_method === 'llm') ? '#1e40af' : '#c2410c',
-            fontWeight: '500'
-          }}>
-            {(job.extraction_method || (job.raw_data as any)?.extraction_method)?.toUpperCase() || 'UNKNOWN'}
-          </span>
-        </div>
-
-        {/* Condensed Description */}
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-            <strong style={{ color: '#92400e' }}>Condensed Description:</strong>
-            <button
-              onClick={(e) => {
-                e.stopPropagation(); // Prevent triggering job card click
-                refreshSingleDescription(job.job_id);
-              }}
-              style={{
-                padding: '4px 8px',
-                borderRadius: '4px',
-                border: '1px solid #10b981',
-                backgroundColor: 'white',
-                color: '#10b981',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                fontSize: '10px',
-                fontWeight: '500',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#10b981';
-                e.currentTarget.style.color = 'white';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'white';
-                e.currentTarget.style.color = '#10b981';
-              }}
-              title="Refresh this job's description"
-            >
-              <RefreshCw style={{ width: '12px', height: '12px' }} />
-            </button>
-          </div>
-          <div style={{
-            padding: '8px',
-            backgroundColor: '#fff',
-            border: '1px solid #fbbf24',
-            borderRadius: '4px',
-            fontSize: '11px',
-            lineHeight: '1.5',
-            whiteSpace: 'pre-wrap',
-            wordBreak: 'break-word',
-            color: '#374151'
-          }}>
-            {condensedDescriptions[job.job_id] || 'Loading description...'}
-          </div>
+        <div style={{
+          padding: '8px',
+          backgroundColor: '#fff',
+          border: '1px solid #fbbf24',
+          borderRadius: '4px',
+          fontSize: '11px',
+          lineHeight: '1.5',
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+          color: '#374151'
+        }}>
+          {condensedDescriptions[job.job_id] || 'Loading description...'}
         </div>
       </div>
 
