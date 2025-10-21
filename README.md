@@ -20,6 +20,8 @@
       - [5. Application Tracking & Follow-ups](#5-application-tracking--follow-ups)
   - [UI Features Guide](#ui-features-guide)
     - [Dashboard Overview](#dashboard-overview)
+    - [Header Actions](#header-actions)
+      - [🔄 Refresh Data Button](#-refresh-data-button)
     - [Navigation Tabs](#navigation-tabs)
       - [📥 Intake Tab (New!)](#-intake-tab-new)
       - [📋 Inbox Tab](#-inbox-tab)
@@ -698,6 +700,38 @@ The dashboard displays real-time statistics across the top (ordered by workflow 
 1. **Non-Job Emails (21)**: Emails Gmail sync fetched but determined to be non-job-related - these are skipped before entering the intake pipeline
 2. **MECE Intake Flow (50)**: Job opportunity emails that went through processing with the formula `Total = Processed + Filtered + Duplicates + Failed` (e.g., 50 = 28 + 15 + 1 + 6)
 3. **Workflow States (0)**: Jobs in the active workflow (New, Approved, Applied, Rejected)
+
+### Header Actions
+
+The application header includes global action buttons that affect the entire dashboard:
+
+#### 🔄 Refresh Data Button
+
+**Purpose**: Manually refresh all data displayed in the UI without requiring a full page reload.
+
+**What it does**:
+- Fetches the latest job data from the backend API
+- Updates statistics counters (dashboard metrics)
+- Refreshes application tracking data
+- Preserves your current tab and scroll position
+
+**When to use it**:
+- After running backend operations externally (e.g., API calls via `curl`)
+- After using re-extraction APIs to update job data
+- When working with multiple browser windows/tabs
+- If the UI appears out of sync with the database
+
+**How to use**:
+1. Click the **"Refresh Data"** button in the header (blue button with circular arrow icon)
+2. Wait for the refresh to complete (button shows "Refreshing..." with spinning icon)
+3. Data updates automatically across all tabs
+
+**Visual feedback**:
+- Button text changes to "Refreshing..." during operation
+- Circular arrow icon spins while fetching data
+- Button is disabled during refresh to prevent duplicate requests
+
+**Note**: This button was added to solve the stale React state issue where external backend changes weren't reflected in the UI. See `bugs/fixed/BUG-0001-stale-react-state-filtered-tab.md` for technical details.
 
 ### Navigation Tabs
 
