@@ -22,6 +22,7 @@
     - [Dashboard Overview](#dashboard-overview)
     - [Header Actions](#header-actions)
       - [🔄 Refresh Data Button](#-refresh-data-button)
+      - [🔄 Refresh Descriptions Button](#-refresh-descriptions-button)
     - [Navigation Tabs](#navigation-tabs)
       - [📥 Intake Tab (New!)](#-intake-tab-new)
       - [📋 Inbox Tab](#-inbox-tab)
@@ -732,6 +733,34 @@ The application header includes global action buttons that affect the entire das
 - Button is disabled during refresh to prevent duplicate requests
 
 **Note**: This button was added to solve the stale React state issue where external backend changes weren't reflected in the UI. See `bugs/fixed/BUG-0001-stale-react-state-filtered-tab.md` for technical details.
+
+#### 🔄 Refresh Descriptions Button
+
+**Purpose**: Clear all cached condensed job descriptions and force them to regenerate on next view.
+
+**What it does**:
+- Clears the local cache of AI-generated condensed job descriptions
+- Forces all job descriptions to regenerate when viewed next
+- Does NOT fetch new data from the database (use "Refresh Data" for that)
+- Only affects the condensed descriptions shown in job cards
+
+**When to use it**:
+- After modifying the condensed description prompt template
+- When descriptions appear stale or incorrect
+- To test changes to the description generation logic
+- If you want all jobs to regenerate their summaries with updated AI settings
+
+**How to use**:
+1. Click the **"Refresh Descriptions"** button in the header (green button with circular arrow icon)
+2. Cache clears immediately (no loading indicator needed)
+3. Navigate to any job tab to see descriptions regenerate automatically
+
+**Visual feedback**:
+- Button has green styling (#10b981) to distinguish from "Refresh Data"
+- No loading state (operation is instant)
+- Hover effect changes background to green with white text
+
+**Note**: This clears the React state cache only, not the database. Each job's condensed description will be regenerated from the backend API when you view that job card. If you want to force backend regeneration, use the per-job refresh button in the Debug Info section of each job card.
 
 ### Navigation Tabs
 
