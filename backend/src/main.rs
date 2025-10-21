@@ -2774,13 +2774,13 @@ async fn call_claude_api(
     Ok(extraction)
 }
 
-/// Extracts job information from email using LLM (Claude Haiku) exclusively
+/// Extracts job information from email using LLM (Claude Haiku), falling back to regex if LLM fails
 async fn extract_job_from_email_async(
     subject: &Option<String>,
     body: &Option<String>,
     pool: &PgPool,
 ) -> Option<JobExtractionResult> {
-    // Try LLM extraction if API key is available
+    // Try LLM extraction first if API key is available
     if let Ok(api_key) = std::env::var("ANTHROPIC_API_KEY") {
         if !api_key.is_empty() {
             // Fetch active prompt
@@ -2798,26 +2798,161 @@ async fn extract_job_from_email_async(
                         if extraction.confidence >= 0.3 {
                             return Some(extraction);
                         } else {
-                            log_debug(&format!("LLM extraction confidence too low: {:.2}, skipping email", extraction.confidence));
-                            return None;
+                            log_debug(&format!("LLM extraction confidence too low: {:.2}, falling back to regex", extraction.confidence));
                         }
                     }
                     Err(e) => {
-                        log_debug(&format!("LLM extraction failed: {}, skipping email", e));
-                        return None;
+                        log_debug(&format!("LLM extraction failed: {}, falling back to regex", e));
                     }
                 }
             } else {
-                log_debug("No active extraction prompt found, skipping email");
-                return None;
+                log_debug("No active extraction prompt found, falling back to regex");
             }
         }
     }
 
-    log_debug("No ANTHROPIC_API_KEY configured, skipping email");
-    None
+    // Fallback to regex-based extraction
+    log_debug("Using regex-based extraction");
+    extract_job_from_email(subject, body)
 }
 
+/// Regex-based extraction fallback
+fn extract_job_from_email(subject: &Option<String>, body: &Option<String>) -> Option<JobExtractionResult> {
+    let combined_text = format!(
+        "{} {}",
+        subject.as_deref().unwrap_or(""),
+        body.as_deref().unwrap_or("")
+    );
+
+    let mut extraction = JobExtractionResult {
+        title: None,
+        company: None,
+        location: None,
+        salary_min: None,
+        salary_max: None,
+        description: body.clone(),
+        url: None,
+        confidence: 0.0,
+        extraction_method: Some("regex".to_string()),
+        compensation: None,
+        employment: None,
+        remote_work: None,
+        commute: None,
+        job_domain: None,
+        company_industry: None,
+        company_industry_source: None,
+    };
+
+    // Extract job title from subject
+    if let Some(subj) = subject {
+        let title_patterns = [
+            r"(?i)(software|test|qa|quality|automation|engineer|developer|architect|manager|lead|senior|principal|staff)\s+(engineer|developer|tester|analyst|manager|lead|architect)",
+            r"(?i)(job|position|opening|opportunity|role):\s*(.+?)(?:\s+at\s+|\s+@\s+|$)",
+        ];
+
+        for pattern in &title_patterns {
+            if let Ok(re) = regex::Regex::new(pattern) {
+                if let Some(captures) = re.captures(subj) {
+                    if let Some(title_match) = captures.get(0) {
+                        extraction.title = Some(title_match.as_str().trim().to_string());
+                        extraction.confidence += 0.3;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // If no pattern matched, use the subject line as title (fallback)
+        if extraction.title.is_none() && !subj.trim().is_empty() {
+            let cleaned_subject = subj.trim();
+            // Truncate if too long
+            let title = if cleaned_subject.len() > 80 {
+                format!("{}...", &cleaned_subject[..77])
+            } else {
+                cleaned_subject.to_string()
+            };
+            extraction.title = Some(title);
+            extraction.confidence += 0.1; // Lower confidence for fallback
+        }
+    }
+
+    // Extract company name
+    let company_patterns = [
+        r"(?i)at\s+([A-Z][a-zA-Z\s&]+)(?:\s|,|$)",
+        r"(?i)@\s+([A-Z][a-zA-Z\s&]+)(?:\s|,|$)",
+        r"(?i)from\s+([A-Z][a-zA-Z\s&]+)(?:\s|,|$)",
+    ];
+
+    for pattern in &company_patterns {
+        if let Ok(re) = regex::Regex::new(pattern) {
+            if let Some(captures) = re.captures(&combined_text) {
+                if let Some(company_match) = captures.get(1) {
+                    extraction.company = Some(company_match.as_str().trim().to_string());
+                    extraction.confidence += 0.2;
+                    break;
+                }
+            }
+        }
+    }
+
+    // Extract salary
+    let salary_patterns = [
+        r"(?i)\$(\d+),?(\d+)k?",
+        r"(?i)salary:?\s*\$?(\d+),?(\d+)",
+        r"(?i)(\d+)k?\s*-\s*(\d+)k?",
+    ];
+
+    for pattern in &salary_patterns {
+        if let Ok(re) = regex::Regex::new(pattern) {
+            if let Some(captures) = re.captures(&combined_text) {
+                if let Some(salary_match) = captures.get(1) {
+                    if let Ok(salary) = salary_match.as_str().replace(",", "").parse::<i32>() {
+                        let salary_value = if salary < 1000 { salary * 1000 } else { salary };
+                        extraction.salary_min = Some(salary_value);
+                        extraction.salary_max = Some(salary_value);
+                        extraction.confidence += 0.2;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    // Extract location
+    let location_patterns = [
+        r"(?i)(remote|san francisco|bay area|california|ca|fremont|hayward|menlo park|newark|union city|milpitas)",
+        r"(?i)location:?\s*([a-zA-Z\s,]+)",
+    ];
+
+    for pattern in &location_patterns {
+        if let Ok(re) = regex::Regex::new(pattern) {
+            if let Some(captures) = re.captures(&combined_text) {
+                if let Some(location_match) = captures.get(1) {
+                    extraction.location = Some(location_match.as_str().trim().to_string());
+                    extraction.confidence += 0.15;
+                    break;
+                }
+            }
+        }
+    }
+
+    // Extract URLs
+    if let Ok(re) = regex::Regex::new(r"https?://[^\s]+") {
+        if let Some(url_match) = re.find(&combined_text) {
+            extraction.url = Some(url_match.as_str().to_string());
+            extraction.confidence += 0.15;
+        }
+    }
+
+    if extraction.confidence > 0.3 {
+        log_debug(&format!("Regex extraction succeeded - Title: {:?}, Company: {:?}, Confidence: {:.2}",
+            extraction.title, extraction.company, extraction.confidence));
+        Some(extraction)
+    } else {
+        log_debug(&format!("Regex extraction rejected - low confidence: {:.2}", extraction.confidence));
+        None
+    }
+}
 
 async fn create_job_from_extraction(
     extraction: &JobExtractionResult,
