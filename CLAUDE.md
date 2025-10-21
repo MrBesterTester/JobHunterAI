@@ -17,6 +17,10 @@
     - [Development Phases](#development-phases)
   - [File Structure](#file-structure)
   - [API Endpoints](#api-endpoints)
+  - [Bug Tracking Workflow](#bug-tracking-workflow)
+    - [When User Asks to "File a Bug"](#when-user-asks-to-file-a-bug)
+    - [Moving Bugs Between States](#moving-bugs-between-states)
+    - [Key Principles](#key-principles)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -175,3 +179,66 @@ docs/PRD.md           # Product Requirements Document
 - `GET /api/jobs/status/{status}` - Get jobs by status
 - `GET /api/applications` - List all applications
 - `POST /api/applications` - Create new application
+
+## Bug Tracking Workflow
+
+**System**: File-based bug tracking optimized for LLM-assisted development (83% token savings vs monolithic files)
+
+**Directory Structure**:
+```
+bugs/
+├── README.md           # Auto-generated index (updated via script)
+├── BUG-TEMPLATE.md     # Template for new bugs
+├── open/               # Active bugs requiring attention
+├── mitigated/          # Partially fixed bugs
+└── fixed/              # Fully resolved bugs
+```
+
+### When User Asks to "File a Bug"
+
+**Procedure** (execute automatically without asking for confirmation):
+
+1. **Determine next bug ID**:
+   - List existing bugs: `ls bugs/open/ bugs/mitigated/ bugs/fixed/`
+   - Check highest number: BUG-XXXX or ISSUE-XXX format
+   - Increment by 1 for new bug
+
+2. **Create bug file**:
+   - Use format: `bugs/open/BUG-XXXX-short-kebab-case-description.md`
+   - Copy structure from `bugs/BUG-TEMPLATE.md`
+   - Fill out all sections completely:
+     - **YAML frontmatter**: id, title, status, priority, severity, component, created, updated, affects, related
+     - **Markdown sections**: Summary, Impact, Steps to Reproduce, Expected/Actual Behavior, Root Cause, Proposed Solutions, Testing, Status History, Notes, Related Files
+
+3. **Priority/Severity Guidelines**:
+   - **Critical**: System down, data loss, security vulnerability
+   - **High**: Major feature broken, significant user impact
+   - **Medium**: Feature partially working, workaround available
+   - **Low**: Minor issue, cosmetic, nice-to-have
+
+4. **Component Classification**:
+   - frontend, backend, database, infrastructure, docs
+
+5. **Generate index**:
+   - Run: `python3 scripts/generate-bug-index.py`
+   - This updates `bugs/README.md` with tables and statistics
+
+6. **Commit everything**:
+   - Stage bug file and updated index
+   - Commit with descriptive message
+
+### Moving Bugs Between States
+
+When bug status changes:
+1. Move file: `mv bugs/open/BUG-XXXX.md bugs/fixed/`
+2. Update YAML frontmatter: `status: fixed`, add `fixed: YYYY-MM-DD`
+3. Regenerate index: `python3 scripts/generate-bug-index.py`
+4. Commit both changes
+
+### Key Principles
+
+- **Token Efficiency**: Read only the specific bug file needed (avg 6KB) vs entire bug list (12KB+)
+- **Complete Documentation**: Fill ALL sections - don't leave placeholders
+- **Proposed Solutions**: Always include multiple options with pros/cons/effort estimates
+- **Related Files**: Reference specific file paths and line numbers (e.g., `backend/src/main.rs:2652`)
+- **Testing Commands**: Include exact commands to reproduce and verify
