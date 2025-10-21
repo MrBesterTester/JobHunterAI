@@ -127,6 +127,13 @@
   - [Browser & Testing Strategy](#browser--testing-strategy)
     - [Development & Testing Browser: Chrome](#development--testing-browser-chrome)
     - [Cross-Browser Compatibility](#cross-browser-compatibility)
+  - [Bug Tracking](#bug-tracking)
+    - [Directory Structure](#directory-structure)
+    - [Bug Index](#bug-index)
+    - [Reporting a New Bug](#reporting-a-new-bug)
+    - [Bug File Structure](#bug-file-structure)
+    - [Regenerating the Index](#regenerating-the-index)
+    - [Why File-Based Bug Tracking?](#why-file-based-bug-tracking)
   - [Contributing](#contributing)
   - [License](#license)
   - [Contact](#contact)
@@ -2864,6 +2871,90 @@ JobHunter should work in any modern browser (Chrome, Firefox, Safari, Edge) as i
 
 **Why This Strategy?**
 Software is complicated enough. By aligning development, personal use, and primary testing on a single browser (Chrome), we reduce complexity, increase accuracy, and get faster feedback loops. Cross-browser testing happens automatically in CI/CD to ensure broad compatibility without slowing down daily development.
+
+## Bug Tracking
+
+JobHunter uses a **file-based bug tracking system** optimized for LLM-assisted development. Instead of a monolithic KNOWN_ISSUES.md file that burns tokens on every read, bugs are organized as individual markdown files.
+
+### Directory Structure
+
+```
+bugs/
+├── README.md           # Auto-generated index (see below)
+├── BUG-TEMPLATE.md     # Template for new bugs
+├── open/               # Active bugs
+├── mitigated/          # Partially fixed bugs
+└── fixed/              # Resolved bugs
+```
+
+### Bug Index
+
+See **[bugs/README.md](bugs/README.md)** for the complete bug index with:
+- Summary statistics (total, open, mitigated, fixed)
+- Priority breakdown (critical, high, medium, low)
+- Component breakdown (frontend, backend, database, etc.)
+- Organized tables linking to individual bug files
+
+### Reporting a New Bug
+
+1. Copy `bugs/BUG-TEMPLATE.md` to `bugs/open/BUG-XXXX-short-description.md`
+2. Increment the bug ID (check existing bugs for next number)
+3. Fill out all sections of the template (YAML frontmatter + detailed sections)
+4. Run `./scripts/generate-bug-index.py` to update the index
+5. Commit both the bug file and updated `bugs/README.md`
+
+### Bug File Structure
+
+Each bug file contains:
+- **YAML frontmatter**: Machine-readable metadata (id, title, status, priority, severity, component, dates)
+- **Markdown sections**: Human-readable details (summary, impact, steps to reproduce, root cause, solutions, etc.)
+
+Example:
+```markdown
+---
+id: BUG-0001
+title: Stale React State in Filtered Tab
+status: open
+priority: medium
+component: frontend
+created: 2025-10-21
+updated: 2025-10-21
+---
+
+# BUG-0001: Stale React State in Filtered Tab
+
+## Summary
+[Description]
+
+## Impact
+[Who/what is affected]
+
+[Additional sections...]
+```
+
+### Regenerating the Index
+
+After adding, moving, or updating bugs:
+
+```bash
+./scripts/generate-bug-index.py
+# or
+python3 scripts/generate-bug-index.py
+```
+
+This automatically scans all bug files and regenerates `bugs/README.md` with updated tables and statistics.
+
+### Why File-Based Bug Tracking?
+
+**Token Efficiency**: Reading one 200-line bug file vs. a 2000-line KNOWN_ISSUES.md saves 90% of LLM tokens.
+
+**Organized**: Bugs separated by status (open/mitigated/fixed) makes it easy to focus on what matters.
+
+**Searchable**: Individual files are easier to grep, search, and reference.
+
+**Git-Friendly**: Clear diffs when bugs are updated or moved between states.
+
+**LLM-Optimized**: YAML frontmatter enables automated processing and index generation.
 
 ## Contributing
 

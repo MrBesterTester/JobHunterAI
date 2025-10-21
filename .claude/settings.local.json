@@ -80,7 +80,11 @@
       "Bash(sed:*)",
       "Bash(NO_BROWSER=1 ./start.sh:*)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:piperhaywood.com)"
+      "WebFetch(domain:piperhaywood.com)",
+      "WebFetch(domain:emschwartz.me)",
+      "WebFetch(domain:docs.rs)",
+      "Read(//private/tmp/**)",
+      "Bash(TMPDIR=$HOME/tmp cargo test:*)"
     ],
     "deny": [],
     "ask": [
