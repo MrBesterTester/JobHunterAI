@@ -870,6 +870,7 @@ const JobHunterDashboard: React.FC = () => {
     console.log('[Parent] selectedJob changed:', selectedJob ? `Job ID: ${selectedJob.job_id}` : 'null');
   }, [selectedJob]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
   const [showCriteriaConfig, setShowCriteriaConfig] = useState<boolean>(false);
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
   const [generatedContentJob, setGeneratedContentJob] = useState<Job | null>(null);
@@ -986,6 +987,17 @@ const JobHunterDashboard: React.FC = () => {
       console.error('Error fetching stats:', error);
       // Set default stats on error
       setStats({ new: 0, approved: 0, applied: 0, filtered: 0, rejected: 0, ignored: 0 });
+    }
+  };
+
+  const handleRefresh = async (): Promise<void> => {
+    setRefreshing(true);
+    try {
+      await Promise.all([fetchJobs(), fetchStats(), fetchApplications()]);
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -1938,6 +1950,47 @@ const JobHunterDashboard: React.FC = () => {
             <p style={{ color: '#6b7280' }}>Streamline your job search workflow</p>
           </div>
           <div style={{ display: 'flex', gap: '12px' }}>
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '6px',
+                border: '1px solid #3b82f6',
+                backgroundColor: refreshing ? '#e0e7ff' : 'white',
+                color: refreshing ? '#6b7280' : '#3b82f6',
+                fontWeight: '600',
+                cursor: refreshing ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '14px',
+                transition: 'all 0.2s',
+                opacity: refreshing ? 0.6 : 1
+              }}
+              onMouseEnter={(e) => {
+                if (!refreshing) {
+                  e.currentTarget.style.backgroundColor = '#3b82f6';
+                  e.currentTarget.style.color = 'white';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!refreshing) {
+                  e.currentTarget.style.backgroundColor = 'white';
+                  e.currentTarget.style.color = '#3b82f6';
+                }
+              }}
+              title="Refresh jobs, stats, and applications data"
+            >
+              <RefreshCw
+                style={{
+                  width: '18px',
+                  height: '18px',
+                  animation: refreshing ? 'spin 1s linear infinite' : 'none'
+                }}
+              />
+              {refreshing ? 'Refreshing...' : 'Refresh Data'}
+            </button>
             <button
               onClick={clearAllDescriptions}
               style={{

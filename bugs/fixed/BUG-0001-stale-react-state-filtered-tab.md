@@ -30,14 +30,16 @@
 ---
 id: BUG-0001
 title: Stale React State in Filtered Tab - No Auto-Refresh Mechanism
-status: open
+status: fixed
 priority: medium
 severity: medium
 component: frontend
 created: 2025-10-21
 updated: 2025-10-21
+fixed: 2025-10-21
 affects: [UI, Data Refresh, All Tabs]
 related: []
+commits: []
 ---
 
 # BUG-0001: Stale React State in Filtered Tab - No Auto-Refresh Mechanism
@@ -202,9 +204,65 @@ Implement multiple solutions:
 
 ## Decision
 
-**Pending user decision on preferred solution.**
+**✅ Implemented Option 2: Manual Refresh Button**
 
-Recommendation: **Option 5 (Combination)** provides best UX with minimal effort.
+User requested Option 2 implementation with a **global** refresh button (not job-card specific).
+
+**Rationale:**
+- User-controlled: No unnecessary server load
+- Simple to implement: Quick fix for immediate need
+- Global scope: Single button refreshes all data (jobs, stats, applications)
+- Foundation for future enhancements: Can add Options 1, 4, or 5 later if needed
+
+**Other options retained in documentation for possible future implementation.**
+
+## Implementation (2025-10-21)
+
+**Files Modified:**
+- `frontend/src/App.tsx` - Added global refresh functionality
+- `frontend/src/index.css` - Added spin animation for loading indicator
+
+**Code Changes:**
+
+1. **Added State** (`frontend/src/App.tsx:873`):
+```typescript
+const [refreshing, setRefreshing] = useState<boolean>(false);
+```
+
+2. **Added Refresh Handler** (`frontend/src/App.tsx:993-1002`):
+```typescript
+const handleRefresh = async (): Promise<void> => {
+  setRefreshing(true);
+  try {
+    await Promise.all([fetchJobs(), fetchStats(), fetchApplications()]);
+  } catch (error) {
+    console.error('Error refreshing data:', error);
+  } finally {
+    setRefreshing(false);
+  }
+};
+```
+
+3. **Added Global Refresh Button** (`frontend/src/App.tsx:1953-1993`):
+- Blue primary button in header (left of "Refresh Descriptions" button)
+- Shows "Refresh Data" when idle, "Refreshing..." when active
+- Spinning icon animation while refreshing
+- Disabled state while operation in progress
+- Tooltip: "Refresh jobs, stats, and applications data"
+
+4. **Added CSS Animation** (`frontend/src/index.css:21-28`):
+```css
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+```
+
+**User Experience:**
+- Single click refreshes all data (jobs, stats, applications)
+- Visual feedback with spinning icon and button text change
+- Button disabled during refresh to prevent duplicate requests
+- Accessible from any tab or view
 
 ## Testing Plan
 
@@ -228,7 +286,10 @@ Recommendation: **Option 5 (Combination)** provides best UX with minimal effort.
 
 - 2025-10-21: Bug discovered during ISSUE-001 investigation
 - 2025-10-21: Root cause identified - no auto-refresh mechanism
-- 2025-10-21: Documented with proposed solutions
+- 2025-10-21: Documented with proposed solutions (Options 1-5)
+- 2025-10-21: User requested Option 2 (Manual Refresh Button) implementation
+- 2025-10-21: Implemented global refresh button in header
+- 2025-10-21: Marked as **RESOLVED**
 
 ## Notes
 
