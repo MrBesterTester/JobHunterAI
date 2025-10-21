@@ -10,7 +10,8 @@
     - [Problem Description](#problem-description)
     - [Symptoms](#symptoms)
     - [Root Cause Analysis](#root-cause-analysis)
-    - [Potential Solutions](#potential-solutions)
+    - [Partial Fix Implemented (2025-10-20)](#partial-fix-implemented-2025-10-20)
+    - [Potential Solutions (Original Analysis)](#potential-solutions-original-analysis)
     - [Related Files and References](#related-files-and-references)
     - [Test Commands](#test-commands)
     - [Notes](#notes)
@@ -34,11 +35,12 @@ This document tracks known bugs and issues in the JobHunter application. Issues 
 
 ### ISSUE-001: LLM extraction fails on HTML-heavy Dice emails
 
-**Status:** Active
+**Status:** Partially Fixed (Regex Fallback Enabled)
 **Priority:** Medium
 **Date Discovered:** 2025-10-20
+**Date Partially Fixed:** 2025-10-20
 **Component:** Backend LLM extraction
-**Affected File(s):** `backend/src/main.rs` (extract_job_from_email_async, lines 2700-2800)
+**Affected File(s):** `backend/src/main.rs` (extract_job_from_email_async, lines 2774-2817; extract_job_from_email, lines 2819-2955)
 
 #### Affected Job(s)
 - **Job ID:** `94558e12-59db-4751-9556-f36edf9f6260`
@@ -82,7 +84,49 @@ LLM extraction fails on certain Dice recruiting emails with excessive HTML marku
 - Typical successful job: 2-8KB of clean text
 - This failed job: 36KB of HTML markup
 
-#### Potential Solutions
+#### Partial Fix Implemented (2025-10-20)
+
+**Commit:** ced923d - "feat: Re-enable regex fallback for failed LLM extractions"
+
+**What was fixed:**
+- Re-enabled regex-based extraction as fallback when LLM extraction fails or returns low confidence
+- System no longer skips emails entirely when LLM fails
+- Added `extract_job_from_email` function with comprehensive regex patterns
+- Sets `extraction_method` field to "regex" for fallback extractions (vs "llm" for LLM extractions)
+- UI displays orange "REGEX" badge for regex extractions vs blue "LLM" badge
+
+**Code changes:**
+- `extract_job_from_email_async` (lines 2774-2817): Changed from returning None to calling regex fallback
+- `extract_job_from_email` (lines 2819-2955): New function with regex patterns for title, company, salary, location, URL
+- Log messages changed from "skipping email" to "falling back to regex"
+
+**Test results:**
+- Expert Systems Architect job (36KB HTML) now successfully extracts via regex
+- Extraction method correctly tracked in database: `extraction_method = 'regex'`
+- UI correctly displays orange "REGEX" badge
+- Confidence score: 0.8 (vs 0.9 for LLM)
+
+**Limitations of this fix:**
+- Regex extraction is less accurate than LLM extraction
+- May miss nuanced information like remote work policies, company culture, etc.
+- Title extraction falls back to using raw email subject line
+- Company name detection relies on simple patterns ("at X", "@ X", "from X")
+- Salary parsing may fail on complex compensation descriptions
+- Does not solve the underlying LLM timeout/failure issue
+
+**Why this is only a partial fix:**
+- The root cause (excessive HTML overwhelming LLM) is not addressed
+- HTML preprocessing would provide better results
+- Regex patterns may not cover all edge cases
+- Lower extraction quality compared to successful LLM extractions
+
+**Next steps for complete fix:**
+1. Implement HTML-to-text preprocessing before LLM extraction
+2. Add character/token limits to prevent oversized inputs
+3. Improve error handling and logging to capture LLM failures
+4. Consider using a more robust HTML parsing library
+
+#### Potential Solutions (Original Analysis)
 
 1. **HTML-to-text preprocessing** (Recommended)
    - Strip HTML tags before sending to LLM
@@ -126,12 +170,14 @@ LLM extraction fails on certain Dice recruiting emails with excessive HTML marku
 #### Test Commands
 
 ```bash
-# Check the problematic job
+# Check the problematic job and verify extraction method
 psql -U jobhunter_user -d jobhunter_personal -c "
 SELECT
   j.job_id,
   j.title,
   j.status,
+  j.extraction_method,
+  j.raw_data->>'confidence' as confidence,
   LENGTH(e.body_text) as body_chars,
   e.body_text IS NOT NULL as has_body
 FROM jobs j
@@ -139,8 +185,14 @@ JOIN email_jobs e ON j.job_id = e.job_id
 WHERE j.job_id = '94558e12-59db-4751-9556-f36edf9f6260';
 "
 
-# Manually retry extraction
-curl -X POST http://localhost:8080/api/intake/reextract/94558e12-59db-4751-9556-f36edf9f6260
+# Manually retry extraction (will trigger regex fallback for large HTML emails)
+curl -X POST http://localhost:8080/api/intake/reextract-job/94558e12-59db-4751-9556-f36edf9f6260
+
+# Verify extraction method after re-extraction
+curl -s http://localhost:8080/api/jobs | jq '.[] | select(.extraction_method == "regex") | {title, status, extraction_method}'
+
+# Count jobs by extraction method
+curl -s http://localhost:8080/api/jobs | jq 'group_by(.extraction_method) | map({method: .[0].extraction_method, count: length})'
 ```
 
 #### Notes
@@ -148,7 +200,11 @@ curl -X POST http://localhost:8080/api/intake/reextract/94558e12-59db-4751-9556-
 - The job status remained "filtered" - extraction failure doesn't change workflow status
 - This is the correct behavior (re-extraction only updates raw_data, not status)
 - The other failed job "AI Essentials" (4e8e5c5d) is actually a course, not a real job
-- 35/37 jobs (94.6%) extracted successfully, so this is an edge case
+- 35/37 jobs (94.6%) extracted successfully via LLM, so HTML-heavy emails are an edge case
+- **Post-fix:** With regex fallback enabled, the system now extracts 36/37 jobs (97.3%)
+- Regex extraction provides basic job information but lacks the rich context of LLM extraction
+- UI clearly distinguishes extraction methods: blue "LLM" badge vs orange "REGEX" badge
+- Future improvement: HTML preprocessing would allow LLM to handle these cases better
 
 ---
 
