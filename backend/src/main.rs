@@ -337,7 +337,7 @@ pub struct EmploymentDetails {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RemoteWorkDetails {
     pub policy: Option<String>,
-    pub days_onsite_per_week: Option<i32>,
+    pub days_onsite_per_week: Option<f32>,  // Changed to f32 to support fractional days (e.g., 2.5 days/week)
     pub remote_eligible_states: Option<Vec<String>>,
     pub timezone_requirement: Option<String>,
 }
