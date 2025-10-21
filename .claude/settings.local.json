@@ -84,7 +84,8 @@
       "WebFetch(domain:emschwartz.me)",
       "WebFetch(domain:docs.rs)",
       "Read(//private/tmp/**)",
-      "Bash(TMPDIR=$HOME/tmp cargo test:*)"
+      "Bash(TMPDIR=$HOME/tmp cargo test:*)",
+      "WebFetch"
     ],
     "deny": [],
     "ask": [
@@ -93,8 +94,7 @@
       "Bash(git fetch:*)",
       "Bash(git rebase:*)",
       "Bash(git filter-branch:*)",
-      "Bash(git config --global:*)",
-      "WebFetch"
+      "Bash(git config --global:*)"
     ]
   },
   "hooks": {
