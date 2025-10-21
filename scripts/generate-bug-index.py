@@ -24,9 +24,10 @@ def parse_frontmatter(content: str) -> Optional[Dict[str, any]]:
     Parse YAML frontmatter from markdown file.
 
     Returns dict of frontmatter fields, or None if no frontmatter found.
+    Handles files with TOC sections at the beginning.
     """
-    # Match content between --- delimiters at start of file
-    match = re.match(r'^---\s*\n(.*?)\n---\s*\n', content, re.DOTALL)
+    # Match content between --- delimiters (may not be at very start due to TOC)
+    match = re.search(r'^---\s*\n(.*?)\n---\s*\n', content, re.MULTILINE | re.DOTALL)
     if not match:
         return None
 
