@@ -1676,7 +1676,10 @@ async fn condense_text_with_claude(
         .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
 
     // Convert HTML to text if needed
-    let clean_text = if text.contains("<html") || text.contains("<body") {
+    let clean_text = if text.to_lowercase().contains("<html")
+                     || text.to_lowercase().contains("<body")
+                     || text.contains("<!DOCTYPE")
+                     || text.contains("<style") {
         html_to_text(text)
     } else {
         text.to_string()
@@ -2649,9 +2652,32 @@ async fn get_active_extraction_prompt(pool: &PgPool) -> Result<ExtractionPrompt,
     .map_err(|e| format!("Failed to fetch extraction prompt: {}", e))
 }
 
-/// Convert HTML to plain text
+/// Convert HTML to clean text using Mozilla Readability algorithm
+/// Removes boilerplate, CSS, tracking pixels, navigation, and extracts main content
 fn html_to_text(html: &str) -> String {
-    html2text::from_read(html.as_bytes(), 100)
+    use dom_smoothie::{Readability, Config};
+
+    // Try using Readability algorithm to extract main content
+    // Arguments: html, document_url (optional), config (optional)
+    match Readability::new(html, None, Some(Config::default())) {
+        Ok(mut readability) => {
+            match readability.parse() {
+                Ok(article) => {
+                    log_debug(&format!("Readability extraction succeeded - extracted {} chars from {} chars HTML",
+                        article.text_content.len(), html.len()));
+                    article.text_content.to_string()
+                }
+                Err(e) => {
+                    log_debug(&format!("Readability parsing failed: {}, using original", e));
+                    html.to_string()
+                }
+            }
+        }
+        Err(e) => {
+            log_debug(&format!("Readability initialization failed: {}, using original", e));
+            html.to_string()
+        }
+    }
 }
 
 /// Extract JSON from LLM response, handling markdown code fences and explanatory text
@@ -2696,7 +2722,10 @@ async fn call_claude_api(
         .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
 
     // Convert HTML to text if needed
-    let clean_body = if email_body.contains("<html") || email_body.contains("<body") {
+    let clean_body = if email_body.to_lowercase().contains("<html")
+                     || email_body.to_lowercase().contains("<body")
+                     || email_body.contains("<!DOCTYPE")
+                     || email_body.contains("<style") {
         html_to_text(email_body)
     } else {
         email_body.to_string()

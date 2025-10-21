@@ -249,11 +249,12 @@ flowchart TD
     Start([Job Sources]) --> Sources
 
     subgraph Sources [" 1. Automated Job Intake "]
-        Gmail[📧 Gmail] --> Extract
-        LinkedIn[💼 LinkedIn] --> Extract
-        Indeed[🔍 Indeed] --> Extract
+        Gmail[📧 Gmail] --> HTMLClean
+        LinkedIn[💼 LinkedIn] --> HTMLClean
+        Indeed[🔍 Indeed] --> HTMLClean
         Manual[✍️ Manual Entry] --> Extract
-        Extract[Intelligent Extraction<br/>Title, Company, Salary, Location]
+        HTMLClean[HTML Preprocessing<br/>Mozilla Readability] --> Extract
+        Extract[LLM Extraction<br/>Title, Company, Salary, Location]
     end
 
     Extract --> Dedup{Deduplication<br/>SHA256 Hash}
@@ -343,7 +344,10 @@ Gmail/LinkedIn/API Sources → Intelligent Extraction → Automatic Filtering �
   - Extracts: title, company, location, salary, URL, description
   - **NEW**: Company industry detection with inference tracking (extracted vs. inferred)
   - **NEW**: Employment type classification (full-time/part-time/contract/temporary) with source tracking
-- **Smart HTML Processing**: Automatic HTML-to-text conversion for clean extraction
+- **Smart HTML Processing**: Automatic HTML-to-text conversion using Mozilla Readability algorithm
+  - Removes CSS styles, tracking pixels, navigation, ads, and boilerplate
+  - Extracts only main job content from HTML emails
+  - Reduces token usage and improves LLM accuracy
 - **Live Prompt Editing**: Update extraction prompts in real-time via UI without backend restart
 - **Multi-source Deduplication**: SHA256-based prevention of duplicates across all sources
 - **Automatic Filtering**: All jobs filtered against salary ($130K+), location, and domain criteria
@@ -387,7 +391,12 @@ The system uses a sophisticated LLM-based extraction pipeline to parse job infor
 **LLM Analysis (Claude 3.5 Haiku):**
 - Analyzes both email **subject** AND **body content** for comprehensive understanding
 - Uses a 30-second timeout per email with structured JSON response format
-- HTML emails are automatically converted to clean text before analysis
+- **HTML Preprocessing**: Emails with HTML markup are automatically cleaned before analysis
+  - Uses **Mozilla Readability algorithm** (same as Firefox Reader View)
+  - Intelligently removes CSS styles, tracking pixels, navigation menus, and ads
+  - Extracts main content only (job description, requirements, company info)
+  - Handles complex HTML structures from recruiters (Dice, Indeed, etc.)
+  - Reduces 36KB+ HTML emails to concise text for better LLM extraction
 
 **Confidence Scoring:**
 - Each extraction receives a confidence score (0.0 - 1.0) based on data completeness
