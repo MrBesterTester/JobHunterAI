@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, TrendingUp, Award } from 'lucide-react';
+import WeightAdjustmentPanel from './WeightAdjustmentPanel';
 
 const API_URL = 'http://localhost:8080/api';
 
@@ -223,6 +224,9 @@ const RankedJobsTab: React.FC = () => {
           {sortedJobs.length} jobs scored
         </span>
       </div>
+
+      {/* Weight Adjustment Panel */}
+      <WeightAdjustmentPanel onWeightsUpdated={fetchRankedJobs} />
 
       <div style={{
         backgroundColor: '#fef3c7',
