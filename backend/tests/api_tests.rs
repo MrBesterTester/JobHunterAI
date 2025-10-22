@@ -373,7 +373,7 @@ mod performance_tests {
 
         // Verify weights sum to approximately 1.0
         let total_weight: f64 = criteria_list.iter()
-            .map(|c| c.weight.unwrap_or(0.0))
+            .map(|c| c.weight)
             .sum();
 
         assert!((total_weight - 1.0).abs() < 0.001,
@@ -540,7 +540,7 @@ mod performance_tests {
         .await
         .expect("Should fetch compensation criteria");
 
-        let original_weight = original.weight.unwrap();
+        let original_weight = original.weight;
 
         // Update weight
         let new_weight = 0.25;
@@ -561,7 +561,7 @@ mod performance_tests {
         .await
         .expect("Should fetch updated criteria");
 
-        assert!((updated.weight.unwrap() - new_weight).abs() < 0.001);
+        assert!((updated.weight - new_weight).abs() < 0.001);
 
         // Restore original weight
         sqlx::query!(
