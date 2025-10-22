@@ -322,11 +322,14 @@ test.describe('Re-filter Jobs Button and Dropdown', () => {
   });
 
   test('should maintain button state after page navigation', async ({ page }) => {
-    const refilterButton = page.getByRole('button', { name: /Re-filter Jobs/i });
     const dropdown = page.locator('select').filter({ hasText: /Last Sync Only/i });
+
+    // Verify dropdown is visible initially
+    await expect(dropdown).toBeVisible();
 
     // Change dropdown to "All Filtered Jobs"
     await dropdown.selectOption('all_filtered');
+    expect(await dropdown.inputValue()).toBe('all_filtered');
 
     // Navigate away from Intake tab
     const allTab = page.getByRole('button', { name: /^All$/i });
@@ -336,10 +339,18 @@ test.describe('Re-filter Jobs Button and Dropdown', () => {
     // Navigate back to Intake tab
     const intakeTab = page.getByRole('button', { name: /^Intake$/i });
     await intakeTab.click();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(2000); // Increased wait for tab rendering
+
+    // Wait for a known Intake tab element to be visible (not the dropdown)
+    const syncButton = page.getByRole('button', { name: /Sync All Sources/i });
+    await expect(syncButton).toBeVisible({ timeout: 15000 });
+
+    // Get the dropdown again after navigation (create fresh locator)
+    const dropdownAfterNav = page.locator('select').filter({ hasText: /Last Sync Only/i });
+    await expect(dropdownAfterNav).toBeVisible({ timeout: 10000 });
 
     // Dropdown should reset to default ("Last Sync Only") since it's component state
-    const dropdownValue = await dropdown.inputValue();
+    const dropdownValue = await dropdownAfterNav.inputValue();
     expect(dropdownValue).toBe('last_sync');
   });
 
