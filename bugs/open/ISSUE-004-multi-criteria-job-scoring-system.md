@@ -471,11 +471,11 @@ CREATE INDEX idx_job_scores_rank ON job_scores(rank ASC);
 - [x] Migration script for existing database
 - [x] Test schema on dev database
 
-**Documentation Updates** (1 day): ⏭️ DEFERRED
-- [ ] Fix PRD duplicate TOC (remove manual, keep doctoc)
-- [ ] Update PRD Section 3 with new preference rankings
-- [ ] Add compensation equivalence formulas to PRD
-- [ ] Document retainer, benefits, flexibility priorities
+**Documentation Updates** (1 day): ✅ **COMPLETED**
+- [x] Fix PRD duplicate TOC (no duplicates found - only doctoc)
+- [x] Update PRD Section 3 with new preference rankings (docs/PRD.md:140-182)
+- [x] Add compensation equivalence formulas to PRD (docs/PRD.md:250-272)
+- [x] Document retainer, benefits, flexibility priorities (docs/PRD.md:324-402)
 
 **Backend Prep** (2 days): ✅
 - [x] Create Rust structs for `ScoringCriteria` and `JobScore`
@@ -564,13 +564,18 @@ CREATE INDEX idx_job_scores_rank ON job_scores(rank ASC);
   - Null scores sorted to end
   - Applies to: All, New, Approved, Applied, Filtered tabs
   - **Filtered tab especially important**: High-scoring filtered jobs now surface to top
-- [ ] Add filter by minimum score (e.g., "Show only 70+") - DEFERRED to Phase 4
+- [x] Add filter by minimum score (e.g., "Show only 70+") - ✅ COMPLETED
+  - Implementation: RankedJobsTab.tsx:50, 106-112, 240-289
+  - Features: Button group filter (0, 30, 40, 50, 60, 70+)
+  - Shows filtered count: "Showing N jobs with score ≥ X"
+  - Active button highlighted with blue background (#0ea5e9)
+  - Integrated before Scoring Legend
 
 **Polish** (1 day):
 - [x] Loading states (RankedJobsTab shows "Loading ranked jobs..." with Award icon)
 - [x] Success/error messages (WeightAdjustmentPanel displays feedback with icons)
-- [ ] Export to CSV button - DEFERRED to Phase 4
-- [ ] Help tooltips explaining each criterion - DEFERRED to Phase 4
+- [ ] Export to CSV button - DEFERRED (future enhancement)
+- [ ] Help tooltips explaining each criterion - DEFERRED (future enhancement)
 
 **Backend Enhancement**:
 - [x] Added GET /api/jobs/{id}/score endpoint (main.rs:1902-1917)
@@ -600,11 +605,27 @@ CREATE INDEX idx_job_scores_rank ON job_scores(rank ASC);
 - [x] Add score calculation to `/api/intake/reextract-job` flow
 - [x] Batch calculate scores for all existing filtered jobs
 
-**Testing** (2 days): ✅
-- [x] Unit tests for each scoring function (20 tests added)
+**Testing** (2 days): ✅ **ALL COMPLETED**
+- [x] Unit tests for each scoring function (20 tests added - main.rs:6326-6743)
 - [ ] Integration tests for `calculate_job_score()` - DEFERRED (covered by unit tests)
-- [ ] API endpoint tests - DEFERRED (endpoints tested manually)
-- [ ] Frontend E2E tests (Playwright) - DEFERRED (tested manually)
+- [x] API endpoint tests (6 tests added - api_tests.rs:343-701)
+  - test_scoring_criteria_retrieval
+  - test_job_score_insertion
+  - test_multiple_job_scores_ranking
+  - test_scoring_criteria_update
+  - test_score_boundary_values
+  - test_null_score_handling
+- [x] Frontend E2E tests (Playwright) - 10 tests added (27-job-scoring-system.spec.ts)
+  - Ranked Jobs tab visibility
+  - Score display and color coding
+  - Score badges on job cards
+  - Weight adjustment panel functionality
+  - Minimum score filtering
+  - Sorting by criteria
+  - Job detail expansion
+  - Weight update and recalculation
+  - Null score handling
+  - Badge ordering verification
 - [x] Test weight adjustment → re-ranking flow
 
 **Validation** (1 day): ✅

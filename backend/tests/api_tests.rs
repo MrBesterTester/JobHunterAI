@@ -339,4 +339,363 @@ mod performance_tests {
             .await
             .expect("Failed to cleanup test job");
     }
+
+    // ========== SCORING API TESTS ==========
+
+    #[tokio::test]
+    async fn test_scoring_criteria_retrieval() {
+        let pool = create_test_pool().await;
+
+        // Test that scoring criteria can be retrieved
+        let criteria = sqlx::query!(
+            "SELECT criterion_name, weight, enabled FROM scoring_criteria ORDER BY criterion_name"
+        )
+        .fetch_all(&pool)
+        .await;
+
+        assert!(criteria.is_ok(), "Should be able to fetch scoring criteria");
+
+        let criteria_list = criteria.unwrap();
+        assert!(criteria_list.len() == 7, "Should have exactly 7 scoring criteria");
+
+        // Verify required criteria exist
+        let criterion_names: Vec<String> = criteria_list.iter()
+            .map(|c| c.criterion_name.clone())
+            .collect();
+
+        assert!(criterion_names.contains(&"compensation".to_string()));
+        assert!(criterion_names.contains(&"employment_relationship".to_string()));
+        assert!(criterion_names.contains(&"remote_work".to_string()));
+        assert!(criterion_names.contains(&"domain_fit".to_string()));
+        assert!(criterion_names.contains(&"flexibility_perks".to_string()));
+        assert!(criterion_names.contains(&"benefits".to_string()));
+        assert!(criterion_names.contains(&"company_industry".to_string()));
+
+        // Verify weights sum to approximately 1.0
+        let total_weight: f64 = criteria_list.iter()
+            .map(|c| c.weight.unwrap_or(0.0))
+            .sum();
+
+        assert!((total_weight - 1.0).abs() < 0.001,
+                "Weights should sum to 1.0, got {}", total_weight);
+    }
+
+    #[tokio::test]
+    async fn test_job_score_insertion() {
+        let pool = create_test_pool().await;
+
+        // Create a test job first
+        let job_id = Uuid::new_v4();
+        sqlx::query!(
+            "INSERT INTO jobs (job_id, title, company, source, status) VALUES ($1, $2, $3, $4, $5)",
+            job_id,
+            "Test Scoring Job",
+            "TestCorp",
+            "manual",
+            "new"
+        )
+        .execute(&pool)
+        .await
+        .expect("Job insertion should succeed");
+
+        // Insert job score
+        let result = sqlx::query!(
+            r#"
+            INSERT INTO job_scores (
+                job_id,
+                compensation_score,
+                relationship_score,
+                remote_work_score,
+                domain_fit_score,
+                flexibility_score,
+                benefits_score,
+                industry_score,
+                total_score,
+                rank
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            "#,
+            job_id,
+            75.5f64,
+            60.0f64,
+            100.0f64,
+            80.0f64,
+            50.0f64,
+            70.0f64,
+            40.0f64,
+            72.35f64,
+            1i32
+        )
+        .execute(&pool)
+        .await;
+
+        assert!(result.is_ok(), "Job score insertion should succeed");
+
+        // Verify the score was inserted correctly
+        let score = sqlx::query!(
+            "SELECT total_score, rank FROM job_scores WHERE job_id = $1",
+            job_id
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("Should fetch inserted score");
+
+        assert!((score.total_score.unwrap() - 72.35).abs() < 0.01);
+        assert_eq!(score.rank.unwrap(), 1);
+
+        // Cleanup
+        sqlx::query!("DELETE FROM job_scores WHERE job_id = $1", job_id)
+            .execute(&pool)
+            .await
+            .expect("Score cleanup should succeed");
+
+        sqlx::query!("DELETE FROM jobs WHERE job_id = $1", job_id)
+            .execute(&pool)
+            .await
+            .expect("Job cleanup should succeed");
+    }
+
+    #[tokio::test]
+    async fn test_multiple_job_scores_ranking() {
+        let pool = create_test_pool().await;
+
+        // Create 3 test jobs with different scores
+        let job_ids: Vec<Uuid> = (0..3).map(|_| Uuid::new_v4()).collect();
+        let scores = vec![45.5f64, 78.3f64, 62.1f64];
+
+        for (i, &job_id) in job_ids.iter().enumerate() {
+            // Insert job
+            sqlx::query!(
+                "INSERT INTO jobs (job_id, title, company, source, status) VALUES ($1, $2, $3, $4, $5)",
+                job_id,
+                format!("Test Job {}", i + 1),
+                "TestCorp",
+                "manual",
+                "new"
+            )
+            .execute(&pool)
+            .await
+            .expect("Job insertion should succeed");
+
+            // Insert score
+            sqlx::query!(
+                r#"
+                INSERT INTO job_scores (job_id, total_score, rank)
+                VALUES ($1, $2, $3)
+                "#,
+                job_id,
+                scores[i],
+                (i + 1) as i32
+            )
+            .execute(&pool)
+            .await
+            .expect("Score insertion should succeed");
+        }
+
+        // Query jobs ordered by score
+        let ranked_jobs = sqlx::query!(
+            r#"
+            SELECT j.job_id, j.title, s.total_score, s.rank
+            FROM jobs j
+            JOIN job_scores s ON j.job_id = s.job_id
+            WHERE j.job_id = ANY($1)
+            ORDER BY s.total_score DESC
+            "#,
+            &job_ids[..]
+        )
+        .fetch_all(&pool)
+        .await
+        .expect("Should fetch ranked jobs");
+
+        assert_eq!(ranked_jobs.len(), 3);
+
+        // Verify ordering by score (descending)
+        assert_eq!(ranked_jobs[0].title, "Test Job 2"); // 78.3 score
+        assert_eq!(ranked_jobs[1].title, "Test Job 3"); // 62.1 score
+        assert_eq!(ranked_jobs[2].title, "Test Job 1"); // 45.5 score
+
+        // Cleanup
+        for job_id in &job_ids {
+            sqlx::query!("DELETE FROM job_scores WHERE job_id = $1", job_id)
+                .execute(&pool)
+                .await
+                .ok();
+
+            sqlx::query!("DELETE FROM jobs WHERE job_id = $1", job_id)
+                .execute(&pool)
+                .await
+                .ok();
+        }
+    }
+
+    #[tokio::test]
+    async fn test_scoring_criteria_update() {
+        let pool = create_test_pool().await;
+
+        // Get original compensation weight
+        let original = sqlx::query!(
+            "SELECT weight FROM scoring_criteria WHERE criterion_name = 'compensation'"
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("Should fetch compensation criteria");
+
+        let original_weight = original.weight.unwrap();
+
+        // Update weight
+        let new_weight = 0.25;
+        let result = sqlx::query!(
+            "UPDATE scoring_criteria SET weight = $1 WHERE criterion_name = 'compensation'",
+            new_weight
+        )
+        .execute(&pool)
+        .await;
+
+        assert!(result.is_ok(), "Should be able to update criteria weight");
+
+        // Verify update
+        let updated = sqlx::query!(
+            "SELECT weight FROM scoring_criteria WHERE criterion_name = 'compensation'"
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("Should fetch updated criteria");
+
+        assert!((updated.weight.unwrap() - new_weight).abs() < 0.001);
+
+        // Restore original weight
+        sqlx::query!(
+            "UPDATE scoring_criteria SET weight = $1 WHERE criterion_name = 'compensation'",
+            original_weight
+        )
+        .execute(&pool)
+        .await
+        .expect("Should restore original weight");
+    }
+
+    #[tokio::test]
+    async fn test_score_boundary_values() {
+        let pool = create_test_pool().await;
+
+        let job_id = Uuid::new_v4();
+
+        // Insert job
+        sqlx::query!(
+            "INSERT INTO jobs (job_id, title, company, source, status) VALUES ($1, $2, $3, $4, $5)",
+            job_id,
+            "Boundary Test Job",
+            "TestCorp",
+            "manual",
+            "new"
+        )
+        .execute(&pool)
+        .await
+        .expect("Job insertion should succeed");
+
+        // Test boundary values: 0.0, 50.0, 100.0
+        let boundary_scores = vec![0.0f64, 50.0f64, 100.0f64];
+
+        for score in boundary_scores {
+            let result = sqlx::query!(
+                r#"
+                INSERT INTO job_scores (job_id, total_score)
+                VALUES ($1, $2)
+                ON CONFLICT (job_id) DO UPDATE SET total_score = $2
+                "#,
+                job_id,
+                score
+            )
+            .execute(&pool)
+            .await;
+
+            assert!(result.is_ok(), "Should handle boundary score: {}", score);
+
+            // Verify the score
+            let retrieved = sqlx::query!(
+                "SELECT total_score FROM job_scores WHERE job_id = $1",
+                job_id
+            )
+            .fetch_one(&pool)
+            .await
+            .expect("Should fetch score");
+
+            assert!((retrieved.total_score.unwrap() - score).abs() < 0.001);
+        }
+
+        // Cleanup
+        sqlx::query!("DELETE FROM job_scores WHERE job_id = $1", job_id)
+            .execute(&pool)
+            .await
+            .ok();
+
+        sqlx::query!("DELETE FROM jobs WHERE job_id = $1", job_id)
+            .execute(&pool)
+            .await
+            .ok();
+    }
+
+    #[tokio::test]
+    async fn test_null_score_handling() {
+        let pool = create_test_pool().await;
+
+        let job_id = Uuid::new_v4();
+
+        // Insert job
+        sqlx::query!(
+            "INSERT INTO jobs (job_id, title, company, source, status) VALUES ($1, $2, $3, $4, $5)",
+            job_id,
+            "Null Score Test Job",
+            "TestCorp",
+            "manual",
+            "new"
+        )
+        .execute(&pool)
+        .await
+        .expect("Job insertion should succeed");
+
+        // Insert score with NULL criterion scores
+        let result = sqlx::query!(
+            r#"
+            INSERT INTO job_scores (
+                job_id,
+                compensation_score,
+                relationship_score,
+                total_score
+            )
+            VALUES ($1, $2, $3, $4)
+            "#,
+            job_id,
+            None::<f64>,
+            Some(60.0f64),
+            Some(12.0f64)
+        )
+        .execute(&pool)
+        .await;
+
+        assert!(result.is_ok(), "Should handle NULL criterion scores");
+
+        // Verify NULL scores are stored correctly
+        let score = sqlx::query!(
+            "SELECT compensation_score, relationship_score, total_score FROM job_scores WHERE job_id = $1",
+            job_id
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("Should fetch score with NULLs");
+
+        assert!(score.compensation_score.is_none());
+        assert!(score.relationship_score.is_some());
+        assert_eq!(score.relationship_score.unwrap(), 60.0);
+
+        // Cleanup
+        sqlx::query!("DELETE FROM job_scores WHERE job_id = $1", job_id)
+            .execute(&pool)
+            .await
+            .ok();
+
+        sqlx::query!("DELETE FROM jobs WHERE job_id = $1", job_id)
+            .execute(&pool)
+            .await
+            .ok();
+    }
 }

@@ -47,6 +47,7 @@ const RankedJobsTab: React.FC = () => {
   const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
   const [sortColumn, setSortColumn] = useState<SortColumn>('rank');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [minScoreFilter, setMinScoreFilter] = useState<number>(0);
 
   useEffect(() => {
     fetchRankedJobs();
@@ -103,7 +104,15 @@ const RankedJobsTab: React.FC = () => {
   };
 
   const getSortedJobs = (): JobWithScore[] => {
-    const sorted = [...jobs];
+    // First, filter by minimum score
+    const filtered = jobs.filter(job => {
+      if (minScoreFilter === 0) return true; // No filter applied
+      const score = job.score?.total_score;
+      return score !== null && score !== undefined && score >= minScoreFilter;
+    });
+
+    // Then, sort the filtered jobs
+    const sorted = [...filtered];
     sorted.sort((a, b) => {
       let aVal: any;
       let bVal: any;
@@ -227,6 +236,57 @@ const RankedJobsTab: React.FC = () => {
 
       {/* Weight Adjustment Panel */}
       <WeightAdjustmentPanel onWeightsUpdated={fetchRankedJobs} />
+
+      {/* Minimum Score Filter */}
+      <div style={{
+        backgroundColor: '#f0f9ff',
+        border: '1px solid #0ea5e9',
+        borderRadius: '8px',
+        padding: '16px',
+        marginBottom: '20px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+          <label style={{ fontWeight: 500, fontSize: '14px', color: '#0c4a6e' }}>
+            Filter by Minimum Score:
+          </label>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {[0, 30, 40, 50, 60, 70].map(threshold => (
+              <button
+                key={threshold}
+                onClick={() => setMinScoreFilter(threshold)}
+                style={{
+                  padding: '6px 16px',
+                  borderRadius: '6px',
+                  border: minScoreFilter === threshold ? '2px solid #0ea5e9' : '1px solid #cbd5e1',
+                  backgroundColor: minScoreFilter === threshold ? '#0ea5e9' : 'white',
+                  color: minScoreFilter === threshold ? 'white' : '#475569',
+                  fontWeight: minScoreFilter === threshold ? 600 : 400,
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  if (minScoreFilter !== threshold) {
+                    e.currentTarget.style.backgroundColor = '#f1f5f9';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (minScoreFilter !== threshold) {
+                    e.currentTarget.style.backgroundColor = 'white';
+                  }
+                }}
+              >
+                {threshold === 0 ? 'All Jobs' : `${threshold}+`}
+              </button>
+            ))}
+          </div>
+          {minScoreFilter > 0 && (
+            <span style={{ fontSize: '14px', color: '#64748b' }}>
+              Showing {sortedJobs.length} job{sortedJobs.length !== 1 ? 's' : ''} with score ≥ {minScoreFilter}
+            </span>
+          )}
+        </div>
+      </div>
 
       <div style={{
         backgroundColor: '#fef3c7',
