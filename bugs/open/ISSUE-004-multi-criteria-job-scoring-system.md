@@ -33,7 +33,7 @@ related: []](#id-issue-004%0Atitle-multi-criteria-weighted-job-scoring-system%0A
     - [6. Benefits Score (3% weight)](#6-benefits-score-3%25-weight)
     - [7. Company Industry Score (2% weight)](#7-company-industry-score-2%25-weight)
   - [Implementation Plan](#implementation-plan)
-    - [Phase 1: Foundation (Week 1)](#phase-1-foundation-week-1)
+    - [Phase 1: Foundation (Week 1) ✅ COMPLETED](#phase-1-foundation-week-1--completed)
     - [Phase 2: Backend Scoring (Week 2)](#phase-2-backend-scoring-week-2)
     - [Phase 3: UI Enhancement (Week 3)](#phase-3-ui-enhancement-week-3)
     - [Phase 4: Integration & Testing (Week 4)](#phase-4-integration--testing-week-4)
@@ -462,25 +462,25 @@ CREATE INDEX idx_job_scores_rank ON job_scores(rank ASC);
 
 ## Implementation Plan
 
-### Phase 1: Foundation (Week 1)
+### Phase 1: Foundation (Week 1) ✅ COMPLETED
 
-**Database Schema** (2 days):
-- [ ] Create `scoring_criteria` table
-- [ ] Create `job_scores` table
-- [ ] Seed default weights
-- [ ] Migration script for existing database
-- [ ] Test schema on dev database
+**Database Schema** (2 days): ✅
+- [x] Create `scoring_criteria` table
+- [x] Create `job_scores` table
+- [x] Seed default weights
+- [x] Migration script for existing database
+- [x] Test schema on dev database
 
-**Documentation Updates** (1 day):
+**Documentation Updates** (1 day): ⏭️ DEFERRED
 - [ ] Fix PRD duplicate TOC (remove manual, keep doctoc)
 - [ ] Update PRD Section 3 with new preference rankings
 - [ ] Add compensation equivalence formulas to PRD
 - [ ] Document retainer, benefits, flexibility priorities
 
-**Backend Prep** (2 days):
-- [ ] Create Rust structs for `ScoringCriteria` and `JobScore`
-- [ ] Add database query functions: `get_scoring_criteria()`, `save_job_score()`
-- [ ] Relax hard filters:
+**Backend Prep** (2 days): ✅
+- [x] Create Rust structs for `ScoringCriteria` and `JobScore`
+- [x] Add database query functions: `get_scoring_criteria()`, `save_job_score()`
+- [x] Relax hard filters:
   - Lower `min_salary` to $100,000
   - Make domain matching advisory (not eliminatory)
 
