@@ -4302,11 +4302,45 @@ async fn reextract_job_descriptions(pool: web::Data<PgPool>) -> Result<HttpRespo
         }
     }
 
+    // Auto-calculate scores for all updated jobs
+    log_debug(&format!("Calculating scores for {} updated jobs", updated_count));
+    let mut scored_count = 0;
+    let mut score_failed_count = 0;
+
+    if updated_count > 0 {
+        // Fetch all updated jobs
+        let updated_jobs = sqlx::query_as::<_, Job>(
+            "SELECT * FROM jobs WHERE raw_data IS NOT NULL"
+        )
+        .fetch_all(pool.get_ref())
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to fetch jobs for scoring: {}", e)))?;
+
+        for job in updated_jobs {
+            match calculate_job_score(pool.get_ref(), &job).await {
+                Ok(_) => scored_count += 1,
+                Err(e) => {
+                    log_debug(&format!("Failed to score job {}: {}", job.job_id, e));
+                    score_failed_count += 1;
+                }
+            }
+        }
+
+        // Recalculate ranks after scoring all jobs
+        if scored_count > 0 {
+            if let Err(e) = recalculate_ranks(pool.get_ref()).await {
+                log_debug(&format!("Failed to recalculate ranks: {}", e));
+            }
+        }
+    }
+
     Ok(HttpResponse::Ok().json(serde_json::json!({
         "message": "Job description re-extraction completed",
         "total_jobs": total_jobs,
         "updated": updated_count,
-        "failed": failed_count
+        "failed": failed_count,
+        "scored": scored_count,
+        "score_failed": score_failed_count
     })))
 }
 
@@ -4387,10 +4421,36 @@ async fn reextract_single_job(
 
             log_debug(&format!("Successfully re-extracted job: {}", job_uuid));
 
+            // Auto-calculate score after successful extraction
+            let updated_job = sqlx::query_as::<_, Job>(
+                "SELECT * FROM jobs WHERE job_id = $1"
+            )
+            .bind(job_uuid)
+            .fetch_optional(pool.get_ref())
+            .await
+            .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to fetch updated job: {}", e)))?;
+
+            let mut score_calculated = false;
+            if let Some(updated_job) = updated_job {
+                match calculate_job_score(pool.get_ref(), &updated_job).await {
+                    Ok(_) => {
+                        score_calculated = true;
+                        // Recalculate ranks after single job score update
+                        if let Err(e) = recalculate_ranks(pool.get_ref()).await {
+                            log_debug(&format!("Failed to recalculate ranks: {}", e));
+                        }
+                    }
+                    Err(e) => {
+                        log_debug(&format!("Failed to calculate score for job {}: {}", job_uuid, e));
+                    }
+                }
+            }
+
             Ok(HttpResponse::Ok().json(serde_json::json!({
                 "message": "Job re-extraction completed",
                 "job_id": job_uuid,
-                "success": true
+                "success": true,
+                "score_calculated": score_calculated
             })))
         } else {
             log_debug(&format!("LLM extraction returned None for job: {}", job_uuid));
@@ -4493,11 +4553,45 @@ async fn reextract_all_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
         }
     }
 
+    // Auto-calculate scores for all updated jobs
+    log_debug(&format!("Calculating scores for {} updated jobs", updated_count));
+    let mut scored_count = 0;
+    let mut score_failed_count = 0;
+
+    if updated_count > 0 {
+        // Fetch all updated jobs
+        let updated_jobs = sqlx::query_as::<_, Job>(
+            "SELECT * FROM jobs WHERE raw_data IS NOT NULL"
+        )
+        .fetch_all(pool.get_ref())
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to fetch jobs for scoring: {}", e)))?;
+
+        for job in updated_jobs {
+            match calculate_job_score(pool.get_ref(), &job).await {
+                Ok(_) => scored_count += 1,
+                Err(e) => {
+                    log_debug(&format!("Failed to score job {}: {}", job.job_id, e));
+                    score_failed_count += 1;
+                }
+            }
+        }
+
+        // Recalculate ranks after scoring all jobs
+        if scored_count > 0 {
+            if let Err(e) = recalculate_ranks(pool.get_ref()).await {
+                log_debug(&format!("Failed to recalculate ranks: {}", e));
+            }
+        }
+    }
+
     Ok(HttpResponse::Ok().json(serde_json::json!({
         "message": "Full job re-extraction completed",
         "total_jobs": total_jobs,
         "updated": updated_count,
-        "failed": failed_count
+        "failed": failed_count,
+        "scored": scored_count,
+        "score_failed": score_failed_count
     })))
 }
 
@@ -6225,5 +6319,432 @@ mod tests {
         assert_eq!(response.created_at, "2025-10-09T10:30:00Z");
         assert_eq!(response.gmail_url, Some("https://mail.google.com/mail/u/0/#drafts/r-1234567890".to_string()));
         assert_eq!(response.sent_at, None);
+    }
+
+    // ===== Scoring Function Unit Tests =====
+
+    #[test]
+    fn test_compensation_score_with_annual_salary() {
+        use serde_json::json;
+
+        // Test $130K salary (baseline - should score 50)
+        let mut job = Job {
+            job_id: Uuid::new_v4(),
+            title: "Test Job".to_string(),
+            company: "Test Co".to_string(),
+            location: Some("Remote".to_string()),
+            source: "test".to_string(),
+            salary: Some(130000),
+            commute_time: None,
+            status: "new".to_string(),
+            date_email_sent: Utc::now(),
+            description: Some("Test".to_string()),
+            url: None,
+            filter_reason: None,
+            extraction_method: None,
+            raw_data: Some(json!({
+                "compensation": {
+                    "salary_min": 130000,
+                    "salary_max": 130000,
+                    "type": "annual_salary"
+                },
+                "employment": {
+                    "tax_structure": "w2"
+                }
+            })),
+        };
+
+        let score = calculate_compensation_score(&job);
+        assert!(score.is_some());
+        assert!((score.unwrap() - 50.0).abs() < 1.0); // ~50 points for $130K
+
+        // Test $200K salary (should score 100)
+        job.raw_data = Some(json!({
+            "compensation": {
+                "salary_min": 200000,
+                "salary_max": 200000,
+                "type": "annual_salary"
+            },
+            "employment": {
+                "tax_structure": "w2"
+            }
+        }));
+
+        let score = calculate_compensation_score(&job);
+        assert!(score.is_some());
+        assert!((score.unwrap() - 100.0).abs() < 1.0); // 100 points for $200K
+
+        // Test $100K salary (minimum - should score 0)
+        job.raw_data = Some(json!({
+            "compensation": {
+                "salary_min": 100000,
+                "salary_max": 100000,
+                "type": "annual_salary"
+            },
+            "employment": {
+                "tax_structure": "w2"
+            }
+        }));
+
+        let score = calculate_compensation_score(&job);
+        assert!(score.is_some());
+        assert!((score.unwrap() - 0.0).abs() < 1.0); // 0 points for $100K
+    }
+
+    #[test]
+    fn test_compensation_score_with_1099() {
+        use serde_json::json;
+
+        // Test $130K with 1099 (should get 10% boost)
+        let job = Job {
+            job_id: Uuid::new_v4(),
+            title: "Test Job".to_string(),
+            company: "Test Co".to_string(),
+            location: Some("Remote".to_string()),
+            source: "test".to_string(),
+            salary: Some(130000),
+            commute_time: None,
+            status: "new".to_string(),
+            date_email_sent: Utc::now(),
+            description: Some("Test".to_string()),
+            url: None,
+            filter_reason: None,
+            extraction_method: None,
+            raw_data: Some(json!({
+                "compensation": {
+                    "salary_min": 130000,
+                    "salary_max": 130000,
+                    "type": "annual_salary"
+                },
+                "employment": {
+                    "tax_structure": "1099"
+                }
+            })),
+        };
+
+        let score = calculate_compensation_score(&job);
+        assert!(score.is_some());
+        // $130K * 1.1 = $143K equivalent, which should score higher than 50
+        assert!(score.unwrap() > 50.0);
+    }
+
+    #[test]
+    fn test_compensation_score_missing_data() {
+        use serde_json::json;
+
+        // Test with missing compensation data
+        let job = Job {
+            job_id: Uuid::new_v4(),
+            title: "Test Job".to_string(),
+            company: "Test Co".to_string(),
+            location: Some("Remote".to_string()),
+            source: "test".to_string(),
+            salary: None,
+            commute_time: None,
+            status: "new".to_string(),
+            date_email_sent: Utc::now(),
+            description: Some("Test".to_string()),
+            url: None,
+            filter_reason: None,
+            extraction_method: None,
+            raw_data: Some(json!({})),
+        };
+
+        let score = calculate_compensation_score(&job);
+        assert!(score.is_none()); // Should return None for missing data
+    }
+
+    #[test]
+    fn test_relationship_score() {
+        use serde_json::json;
+
+        let mut job = Job {
+            job_id: Uuid::new_v4(),
+            title: "Test Job".to_string(),
+            company: "Test Co".to_string(),
+            location: Some("Remote".to_string()),
+            source: "test".to_string(),
+            salary: None,
+            commute_time: None,
+            status: "new".to_string(),
+            date_email_sent: Utc::now(),
+            description: Some("Test".to_string()),
+            url: None,
+            filter_reason: None,
+            extraction_method: None,
+            raw_data: Some(json!({
+                "employment": {
+                    "relationship": "direct"
+                }
+            })),
+        };
+
+        // Test direct hire (should score 100)
+        let score = calculate_relationship_score(&job);
+        assert!(score.is_some());
+        assert!((score.unwrap() - 100.0).abs() < 1.0);
+
+        // Test staffing agency (should score 60)
+        job.raw_data = Some(json!({
+            "employment": {
+                "relationship": "staffing_agency"
+            }
+        }));
+        let score = calculate_relationship_score(&job);
+        assert!(score.is_some());
+        assert!((score.unwrap() - 60.0).abs() < 1.0);
+
+        // Test contract_to_hire (should score 20)
+        job.raw_data = Some(json!({
+            "employment": {
+                "relationship": "contract_to_hire"
+            }
+        }));
+        let score = calculate_relationship_score(&job);
+        assert!(score.is_some());
+        assert!((score.unwrap() - 20.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn test_remote_score() {
+        use serde_json::json;
+
+        let mut job = Job {
+            job_id: Uuid::new_v4(),
+            title: "Test Job".to_string(),
+            company: "Test Co".to_string(),
+            location: Some("Remote".to_string()),
+            source: "test".to_string(),
+            salary: None,
+            commute_time: None,
+            status: "new".to_string(),
+            date_email_sent: Utc::now(),
+            description: Some("Test".to_string()),
+            url: None,
+            filter_reason: None,
+            extraction_method: None,
+            raw_data: Some(json!({
+                "remote_work": {
+                    "policy": "fully_remote"
+                }
+            })),
+        };
+
+        // Test fully remote (should score 100)
+        let score = calculate_remote_score(&job);
+        assert!(score.is_some());
+        assert!((score.unwrap() - 100.0).abs() < 1.0);
+
+        // Test hybrid 2 days/week (should score 80)
+        job.raw_data = Some(json!({
+            "remote_work": {
+                "policy": "hybrid",
+                "days_onsite_per_week": 2
+            }
+        }));
+        let score = calculate_remote_score(&job);
+        assert!(score.is_some());
+        assert!((score.unwrap() - 80.0).abs() < 1.0);
+
+        // Test onsite (should score 0)
+        job.raw_data = Some(json!({
+            "remote_work": {
+                "policy": "onsite"
+            }
+        }));
+        let score = calculate_remote_score(&job);
+        assert!(score.is_some());
+        assert!((score.unwrap() - 0.0).abs() < 1.0);
+
+        // Test hybrid with company shuttle bonus
+        job.raw_data = Some(json!({
+            "remote_work": {
+                "policy": "hybrid",
+                "days_onsite_per_week": 3
+            },
+            "commute": {
+                "company_shuttle": true
+            }
+        }));
+        let score = calculate_remote_score(&job);
+        assert!(score.is_some());
+        // Should be 60 (base) + 15 (shuttle) = 75
+        assert!((score.unwrap() - 75.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn test_domain_fit_score() {
+        use serde_json::json;
+
+        let mut job = Job {
+            job_id: Uuid::new_v4(),
+            title: "Test Automation Engineer".to_string(),
+            company: "Test Co".to_string(),
+            location: Some("Remote".to_string()),
+            source: "test".to_string(),
+            salary: None,
+            commute_time: None,
+            status: "new".to_string(),
+            date_email_sent: Utc::now(),
+            description: Some("Test automation with Playwright".to_string()),
+            url: None,
+            filter_reason: None,
+            extraction_method: None,
+            raw_data: Some(json!({
+                "job_domain": {
+                    "primary_category": "test_automation",
+                    "automation_focus": true,
+                    "generative_ai_usage": true,
+                    "tech_stack": ["Playwright", "TypeScript"]
+                }
+            })),
+        };
+
+        // Test automation engineer with GenAI and Playwright
+        let score = calculate_domain_fit_score(&job);
+        assert!(score.is_some());
+        // Base 90 + automation 10 + GenAI 10 + Playwright 5 = 115 -> capped at 100
+        assert!((score.unwrap() - 100.0).abs() < 1.0);
+
+        // Test software engineering (general)
+        job.title = "Software Engineer".to_string(); // Change title to not contain "test"
+        job.raw_data = Some(json!({
+            "job_domain": {
+                "primary_category": "software_engineering"
+            }
+        }));
+        let score = calculate_domain_fit_score(&job);
+        assert!(score.is_some());
+        assert!((score.unwrap() - 40.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn test_flexibility_score() {
+        use serde_json::json;
+
+        let mut job = Job {
+            job_id: Uuid::new_v4(),
+            title: "Test Job".to_string(),
+            company: "Test Co".to_string(),
+            location: Some("Remote".to_string()),
+            source: "test".to_string(),
+            salary: None,
+            commute_time: None,
+            status: "new".to_string(),
+            date_email_sent: Utc::now(),
+            description: Some("3-day retainer arrangement with flexible hours".to_string()),
+            url: None,
+            filter_reason: None,
+            extraction_method: None,
+            raw_data: Some(json!({})),
+        };
+
+        // Test with retainer in contract_duration
+        job.raw_data = Some(json!({
+            "employment": {
+                "contract_duration": "3-day retainer"
+            }
+        }));
+        let score = calculate_flexibility_score(&job);
+        assert!(score.is_some());
+        // Should detect "3-day retainer" and score 100
+        assert!((score.unwrap() - 100.0).abs() < 1.0);
+
+        // Test with schedule flexibility
+        job.description = Some("Flexible schedule".to_string());
+        job.raw_data = Some(json!({
+            "commute": {
+                "schedule_flexibility": true
+            }
+        }));
+        let score = calculate_flexibility_score(&job);
+        assert!(score.is_some());
+        assert!(score.unwrap() >= 60.0); // Should score for flexibility
+    }
+
+    #[test]
+    fn test_benefits_score() {
+        use serde_json::json;
+
+        let mut job = Job {
+            job_id: Uuid::new_v4(),
+            title: "Test Job".to_string(),
+            company: "Test Co".to_string(),
+            location: Some("Remote".to_string()),
+            source: "test".to_string(),
+            salary: None,
+            commute_time: None,
+            status: "new".to_string(),
+            date_email_sent: Utc::now(),
+            description: Some("Blue Shield insurance provided".to_string()),
+            url: None,
+            filter_reason: None,
+            extraction_method: None,
+            raw_data: Some(json!({
+                "employment": {
+                    "benefits": "Blue Shield health insurance"
+                }
+            })),
+        };
+
+        // Test private insurance (should score 100)
+        let score = calculate_benefits_score(&job);
+        assert!(score.is_some());
+        assert!((score.unwrap() - 100.0).abs() < 1.0);
+
+        // Test comprehensive benefits (should score 70)
+        job.raw_data = Some(json!({
+            "employment": {
+                "benefits": "Comprehensive benefits package"
+            }
+        }));
+        let score = calculate_benefits_score(&job);
+        assert!(score.is_some());
+        assert!((score.unwrap() - 70.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn test_industry_score() {
+        use serde_json::json;
+
+        let mut job = Job {
+            job_id: Uuid::new_v4(),
+            title: "Test Job".to_string(),
+            company: "Test Co".to_string(),
+            location: Some("Remote".to_string()),
+            source: "test".to_string(),
+            salary: None,
+            commute_time: None,
+            status: "new".to_string(),
+            date_email_sent: Utc::now(),
+            description: Some("Test".to_string()),
+            url: None,
+            filter_reason: None,
+            extraction_method: None,
+            raw_data: Some(json!({
+                "company_industry": "Healthcare Technology"
+            })),
+        };
+
+        // Test healthcare tech (should score 100)
+        let score = calculate_industry_score(&job);
+        assert!(score.is_some());
+        assert!((score.unwrap() - 100.0).abs() < 1.0);
+
+        // Test enterprise SaaS (should score 90)
+        job.raw_data = Some(json!({
+            "company_industry": "Enterprise SaaS"
+        }));
+        let score = calculate_industry_score(&job);
+        assert!(score.is_some());
+        assert!((score.unwrap() - 90.0).abs() < 1.0);
+
+        // Test unknown industry (should score 40)
+        job.raw_data = Some(json!({
+            "company_industry": "Unknown"
+        }));
+        let score = calculate_industry_score(&job);
+        assert!(score.is_some());
+        assert!((score.unwrap() - 40.0).abs() < 1.0);
     }
 }
