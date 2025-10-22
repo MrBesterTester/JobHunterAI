@@ -684,6 +684,7 @@ fn is_remote_job(location: &Option<String>) -> bool {
     }
 }
 
+#[allow(dead_code)]
 fn matches_domain(title: &str, description: &Option<String>, domains: &[String]) -> bool {
     let text = format!("{} {}", title, description.as_deref().unwrap_or("")).to_lowercase();
 
@@ -800,7 +801,7 @@ fn calculate_compensation_score(job: &Job) -> Option<f64> {
     let employment = raw_data.get("employment");
 
     // Get base annual equivalent
-    let mut annual_equivalent: f64 = 0.0;
+    let mut annual_equivalent: f64;
 
     if let Some(salary_min) = compensation.get("salary_min").and_then(|v| v.as_i64()) {
         let salary_max = compensation.get("salary_max").and_then(|v| v.as_i64()).unwrap_or(salary_min);
