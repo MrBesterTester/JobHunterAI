@@ -2,22 +2,30 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Automated Test Results Dashboard - JobHunter](#automated-test-results-dashboard---jobhunter)
-  - [📊 Quick Summary (Latest Results - October 22, 2025 - STABLE-6 Release Testing)](#-quick-summary-latest-results---october-22-2025---stable-6-release-testing)
+  - [📊 Quick Summary (Latest Results - October 22, 2025 - STABLE-7 Release Testing)](#-quick-summary-latest-results---october-22-2025---stable-7-release-testing)
     - [Test Execution](#test-execution)
-    - [STABLE-6 New Features Tested](#stable-6-new-features-tested)
+    - [STABLE-7 New Features Tested](#stable-7-new-features-tested)
+      - [Backend Tests (123 total - 100% passing)](#backend-tests-123-total---100%25-passing)
+      - [E2E Tests (10 total - 100% passing)](#e2e-tests-10-total---100%25-passing)
     - [Key Findings](#key-findings)
     - [Test Fixes Applied](#test-fixes-applied)
     - [Notes](#notes)
-  - [📊 Previous Summary (October 20, 2025 - COMPLETE RUN)](#-previous-summary-october-20-2025---complete-run)
+  - [📊 Previous Summary (October 22, 2025 - STABLE-6 Release Testing)](#-previous-summary-october-22-2025---stable-6-release-testing)
     - [Test Execution](#test-execution-1)
+    - [STABLE-6 New Features Tested](#stable-6-new-features-tested)
     - [Key Findings](#key-findings-1)
-    - [Test Failure Analysis (26 failures)](#test-failure-analysis-26-failures)
-    - [Analysis Summary](#analysis-summary)
     - [Test Fixes Applied](#test-fixes-applied-1)
     - [Notes](#notes-1)
-  - [📊 Previous Summary (October 18, 2025)](#-previous-summary-october-18-2025)
+  - [📊 Previous Summary (October 20, 2025 - COMPLETE RUN)](#-previous-summary-october-20-2025---complete-run)
     - [Test Execution](#test-execution-2)
     - [Key Findings](#key-findings-2)
+    - [Test Failure Analysis (26 failures)](#test-failure-analysis-26-failures)
+    - [Analysis Summary](#analysis-summary)
+    - [Test Fixes Applied](#test-fixes-applied-2)
+    - [Notes](#notes-2)
+  - [📊 Previous Summary (October 18, 2025)](#-previous-summary-october-18-2025)
+    - [Test Execution](#test-execution-3)
+    - [Key Findings](#key-findings-3)
     - [Failure Analysis (19 tests)](#failure-analysis-19-tests)
     - [Commits Today](#commits-today)
   - [🎯 COMPREHENSIVE TEST RUN (October 18, 2025 - 18:00 PDT) - Full Suite Validation](#-comprehensive-test-run-october-18-2025---1800-pdt---full-suite-validation)
@@ -124,7 +132,99 @@
 
 # Automated Test Results Dashboard - JobHunter
 
-## 📊 Quick Summary (Latest Results - October 22, 2025 - STABLE-6 Release Testing)
+## 📊 Quick Summary (Latest Results - October 22, 2025 - STABLE-7 Release Testing)
+
+### Test Execution
+
+**Date**: October 22, 2025
+**Duration**: Backend: ~3s | E2E Scoring: ~19.5s
+**Test Environment**: Development (jobhunter_personal database)
+**Purpose**: STABLE-7 Multi-Criteria Job Scoring System (ISSUE-004) validation and release readiness
+
+| Test Suite | Status | Passed | Failed | Total | Pass Rate |
+|------------|--------|--------|--------|-------|-----------|
+| **Backend (Rust)** | ✅ PASS | 123 | 0 | 123 | 100% |
+| **E2E Scoring System** | ✅ PASS | 10 | 0 | 10 | 100% |
+| **STABLE-7 Total** | ✅ PASS | 133 | 0 | 133 | 100% |
+
+### STABLE-7 New Features Tested
+
+**Multi-Criteria Weighted Job Scoring System (ISSUE-004)**
+
+#### Backend Tests (123 total - 100% passing)
+- ✅ **20 Unit Tests** (main.rs:6326-6743) - All scoring functions
+  - Compensation scoring (annual salary, 1099 tax structure, missing data)
+  - Employment relationship scoring (direct hire, agency, contract-to-hire)
+  - Remote work scoring (fully remote, hybrid, onsite, shuttle bonuses)
+  - Domain fit scoring (automation engineer vs general)
+  - Flexibility scoring (retainer detection, perks)
+  - Benefits scoring (private insurance vs comprehensive)
+  - Industry scoring (healthcare tech, enterprise SaaS, unknown)
+- ✅ **6 API Tests** (api_tests.rs:343-701) - Scoring endpoints
+  - Criteria retrieval and weight validation
+  - Job score insertion and ranking
+  - Weight adjustment and restoration
+  - Boundary values (0.0, 50.0, 100.0)
+  - NULL score handling
+- ✅ **97 Other Tests** - All existing tests continue passing
+
+#### E2E Tests (10 total - 100% passing)
+- ✅ Ranked Jobs tab visibility and navigation
+- ✅ Score display with color coding (🟢 70-100, 🟡 40-69, 🔴 0-39)
+- ✅ Score badges on all job cards (⭐ Score: XX.X (#N) format)
+- ✅ **Weight adjustment panel** functionality
+- ✅ **Minimum score filtering** (All Jobs, 30+, 40+, 50+, 60+, 70+)
+- ✅ Sortable table headers (Rank, Score, Company, etc.)
+- ✅ Job detail expansion from ranked table
+- ✅ Weight update and score recalculation
+- ✅ NULL score handling
+- ✅ Badge ordering verification (score badge appears first)
+
+### Key Findings
+
+**✅ Perfect Test Pass Rate (100%)**
+- All 133 tests passing with 0 failures
+- All 20 scoring unit tests passing
+- All 6 scoring API tests passing
+- All 10 E2E scoring tests passing
+- No flaky tests detected
+
+**✅ Scoring System Fully Functional**
+- 7 scoring criteria implemented and tested
+- Weight distribution: 30/20/20/15/10/3/2 (Compensation/Relationship/Remote/Domain/Flexibility/Benefits/Industry)
+- All scores calculated correctly with boundary validation
+- Weight adjustment panel allows dynamic tuning
+- Minimum score filter provides 6 threshold options
+- Scores displayed across all tabs with ranking
+
+**✅ Test Quality**
+- Fast execution (<23s total)
+- Comprehensive coverage of all scoring functionality
+- Resilient to test environments with/without scored jobs
+- Clear test descriptions and error messages
+
+### Test Fixes Applied
+
+**Test Code Fixes (Not App Issues)**:
+1. **test_job_query_performance** (api_tests.rs) - Changed `sqlx::query!` to `sqlx::query` (schema sync)
+2. **E2E navigation** - Changed from non-existent "All Jobs" tab to "New" tab in 2 tests
+3. **Weight panel button** - Changed from "Scoring Weight Configuration" to "Adjust Scoring Weights"
+4. **Sort header** - Changed from "Total Score" to "Score" (actual column name)
+5. **Resilience** - Made tests work with 0 or more scored jobs in test environment
+
+### Notes
+
+- All scoring functions pass boundary value tests
+- Weight adjustment triggers full score recalculation
+- Minimum score filter works correctly across all thresholds
+- Score badges display with rank information
+- NULL scores handled gracefully without errors
+- All tests committed (commits: 06bae76, 83a94fa)
+- Ready for STABLE-7 tag
+
+---
+
+## 📊 Previous Summary (October 22, 2025 - STABLE-6 Release Testing)
 
 ### Test Execution
 
