@@ -37,6 +37,7 @@
       - [📧 Follow-ups Tab](#-follow-ups-tab)
     - [Job Detail Modal](#job-detail-modal)
     - [Job Card Summary Section](#job-card-summary-section)
+    - [Extraction Method Badges](#extraction-method-badges)
     - [Resume Management](#resume-management)
     - [Responsive Design](#responsive-design)
     - [Keyboard Navigation](#keyboard-navigation)
@@ -1051,6 +1052,42 @@ Click any job card to open a detailed modal showing:
 - Grouped by category (Employment, Remote Work, Technical, etc.)
 - Concise bullet-point format with clear labels
 - 11px font for space efficiency while maintaining readability
+
+### Extraction Method Badges
+
+**NEW**: Job cards display color-coded badges indicating the extraction method used (LLM vs REGEX), providing visibility into data quality.
+
+**Badge Types**:
+
+**LLM Badge** (Blue):
+- **Appearance**: Light blue background (#dbeafe) with dark blue text (#1e40af)
+- **Meaning**: Job information extracted using Claude Haiku AI
+- **Quality**: High-quality extraction with rich context and accurate parsing
+- **Features**: Better handling of complex formats, hybrid work policies (e.g., "2.5 days/week"), benefits, perks
+
+**REGEX Badge** (Orange):
+- **Appearance**: Light orange background (#fed7aa) with dark orange text (#c2410c)
+- **Meaning**: Job information extracted using regex pattern matching (fallback)
+- **Quality**: Basic extraction when LLM fails or times out
+- **Note**: May have incomplete data; ensures no jobs are lost
+
+**Location**:
+- Job card header, positioned next to Job ID badge
+- Displayed on all job cards across All, New, and Filtered tabs
+- Consistent styling and positioning throughout the UI
+
+**Technical Background**:
+- Part of ISSUE-001 fix: Mozilla Readability HTML preprocessing
+- Replaced html2text with dom_smoothie for 89.7% size reduction (36KB → 3.7KB)
+- Enables successful LLM extraction from HTML-heavy recruiter emails
+- Supports fractional days onsite (f32 data type) for hybrid work policies
+- Automatic fallback to regex ensures job discovery continuity
+
+**Visual Design**:
+- 12px font size, 500 weight for readability
+- 4px padding and border radius for clean appearance
+- Color-coded for instant visual identification of extraction quality
+- Matches overall badge design system (similar to salary, location badges)
 
 ### Resume Management
 

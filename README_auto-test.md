@@ -21,9 +21,11 @@
     - [**🌐 End-to-End Testing with Playwright**](#-end-to-end-testing-with-playwright)
       - [**Dependencies Added to `package.json`**](#dependencies-added-to-packagejson-1)
       - [**Playwright Configuration** (`playwright.config.ts`)](#playwright-configuration-playwrightconfigts)
-      - [**E2E Test Files Created (18 test suites)**](#e2e-test-files-created-18-test-suites)
+      - [**E2E Test Files Created (32 test suites)**](#e2e-test-files-created-32-test-suites)
       - [**Intake Tab Test Coverage** (NEW - October 6, 2025)](#intake-tab-test-coverage-new---october-6-2025)
       - [**Email Composer Test Coverage** (NEW - October 9, 2025)](#email-composer-test-coverage-new---october-9-2025)
+      - [**Re-filter Jobs Test Coverage** (NEW - October 22, 2025) ✨](#re-filter-jobs-test-coverage-new---october-22-2025-)
+      - [**Extraction Method Badges Test Coverage** (NEW - October 22, 2025) ✨](#extraction-method-badges-test-coverage-new---october-22-2025-)
       - [**Example E2E Test**](#example-e2e-test)
       - [**Running E2E Tests**](#running-e2e-tests)
       - [**E2E Test Best Practices**](#e2e-test-best-practices)
@@ -426,16 +428,19 @@ tap.test('JobCard Component Tests', async (t) => {
 - **Parallel execution**: 4 workers for faster test runs
 - **Base URL**: http://localhost:3000 (configurable)
 
-#### **E2E Test Files Created (18 test suites)**
+#### **E2E Test Files Created (32 test suites)**
 - **`01-setup-load.spec.ts`** - Initial page load and basic functionality (10 tests)
 - **`02-tab-navigation.spec.ts`** - Tab switching and filtering (20 tests)
 - **`03-job-status-updates.spec.ts`** - Status change operations (15 tests)
 - **`04-content-generation.spec.ts`** - Resume/cover letter generation (12 tests)
 - **`05-job-details.spec.ts`** - Job detail modal functionality (18 tests)
 - **`05-job-tradeoff-display.spec.ts`** - **NEW!** Trade-off data display in cards and modal (15 tests) ✨
+- **`05b-new-job-badges.spec.ts`** - Job badge enhancements (tests)
 - **`06-job-badge-styling.spec.ts`** - **NEW!** Badge color-coding and consistency (16 tests) ✨
 - **`06-statistics.spec.ts`** - Dashboard statistics display (10 tests)
+- **`07-dashboard-statistics.spec.ts`** - Dashboard statistics (tests)
 - **`07-filtered-jobs.spec.ts`** - Filtered jobs tab and reasons (12 tests)
+- **`08-failed-duplicates-tabs.spec.ts`** - MECE monitoring tabs (tests)
 - **`08-responsive-design.spec.ts`** - Mobile and tablet layouts (15 tests)
 - **`09-error-handling.spec.ts`** - Error states and recovery (14 tests)
 - **`10-performance.spec.ts`** - Load time and rendering performance (8 tests)
@@ -445,8 +450,21 @@ tap.test('JobCard Component Tests', async (t) => {
 - **`14-timeline-view.spec.ts`** - Timeline visualization (10 tests)
 - **`15-intake-tab.spec.ts`** - Job intake UI testing (27 tests)
 - **`15-email-composer.spec.ts`** - Email composition and Gmail draft creation (16 tests)
+- **`16-gmail-sync-integration.spec.ts`** - Gmail sync integration (tests)
+- **`17-job-card-summary.spec.ts`** - Job card summary display (tests)
+- **`18-debug-section.spec.ts`** - Debug section functionality (tests)
+- **`19-condensed-description.spec.ts`** - Condensed description display (tests)
+- **`20-modal-scrolling.spec.ts`** - Modal scrolling behavior (tests)
+- **`21-scroll-stability.spec.ts`** - Scroll stability (tests)
+- **`22-refresh-buttons.spec.ts`** - Refresh buttons functionality (8 tests)
+- **`23-description-quality.spec.ts`** - Description quality validation (tests)
+- **`24-refresh-data-button.spec.ts`** - Refresh Data button (7 tests)
+- **`25-refilter-jobs.spec.ts`** - **NEW!** Re-filter Jobs button and dropdown (19 tests) ✨
+- **`26-extraction-method-badges.spec.ts`** - **NEW!** Extraction method badges (LLM vs REGEX) (15 tests) ✨
+- **`99-extraction-method-badge-test.spec.ts`** - Expert Systems Architect badge validation (2 tests)
+- **`99b-filtered-tab-test.spec.ts`** - Filtered tab functionality validation (tests)
 
-**Total: 268+ end-to-end tests** covering the complete user workflow
+**Total: 302+ end-to-end tests** covering the complete user workflow
 
 #### **Intake Tab Test Coverage** (NEW - October 6, 2025)
 
@@ -552,6 +570,127 @@ npx playwright test e2e/tests/15-email-composer.spec.ts --headed
 
 # Run specific test by name
 npx playwright test -g "should open email composer modal"
+```
+
+#### **Re-filter Jobs Test Coverage** (NEW - October 22, 2025) ✨
+
+The newly added `25-refilter-jobs.spec.ts` provides comprehensive testing for the Re-filter Jobs button and dropdown feature:
+
+**Test Suites**:
+1. **Dropdown Display and Options** (2 tests)
+   - Dropdown visibility with both scope options
+   - Default selection verification ("Last Sync Only")
+
+2. **Button Display and Styling** (3 tests)
+   - Re-filter Jobs button visibility
+   - Purple background color (#8b5cf6) verification
+   - Filter icon display
+
+3. **Layout and Positioning** (2 tests)
+   - Correct positioning in header (left of Sync All Sources)
+   - Alignment with other header buttons
+
+4. **User Interaction** (4 tests)
+   - Dropdown scope changes ("Last Sync Only" ↔ "All Filtered Jobs")
+   - Dropdown disabled during operation
+   - "Re-filtering..." text and spinning icon during operation
+   - Button enabled/disabled state management
+
+5. **Operation Results** (3 tests)
+   - Success notification display with statistics
+   - Re-filtering with "Last Sync Only" scope
+   - Re-filtering with "All Filtered Jobs" scope
+
+6. **API Integration** (2 tests)
+   - No Gmail API calls (doesn't fetch new emails)
+   - Correct API call to `/jobs/refilter` endpoint
+
+7. **Edge Cases and Error Handling** (3 tests)
+   - State persistence after navigation
+   - Graceful API error handling
+   - Keyboard navigation accessibility
+
+**Key Features Tested**:
+- **Scope Selection**: Two filtering scopes with clear dropdown
+- **Visual Feedback**: Purple styling, spinning icon, loading states
+- **API Efficiency**: Re-evaluates existing jobs without fetching new data
+- **Results Display**: Shows jobs refiltered, moved to New, remained Filtered
+- **Accessibility**: Keyboard navigation support
+
+**Running Re-filter Jobs Tests**:
+```bash
+# Run Re-filter Jobs tests specifically
+npx playwright test e2e/tests/25-refilter-jobs.spec.ts
+
+# Run with visible browser
+npx playwright test e2e/tests/25-refilter-jobs.spec.ts --headed
+
+# Run specific test by name
+npx playwright test -g "should display Re-filter Jobs button"
+```
+
+#### **Extraction Method Badges Test Coverage** (NEW - October 22, 2025) ✨
+
+The newly added `26-extraction-method-badges.spec.ts` provides comprehensive testing for extraction method badge display (LLM vs REGEX):
+
+**Test Suites**:
+1. **Badge Display** (2 tests)
+   - Extraction method badge visibility on job cards
+   - Badge text verification ("LLM" or "REGEX")
+
+2. **Badge Styling** (3 tests)
+   - LLM badge: Blue background (#dbeafe), Blue text (#1e40af)
+   - REGEX badge: Orange background (#fed7aa), Orange text (#c2410c)
+   - Font styling consistency (12px, weight 500)
+
+3. **Layout and Positioning** (2 tests)
+   - Badge positioned near Job ID in card header
+   - Badge displayed on all visible job cards
+
+4. **API Integration** (1 test)
+   - Extraction methods tracked via API
+   - Validation of 'llm' or 'regex' values
+
+5. **Cross-Tab Consistency** (1 test)
+   - Badge styling consistent across All/New/Filtered tabs
+
+6. **Modal Display** (1 test)
+   - Badge presence in job details modal (optional)
+
+7. **Data Validation** (2 tests)
+   - REGEX badge for jobs with HTML preprocessing issues
+   - Fractional days onsite support (f32) for hybrid roles
+
+8. **Visual Design** (2 tests)
+   - Distinct colors for LLM vs REGEX badges
+   - Readable with appropriate padding and border radius
+
+9. **Accessibility** (1 test)
+   - Badge readability and padding verification
+
+**Key Features Tested**:
+- **Visual Distinction**: Color-coded badges (blue for LLM, orange for REGEX)
+- **Extraction Quality**: Tracks which jobs used LLM vs regex fallback
+- **Data Type Support**: Validates f32 support for fractional days onsite (e.g., 2.5 days/week)
+- **Consistency**: Same styling across all tabs and views
+- **API Validation**: Ensures extraction_method field accuracy
+
+**Background Context**:
+- Implemented as part of ISSUE-001 fix (Mozilla Readability HTML preprocessing)
+- LLM extraction (Claude Haiku) preferred for accuracy and rich context
+- Regex fallback ensures no jobs lost when LLM fails or times out
+- Supports fractional days onsite (f32) for hybrid work policies (e.g., "2.5 days per week onsite")
+
+**Running Extraction Method Badge Tests**:
+```bash
+# Run Extraction Method Badge tests specifically
+npx playwright test e2e/tests/26-extraction-method-badges.spec.ts
+
+# Run with visible browser
+npx playwright test e2e/tests/26-extraction-method-badges.spec.ts --headed
+
+# Run specific test by name
+npx playwright test -g "should style LLM badge with blue colors"
 ```
 
 #### **Example E2E Test**
@@ -1412,19 +1551,21 @@ Failed: 0/4
 
 ### **Test Suite Summary**
 
-**Total Test Count** (as of October 14, 2025):
+**Total Test Count** (as of October 22, 2025):
 - **Backend**: ~61 tests (Rust integration tests)
   - Including **3 Gmail API integration tests**
   - Including **8 Gmail draft/MIME encoding tests** ✨
 - **Frontend Unit**: ~30 tests (TAP/TypeScript)
-- **Frontend E2E**: **268 tests** (Playwright)
+- **Frontend E2E**: **302 tests** (Playwright)
   - Including **27 Intake tab tests**
   - Including **16 Email Composer tests** ✨
   - Including **15 Trade-off Display tests** ✨
   - Including **16 Badge Styling tests** ✨
+  - Including **19 Re-filter Jobs tests** ✨ **NEW**
+  - Including **15 Extraction Method Badges tests** ✨ **NEW**
 - **Database**: ~45 tests (pgTAP)
 
-**Grand Total: ~404 automated tests** covering the complete JobHunter platform
+**Grand Total: ~438 automated tests** covering the complete JobHunter platform
 
 ### **CI/CD Integration**
 

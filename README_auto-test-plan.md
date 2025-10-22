@@ -48,6 +48,9 @@
       - [Integration Testing](#integration-testing)
       - [Browser Testing Strategy: Chrome + Playwright](#browser-testing-strategy-chrome--playwright)
       - [Playwright Test Architecture](#playwright-test-architecture)
+    - [Phase STABLE-6 - New Feature Testing (October 22, 2025) ✨ **NEW**](#phase-stable-6---new-feature-testing-october-22-2025--new)
+      - [New Test Suites Implemented](#new-test-suites-implemented)
+      - [Test Execution Summary](#test-execution-summary)
     - [Phase 5 Validation Status (September 30, 2025 - Updated After P1+P2 Fixes)](#phase-5-validation-status-september-30-2025---updated-after-p1p2-fixes)
     - [P4 Performance Test Fixes - Detailed Technical Plan](#p4-performance-test-fixes---detailed-technical-plan)
       - [Test 1: Memory Leak Detection (Line 48-73)](#test-1-memory-leak-detection-line-48-73)
@@ -628,6 +631,113 @@ npm run test:e2e:webkit
 npm run test:e2e:chromium -- e2e/tests/01-setup-load.spec.ts
 npm run test:e2e:chromium -- e2e/tests/02-tab-navigation.spec.ts
 ```
+
+### Phase STABLE-6 - New Feature Testing (October 22, 2025) ✨ **NEW**
+**Target Coverage: 100% | Status: 34 New Tests Implemented**
+
+**Overview:**
+Since the STABLE-5 release, several new features have been added to the system:
+1. Re-filter Jobs button and dropdown
+2. Extraction method badges (LLM vs REGEX)
+3. Mozilla Readability HTML preprocessing
+4. Fractional days onsite support (f32)
+5. Refresh Descriptions button (already tested in 22-refresh-buttons.spec.ts)
+6. Global Refresh Data button (already tested in 24-refresh-data-button.spec.ts)
+
+#### New Test Suites Implemented
+
+**1. Re-filter Jobs Testing (25-refilter-jobs.spec.ts) - 19 Tests ✨**
+
+**Purpose**: Test the Re-filter Jobs button and dropdown that re-applies filtering criteria to existing jobs without fetching new emails.
+
+**Test Coverage:**
+- ✅ **Dropdown Display** (2 tests): Verify dropdown with "Last Sync Only" and "All Filtered Jobs" options
+- ✅ **Button Styling** (3 tests): Purple background (#8b5cf6), Filter icon, button visibility
+- ✅ **Layout** (2 tests): Correct positioning in header, alignment with Sync All Sources button
+- ✅ **User Interaction** (4 tests): Dropdown scope changes, disabled during operation, loading states
+- ✅ **Operation Results** (3 tests): Success notification, scope-specific re-filtering
+- ✅ **API Integration** (2 tests): No Gmail calls, correct /jobs/refilter endpoint
+- ✅ **Edge Cases** (3 tests): State persistence, error handling, keyboard accessibility
+
+**Key Features:**
+- Purple button that re-evaluates existing jobs against current filtering criteria
+- Dropdown with two scopes: "Last Sync Only" or "All Filtered Jobs"
+- Visual feedback with spinning icon during operation
+- Success notification shows jobs refiltered, moved to New, and remained Filtered
+- Does NOT fetch new emails (only re-evaluates existing data)
+
+**Running Tests:**
+```bash
+npx playwright test e2e/tests/25-refilter-jobs.spec.ts
+npx playwright test -g "should display Re-filter Jobs button"
+```
+
+**2. Extraction Method Badges Testing (26-extraction-method-badges.spec.ts) - 15 Tests ✨**
+
+**Purpose**: Test the display of extraction method badges that indicate whether a job was extracted using LLM (Claude Haiku) or regex fallback.
+
+**Test Coverage:**
+- ✅ **Badge Display** (2 tests): Visibility on job cards, text verification ("LLM" or "REGEX")
+- ✅ **Badge Styling** (3 tests): LLM (blue), REGEX (orange), font styling (12px, 500 weight)
+- ✅ **Layout** (2 tests): Badge positioning near Job ID, displayed on all cards
+- ✅ **API Integration** (1 test): Extraction methods tracked via API
+- ✅ **Cross-Tab Consistency** (1 test): Same styling across All/New/Filtered tabs
+- ✅ **Modal Display** (1 test): Badge presence in job details modal
+- ✅ **Data Validation** (2 tests): REGEX badges for failed extractions, f32 support for fractional days
+- ✅ **Visual Design** (2 tests): Distinct colors (blue vs orange), readable padding
+- ✅ **Accessibility** (1 test): Badge readability verification
+
+**Key Features:**
+- Blue "LLM" badge: Job extracted successfully using Claude Haiku
+- Orange "REGEX" badge: Job extracted using regex fallback (LLM failed/timeout)
+- Color-coded for quick visual identification of extraction quality
+- Validates f32 support for fractional days onsite (e.g., "2.5 days/week")
+- Implemented as part of ISSUE-001 fix (Mozilla Readability preprocessing)
+
+**Running Tests:**
+```bash
+npx playwright test e2e/tests/26-extraction-method-badges.spec.ts
+npx playwright test -g "should style LLM badge with blue colors"
+```
+
+**Background Context:**
+- **ISSUE-001 Fix**: Replaced html2text with dom_smoothie (Mozilla Readability algorithm)
+  - 89.7% size reduction (36KB → 3.7KB)
+  - Better HTML-to-text conversion for LLM extraction
+  - QA tested with scripts/test_extraction_quality.py
+- **Fractional Days Support**: Changed days_onsite_per_week from i32 to f32
+  - Supports hybrid work policies like "2.5 days per week onsite"
+  - Enables more accurate representation of flexible work arrangements
+- **Regex Fallback**: Ensures no jobs are lost when LLM fails
+  - Orange badge indicates potential data quality issues
+  - Allows manual review of regex-extracted jobs
+
+#### Test Execution Summary
+
+**New Tests Added:**
+- **Re-filter Jobs**: 19 tests
+- **Extraction Method Badges**: 15 tests
+- **Total New Tests**: 34 tests
+
+**Previously Existing Tests for STABLE-5 Features:**
+- **Refresh Descriptions** (22-refresh-buttons.spec.ts): 8 tests (global and per-job refresh)
+- **Refresh Data Button** (24-refresh-data-button.spec.ts): 7 tests (global data refresh)
+
+**Updated Test Suite Totals:**
+- **Frontend E2E**: 302 tests (up from 268)
+- **Grand Total**: ~438 tests (up from ~404)
+
+**Files Modified:**
+- ✅ frontend/e2e/tests/25-refilter-jobs.spec.ts (NEW)
+- ✅ frontend/e2e/tests/26-extraction-method-badges.spec.ts (NEW)
+- ✅ README_auto-test.md (updated with new test documentation)
+- ✅ README_auto-test-plan.md (this file - added Phase STABLE-6 section)
+
+**Next Steps:**
+1. Run complete test suite to verify all tests pass
+2. Update README_auto-test-results.md with new test results
+3. Update README.md with new feature documentation
+4. Create STABLE-6 git tag once all tests pass
 
 ### Phase 5 Validation Status (September 30, 2025 - Updated After P1+P2 Fixes)
 
