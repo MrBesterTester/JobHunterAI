@@ -103,6 +103,40 @@ pub struct JobDeduplication {
 }
 
 // ============================================================================
+// ISSUE-004: Multi-Criteria Job Scoring System
+// ============================================================================
+
+#[derive(Debug, Serialize, Deserialize, FromRow, Clone)]
+pub struct ScoringCriteria {
+    pub criteria_id: Uuid,
+    pub criterion_name: String,
+    pub weight: f64,
+    pub enabled: bool,
+    pub description: Option<String>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow, Clone)]
+pub struct JobScore {
+    pub job_id: Uuid,
+    pub compensation_score: Option<f64>,
+    pub relationship_score: Option<f64>,
+    pub remote_work_score: Option<f64>,
+    pub domain_fit_score: Option<f64>,
+    pub flexibility_score: Option<f64>,
+    pub benefits_score: Option<f64>,
+    pub industry_score: Option<f64>,
+    pub total_score: Option<f64>,
+    pub rank: Option<i32>,
+    pub calculated_at: DateTime<Utc>,
+    pub manual_override_enabled: bool,
+    pub manual_adjustment_points: Option<f64>,
+    pub override_reason: Option<String>,
+    pub overridden_by: Option<String>,
+    pub overridden_at: Option<DateTime<Utc>>,
+}
+
+// ============================================================================
 // Phase 5.2: Email Draft Models
 // ============================================================================
 
@@ -680,6 +714,78 @@ async fn get_job_criteria(pool: &PgPool) -> Result<JobCriteria, sqlx::Error> {
     .await
 }
 
+// ============================================================================
+// ISSUE-004: Scoring Database Functions
+// ============================================================================
+
+/// Get all scoring criteria (for weighted score calculation)
+async fn get_scoring_criteria(pool: &PgPool) -> Result<Vec<ScoringCriteria>, sqlx::Error> {
+    sqlx::query_as::<_, ScoringCriteria>(
+        "SELECT * FROM scoring_criteria WHERE enabled = true ORDER BY weight DESC"
+    )
+    .fetch_all(pool)
+    .await
+}
+
+/// Get job score for a specific job
+async fn get_job_score(pool: &PgPool, job_id: Uuid) -> Result<Option<JobScore>, sqlx::Error> {
+    sqlx::query_as::<_, JobScore>(
+        "SELECT * FROM job_scores WHERE job_id = $1"
+    )
+    .bind(job_id)
+    .fetch_optional(pool)
+    .await
+}
+
+/// Save or update job score (upsert)
+async fn save_job_score(pool: &PgPool, score: &JobScore) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        r#"
+        INSERT INTO job_scores (
+            job_id, compensation_score, relationship_score, remote_work_score,
+            domain_fit_score, flexibility_score, benefits_score, industry_score,
+            total_score, rank, calculated_at, manual_override_enabled,
+            manual_adjustment_points, override_reason, overridden_by, overridden_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        ON CONFLICT (job_id) DO UPDATE SET
+            compensation_score = EXCLUDED.compensation_score,
+            relationship_score = EXCLUDED.relationship_score,
+            remote_work_score = EXCLUDED.remote_work_score,
+            domain_fit_score = EXCLUDED.domain_fit_score,
+            flexibility_score = EXCLUDED.flexibility_score,
+            benefits_score = EXCLUDED.benefits_score,
+            industry_score = EXCLUDED.industry_score,
+            total_score = EXCLUDED.total_score,
+            rank = EXCLUDED.rank,
+            calculated_at = EXCLUDED.calculated_at,
+            manual_override_enabled = EXCLUDED.manual_override_enabled,
+            manual_adjustment_points = EXCLUDED.manual_adjustment_points,
+            override_reason = EXCLUDED.override_reason,
+            overridden_by = EXCLUDED.overridden_by,
+            overridden_at = EXCLUDED.overridden_at
+        "#
+    )
+    .bind(score.job_id)
+    .bind(score.compensation_score)
+    .bind(score.relationship_score)
+    .bind(score.remote_work_score)
+    .bind(score.domain_fit_score)
+    .bind(score.flexibility_score)
+    .bind(score.benefits_score)
+    .bind(score.industry_score)
+    .bind(score.total_score)
+    .bind(score.rank)
+    .bind(score.calculated_at)
+    .bind(score.manual_override_enabled)
+    .bind(score.manual_adjustment_points)
+    .bind(&score.override_reason)
+    .bind(&score.overridden_by)
+    .bind(score.overridden_at)
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
 async fn filter_job(job_req: &CreateJobRequest, pool: &PgPool) -> FilterResult {
     let mut reasons = Vec::new();
 
@@ -722,12 +828,16 @@ async fn filter_job(job_req: &CreateJobRequest, pool: &PgPool) -> FilterResult {
         }
     }
 
-    // Check domain match
+    // ISSUE-004 Phase 1: Domain match is now ADVISORY (not eliminatory)
+    // Domain mismatch will be captured in scoring, not filtering
+    // Commenting out domain filter to allow all jobs through to scoring phase
+    /*
     if let Some(ref domains) = criteria.preferred_domains {
         if !matches_domain(&job_req.title, &job_req.description, domains) {
             reasons.push("Job doesn't match preferred domains (Testing, AI, Firmware)".to_string());
         }
     }
+    */
 
     let passed = reasons.is_empty();
     let status = if passed { "new".to_string() } else { "filtered".to_string() };
