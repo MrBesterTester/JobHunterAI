@@ -298,7 +298,7 @@ mod performance_tests {
         let pool = create_test_pool().await;
 
         let start = Instant::now();
-        let _result = sqlx::query!("SELECT * FROM jobs LIMIT 100")
+        let _result = sqlx::query("SELECT * FROM jobs LIMIT 100")
             .fetch_all(&pool)
             .await
             .expect("Job query should succeed");
