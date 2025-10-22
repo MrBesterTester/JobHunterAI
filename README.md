@@ -1581,6 +1581,24 @@ NO_BROWSER=1 ./start.sh
 - **Automatic browser launch**: Opens http://localhost:3000 when ready (skip with `NO_BROWSER=1`)
 - **Typical startup time**: 10-15 seconds (backend ~2s, frontend compilation ~8-13s)
 
+**Expected log messages after startup:**
+
+You may see one or a few "Readability extraction succeeded" messages in the backend logs shortly after startup. This is **normal behavior** and indicates:
+- Unprocessed email jobs from a previous session are being completed
+- The Gmail sync was triggered (manually or automatically) and is processing pending emails
+- HTML content is being cleaned and extracted using the Readability algorithm
+
+Example message:
+```
+[2025-10-22 12:01:20.152] Readability extraction succeeded - extracted 956 chars from 9182 chars HTML
+```
+
+**This is NOT a background task** - extractions only occur when:
+1. Gmail sync is explicitly triggered via the UI or API
+2. Reprocessing operations are run (reextract, reprocess-empty-bodies, etc.)
+
+If you see these messages, it means leftover emails from before are being processed on-demand, not that something is running automatically in the background.
+
 **Stopping the app:**
 ```bash
 ./stop.sh          # Stop app only (PostgreSQL keeps running)
