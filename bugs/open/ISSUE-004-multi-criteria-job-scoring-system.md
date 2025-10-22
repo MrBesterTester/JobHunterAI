@@ -524,7 +524,14 @@ CREATE INDEX idx_job_scores_rank ON job_scores(rank ASC);
 
 **Integration** (1 day):
 - [ ] Add "Ranked Jobs" tab to main navigation
-- [ ] Add score badge to job cards in existing tabs
+- [ ] **Add overall score badge as FIRST badge on job cards** in all tabs (All, New, Filtered, etc.)
+  - Badge format: Score (0-100) with color coding
+  - Green: 70-100, Yellow: 40-69, Red: 0-39
+  - Position: Before Job ID, extraction method, and all other badges
+- [ ] **Sort job cards by total_score DESC** in ALL tabs that display job cards
+  - Default sort order: Highest score first
+  - Applies to: All, New, Approved, Applied, Filtered, Follow-ups, Calendar
+  - **Filtered tab especially important**: Primary use case for identifying false negatives (good jobs incorrectly filtered)
 - [ ] Add filter by minimum score (e.g., "Show only 70+")
 
 **Polish** (1 day):
