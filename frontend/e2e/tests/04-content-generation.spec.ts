@@ -22,6 +22,9 @@ test.describe('Content Generation', () => {
   });
 
   test.describe('Section 7: Generate Resume & Cover Letter Test', () => {
+    // Configure longer timeout for LLM tests (generation takes ~30s)
+    test.describe.configure({ timeout: 60000 });
+
     test('should show Generate button for approved jobs', async ({ page }) => {
       await dashboardPage.clickTab('approved');
       await dashboardPage.waitForJobsUpdate();
@@ -76,7 +79,7 @@ test.describe('Content Generation', () => {
       await firstJob.generateContent();
 
       // Wait for modal to appear with content (LLM takes longer: 5-15 seconds per call, 2 calls)
-      await contentModal.waitForVisible();
+      await contentModal.waitForVisible(45000);
       await contentModal.waitForContentGeneration(45000);
 
       const duration = Date.now() - startTime;
@@ -125,8 +128,8 @@ test.describe('Content Generation', () => {
 
       // Generate content
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(45000);
+      await contentModal.waitForContentGeneration(45000);
 
       // Get resume content
       const resumeContent = await contentModal.getResumeContent();
@@ -160,8 +163,8 @@ test.describe('Content Generation', () => {
 
       // Generate content
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(45000);
+      await contentModal.waitForContentGeneration(45000);
 
       // Get cover letter content
       const coverLetterContent = await contentModal.getCoverLetterContent();
@@ -190,8 +193,8 @@ test.describe('Content Generation', () => {
 
       // Generate content
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(45000);
+      await contentModal.waitForContentGeneration(45000);
 
       const resumeContent = await contentModal.getResumeContent();
       const lowerContent = resumeContent.toLowerCase();
@@ -231,8 +234,8 @@ test.describe('Content Generation', () => {
 
       // Generate content
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(45000);
+      await contentModal.waitForContentGeneration(45000);
 
       const resumeContent = await contentModal.getResumeContent();
 
@@ -243,6 +246,9 @@ test.describe('Content Generation', () => {
   });
 
   test.describe('Section 8: Content Generation Modal Test', () => {
+    // Configure longer timeout for LLM tests (generation takes ~30s)
+    test.describe.configure({ timeout: 60000 });
+
     test('should have close button in top-right corner', async ({ page }) => {
       await dashboardPage.clickTab('approved');
       await dashboardPage.waitForJobsUpdate();
@@ -254,8 +260,8 @@ test.describe('Content Generation', () => {
 
       const firstJob = await getJobCard(page, 0);
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(45000);
+      await contentModal.waitForContentGeneration(45000);
 
       // Verify close button is visible
       await expect(contentModal.closeButton).toBeVisible();
@@ -272,8 +278,8 @@ test.describe('Content Generation', () => {
 
       const firstJob = await getJobCard(page, 0);
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(45000);
+      await contentModal.waitForContentGeneration(45000);
 
       // Click close button
       await contentModal.close();
@@ -293,8 +299,8 @@ test.describe('Content Generation', () => {
 
       const firstJob = await getJobCard(page, 0);
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(45000);
+      await contentModal.waitForContentGeneration(45000);
 
       // Click outside modal on overlay
       await contentModal.closeByOverlay();
@@ -314,8 +320,8 @@ test.describe('Content Generation', () => {
 
       const firstJob = await getJobCard(page, 0);
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(45000);
+      await contentModal.waitForContentGeneration(45000);
 
       // Check if modal is scrollable
       await contentModal.verifyScrollable();
@@ -334,15 +340,15 @@ test.describe('Content Generation', () => {
 
       // Generate content
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(45000);
+      await contentModal.waitForContentGeneration(45000);
 
       // Close modal
       await contentModal.close();
 
       // Re-open modal
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
+      await contentModal.waitForVisible(45000);
 
       // Verify modal is visible again
       expect(await contentModal.isVisible()).toBe(true);
@@ -361,8 +367,8 @@ test.describe('Content Generation', () => {
 
       // Generate content first time
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(45000);
+      await contentModal.waitForContentGeneration(45000);
 
       const firstResumeContent = await contentModal.getResumeContent();
 
@@ -371,7 +377,7 @@ test.describe('Content Generation', () => {
 
       // Re-open modal
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
+      await contentModal.waitForVisible(45000);
 
       // Content might be regenerated or cached - both are acceptable
       const secondResumeContent = await contentModal.getResumeContent();
@@ -390,8 +396,8 @@ test.describe('Content Generation', () => {
 
       const firstJob = await getJobCard(page, 0);
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(45000);
+      await contentModal.waitForContentGeneration(45000);
 
       // Press Escape key
       await contentModal.closeByEscape();
@@ -402,6 +408,9 @@ test.describe('Content Generation', () => {
   });
 
   test.describe('Content Quality Validation', () => {
+    // Configure longer timeout for LLM tests (generation takes ~30s, this suite generates 2x)
+    test.describe.configure({ timeout: 90000 }); // 90 seconds for tests that generate content twice
+
     test('should generate unique content for different jobs', async ({ page }) => {
       await dashboardPage.clickTab('approved');
       await dashboardPage.waitForJobsUpdate();
@@ -416,8 +425,8 @@ test.describe('Content Generation', () => {
       // Generate content for first job
       const firstJob = await getJobCard(page, 0);
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(45000);
+      await contentModal.waitForContentGeneration(45000);
 
       const firstCoverLetter = await contentModal.getCoverLetterContent();
       await contentModal.close();
@@ -427,8 +436,8 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
       const secondJob = await getJobCard(page, 1);
       await secondJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(45000);
+      await contentModal.waitForContentGeneration(45000);
 
       const secondCoverLetter = await contentModal.getCoverLetterContent();
 
@@ -450,8 +459,8 @@ test.describe('Content Generation', () => {
       const title = await firstJob.getTitle();
 
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(45000);
+      await contentModal.waitForContentGeneration(45000);
 
       // Verify cover letter personalization
       await contentModal.verifyCoverLetterPersonalization(company, title);
@@ -468,8 +477,8 @@ test.describe('Content Generation', () => {
 
       const firstJob = await getJobCard(page, 0);
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(45000);
+      await contentModal.waitForContentGeneration(45000);
 
       const resume = await contentModal.getResumeContent();
       const coverLetter = await contentModal.getCoverLetterContent();
