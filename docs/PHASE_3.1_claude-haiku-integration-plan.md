@@ -884,7 +884,7 @@ Duration: ~30 seconds (LLM generation)
 **Final Results**:
 - ✅ **24 passed** (89% pass rate)
 - ❌ **2 failed** (8% - edge case failures)
-- ⏭️ **1 skipped** (3%)
+- ⏭️ **1 skipped** (3% - requires 2+ approved jobs in database)
 
 **Tests Passing** (24/27):
 - ✅ Section 7: Generate Resume & Cover Letter Test (5/7)
