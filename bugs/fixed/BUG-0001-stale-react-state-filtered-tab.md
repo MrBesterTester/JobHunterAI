@@ -1,6 +1,18 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
+  - [id: BUG-0001
+title: Stale React State in Filtered Tab - No Auto-Refresh Mechanism
+status: fixed
+priority: medium
+severity: medium
+component: frontend
+created: 2025-10-21
+updated: 2025-10-21
+fixed: 2025-10-21
+affects: [UI, Data Refresh, All Tabs]
+related: []
+commits: []](#id-bug-0001%0Atitle-stale-react-state-in-filtered-tab---no-auto-refresh-mechanism%0Astatus-fixed%0Apriority-medium%0Aseverity-medium%0Acomponent-frontend%0Acreated-2025-10-21%0Aupdated-2025-10-21%0Afixed-2025-10-21%0Aaffects-ui-data-refresh-all-tabs%0Arelated-%0Acommits-)
 - [BUG-0001: Stale React State in Filtered Tab - No Auto-Refresh Mechanism](#bug-0001-stale-react-state-in-filtered-tab---no-auto-refresh-mechanism)
   - [Summary](#summary)
   - [Impact](#impact)
@@ -16,14 +28,16 @@
     - [Option 4: Cache-Busting](#option-4-cache-busting)
     - [Option 5: Combination Approach (Best)](#option-5-combination-approach-best)
   - [Decision](#decision)
+  - [Implementation (2025-10-21)](#implementation-2025-10-21)
   - [Testing Plan](#testing-plan)
-    - [Test Case 1: Stale Data Detection](#test-case-1-stale-data-detection)
-    - [Test Case 2: Multiple Clients](#test-case-2-multiple-clients)
-    - [Test Case 3: Re-extraction Flow](#test-case-3-re-extraction-flow)
+    - [Automated E2E Tests](#automated-e2e-tests)
+    - [Manual Test Cases](#manual-test-cases)
+      - [Test Case 1: Stale Data Detection](#test-case-1-stale-data-detection)
+      - [Test Case 2: Multiple Clients](#test-case-2-multiple-clients)
+      - [Test Case 3: Re-extraction Flow](#test-case-3-re-extraction-flow)
   - [Status History](#status-history)
   - [Notes](#notes)
   - [Related Files](#related-files)
-  - [Full Investigation](#full-investigation)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -266,21 +280,37 @@ const handleRefresh = async (): Promise<void> => {
 
 ## Testing Plan
 
-### Test Case 1: Stale Data Detection
+### Automated E2E Tests
+
+**File**: `frontend/e2e/tests/24-refresh-data-button.spec.ts`
+
+**7 Test Cases**:
+1. Button visibility and positioning in header
+2. Correct styling (blue primary color)
+3. Positioned left of "Refresh Descriptions" button
+4. Triggers API calls when clicked (jobs, stats, applications)
+5. Clickable and enabled state
+6. Has descriptive tooltip
+7. Works on mobile viewport
+
+**Test Results**: ✅ All 7 tests passing
+
+### Manual Test Cases
+
+#### Test Case 1: Stale Data Detection
 1. Open UI in browser
 2. Use API to modify a job externally
-3. Check if UI updates automatically (should after 30s with polling)
-4. Click manual refresh button - should update immediately
+3. Click manual refresh button - should update immediately
 
-### Test Case 2: Multiple Clients
+#### Test Case 2: Multiple Clients
 1. Open UI in two browser tabs
 2. Update job status in Tab 1
-3. Verify Tab 2 sees change (after polling interval)
+3. Click refresh in Tab 2 - should see changes
 
-### Test Case 3: Re-extraction Flow
+#### Test Case 3: Re-extraction Flow
 1. Open UI, view a job
 2. Call re-extraction API endpoint
-3. Verify UI updates to show new extraction_method and data
+3. Click refresh button - verify UI shows new extraction_method and data
 
 ## Status History
 
@@ -302,18 +332,17 @@ const handleRefresh = async (): Promise<void> => {
 
 ## Related Files
 
+**Implementation**:
 - `frontend/src/App.tsx:861` - State declaration
+- `frontend/src/App.tsx:873` - Refreshing state
 - `frontend/src/App.tsx:889-910` - fetchJobs function
+- `frontend/src/App.tsx:993-1002` - handleRefresh function
 - `frontend/src/App.tsx:1163-1165` - filterJobs function
 - `frontend/src/App.tsx:1183-1187` - useEffect initial fetch
+- `frontend/src/App.tsx:1953-1993` - Refresh Data button UI
 - `frontend/src/App.tsx:2114-2121` - Filtered tab rendering
 - `frontend/src/App.tsx:1012` - Existing optimistic updates
+- `frontend/src/index.css:21-28` - Spin animation keyframes
 
-## Full Investigation
-
-See `/INVESTIGATION_FILTERED_TAB.md` for complete 300-line technical analysis including:
-- Detailed code flow
-- Browser caching analysis
-- All 5 solution options with full pros/cons
-- Testing recommendations
-- Files analyzed
+**Testing**:
+- `frontend/e2e/tests/24-refresh-data-button.spec.ts` - E2E test suite (7 tests)
