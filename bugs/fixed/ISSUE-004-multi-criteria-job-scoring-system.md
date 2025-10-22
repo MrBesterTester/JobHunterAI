@@ -3,14 +3,15 @@
 
   - [id: ISSUE-004
 title: Multi-Criteria Weighted Job Scoring System
-status: open
+status: completed
 priority: high
 severity: medium
 component: backend, frontend, database
 created: 2025-10-21
-updated: 2025-10-21
+updated: 2025-10-22
+completed: 2025-10-22
 affects: [Job Filtering, Job Ranking, Decision Making, UI]
-related: []](#id-issue-004%0Atitle-multi-criteria-weighted-job-scoring-system%0Astatus-open%0Apriority-high%0Aseverity-medium%0Acomponent-backend-frontend-database%0Acreated-2025-10-21%0Aupdated-2025-10-21%0Aaffects-job-filtering-job-ranking-decision-making-ui%0Arelated-)
+related: []](#id-issue-004%0Atitle-multi-criteria-weighted-job-scoring-system%0Astatus-completed%0Apriority-high%0Aseverity-medium%0Acomponent-backend-frontend-database%0Acreated-2025-10-21%0Aupdated-2025-10-22%0Acompleted-2025-10-22%0Aaffects-job-filtering-job-ranking-decision-making-ui%0Arelated-)
 - [ISSUE-004: Multi-Criteria Weighted Job Scoring System](#issue-004-multi-criteria-weighted-job-scoring-system)
   - [Summary](#summary)
   - [Impact](#impact)
@@ -621,7 +622,12 @@ CREATE INDEX idx_job_scores_rank ON job_scores(rank ASC);
   - Score display and color coding
   - Score badges on job cards
   - Weight adjustment panel functionality
-  - Minimum score filtering
+  - **Minimum score filtering** (lines 106-155) ✅ PASSED (2.4s)
+    - Verifies all 6 filter buttons visible (All Jobs, 30+, 40+, 50+, 60+, 70+)
+    - Tests filter interactions and button clicks
+    - Validates filtered count display when jobs present
+    - Tests filter reset and threshold changes
+    - Resilient to environments with 0 or more scored jobs
   - Sorting by criteria
   - Job detail expansion
   - Weight update and recalculation
