@@ -2,7 +2,6 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Product Requirements Document (PRD)](#product-requirements-document-prd)
-  - [Table of Contents](#table-of-contents)
   - [1. Overview](#1-overview)
   - [2. Goals & Objectives](#2-goals--objectives)
   - [3. Job Criteria](#3-job-criteria)
@@ -35,36 +34,6 @@
 **Project Name:** JobHunter
 **Prepared by:** Sam Kirk
 **Date:** 2025-09-11
-
----
-
-## Table of Contents
-
-1. [Overview](#1-overview)
-2. [Goals & Objectives](#2-goals--objectives)
-3. [Job Criteria](#3-job-criteria)
-   - [3.1 Job Domain & Technical Focus](#31-job-domain--technical-focus)
-   - [3.2 Compensation Structure](#32-compensation-structure)
-   - [3.3 Employment Relationship](#33-employment-relationship)
-   - [3.4 Work Location & Remote Policy](#34-work-location--remote-policy)
-   - [3.5 Commute Considerations](#35-commute-considerations-for-hybridonsite-roles)
-   - [3.6 Job Evaluation Framework](#36-job-evaluation-framework)
-4. [Workflow](#4-workflow)
-   - [4.1 Intake Sources](#41-intake-sources)
-   - [4.2 Processing Pipeline](#42-processing-pipeline)
-   - [4.3 Resume & Cover Letter Generation](#43-resume--cover-letter-generation)
-   - [4.4 Email Composition & Sending](#44-email-composition--sending)
-   - [4.5 Application & Tracking](#45-application--tracking)
-5. [Database Schema](#5-database-schema)
-6. [User Interface](#6-user-interface)
-   - [6.1 Dashboard (Frontend: TypeScript)](#61-dashboard-frontend-typescript)
-7. [Technical Implementation](#7-technical-implementation)
-   - [7.1 Frontend](#71-frontend)
-   - [7.2 Backend](#72-backend)
-   - [7.3 Database](#73-database)
-8. [Success Metrics](#8-success-metrics)
-9. [Risks & Mitigations](#9-risks--mitigations)
-10. [Next Steps](#10-next-steps)
 
 ---
 
@@ -119,34 +88,96 @@ The implementation stack is:
 
 **Preference Order**: Schedule C consulting > 1099 contract > Annual W-2 salary > Hourly W-2 temp
 
-**Compensation Types:**
+**Minimum Threshold**: $100,000 annual equivalent (after conversion and adjustments)
+**Target Baseline**: $130,000 annual equivalent
+
+**Compensation Types & Equivalence:**
+
 - **Annual Salary**: Preferred baseline structure
-  - Minimum: $130,000/year
-  - Better: Higher compensation
-- **Hourly Rate**: Less preferred than annual salary
-  - Must convert to annual equivalent (assume 2080 hours/year)
-  - Minimum: $62.50/hour (= $130K annual)
+  - Use as-is (or average of min/max if range provided)
+  - Minimum: $100,000/year (hard filter)
+  - Target: $130,000/year (baseline for scoring)
+
+- **Hourly Rate**: Convert to annual equivalent
+  - Formula: Hourly rate × 2080 hours/year
+  - Example: $62.50/hour = $130,000 annual
+  - Minimum: $48.08/hour (= $100K annual)
+
+- **Daily Rate**: Convert to annual equivalent
+  - Formula: Daily rate × 250 days/year
+  - Example: $520/day = $130,000 annual
+  - Minimum: $400/day (= $100K annual)
+
 - **Consulting Contract**: Highly preferred, especially:
-  - Contract with retainer arrangement
+  - **Contract with retainer arrangement** (most preferred)
+    - 3-day retainer: Excellent (high autonomy + stability)
+    - 2-day retainer: Very good
+    - 1-day retainer: Good
   - Corp-to-corp arrangements
   - Project-based with ongoing relationship
-- **Daily Rate**: Convert to annual equivalent for comparison
-- **Tax Structure Preference**: Schedule C (own consulting firm) > 1099 independent contractor > W-2 employee
 
-**Trade-off Principle**: A W-2 role at $160K might be less attractive than a 1099 contract at $140K due to tax advantages.
+**Tax Structure Adjustments** (effective value):
+- **Schedule C** (own consulting firm): Multiply equivalent by 1.15 (+15% value)
+  - Reason: Business expense deductions, QBI deduction, tax optimization
+- **1099 Independent Contractor**: Multiply equivalent by 1.10 (+10% value)
+  - Reason: Tax flexibility, business expense deductions
+- **W-2 Employee**: Use as-is (1.0 multiplier, baseline)
+  - Standard withholding, limited deductions
+
+**Equity & Bonus**:
+- **Equity Offered**: Multiply stated value by 0.20 (80% discount factor)
+  - Reason: Illiquid, uncertain value, long vesting schedules
+  - Add discounted value to total compensation
+- **Bonus Structure**: Add stated percentage to base salary
+  - Example: 10% bonus on $130K = add $13,000 to equivalent
+  - Use stated percentage if available, otherwise ignore
+
+**Trade-off Principle**:
+- A W-2 role at $160K might be less attractive than a 1099 contract at $140K due to tax advantages ($140K × 1.10 = $154K equivalent)
+- A Schedule C contract at $135K might equal a W-2 at $155K ($135K × 1.15 = $155K equivalent)
 
 ### 3.3 Employment Relationship
 
-**Preference Order**: Direct consulting > Direct hire > Agency placement
+**Preference Order** (descending):
+1. **Direct Hire** (full-time employee with hiring company)
+2. **Staffing Agency** (agency places candidate; candidate is W-2 employee of hiring company or agency; agency receives placement fee from employer)
+3. **Contract Agency** (candidate works for agency; agency contracts candidate's services to employer; candidate may be W-2 of agency or 1099)
+4. **Contract-to-Hire** (starts as contract, potential conversion)
 
-- **Direct Hire**: Preferred for stability
-- **Direct Consulting**: Most preferred if through own consulting firm (Schedule C income)
-- **Staffing Agency**: Less preferred but acceptable for strong opportunities
-  - Agency typically means W-2 (least preferred tax structure)
-  - Evaluate based on other compensating factors
-- **Contract-to-Hire**: Acceptable if strong conversion likelihood
+**Definitions & Clarifications:**
 
-**Trade-off Principle**: Agency placement at higher rate might compensate for less preferred relationship structure.
+- **Direct Hire**: Traditional full-time employment
+  - Most stable relationship
+  - Direct benefits from employer
+  - W-2 employee of hiring company
+
+- **Direct Consulting** (via own firm): **Highest preference when available**
+  - Schedule C income (own consulting business)
+  - Contract directly with client company
+  - Maximum autonomy and tax advantages
+  - Often includes retainer arrangements
+
+- **Staffing Agency / Recruiter**:
+  - Agency identifies and places candidates for employer
+  - Employer pays agency placement fee (usually % of first-year salary)
+  - Candidate becomes employee of hiring company (not agency)
+  - Typically W-2 structure (least preferred tax-wise)
+  - Acceptable for strong opportunities with good compensation
+
+- **Contract Agency**:
+  - Candidate works for agency on behalf of employer
+  - Agency contracts out candidate's services to client
+  - Candidate may be W-2 of agency or 1099 contractor
+  - Less direct relationship with end client
+
+- **Contract-to-Hire**:
+  - Starts as contractor (1099 or W-2 of agency)
+  - Potential conversion to direct hire after trial period
+  - Lower priority unless conversion likelihood is very high
+
+**Trade-off Principle**:
+- Agency placement at $150K direct hire might beat direct hire at $140K due to compensation difference
+- Contract agency with 1099 structure at $135K might beat staffing agency W-2 at $140K due to tax advantages ($135K × 1.10 = $148.5K equivalent)
 
 ### 3.4 Work Location & Remote Policy
 
@@ -197,12 +228,77 @@ When remote work is not available, commute factors become critical:
 
 ### 3.6 Job Evaluation Framework
 
-All criteria interact in a multidimensional trade-off space. The system extracts data across all dimensions, and you make final acceptability decisions based on your assessment of the specific opportunity.
+All criteria interact in a multidimensional trade-off space. The system extracts data across all dimensions, then **ranks jobs using a weighted scoring system** (see ISSUE-004) to support informed decision-making.
+
+**Multi-Criteria Weighted Scoring** (Implemented in ISSUE-004):
+
+The system calculates a 0-100 score for each job based on 7 weighted criteria:
+
+| Criterion | Weight | Key Factors |
+|-----------|--------|-------------|
+| Compensation | 30% | Equivalent annual value + tax adjustments + equity/bonus |
+| Employment Relationship | 20% | Direct hire > Staffing agency > Contract agency > Contract-to-hire |
+| Remote Work Policy | 20% | Fully remote > Hybrid (1-3 days) > Onsite + shuttle/perks |
+| Domain/Technical Fit | 15% | Testing/QA focus > Automation > GenAI > Adjacent tech |
+| Flexibility & Perks | 10% | Retainer > Schedule flexibility > Shuttles > Standard |
+| Benefits | 3% | Private insurance > Comprehensive > Standard > Minimal |
+| Company Industry | 2% | Healthcare tech > Enterprise SaaS > Consulting > Other |
+
+**Total: 100%** (weights sum to 1.0)
+
+**Benefits Considerations** (Low priority but nice-to-have):
+- **Private Insurance** (e.g., Blue Shield, Aetna): Preferred over standard plans
+  - Has Medicare/Kaiser baseline coverage
+  - Private insurance provides additional options and flexibility
+- **Comprehensive Benefits**: Standard health, dental, vision, 401(k)
+- **Minimal Benefits**: Basic coverage only
+- **Note**: Benefits are a low-weighted factor (3%) in overall scoring
+
+**Flexibility & Perks Prioritization**:
+1. **Retainer Arrangements** (Highest value):
+   - 3-day retainer: Excellent (high autonomy + guaranteed income)
+   - 2-day retainer: Very good
+   - 1-day retainer: Good
+   - Provides flexibility and stability for contract work
+
+2. **Company Shuttle/Bus**: Significantly extends acceptable commute
+   - Can work during commute (productive time)
+   - No driving stress
+   - Extends acceptable commute from 45 to 60 minutes
+
+3. **FasTrak/Express Lane Reimbursement**: Reduces commute variability
+   - Makes longer commutes more predictable
+   - Valued perk for hybrid/onsite roles
+
+4. **Schedule Flexibility**:
+   - Late-morning start preferred (avoid peak traffic)
+   - Evening flexibility for work-life balance
+   - Flexible hours valued for hybrid/onsite roles
+
+5. **Other Perks**: Parking, transit passes, gym membership (minor factors)
 
 **Example Trade-offs:**
 - Agency W-2 at $150K + fully remote might beat direct hire W-2 at $140K + 3 days onsite
+  - Compensation: $150K vs $140K (+$10K)
+  - Remote: Fully remote vs 3-day hybrid (better flexibility)
+  - Relationship: Agency vs Direct (direct hire preferred but offset by other factors)
+
 - Direct hire W-2 at $145K + 30 min commute + company shuttle might beat remote 1099 at $135K
+  - Compensation: $145K vs $148.5K equivalent ($135K × 1.10)
+  - Commute: Short with shuttle (productive time) vs none
+  - Relationship: Direct hire vs 1099 (direct hire preferred in this case)
+
 - 1099 contract at $130K might beat W-2 at $140K due to tax advantages
+  - Compensation: $143K equivalent ($130K × 1.10) vs $140K
+  - Tax structure: 1099 flexibility vs W-2 standard withholding
+  - Note: Close call, other factors would decide (remote work, tech fit, etc.)
+
+**Decision Process**:
+1. System calculates weighted score for each job (0-100)
+2. Jobs ranked by total score in UI
+3. User reviews top-ranked jobs with full criteria visibility
+4. User makes final decision based on total picture
+5. Future: User can manually adjust scores for intangible factors (Option C)
 
 ---
 
