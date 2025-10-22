@@ -34,7 +34,7 @@ related: []](#id-issue-004%0Atitle-multi-criteria-weighted-job-scoring-system%0A
     - [7. Company Industry Score (2% weight)](#7-company-industry-score-2%25-weight)
   - [Implementation Plan](#implementation-plan)
     - [Phase 1: Foundation (Week 1) ✅ COMPLETED](#phase-1-foundation-week-1--completed)
-    - [Phase 2: Backend Scoring (Week 2)](#phase-2-backend-scoring-week-2)
+    - [Phase 2: Backend Scoring (Week 2) ✅ **COMPLETED**](#phase-2-backend-scoring-week-2--completed)
     - [Phase 3: UI Enhancement (Week 3)](#phase-3-ui-enhancement-week-3)
     - [Phase 4: Integration & Testing (Week 4)](#phase-4-integration--testing-week-4)
   - [Future Enhancement: Option C Migration](#future-enhancement-option-c-migration)
@@ -484,30 +484,48 @@ CREATE INDEX idx_job_scores_rank ON job_scores(rank ASC);
   - Lower `min_salary` to $100,000
   - Make domain matching advisory (not eliminatory)
 
-### Phase 2: Backend Scoring (Week 2)
+### Phase 2: Backend Scoring (Week 2) ✅ **COMPLETED**
+
+**Status**: Implemented and tested - commit 4f861db
 
 **Scoring Functions** (4 days):
-- [ ] `calculate_compensation_score()` - Handle salary, hourly, daily, tax structure
-- [ ] `calculate_relationship_score()` - Direct, agency, contract rankings
-- [ ] `calculate_remote_score()` - Remote policy + commute bonuses
-- [ ] `calculate_domain_fit_score()` - Testing focus + tech stack + GenAI
-- [ ] `calculate_flexibility_score()` - Retainers + schedule + perks
-- [ ] `calculate_benefits_score()` - Insurance type parsing
-- [ ] `calculate_industry_score()` - Industry sector lookup
+- [x] `calculate_compensation_score()` - Handle salary, hourly, daily, tax structure
+- [x] `calculate_relationship_score()` - Direct, agency, contract rankings
+- [x] `calculate_remote_score()` - Remote policy + commute bonuses
+- [x] `calculate_domain_fit_score()` - Testing focus + tech stack + GenAI
+- [x] `calculate_flexibility_score()` - Retainers + schedule + perks
+- [x] `calculate_benefits_score()` - Insurance type parsing
+- [x] `calculate_industry_score()` - Industry sector lookup
 
 **Orchestration** (1 day):
-- [ ] `calculate_job_score(job: &Job) -> JobScore` - Calls all scoring functions
-- [ ] Fetch weights from `scoring_criteria` table
-- [ ] Calculate weighted sum
-- [ ] Calculate rank across all scored jobs
-- [ ] Save to `job_scores` table
+- [x] `calculate_job_score(job: &Job) -> JobScore` - Calls all scoring functions
+- [x] Fetch weights from `scoring_criteria` table
+- [x] Calculate weighted sum
+- [x] Calculate rank across all scored jobs
+- [x] Save to `job_scores` table
 
 **API Endpoints** (1 day):
-- [ ] `POST /api/jobs/{id}/calculate-score` - Trigger scoring for one job
-- [ ] `POST /api/jobs/calculate-all-scores` - Bulk re-score all jobs
-- [ ] `GET /api/jobs/ranked` - Get jobs ordered by score
-- [ ] `GET /api/scoring-criteria` - Get current weights
-- [ ] `PUT /api/scoring-criteria` - Update weights (array of criteria)
+- [x] `POST /api/jobs/{id}/calculate-score` - Trigger scoring for one job
+- [x] `POST /api/jobs/calculate-all-scores` - Bulk re-score all jobs
+- [x] `GET /api/jobs/ranked` - Get jobs ordered by score
+- [x] `GET /api/scoring-criteria` - Get current weights
+- [x] `PUT /api/scoring-criteria` - Update weights (array of criteria)
+
+**Implementation Details**:
+- All 7 scoring functions implemented with proper 0-100 scaling
+- Linear interpolation for compensation ($100K-$200K+ range)
+- Tax structure multipliers: W-2 (×1.0), 1099 (×1.10), Schedule C (×1.15)
+- Weighted sum calculation: total_score = Σ(score_i × weight_i)
+- SQL window function for ranking (ROW_NUMBER() OVER ORDER BY total_score DESC)
+- Database migration updated: DECIMAL → DOUBLE PRECISION for f64 compatibility
+- Route ordering fixed: /ranked before /{id} to prevent UUID parsing conflict
+- PRD updated with comprehensive scoring formulas (section 3.6)
+
+**Testing Results**:
+- Successfully scored 30 jobs with 0 failures
+- All API endpoints functional
+- Weighted calculations verified correct
+- Rankings properly assigned
 
 ### Phase 3: UI Enhancement (Week 3)
 
