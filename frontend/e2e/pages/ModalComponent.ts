@@ -33,9 +33,10 @@ export class ModalComponent {
 
   /**
    * Wait for modal to be visible
+   * @param timeoutMs - Optional timeout in milliseconds (default: 5000)
    */
-  async waitForVisible() {
-    await expect(this.modal).toBeVisible({ timeout: 5000 });
+  async waitForVisible(timeoutMs: number = 5000) {
+    await expect(this.modal).toBeVisible({ timeout: timeoutMs });
   }
 
   /**

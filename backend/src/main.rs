@@ -12,6 +12,12 @@ use std::fs::OpenOptions;
 use std::io::Write;
 
 // ============================================================================
+// Module Declarations
+// ============================================================================
+
+mod llm;
+
+// ============================================================================
 // Debug Logging
 // ============================================================================
 
@@ -637,6 +643,12 @@ pub struct GeneratedContent {
     pub resume_format: String,
     pub generated_at: DateTime<Utc>,
     pub application_id: Uuid,
+    // LLM metadata
+    pub generation_method: String,
+    pub llm_model: Option<String>,
+    pub tokens_used: Option<i32>,
+    pub cost_estimate: Option<f64>,
+    pub generation_time_ms: Option<i64>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -1561,6 +1573,119 @@ fn generate_personalized_opening(job: &Job) -> String {
     format!("{} Your focus on {} aligns perfectly with my career goals.", salary_note, determine_relevant_domains(job))
 }
 
+// ============================================================================
+// LLM-Based Content Generation
+// ============================================================================
+
+use llm::{
+    load_prompt_template, build_prompt, extract_primary_domain,
+    extract_technologies, extract_seniority, AnthropicClient,
+};
+use std::collections::HashMap;
+
+/// Generate content for job using LLM (NEW implementation)
+async fn generate_content_for_job_llm(
+    job: &Job,
+    pool: &PgPool,
+) -> Result<GeneratedContent, Box<dyn std::error::Error>> {
+    use std::time::Instant;
+
+    let start_time = Instant::now();
+
+    // Get master resume
+    let master_resume = get_master_resume(pool).await?;
+
+    // Create LLM client
+    let client = AnthropicClient::from_env()
+        .map_err(|e| format!("Failed to create Anthropic client: {}", e))?;
+
+    // Generate customized resume using LLM
+    let (customized_resume, resume_usage) = {
+        let resume_template = llm::load_prompt_template("resume_customization")?;
+        let mut variables = HashMap::new();
+
+        let empty_description = String::new();
+        let job_description = job.description.as_ref().unwrap_or(&empty_description);
+
+        variables.insert("master_resume".to_string(), master_resume.content.clone());
+        variables.insert("job_title".to_string(), job.title.clone());
+        variables.insert("company".to_string(), job.company.clone());
+        variables.insert("location".to_string(), job.location.as_ref().unwrap_or(&"Not specified".to_string()).clone());
+        variables.insert("salary".to_string(), job.salary.map(|s| format!("${}", s)).unwrap_or("Not specified".to_string()));
+        variables.insert("job_description".to_string(), job_description.clone());
+        variables.insert("primary_domain".to_string(), llm::extract_primary_domain(&job.title, job_description));
+        variables.insert("technologies".to_string(), llm::extract_technologies(job_description));
+        variables.insert("seniority".to_string(), llm::extract_seniority(&job.title));
+
+        let prompt = llm::build_prompt(&resume_template, &variables);
+        let response = client.generate(&prompt, 2500, None).await
+            .map_err(|e| format!("Resume generation failed: {}", e))?;
+
+        (response.content, response.usage)
+    };
+
+    // Generate cover letter using LLM (sequential - uses customized resume)
+    let (cover_letter, cover_letter_usage) = {
+        let cl_template = llm::load_prompt_template("cover_letter_generation")?;
+        let mut variables = HashMap::new();
+
+        variables.insert("customized_resume".to_string(), customized_resume.clone());
+        variables.insert("job_title".to_string(), job.title.clone());
+        variables.insert("company".to_string(), job.company.clone());
+        variables.insert("location".to_string(), job.location.as_ref().unwrap_or(&"Not specified".to_string()).clone());
+        variables.insert("salary".to_string(), job.salary.map(|s| format!("${}", s)).unwrap_or("Not specified".to_string()));
+        variables.insert("job_description".to_string(), job.description.as_ref().unwrap_or(&String::new()).clone());
+        variables.insert("url".to_string(), job.url.as_ref().unwrap_or(&"Not specified".to_string()).clone());
+        variables.insert("company_research".to_string(), "Not available".to_string());
+
+        let salary_note = if let Some(salary) = job.salary {
+            if salary < 130000 {
+                format!("Note: The listed salary (${}) is below your target of $130,000. You may want to address compensation expectations during the interview process.", salary)
+            } else {
+                "The compensation aligns with your expectations.".to_string()
+            }
+        } else {
+            "Compensation details not specified in posting.".to_string()
+        };
+        variables.insert("salary_note".to_string(), salary_note);
+
+        let prompt = llm::build_prompt(&cl_template, &variables);
+        let response = client.generate(&prompt, 1500, None).await
+            .map_err(|e| format!("Cover letter generation failed: {}", e))?;
+
+        (response.content, response.usage)
+    };
+
+    // Calculate total tokens and cost
+    let total_tokens = resume_usage.input_tokens + resume_usage.output_tokens +
+                      cover_letter_usage.input_tokens + cover_letter_usage.output_tokens;
+
+    let total_usage = llm::Usage {
+        input_tokens: resume_usage.input_tokens + cover_letter_usage.input_tokens,
+        output_tokens: resume_usage.output_tokens + cover_letter_usage.output_tokens,
+    };
+
+    let cost = AnthropicClient::estimate_cost(&total_usage);
+    let generation_time = start_time.elapsed().as_millis() as i64;
+
+    Ok(GeneratedContent {
+        resume: customized_resume,
+        cover_letter,
+        resume_format: master_resume.format,
+        generated_at: Utc::now(),
+        application_id: Uuid::nil(), // Will be set by the handler
+        generation_method: "llm".to_string(),
+        llm_model: Some("claude-3-5-haiku-20241022".to_string()),
+        tokens_used: Some(total_tokens),
+        cost_estimate: Some(cost),
+        generation_time_ms: Some(generation_time),
+    })
+}
+
+// ============================================================================
+// Legacy Template-Based Content Generation (DEPRECATED)
+// ============================================================================
+
 async fn generate_content_for_job(job: &Job, pool: &PgPool) -> Result<GeneratedContent, Box<dyn std::error::Error>> {
     // Get master resume
     let master_resume = get_master_resume(pool).await?;
@@ -1584,6 +1709,11 @@ async fn generate_content_for_job(job: &Job, pool: &PgPool) -> Result<GeneratedC
         resume_format: master_resume.format,
         generated_at: Utc::now(),
         application_id: Uuid::nil(), // Will be set by the handler
+        generation_method: "template".to_string(),
+        llm_model: None,
+        tokens_used: None,
+        cost_estimate: None,
+        generation_time_ms: None,
     })
 }
 
@@ -2249,8 +2379,8 @@ async fn generate_content_handler(
         new_app_id
     };
 
-    // Generate content
-    match generate_content_for_job(&job, pool.get_ref()).await {
+    // Generate content using LLM
+    match generate_content_for_job_llm(&job, pool.get_ref()).await {
         Ok(mut content) => {
             content.application_id = application_id;
             Ok(HttpResponse::Ok().json(content))
@@ -2315,8 +2445,8 @@ async fn generate_content_with_options_handler(
         new_app_id
     };
 
-    // For now, use the basic generation (could extend to use custom templates)
-    match generate_content_for_job(&job, pool.get_ref()).await {
+    // Generate content using LLM
+    match generate_content_for_job_llm(&job, pool.get_ref()).await {
         Ok(mut content) => {
             content.application_id = application_id;
             Ok(HttpResponse::Ok().json(content))
