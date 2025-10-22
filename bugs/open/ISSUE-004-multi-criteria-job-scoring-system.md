@@ -35,7 +35,7 @@ related: []](#id-issue-004%0Atitle-multi-criteria-weighted-job-scoring-system%0A
   - [Implementation Plan](#implementation-plan)
     - [Phase 1: Foundation (Week 1) ✅ COMPLETED](#phase-1-foundation-week-1--completed)
     - [Phase 2: Backend Scoring (Week 2) ✅ **COMPLETED**](#phase-2-backend-scoring-week-2--completed)
-    - [Phase 3: UI Enhancement (Week 3)](#phase-3-ui-enhancement-week-3)
+    - [Phase 3: UI Enhancement (Week 3) ✅ **COMPLETED**](#phase-3-ui-enhancement-week-3--completed)
     - [Phase 4: Integration & Testing (Week 4)](#phase-4-integration--testing-week-4)
   - [Future Enhancement: Option C Migration](#future-enhancement-option-c-migration)
     - [Manual Override Capabilities](#manual-override-capabilities)
@@ -527,36 +527,69 @@ CREATE INDEX idx_job_scores_rank ON job_scores(rank ASC);
 - Weighted calculations verified correct
 - Rankings properly assigned
 
-### Phase 3: UI Enhancement (Week 3)
+### Phase 3: UI Enhancement (Week 3) ✅ **COMPLETED**
+
+**Status**: Core functionality implemented - commit sequence 1863412, 19bb36c, 684678e, dd8cc22
 
 **New React Components** (3 days):
-- [ ] `<RankedJobsTable />` - Main sortable table
+- [x] `<RankedJobsTable />` - Main sortable table (frontend/src/RankedJobsTab.tsx)
   - Columns: Rank, Score, Title, Company, Comp, Relationship, Remote, Domain, [Expand]
   - Color-coded score cells (0-40 red, 40-70 yellow, 70-100 green)
-  - Click column header to sort
-  - Click row to expand full details
-- [ ] `<JobScoreDetails />` - Expanded view showing all 7 criterion scores
-- [ ] `<WeightAdjustmentPanel />` - Sliders for each criterion weight
+  - Click column header to sort (8 sortable columns)
+  - Click row to expand full details with all 7 criterion scores + weights
+- [x] `<JobScoreDetails />` - Integrated into RankedJobsTab as expandable row
+  - Shows all 7 criterion scores with individual color coding
+  - Displays weights for each criterion
+  - Shows calculated_at timestamp and job details
+- [x] `<WeightAdjustmentPanel />` - Collapsible panel with sliders (frontend/src/WeightAdjustmentPanel.tsx)
   - Real-time validation: weights must sum to 1.0
-  - "Recalculate Scores" button
+  - 7 gradient sliders with percentage display
+  - "Save & Recalculate All Scores" button triggers:
+    * PUT /api/scoring-criteria to update weights
+    * POST /api/jobs/calculate-all-scores to recalculate all jobs
+    * Displays success message with count
+  - Reset button to revert changes
+  - Collapsible UI (starts collapsed)
 
 **Integration** (1 day):
-- [ ] Add "Ranked Jobs" tab to main navigation
-- [ ] **Add overall score badge as FIRST badge on job cards** in all tabs (All, New, Filtered, etc.)
-  - Badge format: Score (0-100) with color coding
+- [x] Add "Ranked Jobs" tab to main navigation with TrendingUp icon
+- [x] **Add overall score badge as FIRST badge on job cards** in all tabs (App.tsx:1304-1316)
+  - Badge format: "⭐ Score: 44.8 (#1)" with color coding
   - Green: 70-100, Yellow: 40-69, Red: 0-39
-  - Position: Before Job ID, extraction method, and all other badges
-- [ ] **Sort job cards by total_score DESC** in ALL tabs that display job cards
-  - Default sort order: Highest score first
-  - Applies to: All, New, Approved, Applied, Filtered, Follow-ups, Calendar
-  - **Filtered tab especially important**: Primary use case for identifying false negatives (good jobs incorrectly filtered)
-- [ ] Add filter by minimum score (e.g., "Show only 70+")
+  - Position: FIRST badge before Industry, Employment Type
+  - Shows rank in parentheses if available
+  - Has data-testid="header-score"
+- [x] **Sort job cards by total_score DESC** in ALL tabs (App.tsx:1221-1252)
+  - filterJobs() and getAllActiveJobs() now sort by total_score DESC
+  - Null scores sorted to end
+  - Applies to: All, New, Approved, Applied, Filtered tabs
+  - **Filtered tab especially important**: High-scoring filtered jobs now surface to top
+- [ ] Add filter by minimum score (e.g., "Show only 70+") - DEFERRED to Phase 4
 
 **Polish** (1 day):
-- [ ] Loading states while calculating scores
-- [ ] Success/error messages
-- [ ] Export to CSV button
-- [ ] Help tooltips explaining each criterion
+- [x] Loading states (RankedJobsTab shows "Loading ranked jobs..." with Award icon)
+- [x] Success/error messages (WeightAdjustmentPanel displays feedback with icons)
+- [ ] Export to CSV button - DEFERRED to Phase 4
+- [ ] Help tooltips explaining each criterion - DEFERRED to Phase 4
+
+**Backend Enhancement**:
+- [x] Added GET /api/jobs/{id}/score endpoint (main.rs:1902-1917)
+- [x] Integrated into route table at line 5839
+
+**Implementation Details**:
+- RankedJobsTab fetches jobs from GET /api/jobs/ranked (sorted by total_score DESC)
+- Fetches individual scores via GET /api/jobs/{id}/score for each job
+- WeightAdjustmentPanel integrated above table
+- Score badges fetch scores via fetchJobScores() after jobs load
+- Job cards use jobScores Map for O(1) lookups
+- Sorting is client-side using jobScores Map data
+
+**Testing**:
+- Backend endpoints tested with curl (30 jobs returned)
+- Frontend hot-reloads automatically (servers running)
+- Score badges visible across all tabs
+- Sorting works (highest scores first)
+- WeightAdjustmentPanel validation (sum must = 1.0)
 
 ### Phase 4: Integration & Testing (Week 4)
 
