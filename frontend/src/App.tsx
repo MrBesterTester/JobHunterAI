@@ -1219,12 +1219,36 @@ const JobHunterDashboard: React.FC = () => {
   };
 
   const filterJobs = (status: string): Job[] => {
-    return jobs.filter(job => job.status === status);
+    const filtered = jobs.filter(job => job.status === status);
+    // Sort by total_score DESC (highest first), nulls last
+    return filtered.sort((a, b) => {
+      const scoreA = jobScores.get(a.job_id)?.total_score;
+      const scoreB = jobScores.get(b.job_id)?.total_score;
+
+      // Handle nulls/undefined
+      if (scoreA === null || scoreA === undefined) return 1;
+      if (scoreB === null || scoreB === undefined) return -1;
+
+      // Sort descending (higher scores first)
+      return scoreB - scoreA;
+    });
   };
 
   const getAllActiveJobs = (): Job[] => {
     // Exclude rejected jobs from "All" tab - show only active workflow jobs
-    return jobs.filter(job => job.status !== 'rejected');
+    const filtered = jobs.filter(job => job.status !== 'rejected');
+    // Sort by total_score DESC (highest first), nulls last
+    return filtered.sort((a, b) => {
+      const scoreA = jobScores.get(a.job_id)?.total_score;
+      const scoreB = jobScores.get(b.job_id)?.total_score;
+
+      // Handle nulls/undefined
+      if (scoreA === null || scoreA === undefined) return 1;
+      if (scoreB === null || scoreB === undefined) return -1;
+
+      // Sort descending (higher scores first)
+      return scoreB - scoreA;
+    });
   };
 
   // Helper function to get display label for tabs
