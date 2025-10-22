@@ -11,6 +11,7 @@
     - [3.4 Work Location & Remote Policy](#34-work-location--remote-policy)
     - [3.5 Commute Considerations (for hybrid/onsite roles)](#35-commute-considerations-for-hybridonsite-roles)
     - [3.6 Job Evaluation Framework](#36-job-evaluation-framework)
+      - [Scoring Calculation Formulas](#scoring-calculation-formulas)
   - [4. Workflow](#4-workflow)
     - [4.1 Intake Sources](#41-intake-sources)
     - [4.2 Processing Pipeline](#42-processing-pipeline)
@@ -245,6 +246,129 @@ The system calculates a 0-100 score for each job based on 7 weighted criteria:
 | Company Industry | 2% | Healthcare tech > Enterprise SaaS > Consulting > Other |
 
 **Total: 100%** (weights sum to 1.0)
+
+#### Scoring Calculation Formulas
+
+Each criterion is scored on a 0-100 scale using the following algorithms:
+
+**1. Compensation Score (0-100, Weight: 30%)**
+
+Formula: Linear interpolation across salary bands
+- Calculate annual equivalent:
+  - Salary: Use as-is (or average if range)
+  - Hourly: Rate × 2080 hours/year
+  - Daily: Rate × 250 days/year
+- Apply tax structure multiplier:
+  - W-2: ×1.0 (baseline)
+  - 1099: ×1.10 (+10% value)
+  - Schedule C: ×1.15 (+15% value)
+- Add bonus (if stated percentage)
+- Add equity × 0.20 (80% discount factor)
+- Score:
+  - ≤$100K: 0 points
+  - $100K-$130K: 0-50 points (linear)
+  - $130K-$160K: 50-75 points (linear)
+  - $160K-$200K: 75-100 points (linear)
+  - ≥$200K: 100 points
+
+**2. Employment Relationship Score (0-100, Weight: 20%)**
+
+Priority rankings:
+- Schedule C consulting: 100 points (highest autonomy)
+- Contract with retainer: 90 points (stability + flexibility)
+- Direct hire / Full-time: 100 points
+- Staffing agency: 60 points
+- Contract agency: 40 points
+- Contract-to-hire: 20 points
+- Standard contract: 40 points
+- Unknown: 30 points
+
+**3. Remote Work Score (0-100, Weight: 20%)**
+
+Base policy score:
+- Fully remote: 100 points
+- Hybrid 1 day/week: 90 points
+- Hybrid 2 days/week: 80 points
+- Hybrid 3 days/week: 60 points
+- Hybrid 4 days/week: 30 points
+- Hybrid 5 days/week: 10 points
+- Onsite: 0 points
+
+Bonuses (if not fully remote):
+- Company shuttle: +15 points
+- FasTrak reimbursement: +10 points
+- Schedule flexibility: +5 points
+- Max total: 100 points
+
+**4. Domain/Technical Fit Score (0-100, Weight: 15%)**
+
+Base category score:
+- Testing/QA: 100 points
+- Test Automation: 90 points
+- Firmware Testing: 85 points
+- Software Engineering (testing focus): 80 points
+- Software Engineering (no testing): 40 points
+- DevOps / Release Engineering: 60 points
+- Other: 20 points
+
+Bonuses:
+- Automation focus: +10 points
+- Generative AI usage: +10 points
+- Tech stack includes Playwright/Cypress/Selenium: +5 points
+- Title contains "test"/"qa"/"quality": +5 points
+
+Penalties:
+- Management role (manager/director/executive): -20 points
+- Final score: max(0, min(100, score))
+
+**5. Flexibility & Perks Score (0-100, Weight: 10%)**
+
+Retainer arrangements (highest priority):
+- 3-day retainer: 100 points
+- 2-day retainer: 85 points
+- 1-day retainer: 70 points
+- Standard contract: 40 points
+
+If no retainer, score based on perks:
+- Schedule flexibility: 60 points
+- Company shuttle: 50 points
+- FasTrak reimbursement: 40 points
+- Parking: 30 points
+- Standard benefits: 20 points
+- None: 0 points
+
+**6. Benefits Score (0-100, Weight: 3%)**
+
+Insurance quality:
+- Private insurance (Blue Shield, Aetna, Kaiser, Cigna): 100 points
+- Comprehensive (full package): 70 points
+- Standard (health + dental): 50 points
+- Health only: 30 points
+- Unknown/neutral: 40 points
+
+**7. Company Industry Score (0-100, Weight: 2%)**
+
+Industry rankings:
+- Healthcare + Tech: 100 points
+- SaaS / Enterprise: 90 points
+- Financial / FinTech: 80 points
+- Consulting: 70 points
+- E-commerce: 60 points
+- Telecom: 50 points
+- Other/Unknown: 40 points
+
+**Final Score Calculation:**
+```
+total_score = (compensation_score × 0.30) +
+              (relationship_score × 0.20) +
+              (remote_work_score × 0.20) +
+              (domain_fit_score × 0.15) +
+              (flexibility_score × 0.10) +
+              (benefits_score × 0.03) +
+              (industry_score × 0.02)
+```
+
+Jobs are ranked by descending total_score.
 
 **Benefits Considerations** (Low priority but nice-to-have):
 - **Private Insurance** (e.g., Blue Shield, Aetna): Preferred over standard plans

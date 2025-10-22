@@ -11,7 +11,7 @@
 CREATE TABLE scoring_criteria (
     criteria_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     criterion_name VARCHAR(50) NOT NULL UNIQUE,
-    weight DECIMAL(4,3) NOT NULL CHECK (weight >= 0 AND weight <= 1),
+    weight DOUBLE PRECISION NOT NULL CHECK (weight >= 0 AND weight <= 1),
     enabled BOOLEAN DEFAULT true,
     description TEXT,
     updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -42,22 +42,22 @@ CREATE TABLE job_scores (
     job_id UUID PRIMARY KEY REFERENCES jobs(job_id) ON DELETE CASCADE,
 
     -- Individual criterion scores (0-100 scale)
-    compensation_score DECIMAL(5,2) CHECK (compensation_score BETWEEN 0 AND 100),
-    relationship_score DECIMAL(5,2) CHECK (relationship_score BETWEEN 0 AND 100),
-    remote_work_score DECIMAL(5,2) CHECK (remote_work_score BETWEEN 0 AND 100),
-    domain_fit_score DECIMAL(5,2) CHECK (domain_fit_score BETWEEN 0 AND 100),
-    flexibility_score DECIMAL(5,2) CHECK (flexibility_score BETWEEN 0 AND 100),
-    benefits_score DECIMAL(5,2) CHECK (benefits_score BETWEEN 0 AND 100),
-    industry_score DECIMAL(5,2) CHECK (industry_score BETWEEN 0 AND 100),
+    compensation_score DOUBLE PRECISION CHECK (compensation_score BETWEEN 0 AND 100),
+    relationship_score DOUBLE PRECISION CHECK (relationship_score BETWEEN 0 AND 100),
+    remote_work_score DOUBLE PRECISION CHECK (remote_work_score BETWEEN 0 AND 100),
+    domain_fit_score DOUBLE PRECISION CHECK (domain_fit_score BETWEEN 0 AND 100),
+    flexibility_score DOUBLE PRECISION CHECK (flexibility_score BETWEEN 0 AND 100),
+    benefits_score DOUBLE PRECISION CHECK (benefits_score BETWEEN 0 AND 100),
+    industry_score DOUBLE PRECISION CHECK (industry_score BETWEEN 0 AND 100),
 
     -- Aggregate scores
-    total_score DECIMAL(5,2) CHECK (total_score BETWEEN 0 AND 100),
+    total_score DOUBLE PRECISION CHECK (total_score BETWEEN 0 AND 100),
     rank INTEGER, -- Ordinal ranking among all scored jobs
     calculated_at TIMESTAMPTZ DEFAULT NOW(),
 
     -- Future: Option C (Manual Override) fields
     manual_override_enabled BOOLEAN DEFAULT false,
-    manual_adjustment_points DECIMAL(5,2) DEFAULT 0,
+    manual_adjustment_points DOUBLE PRECISION DEFAULT 0,
     override_reason TEXT,
     overridden_by VARCHAR(100),
     overridden_at TIMESTAMPTZ

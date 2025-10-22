@@ -786,6 +786,474 @@ async fn save_job_score(pool: &PgPool, score: &JobScore) -> Result<(), sqlx::Err
     Ok(())
 }
 
+// ============================================================================
+// ISSUE-004: Scoring Calculation Functions
+// ============================================================================
+
+/// Calculate compensation score (0-100) based on annual equivalent with tax adjustments
+/// Weight: 30%
+fn calculate_compensation_score(job: &Job) -> Option<f64> {
+    let raw_data = job.raw_data.as_ref()?;
+
+    // Extract compensation data
+    let compensation = raw_data.get("compensation")?;
+    let employment = raw_data.get("employment");
+
+    // Get base annual equivalent
+    let mut annual_equivalent: f64 = 0.0;
+
+    if let Some(salary_min) = compensation.get("salary_min").and_then(|v| v.as_i64()) {
+        let salary_max = compensation.get("salary_max").and_then(|v| v.as_i64()).unwrap_or(salary_min);
+        annual_equivalent = ((salary_min + salary_max) / 2) as f64;
+    } else if let Some(hourly) = compensation.get("hourly_rate").and_then(|v| v.as_f64()) {
+        annual_equivalent = hourly * 2080.0; // 40 hrs/week * 52 weeks
+    } else if let Some(daily) = compensation.get("daily_rate").and_then(|v| v.as_f64()) {
+        annual_equivalent = daily * 250.0; // 5 days/week * 50 weeks
+    } else {
+        return None; // No compensation data
+    }
+
+    // Apply tax structure multiplier
+    if let Some(emp) = employment {
+        if let Some(tax_structure) = emp.get("tax_structure").and_then(|v| v.as_str()) {
+            annual_equivalent *= match tax_structure {
+                "1099" => 1.10,
+                "schedule_c" => 1.15,
+                _ => 1.0, // W-2 baseline
+            };
+        }
+    }
+
+    // Add bonus if available
+    if let Some(bonus_str) = compensation.get("bonus_structure").and_then(|v| v.as_str()) {
+        if let Some(pct_str) = bonus_str.strip_suffix('%') {
+            if let Ok(pct) = pct_str.parse::<f64>() {
+                annual_equivalent *= 1.0 + (pct / 100.0);
+            }
+        }
+    }
+
+    // Add equity with 20% discount factor
+    if let Some(equity) = compensation.get("equity_offered").and_then(|v| v.as_f64()) {
+        annual_equivalent += equity * 0.20;
+    }
+
+    // Calculate score (linear interpolation)
+    // $100K = 0, $130K = 50, $160K = 75, $200K = 100
+    let score = if annual_equivalent <= 100_000.0 {
+        0.0
+    } else if annual_equivalent <= 130_000.0 {
+        50.0 * (annual_equivalent - 100_000.0) / 30_000.0
+    } else if annual_equivalent <= 160_000.0 {
+        50.0 + 25.0 * (annual_equivalent - 130_000.0) / 30_000.0
+    } else if annual_equivalent <= 200_000.0 {
+        75.0 + 25.0 * (annual_equivalent - 160_000.0) / 40_000.0
+    } else {
+        100.0
+    };
+
+    Some(score.min(100.0))
+}
+
+/// Calculate employment relationship score (0-100)
+/// Weight: 20%
+fn calculate_relationship_score(job: &Job) -> Option<f64> {
+    let raw_data = job.raw_data.as_ref()?;
+    let employment = raw_data.get("employment")?;
+
+    // Check for Schedule C override
+    if let Some(tax_structure) = employment.get("tax_structure").and_then(|v| v.as_str()) {
+        if tax_structure == "schedule_c" {
+            return Some(100.0);
+        }
+    }
+
+    // Get relationship type
+    let relationship = employment.get("relationship").and_then(|v| v.as_str())?;
+
+    // Check for contract with retainer
+    if relationship.contains("contract") {
+        if let Some(duration) = employment.get("contract_duration").and_then(|v| v.as_str()) {
+            if duration.contains("retainer") {
+                return Some(90.0);
+            }
+        }
+    }
+
+    // Standard relationship scores
+    let score = match relationship {
+        "direct" | "full-time" | "full_time" => 100.0,
+        "staffing_agency" | "recruiter" => 60.0,
+        "contract_agency" => 40.0,
+        "contract_to_hire" | "contract-to-hire" => 20.0,
+        _ => 30.0, // Unknown
+    };
+
+    Some(score)
+}
+
+/// Calculate remote work policy score (0-100)
+/// Weight: 20%
+fn calculate_remote_score(job: &Job) -> Option<f64> {
+    let raw_data = job.raw_data.as_ref()?;
+
+    let mut score: f64 = 0.0;
+
+    // Get remote work policy
+    if let Some(remote_work) = raw_data.get("remote_work") {
+        if let Some(policy) = remote_work.get("policy").and_then(|v| v.as_str()) {
+            score = match policy {
+                "fully_remote" | "remote" => 100.0,
+                "hybrid" => {
+                    // Check days onsite
+                    if let Some(days) = remote_work.get("days_onsite_per_week").and_then(|v| v.as_f64()) {
+                        if days <= 1.0 {
+                            90.0
+                        } else if days <= 2.0 {
+                            80.0
+                        } else if days <= 3.0 {
+                            60.0
+                        } else if days <= 4.0 {
+                            30.0
+                        } else {
+                            10.0
+                        }
+                    } else {
+                        60.0 // Hybrid, assume 3 days
+                    }
+                },
+                "onsite" | "office" => 0.0,
+                _ => 50.0, // Unknown, neutral
+            };
+        }
+    }
+
+    // Add commute bonuses if not fully remote
+    if score < 100.0 {
+        if let Some(commute) = raw_data.get("commute") {
+            if commute.get("company_shuttle").and_then(|v| v.as_bool()).unwrap_or(false) {
+                score += 15.0;
+            }
+            if let Some(perks) = commute.get("commute_perks").and_then(|v| v.as_str()) {
+                if perks.contains("fastrak") || perks.contains("FasTrak") {
+                    score += 10.0;
+                }
+            }
+            if commute.get("schedule_flexibility").and_then(|v| v.as_bool()).unwrap_or(false) {
+                score += 5.0;
+            }
+        }
+    }
+
+    Some(score.min(100.0))
+}
+
+/// Calculate domain/technical fit score (0-100)
+/// Weight: 15%
+fn calculate_domain_fit_score(job: &Job) -> Option<f64> {
+    let raw_data = job.raw_data.as_ref()?;
+
+    let mut score: f64 = 20.0; // Default for other categories
+
+    // Check primary category
+    if let Some(job_domain) = raw_data.get("job_domain") {
+        if let Some(category) = job_domain.get("primary_category").and_then(|v| v.as_str()) {
+            score = match category {
+                "testing_qa" | "quality_assurance" => 100.0,
+                "test_automation" => 90.0,
+                "firmware_testing" => 85.0,
+                "software_engineering" => {
+                    if job_domain.get("testing_focus").and_then(|v| v.as_bool()).unwrap_or(false) {
+                        80.0
+                    } else {
+                        40.0
+                    }
+                },
+                "devops" | "release_engineering" => 60.0,
+                _ => 20.0,
+            };
+        }
+
+        // Add bonuses
+        if job_domain.get("automation_focus").and_then(|v| v.as_bool()).unwrap_or(false) {
+            score += 10.0;
+        }
+        if job_domain.get("generative_ai_usage").and_then(|v| v.as_bool()).unwrap_or(false) {
+            score += 10.0;
+        }
+
+        // Check tech stack
+        if let Some(tech_stack) = job_domain.get("tech_stack").and_then(|v| v.as_array()) {
+            let tech_string = tech_stack.iter()
+                .filter_map(|v| v.as_str())
+                .collect::<Vec<_>>()
+                .join(" ");
+            if tech_string.contains("Playwright") || tech_string.contains("Cypress") || tech_string.contains("Selenium") {
+                score += 5.0;
+            }
+        }
+    }
+
+    // Title bonus
+    let title_lower = job.title.to_lowercase();
+    if title_lower.contains("test") || title_lower.contains("qa") || title_lower.contains("quality") {
+        score += 5.0;
+    }
+
+    // Management penalty
+    if title_lower.contains("manager") || title_lower.contains("director") || title_lower.contains("executive") {
+        score -= 20.0;
+    }
+
+    Some(score.max(0.0).min(100.0))
+}
+
+/// Calculate flexibility & perks score (0-100)
+/// Weight: 10%
+fn calculate_flexibility_score(job: &Job) -> Option<f64> {
+    let raw_data = job.raw_data.as_ref()?;
+
+    // Check for retainer arrangements
+    if let Some(employment) = raw_data.get("employment") {
+        if let Some(duration) = employment.get("contract_duration").and_then(|v| v.as_str()) {
+            let duration_lower = duration.to_lowercase();
+            if duration_lower.contains("retainer") {
+                if duration_lower.contains("3") || duration_lower.contains("three") {
+                    return Some(100.0);
+                } else if duration_lower.contains("2") || duration_lower.contains("two") {
+                    return Some(85.0);
+                } else if duration_lower.contains("1") || duration_lower.contains("one") {
+                    return Some(70.0);
+                }
+            }
+            if duration_lower.contains("contract") {
+                return Some(40.0);
+            }
+        }
+    }
+
+    // No retainer, score based on perks
+    let mut score: f64 = 0.0;
+
+    if let Some(commute) = raw_data.get("commute") {
+        if commute.get("schedule_flexibility").and_then(|v| v.as_bool()).unwrap_or(false) {
+            score = 60.0;
+        } else if commute.get("company_shuttle").and_then(|v| v.as_bool()).unwrap_or(false) {
+            score = 50.0;
+        } else if let Some(perks) = commute.get("commute_perks").and_then(|v| v.as_str()) {
+            if perks.contains("fastrak") || perks.contains("FasTrak") {
+                score = 40.0;
+            } else if perks.contains("parking") {
+                score = 30.0;
+            }
+        }
+    }
+
+    if score == 0.0 {
+        if raw_data.get("employment")
+            .and_then(|e| e.get("benefits"))
+            .is_some() {
+            score = 20.0; // Standard benefits
+        }
+    }
+
+    Some(score)
+}
+
+/// Calculate benefits score (0-100)
+/// Weight: 3%
+fn calculate_benefits_score(job: &Job) -> Option<f64> {
+    let raw_data = job.raw_data.as_ref()?;
+
+    let benefits_str = raw_data.get("employment")
+        .and_then(|e| e.get("benefits"))
+        .and_then(|b| b.as_str())?;
+
+    let benefits_lower = benefits_str.to_lowercase();
+
+    // Check for private insurance
+    if benefits_lower.contains("blue shield") || benefits_lower.contains("aetna") ||
+       benefits_lower.contains("kaiser") || benefits_lower.contains("cigna") {
+        return Some(100.0);
+    }
+
+    // Comprehensive benefits
+    if benefits_lower.contains("comprehensive") || benefits_lower.contains("full benefits") {
+        return Some(70.0);
+    }
+
+    // Standard benefits
+    if benefits_lower.contains("health") && benefits_lower.contains("dental") {
+        return Some(50.0);
+    }
+
+    // Minimal
+    if benefits_lower.contains("health") || benefits_lower.contains("insurance") {
+        return Some(30.0);
+    }
+
+    Some(40.0) // Unknown, neutral
+}
+
+/// Calculate company industry score (0-100)
+/// Weight: 2%
+fn calculate_industry_score(job: &Job) -> Option<f64> {
+    let raw_data = job.raw_data.as_ref()?;
+
+    let industry = raw_data.get("company_industry")
+        .and_then(|i| i.as_str())?;
+
+    let industry_lower = industry.to_lowercase();
+
+    let score = if industry_lower.contains("healthcare") && industry_lower.contains("tech") {
+        100.0
+    } else if industry_lower.contains("saas") || industry_lower.contains("enterprise") {
+        90.0
+    } else if industry_lower.contains("financial") || industry_lower.contains("fintech") {
+        80.0
+    } else if industry_lower.contains("consulting") {
+        70.0
+    } else if industry_lower.contains("ecommerce") || industry_lower.contains("e-commerce") {
+        60.0
+    } else if industry_lower.contains("telecom") {
+        50.0
+    } else {
+        40.0 // Other/Unknown
+    };
+
+    Some(score)
+}
+
+// ============================================================================
+// ISSUE-004: Orchestration Function
+// ============================================================================
+
+/// Calculate complete job score with weighted criteria
+/// Returns JobScore with all criterion scores and total score
+async fn calculate_job_score(pool: &PgPool, job: &Job) -> Result<JobScore, String> {
+    // Calculate individual criterion scores
+    let compensation_score = calculate_compensation_score(job);
+    let relationship_score = calculate_relationship_score(job);
+    let remote_work_score = calculate_remote_score(job);
+    let domain_fit_score = calculate_domain_fit_score(job);
+    let flexibility_score = calculate_flexibility_score(job);
+    let benefits_score = calculate_benefits_score(job);
+    let industry_score = calculate_industry_score(job);
+
+    // Fetch weights from database
+    let criteria = get_scoring_criteria(pool)
+        .await
+        .map_err(|e| format!("Failed to fetch scoring criteria: {}", e))?;
+
+    // Build weight map
+    let mut weights: std::collections::HashMap<String, f64> = std::collections::HashMap::new();
+    for criterion in criteria {
+        weights.insert(criterion.criterion_name, criterion.weight);
+    }
+
+    // Calculate weighted total score
+    let mut total_score: f64 = 0.0;
+    let mut criterion_count = 0;
+
+    if let Some(score) = compensation_score {
+        if let Some(&weight) = weights.get("compensation") {
+            total_score += score * weight;
+            criterion_count += 1;
+        }
+    }
+    if let Some(score) = relationship_score {
+        if let Some(&weight) = weights.get("employment_relationship") {
+            total_score += score * weight;
+            criterion_count += 1;
+        }
+    }
+    if let Some(score) = remote_work_score {
+        if let Some(&weight) = weights.get("remote_work") {
+            total_score += score * weight;
+            criterion_count += 1;
+        }
+    }
+    if let Some(score) = domain_fit_score {
+        if let Some(&weight) = weights.get("domain_fit") {
+            total_score += score * weight;
+            criterion_count += 1;
+        }
+    }
+    if let Some(score) = flexibility_score {
+        if let Some(&weight) = weights.get("flexibility_perks") {
+            total_score += score * weight;
+            criterion_count += 1;
+        }
+    }
+    if let Some(score) = benefits_score {
+        if let Some(&weight) = weights.get("benefits") {
+            total_score += score * weight;
+            criterion_count += 1;
+        }
+    }
+    if let Some(score) = industry_score {
+        if let Some(&weight) = weights.get("company_industry") {
+            total_score += score * weight;
+            criterion_count += 1;
+        }
+    }
+
+    // Ensure we have at least some scores
+    if criterion_count == 0 {
+        return Err("No valid criterion scores calculated".to_string());
+    }
+
+    // Create JobScore struct
+    let job_score = JobScore {
+        job_id: job.job_id,
+        compensation_score,
+        relationship_score,
+        remote_work_score,
+        domain_fit_score,
+        flexibility_score,
+        benefits_score,
+        industry_score,
+        total_score: Some(total_score),
+        rank: None, // Will be calculated separately
+        calculated_at: Utc::now(),
+        manual_override_enabled: false,
+        manual_adjustment_points: None,
+        override_reason: None,
+        overridden_by: None,
+        overridden_at: None,
+    };
+
+    // Save to database
+    save_job_score(pool, &job_score)
+        .await
+        .map_err(|e| format!("Failed to save job score: {}", e))?;
+
+    Ok(job_score)
+}
+
+/// Recalculate ranks for all scored jobs (called after batch scoring)
+async fn recalculate_ranks(pool: &PgPool) -> Result<(), sqlx::Error> {
+    // Update ranks based on total_score DESC using window function
+    sqlx::query(
+        r#"
+        WITH ranked_jobs AS (
+            SELECT
+                job_id,
+                ROW_NUMBER() OVER (ORDER BY total_score DESC NULLS LAST) as new_rank
+            FROM job_scores
+        )
+        UPDATE job_scores
+        SET rank = ranked_jobs.new_rank
+        FROM ranked_jobs
+        WHERE job_scores.job_id = ranked_jobs.job_id
+        "#
+    )
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}
+
 async fn filter_job(job_req: &CreateJobRequest, pool: &PgPool) -> FilterResult {
     let mut reasons = Vec::new();
 
@@ -1346,6 +1814,131 @@ async fn get_filtered_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
 
     Ok(HttpResponse::Ok().json(jobs))
+}
+
+// ============================================================================
+// ISSUE-004: Scoring API Endpoints
+// ============================================================================
+
+/// POST /api/jobs/{id}/calculate-score - Calculate score for single job
+async fn calculate_single_job_score(
+    pool: web::Data<PgPool>,
+    job_id: web::Path<Uuid>,
+) -> Result<HttpResponse> {
+    // Fetch job
+    let job = sqlx::query_as::<_, Job>(
+        "SELECT * FROM jobs WHERE job_id = $1"
+    )
+    .bind(*job_id)
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorNotFound(format!("Job not found: {}", e)))?;
+
+    // Calculate score
+    let job_score = calculate_job_score(pool.get_ref(), &job)
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to calculate score: {}", e)))?;
+
+    // Recalculate ranks
+    recalculate_ranks(pool.get_ref())
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to recalculate ranks: {}", e)))?;
+
+    Ok(HttpResponse::Ok().json(job_score))
+}
+
+/// POST /api/jobs/calculate-all-scores - Bulk score all jobs
+async fn calculate_all_job_scores(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    // Fetch all jobs
+    let jobs = sqlx::query_as::<_, Job>(
+        "SELECT * FROM jobs WHERE raw_data IS NOT NULL"
+    )
+    .fetch_all(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to fetch jobs: {}", e)))?;
+
+    let mut scored_count = 0;
+    let mut failed_count = 0;
+
+    for job in jobs {
+        match calculate_job_score(pool.get_ref(), &job).await {
+            Ok(_) => scored_count += 1,
+            Err(e) => {
+                eprintln!("Failed to score job {}: {}", job.job_id, e);
+                failed_count += 1;
+            }
+        }
+    }
+
+    // Recalculate ranks after scoring all
+    recalculate_ranks(pool.get_ref())
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to recalculate ranks: {}", e)))?;
+
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "scored_count": scored_count,
+        "failed_count": failed_count
+    })))
+}
+
+/// GET /api/jobs/ranked - Get jobs ordered by score
+async fn get_ranked_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    // Fetch jobs with their scores using raw SQL
+    let jobs = sqlx::query_as::<_, Job>(
+        r#"
+        SELECT j.*
+        FROM jobs j
+        LEFT JOIN job_scores s ON j.job_id = s.job_id
+        ORDER BY s.total_score DESC NULLS LAST
+        "#
+    )
+    .fetch_all(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    Ok(HttpResponse::Ok().json(jobs))
+}
+
+/// GET /api/scoring-criteria - Get current weights
+async fn get_scoring_criteria_handler(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    let criteria = get_scoring_criteria(pool.get_ref())
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    Ok(HttpResponse::Ok().json(criteria))
+}
+
+/// PUT /api/scoring-criteria - Update weights
+#[derive(Deserialize)]
+struct UpdateScoringCriteriaRequest {
+    criteria: Vec<ScoringCriteria>,
+}
+
+async fn update_scoring_criteria_handler(
+    pool: web::Data<PgPool>,
+    req: web::Json<UpdateScoringCriteriaRequest>,
+) -> Result<HttpResponse> {
+    // Validate weights sum to 1.0 (±0.001 tolerance)
+    let weight_sum: f64 = req.criteria.iter().map(|c| c.weight).sum();
+    if (weight_sum - 1.0).abs() > 0.001 {
+        return Ok(HttpResponse::BadRequest().json(serde_json::json!({
+            "error": format!("Weights must sum to 1.0 (got: {})", weight_sum)
+        })));
+    }
+
+    // Update each criterion
+    for criterion in &req.criteria {
+        sqlx::query(
+            "UPDATE scoring_criteria SET weight = $1, updated_at = NOW() WHERE criteria_id = $2"
+        )
+        .bind(criterion.weight)
+        .bind(criterion.criteria_id)
+        .execute(pool.get_ref())
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    }
+
+    Ok(HttpResponse::Ok().json(serde_json::json!({"success": true})))
 }
 
 async fn get_job_stats(pool: web::Data<PgPool>) -> Result<HttpResponse> {
@@ -5218,9 +5811,16 @@ async fn main() -> std::io::Result<()> {
             .route("/api/jobs", web::post().to(create_job))
             .route("/api/jobs/filtered", web::get().to(get_filtered_jobs))
             .route("/api/jobs/stats", web::get().to(get_job_stats))
+            // ISSUE-004: Scoring system endpoints (must be before /{id} routes)
+            .route("/api/jobs/ranked", web::get().to(get_ranked_jobs))
+            .route("/api/jobs/calculate-all-scores", web::post().to(calculate_all_job_scores))
+            .route("/api/scoring-criteria", web::get().to(get_scoring_criteria_handler))
+            .route("/api/scoring-criteria", web::put().to(update_scoring_criteria_handler))
+            // Job routes with {id} parameter
             .route("/api/jobs/{id}", web::get().to(get_job))
             .route("/api/jobs/{id}/status", web::put().to(update_job_status))
             .route("/api/jobs/status/{status}", web::get().to(get_jobs_by_status))
+            .route("/api/jobs/{id}/calculate-score", web::post().to(calculate_single_job_score))
             .route("/api/applications", web::get().to(get_applications))
             .route("/api/applications", web::post().to(create_application))
             .route("/api/criteria", web::get().to(get_criteria))
