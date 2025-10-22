@@ -158,6 +158,20 @@ interface CoverLetterTemplate {
   updated_at: string;
 }
 
+interface JobScore {
+  job_id: string;
+  compensation_score: number | null;
+  relationship_score: number | null;
+  remote_work_score: number | null;
+  domain_fit_score: number | null;
+  flexibility_score: number | null;
+  benefits_score: number | null;
+  industry_score: number | null;
+  total_score: number | null;
+  rank: number | null;
+  calculated_at: string;
+}
+
 type TabType = 'approved' | 'applied' | 'filtered' | 'failed' | 'duplicates' | 'new' | 'all' | 'intake' | 'calendar' | 'follow-ups' | 'ignored' | 'ranked';
 
 // Helper functions moved outside component to prevent recreation on re-renders
@@ -860,6 +874,7 @@ const JobDetails: React.FC<{
 
 const JobHunterDashboard: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [jobScores, setJobScores] = useState<Map<string, JobScore>>(new Map());
   const [applications, setApplications] = useState<Application[]>([]);
   const [criteria, setCriteria] = useState<JobCriteria | null>(null);
   const [stats, setStats] = useState<JobStats>({});
@@ -897,6 +912,10 @@ const JobHunterDashboard: React.FC = () => {
       const data: Job[] = await response.json();
       setJobs(data);
       setLoading(false);
+
+      // Fetch scores for all jobs
+      const jobIds = data.map(job => job.job_id);
+      fetchJobScores(jobIds);
     } catch (error) {
       console.error('Error fetching jobs:', error);
       setJobs([
@@ -937,6 +956,32 @@ const JobHunterDashboard: React.FC = () => {
         }
       ]);
       setLoading(false);
+    }
+  };
+
+  const fetchJobScores = async (jobIds: string[]): Promise<void> => {
+    try {
+      const scoresMap = new Map<string, JobScore>();
+
+      // Fetch scores for all jobs in parallel
+      await Promise.all(
+        jobIds.map(async (jobId) => {
+          try {
+            const response = await fetch(`${API_URL}/jobs/${jobId}/score`);
+            if (response.ok) {
+              const score: JobScore = await response.json();
+              scoresMap.set(jobId, score);
+            }
+          } catch (error) {
+            // Silently ignore missing scores
+            console.debug(`No score found for job ${jobId}`);
+          }
+        })
+      );
+
+      setJobScores(scoresMap);
+    } catch (error) {
+      console.error('Error fetching job scores:', error);
     }
   };
 
@@ -1230,6 +1275,17 @@ const JobHunterDashboard: React.FC = () => {
       fetchCondensedDescription(job.job_id);
     }, [job.job_id]);
 
+    // Get score for this job
+    const score = jobScores.get(job.job_id);
+
+    // Helper function for score badge color
+    const getScoreBadgeColor = (totalScore: number | null | undefined): { bg: string; text: string } => {
+      if (totalScore === null || totalScore === undefined) return { bg: '#f3f4f6', text: '#6b7280' };
+      if (totalScore >= 70) return { bg: '#d1fae5', text: '#065f46' };
+      if (totalScore >= 40) return { bg: '#fef3c7', text: '#92400e' };
+      return { bg: '#fee2e2', text: '#991b1b' };
+    };
+
     return (
     <div
       className="bg-white border rounded-lg p-4 mb-3 hover:shadow-md transition-shadow cursor-pointer"
@@ -1242,8 +1298,23 @@ const JobHunterDashboard: React.FC = () => {
           <h3 style={{ fontWeight: 600, fontSize: '18px', color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} data-testid="job-title">{job.title}</h3>
           <p style={{ color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} data-testid="job-company">{job.company}</p>
 
-          {/* Header metadata: Industry, Employment Type, Extraction Method */}
+          {/* Header metadata: Score (FIRST), Industry, Employment Type, Extraction Method */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px', fontSize: '12px' }}>
+            {/* Overall Score Badge (FIRST) */}
+            {score && score.total_score !== null && (
+              <span
+                data-testid="header-score"
+                style={{
+                  padding: '2px 8px',
+                  borderRadius: '3px',
+                  fontSize: '11px',
+                  fontWeight: '600',
+                  ...getScoreBadgeColor(score.total_score)
+                }}>
+                ⭐ Score: {score.total_score.toFixed(1)} {score.rank && `(#${score.rank})`}
+              </span>
+            )}
+
             {/* Company Industry */}
             {job.raw_data?.company_industry && (
               <span
