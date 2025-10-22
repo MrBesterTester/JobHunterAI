@@ -1248,8 +1248,16 @@ const JobHunterDashboard: React.FC = () => {
 
   const filterJobs = (status: string): Job[] => {
     const filtered = jobs.filter(job => job.status === status);
-    // Sort by total_score DESC (highest first), nulls last
+    // Sort by: 1) has description (first), 2) total_score DESC (highest first), 3) nulls last
     return filtered.sort((a, b) => {
+      const hasDescA = !!condensedDescriptions[a.job_id];
+      const hasDescB = !!condensedDescriptions[b.job_id];
+
+      // Jobs with descriptions come first
+      if (hasDescA && !hasDescB) return -1;
+      if (!hasDescA && hasDescB) return 1;
+
+      // If both have or both lack descriptions, sort by score
       const scoreA = jobScores.get(a.job_id)?.total_score;
       const scoreB = jobScores.get(b.job_id)?.total_score;
 
@@ -1265,8 +1273,16 @@ const JobHunterDashboard: React.FC = () => {
   const getAllActiveJobs = (): Job[] => {
     // Exclude rejected jobs from "All" tab - show only active workflow jobs
     const filtered = jobs.filter(job => job.status !== 'rejected');
-    // Sort by total_score DESC (highest first), nulls last
+    // Sort by: 1) has description (first), 2) total_score DESC (highest first), 3) nulls last
     return filtered.sort((a, b) => {
+      const hasDescA = !!condensedDescriptions[a.job_id];
+      const hasDescB = !!condensedDescriptions[b.job_id];
+
+      // Jobs with descriptions come first
+      if (hasDescA && !hasDescB) return -1;
+      if (!hasDescA && hasDescB) return 1;
+
+      // If both have or both lack descriptions, sort by score
       const scoreA = jobScores.get(a.job_id)?.total_score;
       const scoreB = jobScores.get(b.job_id)?.total_score;
 
@@ -1894,6 +1910,22 @@ const JobHunterDashboard: React.FC = () => {
         }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
           <strong style={{ color: '#92400e', fontSize: '11px' }}>Condensed Description</strong>
+          {!condensedDescriptions[job.job_id] && (
+            <span
+              data-testid="no-description-warning"
+              title="This job has no condensed description. It will be ranked last in the list."
+              style={{
+                padding: '2px 6px',
+                borderRadius: '3px',
+                fontSize: '10px',
+                fontWeight: '600',
+                backgroundColor: '#fee2e2',
+                color: '#991b1b',
+                border: '1px solid #fecaca'
+              }}>
+              ⚠️ No Description
+            </span>
+          )}
           <button
             onClick={(e) => {
               e.stopPropagation(); // Prevent triggering job card click
