@@ -1899,6 +1899,23 @@ async fn get_ranked_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     Ok(HttpResponse::Ok().json(jobs))
 }
 
+/// GET /api/jobs/{id}/score - Get score for a specific job
+async fn get_job_score_handler(
+    pool: web::Data<PgPool>,
+    job_id: web::Path<Uuid>,
+) -> Result<HttpResponse> {
+    let score = get_job_score(pool.get_ref(), *job_id)
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    match score {
+        Some(s) => Ok(HttpResponse::Ok().json(s)),
+        None => Ok(HttpResponse::NotFound().json(serde_json::json!({
+            "error": "Score not found for this job"
+        })))
+    }
+}
+
 /// GET /api/scoring-criteria - Get current weights
 async fn get_scoring_criteria_handler(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     let criteria = get_scoring_criteria(pool.get_ref())
@@ -5819,8 +5836,9 @@ async fn main() -> std::io::Result<()> {
             // Job routes with {id} parameter
             .route("/api/jobs/{id}", web::get().to(get_job))
             .route("/api/jobs/{id}/status", web::put().to(update_job_status))
-            .route("/api/jobs/status/{status}", web::get().to(get_jobs_by_status))
+            .route("/api/jobs/{id}/score", web::get().to(get_job_score_handler))
             .route("/api/jobs/{id}/calculate-score", web::post().to(calculate_single_job_score))
+            .route("/api/jobs/status/{status}", web::get().to(get_jobs_by_status))
             .route("/api/applications", web::get().to(get_applications))
             .route("/api/applications", web::post().to(create_application))
             .route("/api/criteria", web::get().to(get_criteria))

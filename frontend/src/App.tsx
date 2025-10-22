@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { AlertCircle, CheckCircle, XCircle, Clock, Briefcase, DollarSign, MapPin, Filter, FileText, Mail, Calendar as CalendarIcon, Download, Send, ExternalLink, AlertTriangle, Copy, RefreshCw } from 'lucide-react';
+import { AlertCircle, CheckCircle, XCircle, Clock, Briefcase, DollarSign, MapPin, Filter, FileText, Mail, Calendar as CalendarIcon, Download, Send, ExternalLink, AlertTriangle, Copy, RefreshCw, TrendingUp } from 'lucide-react';
 import ResumeManagement from './ResumeManagement';
 import CalendarTab from './CalendarTab';
 import FollowupsTab from './FollowupsTab';
@@ -7,6 +7,7 @@ import IntakeTab from './IntakeTab';
 import IgnoredTab from './IgnoredTab';
 import FailedTab from './FailedTab';
 import DuplicatesTab from './DuplicatesTab';
+import RankedJobsTab from './RankedJobsTab';
 import EmailComposer from './EmailComposer';
 
 const API_URL = 'http://localhost:8080/api';
@@ -157,7 +158,7 @@ interface CoverLetterTemplate {
   updated_at: string;
 }
 
-type TabType = 'approved' | 'applied' | 'filtered' | 'failed' | 'duplicates' | 'new' | 'all' | 'intake' | 'calendar' | 'follow-ups' | 'ignored';
+type TabType = 'approved' | 'applied' | 'filtered' | 'failed' | 'duplicates' | 'new' | 'all' | 'intake' | 'calendar' | 'follow-ups' | 'ignored' | 'ranked';
 
 // Helper functions moved outside component to prevent recreation on re-renders
 const isHtmlContent = (text: string): boolean => {
@@ -1184,6 +1185,7 @@ const JobHunterDashboard: React.FC = () => {
   // Helper function to get display label for tabs
   const getTabLabel = (tab: TabType): string => {
     if (tab === 'ignored') return 'Non-Job Emails';
+    if (tab === 'ranked') return 'Ranked Jobs';
     return tab.charAt(0).toUpperCase() + tab.slice(1);
   };
 
@@ -2116,7 +2118,7 @@ const JobHunterDashboard: React.FC = () => {
 
       <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 16px', boxSizing: 'border-box', width: '100%' }}>
         <nav style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid #e5e7eb', overflowX: 'auto' }}>
-          {(['ignored', 'intake', 'filtered', 'failed', 'duplicates', 'new', 'approved', 'applied', 'follow-ups', 'calendar', 'all'] as TabType[]).map(tab => (
+          {(['ignored', 'intake', 'filtered', 'failed', 'duplicates', 'new', 'approved', 'applied', 'follow-ups', 'calendar', 'ranked', 'all'] as TabType[]).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -2144,6 +2146,7 @@ const JobHunterDashboard: React.FC = () => {
               {tab === 'new' && <AlertCircle style={{ width: '16px', height: '16px' }} />}
               {tab === 'calendar' && <CalendarIcon style={{ width: '16px', height: '16px' }} />}
               {tab === 'follow-ups' && <Mail style={{ width: '16px', height: '16px' }} />}
+              {tab === 'ranked' && <TrendingUp style={{ width: '16px', height: '16px' }} />}
               {getTabLabel(tab)}
             </button>
           ))}
@@ -2155,6 +2158,8 @@ const JobHunterDashboard: React.FC = () => {
           <CalendarTab />
         ) : activeTab === 'follow-ups' ? (
           <FollowupsTab />
+        ) : activeTab === 'ranked' ? (
+          <RankedJobsTab />
         ) : activeTab === 'ignored' ? (
           <IgnoredTab />
         ) : activeTab === 'failed' ? (
