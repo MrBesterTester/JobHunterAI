@@ -137,6 +137,12 @@ interface GeneratedContent {
   cover_letter: string;
   resume_format: string;
   generated_at: string;
+  // Phase 3.1.3 - LLM metadata fields
+  generation_method?: string;  // "llm" or "template"
+  llm_model?: string;           // "claude-3-5-haiku-20241022"
+  tokens_used?: number;         // Total tokens (input + output)
+  cost_estimate?: number;       // Estimated cost in USD
+  generation_time_ms?: number;  // Generation time in milliseconds
 }
 
 interface ResumeVersion {
@@ -2535,16 +2541,67 @@ const JobHunterDashboard: React.FC = () => {
                 </div>
               </div>
 
-              <div style={{
-                marginTop: '20px',
-                padding: '16px',
-                backgroundColor: '#f3f4f6',
-                borderRadius: '4px',
-                fontSize: '12px',
-                color: '#6b7280'
-              }}>
-                Generated on: {new Date(generatedContent.generated_at).toLocaleString()} |
-                Format: {generatedContent.resume_format}
+              <div
+                data-testid="generation-metadata"
+                style={{
+                  marginTop: '20px',
+                  padding: '16px',
+                  backgroundColor: '#f3f4f6',
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  color: '#6b7280'
+                }}
+              >
+                <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '8px 16px' }}>
+                  <strong>Generated on:</strong>
+                  <span>{new Date(generatedContent.generated_at).toLocaleString()}</span>
+
+                  <strong>Format:</strong>
+                  <span>{generatedContent.resume_format}</span>
+
+                  {generatedContent.generation_method && (
+                    <>
+                      <strong>Generation Method:</strong>
+                      <span>
+                        {generatedContent.generation_method === 'llm' ? '🤖 AI-Powered (LLM)' : '📝 Template-based'}
+                      </span>
+                    </>
+                  )}
+
+                  {generatedContent.llm_model && (
+                    <>
+                      <strong>Model:</strong>
+                      <span data-testid="llm-model">{generatedContent.llm_model}</span>
+                    </>
+                  )}
+
+                  {generatedContent.generation_time_ms !== undefined && (
+                    <>
+                      <strong>Generation Time:</strong>
+                      <span data-testid="generation-time">
+                        {(generatedContent.generation_time_ms / 1000).toFixed(1)}s
+                      </span>
+                    </>
+                  )}
+
+                  {generatedContent.tokens_used !== undefined && (
+                    <>
+                      <strong>Tokens Used:</strong>
+                      <span data-testid="tokens-used">
+                        {generatedContent.tokens_used.toLocaleString()} tokens
+                      </span>
+                    </>
+                  )}
+
+                  {generatedContent.cost_estimate !== undefined && (
+                    <>
+                      <strong>Cost Estimate:</strong>
+                      <span data-testid="cost-estimate" style={{ color: '#10b981', fontWeight: 'bold' }}>
+                        ${generatedContent.cost_estimate.toFixed(4)}
+                      </span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -2552,7 +2609,7 @@ const JobHunterDashboard: React.FC = () => {
               padding: '20px',
               borderTop: '1px solid #e5e7eb',
               display: 'flex',
-              justifyContent: 'flex-end',
+              justifyContent: 'space-between',
               gap: '12px'
             }}>
               <button
@@ -2570,44 +2627,71 @@ const JobHunterDashboard: React.FC = () => {
               >
                 Close
               </button>
-              <button
-                onClick={downloadGeneratedContent}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#3b82f6',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '14px'
-                }}
-              >
-                Download Files
-              </button>
-              {generatedContentJob && (
+              <div style={{ display: 'flex', gap: '12px' }}>
+                {generatedContentJob && (
+                  <button
+                    data-testid="regenerate-button"
+                    onClick={async () => {
+                      await generateContent(generatedContentJob.job_id);
+                    }}
+                    disabled={generatingContent}
+                    style={{
+                      padding: '8px 16px',
+                      backgroundColor: generatingContent ? '#9ca3af' : '#f59e0b',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: generatingContent ? 'not-allowed' : 'pointer',
+                      fontSize: '14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      opacity: generatingContent ? 0.6 : 1
+                    }}
+                  >
+                    <RefreshCw style={{ width: '16px', height: '16px' }} />
+                    {generatingContent ? 'Regenerating...' : 'Regenerate'}
+                  </button>
+                )}
                 <button
-                  onClick={() => {
-                    openEmailComposer(generatedContentJob);
-                    setShowContentGeneration(false);
-                  }}
-                  data-testid="create-draft-button"
+                  onClick={downloadGeneratedContent}
                   style={{
                     padding: '8px 16px',
-                    backgroundColor: '#10b981',
+                    backgroundColor: '#3b82f6',
                     color: 'white',
                     border: 'none',
                     borderRadius: '4px',
                     cursor: 'pointer',
-                    fontSize: '14px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
+                    fontSize: '14px'
                   }}
                 >
-                  <Send style={{ width: '16px', height: '16px' }} />
-                  Create Email Draft
+                  Download Files
                 </button>
-              )}
+                {generatedContentJob && (
+                  <button
+                    onClick={() => {
+                      openEmailComposer(generatedContentJob);
+                      setShowContentGeneration(false);
+                    }}
+                    data-testid="create-draft-button"
+                    style={{
+                      padding: '8px 16px',
+                      backgroundColor: '#10b981',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <Send style={{ width: '16px', height: '16px' }} />
+                    Create Email Draft
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

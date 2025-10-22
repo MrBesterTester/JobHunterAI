@@ -185,6 +185,14 @@ export class JobCardComponent {
   }
 
   /**
+   * Get the Generate button locator (for Phase 3.1.4 tests)
+   */
+  async getGenerateButton(): Promise<Locator> {
+    await expect(this.generateContentButton).toBeVisible();
+    return this.generateContentButton;
+  }
+
+  /**
    * Click on the job card (not on buttons) to open details modal
    */
   async openDetails() {

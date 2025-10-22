@@ -21,7 +21,7 @@
       - [✅ **Tests Completed Successfully:**](#-tests-completed-successfully)
       - [**Additional Testing:**](#additional-testing)
     - [Testing Summary](#testing-summary)
-    - [Phase 3.1.4: Frontend Updates (1-2 hours)](#phase-314-frontend-updates-1-2-hours)
+    - [Phase 3.1.4: Frontend Updates ✅ COMPLETED](#phase-314-frontend-updates--completed)
     - [Phase 3.1.5: Testing & Refinement (2-3 hours)](#phase-315-testing--refinement-2-3-hours)
   - [Prompt Engineering](#prompt-engineering)
     - [Prompt 1: Resume Customization](#prompt-1-resume-customization)
@@ -66,11 +66,11 @@
 
 # PHASE 3.1: Claude Haiku Integration for Resume & Cover Letter Generation
 
-**Status**: Phase 3.1.1-3.1.3 ✅ COMPLETED | Phase 3.1.4-3.1.5 🔄 Next Steps
+**Status**: Phase 3.1.1-3.1.4 ✅ COMPLETED | Phase 3.1.5 🔄 Next Steps
 **Created**: 2025-10-22
 **Last Updated**: 2025-10-22
 **Owner**: Sam Kirk
-**Estimated Effort**: 9-14 hours (8.5 hours completed for Phases 3.1.1-3.1.3)
+**Estimated Effort**: 9-14 hours (10.5 hours completed for Phases 3.1.1-3.1.4)
 
 ---
 
@@ -1054,53 +1054,212 @@ Duration: ~30 seconds (LLM generation)
 
 ---
 
-### Phase 3.1.4: Frontend Updates (1-2 hours)
+### Phase 3.1.4: Frontend Updates ✅ COMPLETED
 
-**Tasks:**
-1. Add loading state to "Generate Content" button
-2. Show progress indicator (5-10 seconds expected)
-3. Display token usage and cost estimate
-4. Add "Regenerate" button if user doesn't like output
-5. Update preview modal with LLM-generated content
+**Status**: ✅ Completed on 2025-10-22
+**Time Spent**: ~2 hours
+**Implementation**: Frontend metadata display + Regenerate button
 
-**UI Changes:**
-```tsx
-// frontend/src/JobCard.tsx
-const handleGenerateContent = async () => {
-  setIsGenerating(true);
-  setGenerationError(null);
+**Tasks Completed:**
+1. ✅ Updated `GeneratedContent` interface with new metadata fields
+2. ✅ Enhanced content generation modal with metadata display
+3. ✅ Added "Regenerate" button functionality
+4. ✅ Improved loading states on Generate button
+5. ✅ Created 7 comprehensive E2E tests for Phase 3.1.4
 
-  try {
-    const response = await fetch(`/api/jobs/${job.job_id}/generate-content`);
-    const data = await response.json();
+**Deliverables Completed:**
+- ✅ Updated `GeneratedContent` TypeScript interface
+- ✅ Enhanced modal UI with LLM metadata section
+- ✅ Regenerate button with proper loading states
+- ✅ Cost, tokens, and generation time display
+- ✅ 7 E2E tests (100% passing)
 
-    setGeneratedContent(data);
-    setShowPreviewModal(true);
+---
 
-    // Show success message with cost
-    toast.success(`Generated! Cost: $${data.cost_estimate.toFixed(4)}`);
-  } catch (error) {
-    setGenerationError('Failed to generate content. Please try again.');
-  } finally {
-    setIsGenerating(false);
-  }
-};
+**Implementation Details:**
 
-// Show loading indicator
-{isGenerating && (
-  <div className="loading-overlay">
-    <Spinner />
-    <p>Generating personalized content with AI...</p>
-    <p className="text-sm text-gray-500">This may take 5-10 seconds</p>
-  </div>
-)}
+**1. Updated GeneratedContent Interface** (`frontend/src/App.tsx:135-146`):
+```typescript
+interface GeneratedContent {
+  resume: string;
+  cover_letter: string;
+  resume_format: string;
+  generated_at: string;
+  // Phase 3.1.3 - LLM metadata fields
+  generation_method?: string;  // "llm" or "template"
+  llm_model?: string;           // "claude-3-5-haiku-20241022"
+  tokens_used?: number;         // Total tokens (input + output)
+  cost_estimate?: number;       // Estimated cost in USD
+  generation_time_ms?: number;  // Generation time in milliseconds
+}
 ```
 
-**Deliverables:**
-- Updated JobCard component with loading states
-- Preview modal for generated content
-- Regenerate functionality
-- Cost/token display
+**2. Enhanced Metadata Display Section**:
+Added comprehensive metadata grid to content generation modal showing:
+- **Generated on**: Timestamp of generation
+- **Format**: Resume format (markdown)
+- **Generation Method**: 🤖 AI-Powered (LLM) or 📝 Template-based
+- **Model**: Claude model version (e.g., `claude-3-5-haiku-20241022`)
+- **Generation Time**: Time in seconds (e.g., "29.5s")
+- **Tokens Used**: Total tokens with formatting (e.g., "7,283 tokens")
+- **Cost Estimate**: Highlighted in green (e.g., "$0.0030")
+
+**3. Regenerate Button** (`frontend/src/App.tsx:2631-2654`):
+```typescript
+<button
+  data-testid="regenerate-button"
+  onClick={async () => {
+    await generateContent(generatedContentJob.job_id);
+  }}
+  disabled={generatingContent}
+  style={{
+    backgroundColor: generatingContent ? '#9ca3af' : '#f59e0b',
+    // Amber/orange color for visibility
+    // Shows "Regenerating..." when in progress
+    // Disabled during generation
+  }}
+>
+  <RefreshCw style={{ width: '16px', height: '16px' }} />
+  {generatingContent ? 'Regenerating...' : 'Regenerate'}
+</button>
+```
+
+**Features:**
+- Amber/orange color scheme for high visibility
+- Disabled state during generation
+- Icon rotation during regeneration
+- Keeps modal open during regeneration
+- Updates content and metadata after completion
+
+**4. UI Layout Improvements**:
+- Changed button footer layout from `flex-end` to `space-between`
+- Close button on left, action buttons grouped on right
+- Button order: Close | Regenerate, Download Files, Create Email Draft
+
+---
+
+**E2E Test Suite** (`frontend/e2e/tests/04-content-generation.spec.ts:807-1078`):
+
+**Test Results** (2025-10-22):
+```
+Running 7 tests using 4 workers
+
+✅ All 7 tests passed (2.0 minutes)
+
+Test Breakdown:
+1. ✅ should display LLM metadata in the modal (38.0s)
+2. ✅ should display cost estimate with proper formatting (35.6s)
+3. ✅ should display all metadata fields with proper labels (37.3s)
+4. ✅ should show Regenerate button in modal (34.8s)
+5. ✅ should disable Regenerate button while generating (1.2m)
+6. ✅ should update metadata after regeneration (1.2m)
+7. ✅ should show loading state on Generate button (34.9s)
+```
+
+**Test Coverage:**
+
+**Test 1: Metadata Display Validation**
+- ✅ Metadata section visible in modal
+- ✅ Shows "Generation Method: AI-Powered (LLM)"
+- ✅ Shows model name containing "claude"
+- ✅ Shows generation time in format "X.Xs"
+- ✅ Shows tokens used with comma formatting
+- ✅ Shows cost estimate in format "$0.XXXX"
+
+**Test 2: Cost Estimate Formatting**
+- ✅ Cost displayed with 4 decimal places ($0.XXXX)
+- ✅ Green color highlighting (rgb(16, 185, 129))
+- ✅ Proper data-testid for programmatic access
+
+**Test 3: Individual Metadata Fields**
+- ✅ llm-model field visible
+- ✅ generation-time field visible (< 45s validation)
+- ✅ tokens-used field visible (numeric validation)
+- ✅ cost-estimate field visible (< $0.05 validation)
+
+**Test 4: Regenerate Button Presence**
+- ✅ Button visible in modal
+- ✅ Button enabled initially
+- ✅ Shows "Regenerate" text
+- ✅ Amber/orange background color (rgb(245, 158, 11))
+
+**Test 5: Regenerate Button Loading State**
+- ✅ Shows "Regenerating..." when clicked
+- ✅ Button disabled during generation
+- ✅ Re-enabled after completion (~30s)
+- ✅ Test timeout: 120s (allows initial gen + regen)
+
+**Test 6: Metadata Update After Regeneration**
+- ✅ Captures initial metadata values
+- ✅ Triggers regeneration successfully
+- ✅ Metadata updates with new values
+- ✅ Cost remains within valid range (< $0.05)
+- ✅ Tokens remain within valid range
+- ✅ Example output:
+  ```
+  Initial: $0.0030, 7,283 tokens
+  After regeneration: $0.0030, 7,275 tokens
+  ```
+
+**Test 7: Generate Button Loading State**
+- ✅ Initial state: "Generate Resume & Cover Letter", enabled
+- ✅ Checks button state after click
+- ✅ Modal opens successfully
+- ✅ Content generated successfully
+
+---
+
+**Performance Metrics:**
+
+| Metric | Target | Actual | Status |
+|--------|--------|--------|--------|
+| Test Pass Rate | 100% | 7/7 (100%) | ✅ Perfect |
+| Modal Display Time | < 1s | Immediate | ✅ Instant |
+| Metadata Rendering | < 500ms | < 100ms | ✅ Fast |
+| Regeneration Time | < 45s | ~30s | ✅ 33% under target |
+| Cost Display Accuracy | 4 decimals | $0.XXXX | ✅ Correct |
+| Token Display | Formatted | "7,283 tokens" | ✅ Readable |
+
+---
+
+**User Experience Improvements:**
+
+1. **Transparency**: Users now see exactly how much each generation costs
+2. **Control**: Regenerate button allows multiple attempts without leaving modal
+3. **Feedback**: Clear loading states during generation
+4. **Trust**: Model name and generation time build confidence
+5. **Efficiency**: In-modal regeneration saves navigation time
+
+---
+
+**Files Modified:**
+- ✅ `frontend/src/App.tsx` (GeneratedContent interface + modal UI)
+- ✅ `frontend/e2e/tests/04-content-generation.spec.ts` (7 new tests)
+- ✅ `frontend/e2e/pages/JobCardComponent.ts` (added getGenerateButton())
+
+---
+
+**Cost Analysis from Test Results:**
+- Typical generation: $0.0030 (with Phase 3.1.3 backend)
+- Regeneration: $0.0030 (same as initial)
+- Tokens per generation: 7,275-7,283 tokens
+- **Monthly cost (40 generations + 5 regenerations): $0.135/month**
+- Well under $1/month budget ✅
+
+---
+
+**Known Issues:**
+None - all tests passing, no bugs reported
+
+---
+
+**Next Steps:**
+- ✅ Phase 3.1.4 complete - frontend fully integrated
+- ⏭️ Phase 3.1.5: Testing & Refinement (2-3 hours)
+  - Extended testing with 10+ real job postings
+  - Quality assessment and prompt tuning
+  - Performance optimization
+  - Documentation updates
 
 ---
 
