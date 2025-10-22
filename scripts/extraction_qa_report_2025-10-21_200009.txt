@@ -1,0 +1,398 @@
+================================================================================
+EXTRACTION QUALITY ASSURANCE TEST REPORT
+Test Date: 2025-10-21 20:05:17
+================================================================================
+
+BACKGROUND:
+  Testing impact of HTML preprocessing change:
+  Old method: html2text crate (produced bloated output)
+  New method: dom_smoothie (Mozilla Readability algorithm)
+
+SAMPLE SIZE: 30 filtered jobs
+
+AGGREGATE RESULTS:
+  Improved:        0/30 (0.0%)
+  Similar:         30/30 (100.0%)
+  Regressed:       0/30 (0.0%)
+
+QUALITY METRICS (Average):
+  Field Completeness:  47.7% → 47.3% (-0.4%)
+  Description Length:  218 → 216 chars (-0.8%)
+  Tech Stack Size:     3.3 → 3.2 items (-0.2)
+  Confidence Score:    0.74 → 0.74 (+0.00)
+
+OVERALL ASSESSMENT:
+  ✅ PASS - Quality maintained
+
+================================================================================
+PER-JOB ANALYSIS:
+================================================================================
+
+[1/30] ------------------------------------------------------------
+  Job ID: 9adc490e-a5c5-453d-81a9-366e2f7b7182
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 225 → 183 chars (-18.7%)
+  Completeness: 25.0% → 20.5% (-4.5%)
+  Tech Stack: 0 → 0 items (+0)
+  Confidence: 0.40 → 0.40 (+0.00)
+  Changed Fields: 1
+    - description: 'Advanced fission energy company developing clean energy technology and working on a combined license application for an advanced nuclear power plant. Currently in regulatory review with the U.S. Nuclear Regulatory Commission.' → 'Clean energy company developing advanced fission technology. Submitted first combined license application for an advanced fission plant and working with Nuclear Regulatory Commission.'
+
+[2/30] Associate Test Engineer
+  Job ID: 4483853b-ddb4-4ae7-97e2-6094d71d7222
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 219 → 219 chars (+0.0%)
+  Completeness: 59.1% → 59.1% (+0.0%)
+  Tech Stack: 0 → 0 items (+0)
+  Confidence: 0.85 → 0.85 (+0.00)
+  Changed Fields: 1
+    - description: 'Supporting manufacturing operations through system-level testing, troubleshooting, calibration, and tool alignment. Requires hands-on experience with digital/analog systems and ability to interpret engineering drawings.' → 'Supporting manufacturing operations through system-level testing, troubleshooting, calibration, and tool alignment. Role requires hands-on experience with digital/analog systems testing and technical report preparation.'
+
+[3/30] Expert Systems Architect
+  Job ID: 94558e12-59db-4751-9556-f36edf9f6260
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 262 → 228 chars (-13.0%)
+  Completeness: 61.4% → 61.4% (+0.0%)
+  Tech Stack: 14 → 14 items (+0)
+  Confidence: 0.85 → 0.85 (+0.00)
+  Changed Fields: 2
+    - location: 'Albany, NY (Hybrid)' → 'Albany, NY'
+    - description: 'Design, configure, and develop complex healthcare systems and applications using .NET, JavaScript, and Oracle technologies. Role involves technical architecture, system integration, and mentoring other programmers while working with protected health information.' → 'Senior technical role designing and developing healthcare systems applications using complex technology stack. Responsible for architecture, development, and mentoring programmers while working with protected health information.'
+
+[4/30] SAP SD/VC Lead
+  Job ID: a8a5fa9f-6db7-4133-8107-6335af58b12a
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 234 → 240 chars (+2.6%)
+  Completeness: 54.5% → 54.5% (+0.0%)
+  Tech Stack: 2 → 2 items (+0)
+  Confidence: 0.85 → 0.85 (+0.00)
+  Changed Fields: 1
+    - description: 'Senior SAP configuration role specializing in Sales & Distribution and Variant Configuration modules. Responsible for designing, implementing, and supporting SAP ECC solutions with focus on system integration and process optimization.' → 'Senior SAP configuration role focused on Sales & Distribution and Variant Configuration modules. Responsible for designing, configuring, and implementing SAP ECC solutions with end-to-end project management and system integration expertise.'
+
+[5/30] Signal Processing Engineer
+  Job ID: 36dd212e-8db3-4ee4-bfca-5690745502f3
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 222 → 211 chars (-5.0%)
+  Completeness: 50.0% → 40.9% (-9.1%)
+  Tech Stack: 0 → 0 items (+0)
+  Confidence: 0.90 → 0.85 (-0.05)
+  Changed Fields: 1
+    - description: 'Technical role focusing on structural dynamics and random vibration analysis. Requires advanced coding skills, equation derivation, and translating theoretical knowledge into practical applications for engineering systems.' → 'Technical role focusing on structural dynamics and random vibration analysis. Involves deriving equations, writing code for technical applications, and translating theoretical knowledge into practical solutions.'
+
+[6/30] PL/SQL QA Functional Tester with Advanced SQL
+  Job ID: e9040999-79fb-4254-94a2-2014633ae1cc
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 214 → 171 chars (-20.1%)
+  Completeness: 45.5% → 50.0% (+4.5%)
+  Tech Stack: 3 → 3 items (+0)
+  Confidence: 0.70 → 0.70 (+0.00)
+  Changed Fields: 1
+    - description: 'QA role focused on PL/SQL and advanced SQL testing. Responsibilities include test case writing, API testing, and working within Agile methodologies. Requires strong technical SQL skills and communication abilities.' → 'QA role focused on SQL testing with expertise in PL/SQL, API testing, and test case development. Requires strong functional testing skills and Agile methodology knowledge.'
+
+[7/30] Lead Hardware Engineer – Microprocessor Architecture & Implementation
+  Job ID: 8f22e36f-7ccc-4896-b495-7149a22673cc
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 231 → 241 chars (+4.3%)
+  Completeness: 56.8% → 54.5% (-2.3%)
+  Tech Stack: 6 → 6 items (+0)
+  Confidence: 0.85 → 0.85 (+0.00)
+  Changed Fields: 1
+    - description: 'Senior hardware engineering role designing microprocessor architecture from concept to silicon. Responsible for FPGA prototyping, digital logic design, and translating architectural models into high-performance RTL implementations.' → 'Senior hardware engineering role focused on microprocessor architecture design from concept to silicon. Responsibilities include FPGA prototyping, digital logic design, and collaborative hardware implementation across full product lifecycle.'
+
+[8/30] Software Engineer
+  Job ID: 380c72f5-1446-4ab7-b102-a0d49725f477
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 146 → 178 chars (+21.9%)
+  Completeness: 34.1% → 29.5% (-4.5%)
+  Tech Stack: 4 → 4 items (+0)
+  Confidence: 0.60 → 0.60 (+0.00)
+  Changed Fields: 1
+    - description: 'C++ software engineering role focusing on Linux development. Responsibilities include building and running C++ applications in Linux environments.' → 'Software engineering role focused on C++ development in Linux environments. Requires expertise in compiling, building, and running C++ applications on Ubuntu or CentOS platforms.'
+
+[9/30] C++ Software Engineer
+  Job ID: 6f023bea-c2e8-40d6-8015-aa952d2c4956
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 215 → 219 chars (+1.9%)
+  Completeness: 38.6% → 47.7% (+9.1%)
+  Tech Stack: 4 → 3 items (-1)
+  Confidence: 0.70 → 0.70 (+0.00)
+  Changed Fields: 1
+    - description: 'Seeking a software engineer with expertise in C/C++ and database programming. Requires strong multi-threaded programming skills and experience in developing high-performance software solutions in Linux environments.' → 'Seeking a software engineer with strong C/C++ and database programming expertise. Role requires deep understanding of multi-threaded programming and developing high-performance software solutions in a Linux environment.'
+
+[10/30] Systems Engineering Support Analyst 3 - General
+  Job ID: 2ecebd9c-c761-490b-bc1f-13f11ffccf04
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 248 → 214 chars (-13.7%)
+  Completeness: 63.6% → 63.6% (+0.0%)
+  Tech Stack: 3 → 0 items (-3)
+  Confidence: 0.85 → 0.85 (+0.00)
+  Changed Fields: 2
+    - company: 'Unspecified Aerospace/Defense Client' → 'Unnamed Aerospace Client'
+    - description: 'Supporting multiple military aircraft platforms including AWACS and B-series bombers. Developing and executing systems integration tests, operating mission systems equipment, and collaborating with engineering teams to validate system requirements.' → 'Support for multiple aerospace platforms including AWACS, B-1, B-2, B-52 weapon systems. Involves systems integration testing, test procedure development, and collaboration with hardware/software engineering teams.'
+
+[11/30] Systems Engineer 3 - System Integration, Verification & Validation
+  Job ID: 87e7bf45-3dfd-4511-8323-03a364ee60fe
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 270 → 289 chars (+7.0%)
+  Completeness: 61.4% → 63.6% (+2.3%)
+  Tech Stack: 0 → 1 items (+1)
+  Confidence: 0.85 → 0.85 (+0.00)
+  Changed Fields: 2
+    - company: 'Unknown Client (Aerospace/Defense Contractor)' → 'Unknown Client (Aerospace/Defense)'
+    - description: 'Interdisciplinary systems engineering role focusing on system lifecycle management, performance requirements integration, and technical optimization across aerospace and defense projects. Involves collaborative system design, verification, and technical problem-solving.' → 'Interdisciplinary engineering role focusing on system lifecycle management, performance optimization, and technical integration across aerospace/defense projects. Responsibilities include system design, verification, requirements management, and cross-functional technical problem-solving.'
+
+[12/30] Cypress Test Automation Analyst with TypeScript with SQL
+  Job ID: fac06414-4ce1-4274-933f-4931025bc6db
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 217 → 192 chars (-11.5%)
+  Completeness: 56.8% → 54.5% (-2.3%)
+  Tech Stack: 3 → 3 items (+0)
+  Confidence: 0.85 → 0.85 (+0.00)
+  Changed Fields: 1
+    - description: 'Test automation role developing frameworks using Cypress and TypeScript with SQL query skills. Focuses on creating innovative automation solutions for enterprise tech stacks, collaborating with cross-functional teams.' → 'Test automation role developing frameworks using Cypress and TypeScript with SQL query capabilities. Focuses on creating and maintaining automated testing solutions for enterprise tech stacks.'
+
+[13/30] Cypress Test Automation Analyst
+  Job ID: f7fdf657-94b9-4db2-9269-7d24f59ed226
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 238 → 204 chars (-14.3%)
+  Completeness: 45.5% → 54.5% (+9.1%)
+  Tech Stack: 5 → 3 items (-2)
+  Confidence: 0.85 → 0.85 (+0.00)
+  Changed Fields: 2
+    - location: 'Charlotte, NC' → 'Charlotte, NC (Remote)'
+    - description: 'Enterprise test automation role developing frameworks using Cypress and TypeScript. Involves creating automated test solutions, writing SQL queries, and collaborating with cross-functional teams to enhance testing efficiency and coverage.' → 'Enterprise test automation role developing frameworks using Cypress and TypeScript. Requires strong SQL skills and ability to collaborate across technical teams to enhance testing efficiency and coverage.'
+
+[14/30] C++ Developer
+  Job ID: e3fb1236-7af2-40d5-853e-859c0c062d99
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 160 → 162 chars (+1.2%)
+  Completeness: 47.7% → 47.7% (+0.0%)
+  Tech Stack: 3 → 3 items (+0)
+  Confidence: 0.75 → 0.75 (+0.00)
+  Changed Fields: 1
+    - description: 'C++ Developer role focused on Linux-based development with database interaction. Strong Linux environment skills required, with PostgreSQL experience preferred.' → 'C++ development role focused on Linux-based environments with database development experience. Strong skills in Linux distributions and PostgreSQL are beneficial.'
+
+[15/30] Cypress Test Automation Analyst with TypeScript with SQL
+  Job ID: 83eef37f-6161-4dea-91fb-0a8b0c37e340
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 220 → 215 chars (-2.3%)
+  Completeness: 54.5% → 52.3% (-2.3%)
+  Tech Stack: 3 → 3 items (+0)
+  Confidence: 0.85 → 0.85 (+0.00)
+  Changed Fields: 1
+    - description: 'Test automation role developing frameworks using Cypress and TypeScript. Requires strong SQL skills and experience with CI/CD pipelines. Collaborate with cross-functional teams to enhance testing efficiency and coverage.' → 'Test automation role focusing on developing automated test frameworks using Cypress and TypeScript. Requires strong analytical skills and ability to create innovative automation solutions for enterprise tech stacks.'
+
+[16/30] Senior Embedded Systems Engineer
+  Job ID: dbad2239-36d7-486d-a968-6cf1e5e76714
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 262 → 228 chars (-13.0%)
+  Completeness: 52.3% → 56.8% (+4.5%)
+  Tech Stack: 3 → 2 items (-1)
+  Confidence: 0.85 → 0.85 (+0.00)
+  Changed Fields: 1
+    - description: 'Complex software engineering role blending hardware and software, focusing on machine learning, real-time system monitoring, and high-performance automation tools. Requires deep expertise in embedded development, control systems, and real-time operating systems.' → 'Software engineering role focusing on hardware and software integration, machine learning, real-time system monitoring, and high-performance automation tools. Requires deep expertise in embedded systems and control technologies.'
+
+[17/30] ** Re-engineering the World with Self-Assembly
+  Job ID: 9afc0626-f33a-4451-8e2d-5886bb7bbb86
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 196 → 204 chars (+4.1%)
+  Completeness: 15.9% → 15.9% (+0.0%)
+  Tech Stack: 0 → 0 items (+0)
+  Confidence: 0.30 → 0.30 (+0.00)
+  Changed Fields: 1
+    - description: 'Academic seminar by UC Berkeley Assistant Professor Grigory Tikhomirov discussing DNA-based nanoscale self-assembly and programmable building blocks for advanced technological and medical devices.' → 'Academic seminar by UC Berkeley Assistant Professor Grigory Tikhomirov exploring nanoscale self-assembly techniques using DNA as a programmable building block for advanced electronic and photonic devices.'
+
+[18/30] Lead Software Engineer
+  Job ID: 6daaf5b1-1a7e-41a7-a617-9951aabf9caa
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 250 → 244 chars (-2.4%)
+  Completeness: 54.5% → 56.8% (+2.3%)
+  Tech Stack: 10 → 8 items (-2)
+  Confidence: 0.85 → 0.85 (+0.00)
+  Changed Fields: 2
+    - company: 'Unknown Company' → 'SoftSages'
+    - description: 'Leading a new team of software engineers supporting data scientists through generative AI initiatives. Responsibilities include building scalable software solutions, mentoring junior developers, and implementing microservices using Python frameworks.' → 'Lead a new team of software engineers supporting data scientists through generative AI initiatives. Responsible for building scalable software solutions, mentoring junior developers, and implementing Python-based microservices and AI workflows.'
+
+[19/30] Hardware Tester
+  Job ID: d6fe41e5-4885-49d6-9d18-80e4279c8f13
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 160 → 238 chars (+48.8%)
+  Completeness: 54.5% → 54.5% (+0.0%)
+  Tech Stack: 1 → 1 items (+0)
+  Confidence: 0.75 → 0.65 (-0.10)
+  Changed Fields: 1
+    - description: 'Hardware testing role in consumer electronics requiring electrical engineering background. Basic Python skills needed for testing consumer electronics hardware.' → 'Hardware testing role for consumer electronics requiring electrical engineering background, basic Python skills, and hands-on testing experience. Position focuses on technical validation and quality assurance in electronics manufacturing.'
+
+[20/30] Design Quality Engineer
+  Job ID: c53957b3-1ce5-4d34-aa39-53bbdd7f3532
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 222 → 242 chars (+9.0%)
+  Completeness: 50.0% → 50.0% (+0.0%)
+  Tech Stack: 0 → 0 items (+0)
+  Confidence: 0.85 → 0.85 (+0.00)
+  Changed Fields: 1
+    - description: 'Medical device design quality role focusing on risk management, documentation review, and regulatory compliance. Responsibilities include DFMEA/PFMEA, design documentation approval, and supporting quality system processes.' → 'Design Quality Engineer responsible for DFMEA and PFMEA risk management in medical device development. Role involves reviewing design documentation, supporting quality system processes, and ensuring compliance with medical device regulations.'
+
+[21/30] Jr. SAP EHS (Environment Health and Safety) Consultant
+  Job ID: dfa34385-36ee-4372-b9d3-9340d48a5fc8
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 194 → 151 chars (-22.2%)
+  Completeness: 50.0% → 36.4% (-13.6%)
+  Tech Stack: 1 → 1 items (+0)
+  Confidence: 0.85 → 0.85 (+0.00)
+  Changed Fields: 1
+    - description: 'Post-production support for business users in SAP S/4 HANA environment. Provides L1/L2 production support with extensive travel requirements. Requires implementation experience with SAP systems.' → 'Post-production support for SAP S/4 HANA business users with implementation experience. Providing L1/L2 production support with weekly travel required.'
+
+[22/30] Senior SDET QA with Telecom Domain
+  Job ID: 708486ac-96b6-4eee-9006-c456eb86b001
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 208 → 206 chars (-1.0%)
+  Completeness: 56.8% → 56.8% (+0.0%)
+  Tech Stack: 9 → 6 items (-3)
+  Confidence: 0.85 → 0.85 (+0.00)
+  Changed Fields: 1
+    - description: 'Senior QA role focusing on software testing across STLC and SDLC methodologies. Requires extensive API automation expertise, programming skills in Java and JavaScript, and strong testing framework experience.' → 'Senior SDET role in telecommunications focused on comprehensive software testing. Requires extensive experience with API testing, automation frameworks, and Agile methodologies across various testing types.'
+
+[23/30] Performance Engineer
+  Job ID: 9485a0a1-481c-4c2f-a369-348e38ed7683
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 274 → 253 chars (-7.7%)
+  Completeness: 52.3% → 45.5% (-6.8%)
+  Tech Stack: 3 → 3 items (+0)
+  Confidence: 0.85 → 0.85 (+0.00)
+  Changed Fields: 2
+    - company: 'Inasolution' → 'Unknown Company'
+    - description: 'Silicon performance engineering role focused on developing performance models, analyzing chip architectures, and creating Python-based automation frameworks. Involves collaboration across design, validation, and manufacturing teams to optimize semiconductor product quality.' → 'Engineering role focused on silicon performance modeling and analysis. Responsibilities include developing performance models, creating Python automation tools, and collaborating with cross-functional teams to optimize chip architecture and reliability.'
+
+[24/30] Google AI Essentials
+  Job ID: 4e8e5c5d-a62f-4828-b550-5b90a3eccf66
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 165 → 204 chars (+23.6%)
+  Completeness: 22.7% → 25.0% (+2.3%)
+  Tech Stack: 0 → 0 items (+0)
+  Confidence: 0.40 → 0.50 (+0.10)
+  Changed Fields: 2
+    - title: 'Google AI Essentials' → 'AI Essentials'
+    - description: 'Online course providing fundamental skills and knowledge about artificial intelligence and machine learning technologies offered by Google through Coursera platform.' → 'Online course covering foundational concepts in artificial intelligence and machine learning through Coursera platform. Designed to provide essential skills for understanding and applying AI technologies.'
+
+[25/30] Senior Node.JS Application Development Engineer
+  Job ID: e3345f83-c595-492e-9f14-28cd050e5b44
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 231 → 215 chars (-6.9%)
+  Completeness: 52.3% → 50.0% (-2.3%)
+  Tech Stack: 7 → 11 items (+4)
+  Confidence: 0.85 → 0.85 (+0.00)
+  Changed Fields: 1
+    - description: 'Enterprise application development using serverless/microservice architectures on AWS. Responsibilities include designing, developing, and deploying complex applications with Node.js while collaborating with cross-functional teams.' → 'Enterprise application development using serverless/microservice architectures on AWS. Requires Node.js expertise and collaboration with cross-functional teams to deliver scalable solutions in healthcare technology.'
+
+[26/30] Software Design Engineer- Cab-Body-Chassis Function
+  Job ID: 6eaefb8a-577f-4e2f-afcd-d5e5266ac896
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 230 → 232 chars (+0.9%)
+  Completeness: 59.1% → 56.8% (-2.3%)
+  Tech Stack: 4 → 6 items (+2)
+  Confidence: 0.90 → 0.90 (+0.00)
+  Changed Fields: 2
+    - title: 'Software Design Engineer- Cab-Body-Chassis Function' → 'Software Design Engineer - Cab-Body-Chassis Function'
+    - description: 'Embedded software engineer developing controls and software for Cab-Body-Chassis functions. Responsible for software requirements, design, coding, testing, and integration of vehicle control systems with focus on ECU applications.' → 'Developing embedded software for Cab-Body-Chassis functions in automotive control systems. Responsible for software requirements, design, coding, testing, and integration of ECU applications with a focus on vehicle control software.'
+
+[27/30] Principal Embedded Software Engineer
+  Job ID: 2bcac89c-2457-4ed7-ba5a-4ec7db8c0d18
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 261 → 224 chars (-14.2%)
+  Completeness: 54.5% → 56.8% (+2.3%)
+  Tech Stack: 9 → 9 items (+0)
+  Confidence: 0.85 → 0.85 (+0.00)
+  Changed Fields: 1
+    - description: 'Hands-on technical leadership role developing embedded systems for real-time target detection and tracking. Responsible for designing high-performance software, optimizing data processing pipelines, and mentoring junior engineers in a collaborative environment.' → 'Technical leadership role developing high-performance embedded systems for real-time target detection and tracking. Requires advanced Linux, C++, and Python skills with expertise in sensor interfaces and system optimization.'
+
+[28/30] View in browser <[[https://go.st.com/v/ODU2LVBWUC03MTUAAAGdGzeFi_xZkbFaZslOsM...
+  Job ID: 26a0edd9-67e3-418e-96ef-5801d8aed52a
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 175 → 211 chars (+20.6%)
+  Completeness: 20.5% → 25.0% (+4.5%)
+  Tech Stack: 0 → 0 items (+0)
+  Confidence: 0.30 → 0.30 (+0.00)
+  Changed Fields: 2
+    - title: 'View in browser <[[https://go.st.com/v/ODU2LVBWUC03MTUAAAGdGzeFi_xZkbFaZslOsM...' → 'Industry Event - Embedded World North America 2025'
+    - description: 'Event invitation for Embedded World North America 2025, featuring interactive demos of embedded systems, processing, sensing, edge AI, connectivity, and security technologies.' → 'Industry event showcasing embedded systems technologies, featuring 18 live demos on processing, sensing, edge AI, connectivity, and security. Opportunity to connect with global developers and technology experts.'
+
+[29/30] Board Level Reliability Test Technician
+  Job ID: e322aa1f-aad6-4b5b-a1c5-5028d6e8431d
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 209 → 231 chars (+10.5%)
+  Completeness: 56.8% → 56.8% (+0.0%)
+  Tech Stack: 3 → 3 items (+0)
+  Confidence: 0.85 → 0.85 (+0.00)
+  Changed Fields: 1
+    - description: 'Conducting package/PCBA/server level testing in a reliability lab and manufacturing environment. Performing functional tests, failure analysis, and electronic component rework using specialized test equipment.' → 'Conducting package/PCBA/server level testing in a manufacturing environment. Responsible for operating reliability test equipment, performing functional tests, and analyzing test results in a semiconductor/electronics testing role.'
+
+[30/30] Oklo is conducting full-scale fuel-assembly flow testing at Argonne National ...
+  Job ID: 34ba30fb-cf90-4162-b9d6-a9f2c3f3443d
+  Assessment: SIMILAR
+  Extraction: llm → llm
+
+  Description: 177 → 232 chars (+31.1%)
+  Completeness: 25.0% → 22.7% (-2.3%)
+  Tech Stack: 0 → 0 items (+0)
+  Confidence: 0.30 → 0.40 (+0.10)
+  Changed Fields: 1
+    - description: 'Company newsletter discussing advanced nuclear fission energy developments, including a combined license submission and upcoming webinar about their Aurora clean energy project.' → 'Advanced nuclear fission energy company focused on developing innovative clean energy solutions. Submitted first combined license application for an advanced fission plant and working closely with U.S. Nuclear Regulatory Commission.'

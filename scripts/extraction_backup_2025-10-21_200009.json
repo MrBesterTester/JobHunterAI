@@ -1,0 +1,2189 @@
+[
+  {
+    "job_id": "9adc490e-a5c5-453d-81a9-366e2f7b7182",
+    "title": "------------------------------------------------------------",
+    "company": "Oklo",
+    "location": "Sunnyvale, CA",
+    "salary": null,
+    "description": "Advanced fission energy company developing clean energy technology and working on a combined license application for an advanced nuclear power plant. Currently in regulatory review with the U.S. Nuclear Regulatory Commission.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": null,
+      "title": null,
+      "commute": {
+        "commute_perks": null,
+        "company_shuttle": null,
+        "office_location": "230 East Caribbean Drive, Sunnyvale, CA 94089",
+        "schedule_flexibility": null
+      },
+      "company": "Oklo",
+      "location": "Sunnyvale, CA",
+      "confidence": 0.4,
+      "employment": {
+        "benefits": null,
+        "agency_name": null,
+        "relationship": null,
+        "tax_structure": null,
+        "employment_type": null,
+        "contract_duration": null,
+        "employment_type_source": null
+      },
+      "job_domain": {
+        "seniority": null,
+        "tech_stack": null,
+        "testing_focus": null,
+        "testing_level": null,
+        "test_equipment": null,
+        "automation_focus": null,
+        "primary_category": "other",
+        "ai_tools_mentioned": null,
+        "generative_ai_usage": null,
+        "test_automation_tools": null
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "Advanced fission energy company developing clean energy technology and working on a combined license application for an advanced nuclear power plant. Currently in regulatory review with the U.S. Nuclear Regulatory Commission.",
+      "remote_work": {
+        "policy": "fully_remote",
+        "days_onsite_per_week": null,
+        "timezone_requirement": null,
+        "remote_eligible_states": null
+      },
+      "compensation": {
+        "type": null,
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": null,
+        "salary_min": null,
+        "hourly_rate": null,
+        "equity_offered": null,
+        "bonus_structure": null
+      },
+      "company_industry": "Energy / Nuclear Technology",
+      "extraction_method": "llm",
+      "company_industry_source": "inferred"
+    },
+    "created_at": "2025-10-20T14:47:16.285150-07:00",
+    "updated_at": "2025-10-21T19:54:53.411504-07:00"
+  },
+  {
+    "job_id": "4483853b-ddb4-4ae7-97e2-6094d71d7222",
+    "title": "Associate Test Engineer",
+    "company": "Unknown Company",
+    "location": "Milpitas, CA",
+    "salary": 62400,
+    "description": "Supporting manufacturing operations through system-level testing, troubleshooting, calibration, and tool alignment. Requires hands-on experience with digital/analog systems and ability to interpret engineering drawings.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": null,
+      "title": "Associate Test Engineer",
+      "commute": {
+        "commute_perks": null,
+        "company_shuttle": null,
+        "office_location": "Milpitas, CA",
+        "schedule_flexibility": "Shift 1: 7:00 AM \u2013 3:30 PM"
+      },
+      "company": "Unknown Company",
+      "location": "Milpitas, CA",
+      "confidence": 0.85,
+      "employment": {
+        "benefits": null,
+        "agency_name": null,
+        "relationship": "staffing_agency",
+        "tax_structure": "W2",
+        "employment_type": "contract",
+        "contract_duration": "12 months+",
+        "employment_type_source": "extracted"
+      },
+      "job_domain": {
+        "seniority": "junior",
+        "tech_stack": null,
+        "testing_focus": true,
+        "testing_level": "system",
+        "test_equipment": "digital/analog testing instruments, calibration tools",
+        "automation_focus": false,
+        "primary_category": "qa_testing",
+        "ai_tools_mentioned": null,
+        "generative_ai_usage": null,
+        "test_automation_tools": null
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "Supporting manufacturing operations through system-level testing, troubleshooting, calibration, and tool alignment. Requires hands-on experience with digital/analog systems and ability to interpret engineering drawings.",
+      "remote_work": {
+        "policy": "onsite",
+        "days_onsite_per_week": null,
+        "timezone_requirement": null,
+        "remote_eligible_states": null
+      },
+      "compensation": {
+        "type": "hourly",
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": null,
+        "salary_min": null,
+        "hourly_rate": 33.0,
+        "equity_offered": null,
+        "bonus_structure": "Overtime (OT) available"
+      },
+      "company_industry": "Manufacturing",
+      "extraction_method": "llm",
+      "company_industry_source": "inferred"
+    },
+    "created_at": "2025-10-20T14:47:05.148792-07:00",
+    "updated_at": "2025-10-21T19:55:04.077145-07:00"
+  },
+  {
+    "job_id": "94558e12-59db-4751-9556-f36edf9f6260",
+    "title": "Expert Systems Architect",
+    "company": "OMH Systems",
+    "location": "Albany, NY (Hybrid)",
+    "salary": null,
+    "description": "Design, configure, and develop complex healthcare systems and applications using .NET, JavaScript, and Oracle technologies. Role involves technical architecture, system integration, and mentoring other programmers while working with protected health information.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": null,
+      "title": "Expert Systems Architect",
+      "commute": {
+        "commute_perks": null,
+        "company_shuttle": null,
+        "office_location": "Albany, NY",
+        "schedule_flexibility": null
+      },
+      "company": "OMH Systems",
+      "location": "Albany, NY (Hybrid)",
+      "confidence": 0.85,
+      "employment": {
+        "benefits": null,
+        "agency_name": "SoftSages Technology",
+        "relationship": "contract",
+        "tax_structure": "W2",
+        "employment_type": "contract",
+        "contract_duration": "30 months",
+        "employment_type_source": "extracted"
+      },
+      "job_domain": {
+        "seniority": "principal",
+        "tech_stack": [
+          "Microsoft Visual Studio",
+          ".NET",
+          "MVC Architecture",
+          "JavaScript",
+          "Ajax",
+          "HTML",
+          "XML",
+          "Web APIs",
+          "WCF",
+          "PL/SQL",
+          "Oracle",
+          "Azure",
+          "AWS",
+          "Google Cloud"
+        ],
+        "testing_focus": false,
+        "testing_level": null,
+        "test_equipment": null,
+        "automation_focus": true,
+        "primary_category": "software_engineering",
+        "ai_tools_mentioned": [
+          "Python",
+          "Chatbot"
+        ],
+        "generative_ai_usage": true,
+        "test_automation_tools": [
+          "Terraform",
+          "Ansible"
+        ]
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "Design, configure, and develop complex healthcare systems and applications using .NET, JavaScript, and Oracle technologies. Role involves technical architecture, system integration, and mentoring other programmers while working with protected health information.",
+      "remote_work": {
+        "policy": "hybrid",
+        "days_onsite_per_week": 2.5,
+        "timezone_requirement": null,
+        "remote_eligible_states": null
+      },
+      "compensation": {
+        "type": "annual_salary",
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": null,
+        "salary_min": null,
+        "hourly_rate": null,
+        "equity_offered": null,
+        "bonus_structure": null
+      },
+      "company_industry": "Healthcare",
+      "extraction_method": "llm",
+      "company_industry_source": "inferred"
+    },
+    "created_at": "2025-10-20T14:46:54.450017-07:00",
+    "updated_at": "2025-10-21T19:55:15.366339-07:00"
+  },
+  {
+    "job_id": "a8a5fa9f-6db7-4133-8107-6335af58b12a",
+    "title": "SAP SD/VC Lead",
+    "company": "Unknown Company",
+    "location": "Milpitas, CA (Hybrid)",
+    "salary": null,
+    "description": "Senior SAP configuration role specializing in Sales & Distribution and Variant Configuration modules. Responsible for designing, implementing, and supporting SAP ECC solutions with focus on system integration and process optimization.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": null,
+      "title": "SAP SD/VC Lead",
+      "commute": {
+        "commute_perks": null,
+        "company_shuttle": null,
+        "office_location": "Milpitas, CA",
+        "schedule_flexibility": null
+      },
+      "company": "Unknown Company",
+      "location": "Milpitas, CA (Hybrid)",
+      "confidence": 0.85,
+      "employment": {
+        "benefits": null,
+        "agency_name": "DataEdge Consulting",
+        "relationship": "staffing_agency",
+        "tax_structure": "W2",
+        "employment_type": "contract",
+        "contract_duration": "6 months",
+        "employment_type_source": "extracted"
+      },
+      "job_domain": {
+        "seniority": "senior",
+        "tech_stack": [
+          "SAP ECC",
+          "SAP S/4 HANA"
+        ],
+        "testing_focus": false,
+        "testing_level": null,
+        "test_equipment": null,
+        "automation_focus": false,
+        "primary_category": "software_engineering",
+        "ai_tools_mentioned": null,
+        "generative_ai_usage": null,
+        "test_automation_tools": null
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "Senior SAP configuration role specializing in Sales & Distribution and Variant Configuration modules. Responsible for designing, implementing, and supporting SAP ECC solutions with focus on system integration and process optimization.",
+      "remote_work": {
+        "policy": "hybrid",
+        "days_onsite_per_week": 3.0,
+        "timezone_requirement": null,
+        "remote_eligible_states": null
+      },
+      "compensation": {
+        "type": "annual_salary",
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": null,
+        "salary_min": null,
+        "hourly_rate": null,
+        "equity_offered": null,
+        "bonus_structure": null
+      },
+      "company_industry": "Information Technology",
+      "extraction_method": "llm",
+      "company_industry_source": "inferred"
+    },
+    "created_at": "2025-10-20T14:46:46.266193-07:00",
+    "updated_at": "2025-10-21T19:55:25.804706-07:00"
+  },
+  {
+    "job_id": "36dd212e-8db3-4ee4-bfca-5690745502f3",
+    "title": "Signal Processing Engineer",
+    "company": "Canvendor Inc.",
+    "location": "Champaign, IL",
+    "salary": null,
+    "description": "Technical role focusing on structural dynamics and random vibration analysis. Requires advanced coding skills, equation derivation, and translating theoretical knowledge into practical applications for engineering systems.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": null,
+      "title": "Signal Processing Engineer",
+      "commute": {
+        "commute_perks": null,
+        "company_shuttle": null,
+        "office_location": "Champaign, IL",
+        "schedule_flexibility": null
+      },
+      "company": "Canvendor Inc.",
+      "location": "Champaign, IL",
+      "confidence": 0.9,
+      "employment": {
+        "benefits": null,
+        "agency_name": null,
+        "relationship": "direct_hire",
+        "tax_structure": "W2",
+        "employment_type": "full_time",
+        "contract_duration": "12+ months",
+        "employment_type_source": "inferred"
+      },
+      "job_domain": {
+        "seniority": "mid",
+        "tech_stack": null,
+        "testing_focus": false,
+        "testing_level": null,
+        "test_equipment": "vibration testing equipment, system identification tools",
+        "automation_focus": false,
+        "primary_category": "firmware_engineering",
+        "ai_tools_mentioned": null,
+        "generative_ai_usage": null,
+        "test_automation_tools": null
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "Technical role focusing on structural dynamics and random vibration analysis. Requires advanced coding skills, equation derivation, and translating theoretical knowledge into practical applications for engineering systems.",
+      "remote_work": {
+        "policy": "onsite",
+        "days_onsite_per_week": null,
+        "timezone_requirement": null,
+        "remote_eligible_states": null
+      },
+      "compensation": {
+        "type": "annual_salary",
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": null,
+        "salary_min": null,
+        "hourly_rate": null,
+        "equity_offered": null,
+        "bonus_structure": null
+      },
+      "company_industry": "Engineering/Research",
+      "extraction_method": "llm",
+      "company_industry_source": "inferred"
+    },
+    "created_at": "2025-10-20T14:46:45.831462-07:00",
+    "updated_at": "2025-10-21T19:55:35.853805-07:00"
+  },
+  {
+    "job_id": "e9040999-79fb-4254-94a2-2014633ae1cc",
+    "title": "PL/SQL QA Functional Tester with Advanced SQL",
+    "company": "Unknown Company",
+    "location": "Charlotte, NC (Hybrid)",
+    "salary": null,
+    "description": "QA role focused on PL/SQL and advanced SQL testing. Responsibilities include test case writing, API testing, and working within Agile methodologies. Requires strong technical SQL skills and communication abilities.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": null,
+      "title": "PL/SQL QA Functional Tester with Advanced SQL",
+      "commute": {
+        "commute_perks": null,
+        "company_shuttle": null,
+        "office_location": "Charlotte, NC",
+        "schedule_flexibility": null
+      },
+      "company": "Unknown Company",
+      "location": "Charlotte, NC (Hybrid)",
+      "confidence": 0.7,
+      "employment": {
+        "benefits": null,
+        "agency_name": "Insoursys",
+        "relationship": "staffing_agency",
+        "tax_structure": "unknown",
+        "employment_type": "contract",
+        "contract_duration": "contract",
+        "employment_type_source": "extracted"
+      },
+      "job_domain": {
+        "seniority": "mid",
+        "tech_stack": [
+          "PL/SQL",
+          "SQL",
+          "Agile"
+        ],
+        "testing_focus": true,
+        "testing_level": null,
+        "test_equipment": null,
+        "automation_focus": null,
+        "primary_category": "qa_testing",
+        "ai_tools_mentioned": null,
+        "generative_ai_usage": null,
+        "test_automation_tools": [
+          "PL/SQL",
+          "SQL",
+          "APIs"
+        ]
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "QA role focused on PL/SQL and advanced SQL testing. Responsibilities include test case writing, API testing, and working within Agile methodologies. Requires strong technical SQL skills and communication abilities.",
+      "remote_work": {
+        "policy": "hybrid",
+        "days_onsite_per_week": null,
+        "timezone_requirement": null,
+        "remote_eligible_states": null
+      },
+      "compensation": {
+        "type": null,
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": null,
+        "salary_min": null,
+        "hourly_rate": null,
+        "equity_offered": null,
+        "bonus_structure": null
+      },
+      "company_industry": null,
+      "extraction_method": "llm",
+      "company_industry_source": null
+    },
+    "created_at": "2025-10-20T11:29:47.202289-07:00",
+    "updated_at": "2025-10-21T19:55:45.970109-07:00"
+  },
+  {
+    "job_id": "8f22e36f-7ccc-4896-b495-7149a22673cc",
+    "title": "Lead Hardware Engineer \u2013 Microprocessor Architecture & Implementation",
+    "company": "Unknown Company",
+    "location": "Remote",
+    "salary": null,
+    "description": "Senior hardware engineering role designing microprocessor architecture from concept to silicon. Responsible for FPGA prototyping, digital logic design, and translating architectural models into high-performance RTL implementations.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": null,
+      "title": "Lead Hardware Engineer \u2013 Microprocessor Architecture & Implementation",
+      "commute": {
+        "commute_perks": null,
+        "company_shuttle": null,
+        "office_location": null,
+        "schedule_flexibility": null
+      },
+      "company": "Unknown Company",
+      "location": "Remote",
+      "confidence": 0.85,
+      "employment": {
+        "benefits": null,
+        "agency_name": "Saxon Global",
+        "relationship": "staffing_agency",
+        "tax_structure": "W2",
+        "employment_type": "contract",
+        "contract_duration": "12 months",
+        "employment_type_source": "extracted"
+      },
+      "job_domain": {
+        "seniority": "senior",
+        "tech_stack": [
+          "Verilog",
+          "VHDL",
+          "Python",
+          "Perl",
+          "C",
+          "Assembly"
+        ],
+        "testing_focus": false,
+        "testing_level": "board-level",
+        "test_equipment": "FPGA (Xilinx, Intel)",
+        "automation_focus": true,
+        "primary_category": "firmware_engineering",
+        "ai_tools_mentioned": null,
+        "generative_ai_usage": null,
+        "test_automation_tools": [
+          "Python",
+          "Perl"
+        ]
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "Senior hardware engineering role designing microprocessor architecture from concept to silicon. Responsible for FPGA prototyping, digital logic design, and translating architectural models into high-performance RTL implementations.",
+      "remote_work": {
+        "policy": "fully_remote",
+        "days_onsite_per_week": null,
+        "timezone_requirement": null,
+        "remote_eligible_states": null
+      },
+      "compensation": {
+        "type": "annual_salary",
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": null,
+        "salary_min": null,
+        "hourly_rate": null,
+        "equity_offered": null,
+        "bonus_structure": null
+      },
+      "company_industry": "Semiconductor/Hardware",
+      "extraction_method": "llm",
+      "company_industry_source": "inferred"
+    },
+    "created_at": "2025-10-20T11:29:43.085179-07:00",
+    "updated_at": "2025-10-21T19:55:56.755423-07:00"
+  },
+  {
+    "job_id": "380c72f5-1446-4ab7-b102-a0d49725f477",
+    "title": "Software Engineer",
+    "company": "Inasolution",
+    "location": "San Jose, CA",
+    "salary": null,
+    "description": "C++ software engineering role focusing on Linux development. Responsibilities include building and running C++ applications in Linux environments.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": null,
+      "title": "Software Engineer",
+      "commute": {
+        "commute_perks": null,
+        "company_shuttle": null,
+        "office_location": "San Jose, CA",
+        "schedule_flexibility": null
+      },
+      "company": "Inasolution",
+      "location": "San Jose, CA",
+      "confidence": 0.6,
+      "employment": {
+        "benefits": null,
+        "agency_name": null,
+        "relationship": "direct_hire",
+        "tax_structure": "W2",
+        "employment_type": null,
+        "contract_duration": null,
+        "employment_type_source": null
+      },
+      "job_domain": {
+        "seniority": "mid",
+        "tech_stack": [
+          "C++",
+          "Linux",
+          "Ubuntu",
+          "CentOS"
+        ],
+        "testing_focus": false,
+        "testing_level": null,
+        "test_equipment": null,
+        "automation_focus": null,
+        "primary_category": "software_engineering",
+        "ai_tools_mentioned": null,
+        "generative_ai_usage": null,
+        "test_automation_tools": null
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "C++ software engineering role focusing on Linux development. Responsibilities include building and running C++ applications in Linux environments.",
+      "remote_work": {
+        "policy": null,
+        "days_onsite_per_week": null,
+        "timezone_requirement": null,
+        "remote_eligible_states": null
+      },
+      "compensation": {
+        "type": "annual_salary",
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": null,
+        "salary_min": null,
+        "hourly_rate": null,
+        "equity_offered": null,
+        "bonus_structure": null
+      },
+      "company_industry": null,
+      "extraction_method": "llm",
+      "company_industry_source": null
+    },
+    "created_at": "2025-10-19T18:31:14.506828-07:00",
+    "updated_at": "2025-10-21T19:56:06.027732-07:00"
+  },
+  {
+    "job_id": "6f023bea-c2e8-40d6-8015-aa952d2c4956",
+    "title": "C++ Software Engineer",
+    "company": "Unknown Company",
+    "location": "Milpitas, CA",
+    "salary": null,
+    "description": "Seeking a software engineer with expertise in C/C++ and database programming. Requires strong multi-threaded programming skills and experience in developing high-performance software solutions in Linux environments.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": null,
+      "title": "C++ Software Engineer",
+      "commute": {
+        "commute_perks": null,
+        "company_shuttle": null,
+        "office_location": "Milpitas, CA",
+        "schedule_flexibility": null
+      },
+      "company": "Unknown Company",
+      "location": "Milpitas, CA",
+      "confidence": 0.7,
+      "employment": {
+        "benefits": null,
+        "agency_name": null,
+        "relationship": "staffing_agency",
+        "tax_structure": "W2",
+        "employment_type": "contract",
+        "contract_duration": "12 months+",
+        "employment_type_source": "inferred"
+      },
+      "job_domain": {
+        "seniority": "mid",
+        "tech_stack": [
+          "C++",
+          "C",
+          "Linux",
+          "Database"
+        ],
+        "testing_focus": null,
+        "testing_level": null,
+        "test_equipment": null,
+        "automation_focus": null,
+        "primary_category": "software_engineering",
+        "ai_tools_mentioned": null,
+        "generative_ai_usage": null,
+        "test_automation_tools": null
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "Seeking a software engineer with expertise in C/C++ and database programming. Requires strong multi-threaded programming skills and experience in developing high-performance software solutions in Linux environments.",
+      "remote_work": {
+        "policy": "onsite",
+        "days_onsite_per_week": null,
+        "timezone_requirement": null,
+        "remote_eligible_states": null
+      },
+      "compensation": {
+        "type": null,
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": null,
+        "salary_min": null,
+        "hourly_rate": null,
+        "equity_offered": null,
+        "bonus_structure": null
+      },
+      "company_industry": null,
+      "extraction_method": "llm",
+      "company_industry_source": null
+    },
+    "created_at": "2025-10-19T18:31:11.887402-07:00",
+    "updated_at": "2025-10-21T19:56:16.242491-07:00"
+  },
+  {
+    "job_id": "2ecebd9c-c761-490b-bc1f-13f11ffccf04",
+    "title": "Systems Engineering Support Analyst 3 - General",
+    "company": "Unspecified Aerospace/Defense Client",
+    "location": "Oklahoma City, OK",
+    "salary": 140121,
+    "description": "Supporting multiple military aircraft platforms including AWACS and B-series bombers. Developing and executing systems integration tests, operating mission systems equipment, and collaborating with engineering teams to validate system requirements.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": null,
+      "title": "Systems Engineering Support Analyst 3 - General",
+      "commute": {
+        "commute_perks": "Per Diem available for residence 50+ miles from job site",
+        "company_shuttle": null,
+        "office_location": "Oklahoma City, OK",
+        "schedule_flexibility": null
+      },
+      "company": "Unspecified Aerospace/Defense Client",
+      "location": "Oklahoma City, OK",
+      "confidence": 0.85,
+      "employment": {
+        "benefits": "Medical, dental, and vision (Cigna), 401(k)",
+        "agency_name": "The Structures Company",
+        "relationship": "staffing_agency",
+        "tax_structure": "1099",
+        "employment_type": "contract",
+        "contract_duration": "6 months",
+        "employment_type_source": "extracted"
+      },
+      "job_domain": {
+        "seniority": "senior",
+        "tech_stack": [
+          "AWACS",
+          "Link-16",
+          "Airborne Mission Systems"
+        ],
+        "testing_focus": true,
+        "testing_level": "system",
+        "test_equipment": null,
+        "automation_focus": false,
+        "primary_category": "qa_testing",
+        "ai_tools_mentioned": null,
+        "generative_ai_usage": null,
+        "test_automation_tools": null
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "Supporting multiple military aircraft platforms including AWACS and B-series bombers. Developing and executing systems integration tests, operating mission systems equipment, and collaborating with engineering teams to validate system requirements.",
+      "remote_work": {
+        "policy": "onsite",
+        "days_onsite_per_week": null,
+        "timezone_requirement": null,
+        "remote_eligible_states": null
+      },
+      "compensation": {
+        "type": "hourly",
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": null,
+        "salary_min": null,
+        "hourly_rate": 67.31,
+        "equity_offered": null,
+        "bonus_structure": "Potential bonus available"
+      },
+      "company_industry": "Aerospace/Defense",
+      "extraction_method": "llm",
+      "company_industry_source": "extracted"
+    },
+    "created_at": "2025-10-19T18:30:50.427034-07:00",
+    "updated_at": "2025-10-21T19:56:27.765350-07:00"
+  },
+  {
+    "job_id": "87e7bf45-3dfd-4511-8323-03a364ee60fe",
+    "title": "Systems Engineer 3 - System Integration, Verification & Validation",
+    "company": "Unknown Client (Aerospace/Defense Contractor)",
+    "location": "Oklahoma City, OK",
+    "salary": 149203,
+    "description": "Interdisciplinary systems engineering role focusing on system lifecycle management, performance requirements integration, and technical optimization across aerospace and defense projects. Involves collaborative system design, verification, and technical problem-solving.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": null,
+      "title": "Systems Engineer 3 - System Integration, Verification & Validation",
+      "commute": {
+        "commute_perks": "Per Diem available for residence 50+ miles from job site",
+        "company_shuttle": null,
+        "office_location": "Oklahoma City, OK",
+        "schedule_flexibility": null
+      },
+      "company": "Unknown Client (Aerospace/Defense Contractor)",
+      "location": "Oklahoma City, OK",
+      "confidence": 0.85,
+      "employment": {
+        "benefits": "Medical, dental, vision (Cigna), 401(k)",
+        "agency_name": "The Structures Company",
+        "relationship": "staffing_agency",
+        "tax_structure": "W2",
+        "employment_type": "contract",
+        "contract_duration": "6 months with potential extension",
+        "employment_type_source": "extracted"
+      },
+      "job_domain": {
+        "seniority": "senior",
+        "tech_stack": null,
+        "testing_focus": true,
+        "testing_level": "systems integration, verification & validation",
+        "test_equipment": null,
+        "automation_focus": null,
+        "primary_category": "software_engineering",
+        "ai_tools_mentioned": null,
+        "generative_ai_usage": null,
+        "test_automation_tools": [
+          "DOORS"
+        ]
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "Interdisciplinary systems engineering role focusing on system lifecycle management, performance requirements integration, and technical optimization across aerospace and defense projects. Involves collaborative system design, verification, and technical problem-solving.",
+      "remote_work": {
+        "policy": "onsite",
+        "days_onsite_per_week": null,
+        "timezone_requirement": null,
+        "remote_eligible_states": null
+      },
+      "compensation": {
+        "type": "hourly",
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": null,
+        "salary_min": null,
+        "hourly_rate": 71.79,
+        "equity_offered": null,
+        "bonus_structure": "Bonus potential mentioned"
+      },
+      "company_industry": "Aerospace/Defense",
+      "extraction_method": "llm",
+      "company_industry_source": "extracted"
+    },
+    "created_at": "2025-10-19T18:30:45.674491-07:00",
+    "updated_at": "2025-10-21T19:56:39.198012-07:00"
+  },
+  {
+    "job_id": "fac06414-4ce1-4274-933f-4931025bc6db",
+    "title": "Cypress Test Automation Analyst with TypeScript with SQL",
+    "company": "Unknown Company",
+    "location": "Charlotte, NC (Remote)",
+    "salary": null,
+    "description": "Test automation role developing frameworks using Cypress and TypeScript with SQL query skills. Focuses on creating innovative automation solutions for enterprise tech stacks, collaborating with cross-functional teams.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": null,
+      "title": "Cypress Test Automation Analyst with TypeScript with SQL",
+      "commute": {
+        "commute_perks": null,
+        "company_shuttle": null,
+        "office_location": null,
+        "schedule_flexibility": null
+      },
+      "company": "Unknown Company",
+      "location": "Charlotte, NC (Remote)",
+      "confidence": 0.85,
+      "employment": {
+        "benefits": null,
+        "agency_name": "Insoursys",
+        "relationship": "staffing_agency",
+        "tax_structure": "1099",
+        "employment_type": "contract",
+        "contract_duration": "contract",
+        "employment_type_source": "extracted"
+      },
+      "job_domain": {
+        "seniority": "senior",
+        "tech_stack": [
+          "Cypress",
+          "TypeScript",
+          "SQL"
+        ],
+        "testing_focus": true,
+        "testing_level": "web UI",
+        "test_equipment": null,
+        "automation_focus": true,
+        "primary_category": "qa_testing",
+        "ai_tools_mentioned": null,
+        "generative_ai_usage": null,
+        "test_automation_tools": [
+          "Cypress",
+          "TypeScript",
+          "SQL",
+          "Jenkins",
+          "GitHub Actions"
+        ]
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "Test automation role developing frameworks using Cypress and TypeScript with SQL query skills. Focuses on creating innovative automation solutions for enterprise tech stacks, collaborating with cross-functional teams.",
+      "remote_work": {
+        "policy": "fully_remote",
+        "days_onsite_per_week": null,
+        "timezone_requirement": null,
+        "remote_eligible_states": [
+          "NC"
+        ]
+      },
+      "compensation": {
+        "type": "consulting_contract",
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": null,
+        "salary_min": null,
+        "hourly_rate": null,
+        "equity_offered": null,
+        "bonus_structure": null
+      },
+      "company_industry": "Technology",
+      "extraction_method": "llm",
+      "company_industry_source": "inferred"
+    },
+    "created_at": "2025-10-19T18:30:40.021483-07:00",
+    "updated_at": "2025-10-21T19:56:49.511664-07:00"
+  },
+  {
+    "job_id": "f7fdf657-94b9-4db2-9269-7d24f59ed226",
+    "title": "Cypress Test Automation Analyst",
+    "company": "Unknown Company",
+    "location": "Charlotte, NC",
+    "salary": null,
+    "description": "Enterprise test automation role developing frameworks using Cypress and TypeScript. Involves creating automated test solutions, writing SQL queries, and collaborating with cross-functional teams to enhance testing efficiency and coverage.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": null,
+      "title": "Cypress Test Automation Analyst",
+      "commute": {
+        "commute_perks": null,
+        "company_shuttle": null,
+        "office_location": null,
+        "schedule_flexibility": null
+      },
+      "company": "Unknown Company",
+      "location": "Charlotte, NC",
+      "confidence": 0.85,
+      "employment": {
+        "benefits": null,
+        "agency_name": "Insoursys Inc",
+        "relationship": "staffing_agency",
+        "tax_structure": "W2",
+        "employment_type": "full_time",
+        "contract_duration": null,
+        "employment_type_source": "inferred"
+      },
+      "job_domain": {
+        "seniority": "mid",
+        "tech_stack": [
+          "Cypress",
+          "TypeScript",
+          "SQL",
+          "Jenkins",
+          "GitHub Actions"
+        ],
+        "testing_focus": true,
+        "testing_level": null,
+        "test_equipment": null,
+        "automation_focus": true,
+        "primary_category": "qa_testing",
+        "ai_tools_mentioned": null,
+        "generative_ai_usage": null,
+        "test_automation_tools": [
+          "Cypress",
+          "TypeScript",
+          "SQL"
+        ]
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "Enterprise test automation role developing frameworks using Cypress and TypeScript. Involves creating automated test solutions, writing SQL queries, and collaborating with cross-functional teams to enhance testing efficiency and coverage.",
+      "remote_work": {
+        "policy": "fully_remote",
+        "days_onsite_per_week": null,
+        "timezone_requirement": null,
+        "remote_eligible_states": null
+      },
+      "compensation": {
+        "type": "annual_salary",
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": null,
+        "salary_min": null,
+        "hourly_rate": null,
+        "equity_offered": null,
+        "bonus_structure": null
+      },
+      "company_industry": null,
+      "extraction_method": "llm",
+      "company_industry_source": null
+    },
+    "created_at": "2025-10-19T18:30:36.763439-07:00",
+    "updated_at": "2025-10-21T19:56:59.524108-07:00"
+  },
+  {
+    "job_id": "e3fb1236-7af2-40d5-853e-859c0c062d99",
+    "title": "C++ Developer",
+    "company": "Unknown Company",
+    "location": "Milpitas, CA",
+    "salary": 208000,
+    "description": "C++ Developer role focused on Linux-based development with database interaction. Strong Linux environment skills required, with PostgreSQL experience preferred.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": null,
+      "title": "C++ Developer",
+      "commute": {
+        "commute_perks": null,
+        "company_shuttle": null,
+        "office_location": "Milpitas, CA",
+        "schedule_flexibility": null
+      },
+      "company": "Unknown Company",
+      "location": "Milpitas, CA",
+      "confidence": 0.75,
+      "employment": {
+        "benefits": null,
+        "agency_name": null,
+        "relationship": "direct_hire",
+        "tax_structure": "W2",
+        "employment_type": "full_time",
+        "contract_duration": "long_term",
+        "employment_type_source": "inferred"
+      },
+      "job_domain": {
+        "seniority": "mid",
+        "tech_stack": [
+          "C++",
+          "Linux",
+          "PostgreSQL"
+        ],
+        "testing_focus": null,
+        "testing_level": null,
+        "test_equipment": null,
+        "automation_focus": null,
+        "primary_category": "software_engineering",
+        "ai_tools_mentioned": null,
+        "generative_ai_usage": null,
+        "test_automation_tools": null
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "C++ Developer role focused on Linux-based development with database interaction. Strong Linux environment skills required, with PostgreSQL experience preferred.",
+      "remote_work": {
+        "policy": "onsite",
+        "days_onsite_per_week": null,
+        "timezone_requirement": null,
+        "remote_eligible_states": null
+      },
+      "compensation": {
+        "type": "hourly",
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": 208000,
+        "salary_min": 208000,
+        "hourly_rate": 100.0,
+        "equity_offered": null,
+        "bonus_structure": null
+      },
+      "company_industry": null,
+      "extraction_method": "llm",
+      "company_industry_source": null
+    },
+    "created_at": "2025-10-19T18:30:20.508462-07:00",
+    "updated_at": "2025-10-21T19:57:08.811730-07:00"
+  },
+  {
+    "job_id": "83eef37f-6161-4dea-91fb-0a8b0c37e340",
+    "title": "Cypress Test Automation Analyst with TypeScript with SQL",
+    "company": "Unknown Company",
+    "location": "Charlotte, NC (Remote)",
+    "salary": null,
+    "description": "Test automation role developing frameworks using Cypress and TypeScript. Requires strong SQL skills and experience with CI/CD pipelines. Collaborate with cross-functional teams to enhance testing efficiency and coverage.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": null,
+      "title": "Cypress Test Automation Analyst with TypeScript with SQL",
+      "commute": {
+        "commute_perks": null,
+        "company_shuttle": null,
+        "office_location": "Charlotte, NC",
+        "schedule_flexibility": null
+      },
+      "company": "Unknown Company",
+      "location": "Charlotte, NC (Remote)",
+      "confidence": 0.85,
+      "employment": {
+        "benefits": null,
+        "agency_name": "Insoursys",
+        "relationship": "staffing_agency",
+        "tax_structure": null,
+        "employment_type": "contract",
+        "contract_duration": "contract",
+        "employment_type_source": "extracted"
+      },
+      "job_domain": {
+        "seniority": "senior",
+        "tech_stack": [
+          "Cypress",
+          "TypeScript",
+          "SQL"
+        ],
+        "testing_focus": true,
+        "testing_level": "web UI",
+        "test_equipment": null,
+        "automation_focus": true,
+        "primary_category": "qa_testing",
+        "ai_tools_mentioned": null,
+        "generative_ai_usage": null,
+        "test_automation_tools": [
+          "Cypress",
+          "TypeScript",
+          "SQL",
+          "Jenkins",
+          "GitHub Actions"
+        ]
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "Test automation role developing frameworks using Cypress and TypeScript. Requires strong SQL skills and experience with CI/CD pipelines. Collaborate with cross-functional teams to enhance testing efficiency and coverage.",
+      "remote_work": {
+        "policy": "fully_remote",
+        "days_onsite_per_week": null,
+        "timezone_requirement": null,
+        "remote_eligible_states": [
+          "NC"
+        ]
+      },
+      "compensation": {
+        "type": null,
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": null,
+        "salary_min": null,
+        "hourly_rate": null,
+        "equity_offered": null,
+        "bonus_structure": null
+      },
+      "company_industry": "Technology",
+      "extraction_method": "llm",
+      "company_industry_source": "inferred"
+    },
+    "created_at": "2025-10-19T18:30:12.649173-07:00",
+    "updated_at": "2025-10-21T19:57:19.278529-07:00"
+  },
+  {
+    "job_id": "dbad2239-36d7-486d-a968-6cf1e5e76714",
+    "title": "Senior Embedded Systems Engineer",
+    "company": "Unknown Company",
+    "location": "Fairfield, CT",
+    "salary": null,
+    "description": "Complex software engineering role blending hardware and software, focusing on machine learning, real-time system monitoring, and high-performance automation tools. Requires deep expertise in embedded development, control systems, and real-time operating systems.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": null,
+      "title": "Senior Embedded Systems Engineer",
+      "commute": {
+        "commute_perks": null,
+        "company_shuttle": null,
+        "office_location": "Fairfield, CT",
+        "schedule_flexibility": null
+      },
+      "company": "Unknown Company",
+      "location": "Fairfield, CT",
+      "confidence": 0.85,
+      "employment": {
+        "benefits": null,
+        "agency_name": "Veridian Tech Solutions, Inc",
+        "relationship": "staffing_agency",
+        "tax_structure": "W2",
+        "employment_type": "full_time",
+        "contract_duration": "permanent",
+        "employment_type_source": "extracted"
+      },
+      "job_domain": {
+        "seniority": "senior",
+        "tech_stack": [
+          "C++",
+          "RTOS",
+          "Control Systems"
+        ],
+        "testing_focus": null,
+        "testing_level": "board-level",
+        "test_equipment": null,
+        "automation_focus": true,
+        "primary_category": "firmware_engineering",
+        "ai_tools_mentioned": null,
+        "generative_ai_usage": null,
+        "test_automation_tools": null
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "Complex software engineering role blending hardware and software, focusing on machine learning, real-time system monitoring, and high-performance automation tools. Requires deep expertise in embedded development, control systems, and real-time operating systems.",
+      "remote_work": {
+        "policy": "onsite",
+        "days_onsite_per_week": null,
+        "timezone_requirement": null,
+        "remote_eligible_states": null
+      },
+      "compensation": {
+        "type": "annual_salary",
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": null,
+        "salary_min": null,
+        "hourly_rate": null,
+        "equity_offered": null,
+        "bonus_structure": null
+      },
+      "company_industry": "Industrial Control Systems",
+      "extraction_method": "llm",
+      "company_industry_source": "inferred"
+    },
+    "created_at": "2025-10-19T18:30:02.841952-07:00",
+    "updated_at": "2025-10-21T19:57:29.074335-07:00"
+  },
+  {
+    "job_id": "9afc0626-f33a-4451-8e2d-5886bb7bbb86",
+    "title": "** Re-engineering the World with Self-Assembly",
+    "company": "Unknown Company",
+    "location": "Sunnyvale, CA",
+    "salary": null,
+    "description": "Academic seminar by UC Berkeley Assistant Professor Grigory Tikhomirov discussing DNA-based nanoscale self-assembly and programmable building blocks for advanced technological and medical devices.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": "https://www.eventbrite.com/e/re-engineering-the-world-with-self-assembly-tickets-1694029340359?aff=oddtdtcreator",
+      "title": null,
+      "commute": {
+        "commute_perks": null,
+        "company_shuttle": null,
+        "office_location": "EAG Laboratories - 810 Kifer Road, Sunnyvale",
+        "schedule_flexibility": null
+      },
+      "company": null,
+      "location": "Sunnyvale, CA",
+      "confidence": 0.3,
+      "employment": {
+        "benefits": null,
+        "agency_name": null,
+        "relationship": null,
+        "tax_structure": null,
+        "employment_type": null,
+        "contract_duration": null,
+        "employment_type_source": null
+      },
+      "job_domain": {
+        "seniority": null,
+        "tech_stack": null,
+        "testing_focus": null,
+        "testing_level": null,
+        "test_equipment": null,
+        "automation_focus": null,
+        "primary_category": null,
+        "ai_tools_mentioned": null,
+        "generative_ai_usage": null,
+        "test_automation_tools": null
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "Academic seminar by UC Berkeley Assistant Professor Grigory Tikhomirov discussing DNA-based nanoscale self-assembly and programmable building blocks for advanced technological and medical devices.",
+      "remote_work": {
+        "policy": null,
+        "days_onsite_per_week": null,
+        "timezone_requirement": null,
+        "remote_eligible_states": null
+      },
+      "compensation": {
+        "type": null,
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": null,
+        "salary_min": null,
+        "hourly_rate": null,
+        "equity_offered": null,
+        "bonus_structure": null
+      },
+      "company_industry": null,
+      "extraction_method": "llm",
+      "company_industry_source": null
+    },
+    "created_at": "2025-10-19T18:29:57.368336-07:00",
+    "updated_at": "2025-10-21T19:57:39.920738-07:00"
+  },
+  {
+    "job_id": "6daaf5b1-1a7e-41a7-a617-9951aabf9caa",
+    "title": "Lead Software Engineer",
+    "company": "Unknown Company",
+    "location": "Remote",
+    "salary": null,
+    "description": "Leading a new team of software engineers supporting data scientists through generative AI initiatives. Responsibilities include building scalable software solutions, mentoring junior developers, and implementing microservices using Python frameworks.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": null,
+      "title": "Lead Software Engineer",
+      "commute": {
+        "commute_perks": null,
+        "company_shuttle": null,
+        "office_location": "Raleigh, NC",
+        "schedule_flexibility": null
+      },
+      "company": "Unknown Company",
+      "location": "Remote",
+      "confidence": 0.85,
+      "employment": {
+        "benefits": null,
+        "agency_name": "SoftSages",
+        "relationship": "contract",
+        "tax_structure": "corp_to_corp",
+        "employment_type": "contract",
+        "contract_duration": "12 months",
+        "employment_type_source": "extracted"
+      },
+      "job_domain": {
+        "seniority": "lead",
+        "tech_stack": [
+          "Python",
+          "Django",
+          "Flask",
+          "FastAPI",
+          "SQLAlchemy",
+          "Docker",
+          "Kubernetes",
+          "AWS",
+          "Pandas",
+          "NumPy"
+        ],
+        "testing_focus": null,
+        "testing_level": null,
+        "test_equipment": null,
+        "automation_focus": true,
+        "primary_category": "software_engineering",
+        "ai_tools_mentioned": [
+          "LangChain"
+        ],
+        "generative_ai_usage": true,
+        "test_automation_tools": null
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "Leading a new team of software engineers supporting data scientists through generative AI initiatives. Responsibilities include building scalable software solutions, mentoring junior developers, and implementing microservices using Python frameworks.",
+      "remote_work": {
+        "policy": "fully_remote",
+        "days_onsite_per_week": null,
+        "timezone_requirement": null,
+        "remote_eligible_states": null
+      },
+      "compensation": {
+        "type": "annual_salary",
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": null,
+        "salary_min": null,
+        "hourly_rate": null,
+        "equity_offered": null,
+        "bonus_structure": null
+      },
+      "company_industry": "Software/SaaS",
+      "extraction_method": "llm",
+      "company_industry_source": "inferred"
+    },
+    "created_at": "2025-10-19T18:29:52.333869-07:00",
+    "updated_at": "2025-10-21T19:57:50.501295-07:00"
+  },
+  {
+    "job_id": "d6fe41e5-4885-49d6-9d18-80e4279c8f13",
+    "title": "Hardware Tester",
+    "company": "Unknown Company",
+    "location": "Cupertino, CA",
+    "salary": null,
+    "description": "Hardware testing role in consumer electronics requiring electrical engineering background. Basic Python skills needed for testing consumer electronics hardware.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": null,
+      "title": "Hardware Tester",
+      "commute": {
+        "commute_perks": null,
+        "company_shuttle": null,
+        "office_location": "Cupertino, CA",
+        "schedule_flexibility": null
+      },
+      "company": "Unknown Company",
+      "location": "Cupertino, CA",
+      "confidence": 0.75,
+      "employment": {
+        "benefits": null,
+        "agency_name": "AppTad Inc",
+        "relationship": "staffing_agency",
+        "tax_structure": "W2",
+        "employment_type": "full_time",
+        "contract_duration": "permanent",
+        "employment_type_source": "extracted"
+      },
+      "job_domain": {
+        "seniority": "mid",
+        "tech_stack": [
+          "Python"
+        ],
+        "testing_focus": true,
+        "testing_level": "hardware",
+        "test_equipment": null,
+        "automation_focus": null,
+        "primary_category": "qa_testing",
+        "ai_tools_mentioned": null,
+        "generative_ai_usage": null,
+        "test_automation_tools": [
+          "Python"
+        ]
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "Hardware testing role in consumer electronics requiring electrical engineering background. Basic Python skills needed for testing consumer electronics hardware.",
+      "remote_work": {
+        "policy": "onsite",
+        "days_onsite_per_week": null,
+        "timezone_requirement": null,
+        "remote_eligible_states": null
+      },
+      "compensation": {
+        "type": "hourly",
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": null,
+        "salary_min": null,
+        "hourly_rate": null,
+        "equity_offered": null,
+        "bonus_structure": null
+      },
+      "company_industry": "Consumer Electronics",
+      "extraction_method": "llm",
+      "company_industry_source": "inferred"
+    },
+    "created_at": "2025-10-19T18:29:38.561416-07:00",
+    "updated_at": "2025-10-21T19:57:59.602328-07:00"
+  },
+  {
+    "job_id": "c53957b3-1ce5-4d34-aa39-53bbdd7f3532",
+    "title": "Design Quality Engineer",
+    "company": "Unknown Company",
+    "location": "Irving, TX",
+    "salary": null,
+    "description": "Medical device design quality role focusing on risk management, documentation review, and regulatory compliance. Responsibilities include DFMEA/PFMEA, design documentation approval, and supporting quality system processes.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": null,
+      "title": "Design Quality Engineer",
+      "commute": {
+        "commute_perks": null,
+        "company_shuttle": null,
+        "office_location": "Irving, TX",
+        "schedule_flexibility": null
+      },
+      "company": "Unknown Company",
+      "location": "Irving, TX",
+      "confidence": 0.85,
+      "employment": {
+        "benefits": null,
+        "agency_name": null,
+        "relationship": "direct_hire",
+        "tax_structure": "W2",
+        "employment_type": "full_time",
+        "contract_duration": "permanent",
+        "employment_type_source": "inferred"
+      },
+      "job_domain": {
+        "seniority": "mid",
+        "tech_stack": null,
+        "testing_focus": true,
+        "testing_level": "design",
+        "test_equipment": null,
+        "automation_focus": false,
+        "primary_category": "qa_testing",
+        "ai_tools_mentioned": null,
+        "generative_ai_usage": null,
+        "test_automation_tools": null
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "Medical device design quality role focusing on risk management, documentation review, and regulatory compliance. Responsibilities include DFMEA/PFMEA, design documentation approval, and supporting quality system processes.",
+      "remote_work": {
+        "policy": "onsite",
+        "days_onsite_per_week": null,
+        "timezone_requirement": null,
+        "remote_eligible_states": null
+      },
+      "compensation": {
+        "type": "annual_salary",
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": null,
+        "salary_min": null,
+        "hourly_rate": null,
+        "equity_offered": null,
+        "bonus_structure": null
+      },
+      "company_industry": "Medical Devices",
+      "extraction_method": "llm",
+      "company_industry_source": "inferred"
+    },
+    "created_at": "2025-10-19T18:29:32.270538-07:00",
+    "updated_at": "2025-10-21T19:58:09.659266-07:00"
+  },
+  {
+    "job_id": "dfa34385-36ee-4372-b9d3-9340d48a5fc8",
+    "title": "Jr. SAP EHS (Environment Health and Safety) Consultant",
+    "company": "SoftSages Technology",
+    "location": "Miami, FL",
+    "salary": null,
+    "description": "Post-production support for business users in SAP S/4 HANA environment. Provides L1/L2 production support with extensive travel requirements. Requires implementation experience with SAP systems.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": null,
+      "title": "Jr. SAP EHS (Environment Health and Safety) Consultant",
+      "commute": {
+        "commute_perks": "Travel expenses paid",
+        "company_shuttle": null,
+        "office_location": null,
+        "schedule_flexibility": null
+      },
+      "company": "SoftSages Technology",
+      "location": "Miami, FL",
+      "confidence": 0.85,
+      "employment": {
+        "benefits": null,
+        "agency_name": "SoftSages Technology",
+        "relationship": "consulting",
+        "tax_structure": "1099",
+        "employment_type": "contract",
+        "contract_duration": "3 months",
+        "employment_type_source": "extracted"
+      },
+      "job_domain": {
+        "seniority": "junior",
+        "tech_stack": [
+          "SAP S/4 HANA"
+        ],
+        "testing_focus": null,
+        "testing_level": null,
+        "test_equipment": null,
+        "automation_focus": null,
+        "primary_category": "software_engineering",
+        "ai_tools_mentioned": null,
+        "generative_ai_usage": null,
+        "test_automation_tools": null
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "Post-production support for business users in SAP S/4 HANA environment. Provides L1/L2 production support with extensive travel requirements. Requires implementation experience with SAP systems.",
+      "remote_work": {
+        "policy": "hybrid",
+        "days_onsite_per_week": null,
+        "timezone_requirement": null,
+        "remote_eligible_states": [
+          "FL",
+          "AZ",
+          "KS"
+        ]
+      },
+      "compensation": {
+        "type": "annual_salary",
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": null,
+        "salary_min": null,
+        "hourly_rate": null,
+        "equity_offered": null,
+        "bonus_structure": null
+      },
+      "company_industry": "Technology",
+      "extraction_method": "llm",
+      "company_industry_source": "inferred"
+    },
+    "created_at": "2025-10-19T18:29:24.118894-07:00",
+    "updated_at": "2025-10-21T19:58:19.862871-07:00"
+  },
+  {
+    "job_id": "708486ac-96b6-4eee-9006-c456eb86b001",
+    "title": "Senior SDET QA with Telecom Domain",
+    "company": "Unknown Company",
+    "location": "Denver, CO",
+    "salary": null,
+    "description": "Senior QA role focusing on software testing across STLC and SDLC methodologies. Requires extensive API automation expertise, programming skills in Java and JavaScript, and strong testing framework experience.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": null,
+      "title": "Senior SDET QA with Telecom Domain",
+      "commute": {
+        "commute_perks": null,
+        "company_shuttle": null,
+        "office_location": "Denver, CO",
+        "schedule_flexibility": null
+      },
+      "company": "Unknown Company",
+      "location": "Denver, CO",
+      "confidence": 0.85,
+      "employment": {
+        "benefits": null,
+        "agency_name": "United Software Group Inc.",
+        "relationship": "staffing_agency",
+        "tax_structure": "W2",
+        "employment_type": "full_time",
+        "contract_duration": "long_term",
+        "employment_type_source": "inferred"
+      },
+      "job_domain": {
+        "seniority": "senior",
+        "tech_stack": [
+          "Java",
+          "JavaScript",
+          "TypeScript",
+          "Groovy",
+          "SQL",
+          "PostgreSQL",
+          "REST",
+          "SOAP",
+          "GraphQL"
+        ],
+        "testing_focus": true,
+        "testing_level": "API",
+        "test_equipment": null,
+        "automation_focus": true,
+        "primary_category": "qa_testing",
+        "ai_tools_mentioned": null,
+        "generative_ai_usage": null,
+        "test_automation_tools": [
+          "WebDriverIO",
+          "Selenium",
+          "SOAPUI",
+          "Jira"
+        ]
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "Senior QA role focusing on software testing across STLC and SDLC methodologies. Requires extensive API automation expertise, programming skills in Java and JavaScript, and strong testing framework experience.",
+      "remote_work": {
+        "policy": "onsite",
+        "days_onsite_per_week": null,
+        "timezone_requirement": null,
+        "remote_eligible_states": null
+      },
+      "compensation": {
+        "type": "annual_salary",
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": null,
+        "salary_min": null,
+        "hourly_rate": null,
+        "equity_offered": null,
+        "bonus_structure": null
+      },
+      "company_industry": "Telecommunications",
+      "extraction_method": "llm",
+      "company_industry_source": "inferred"
+    },
+    "created_at": "2025-10-19T18:29:17.695320-07:00",
+    "updated_at": "2025-10-21T19:58:30.114019-07:00"
+  },
+  {
+    "job_id": "9485a0a1-481c-4c2f-a369-348e38ed7683",
+    "title": "Performance Engineer",
+    "company": "Inasolution",
+    "location": "Remote",
+    "salary": null,
+    "description": "Silicon performance engineering role focused on developing performance models, analyzing chip architectures, and creating Python-based automation frameworks. Involves collaboration across design, validation, and manufacturing teams to optimize semiconductor product quality.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": null,
+      "title": "Performance Engineer",
+      "commute": {
+        "commute_perks": null,
+        "company_shuttle": null,
+        "office_location": null,
+        "schedule_flexibility": null
+      },
+      "company": "Inasolution",
+      "location": "Remote",
+      "confidence": 0.85,
+      "employment": {
+        "benefits": null,
+        "agency_name": null,
+        "relationship": "direct_hire",
+        "tax_structure": "W2",
+        "employment_type": "full_time",
+        "contract_duration": "long_term",
+        "employment_type_source": "inferred"
+      },
+      "job_domain": {
+        "seniority": "senior",
+        "tech_stack": [
+          "Python",
+          "Silicon",
+          "Performance Modeling"
+        ],
+        "testing_focus": true,
+        "testing_level": "chip-level",
+        "test_equipment": null,
+        "automation_focus": true,
+        "primary_category": "firmware_engineering",
+        "ai_tools_mentioned": null,
+        "generative_ai_usage": null,
+        "test_automation_tools": [
+          "Python"
+        ]
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "Silicon performance engineering role focused on developing performance models, analyzing chip architectures, and creating Python-based automation frameworks. Involves collaboration across design, validation, and manufacturing teams to optimize semiconductor product quality.",
+      "remote_work": {
+        "policy": "fully_remote",
+        "days_onsite_per_week": null,
+        "timezone_requirement": null,
+        "remote_eligible_states": null
+      },
+      "compensation": {
+        "type": "annual_salary",
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": null,
+        "salary_min": null,
+        "hourly_rate": null,
+        "equity_offered": null,
+        "bonus_structure": null
+      },
+      "company_industry": "Semiconductor",
+      "extraction_method": "llm",
+      "company_industry_source": "inferred"
+    },
+    "created_at": "2025-10-19T18:29:10.830035-07:00",
+    "updated_at": "2025-10-21T19:58:40.301658-07:00"
+  },
+  {
+    "job_id": "4e8e5c5d-a62f-4828-b550-5b90a3eccf66",
+    "title": "Google AI Essentials",
+    "company": "Google",
+    "location": "Remote",
+    "salary": null,
+    "description": "Online course providing fundamental skills and knowledge about artificial intelligence and machine learning technologies offered by Google through Coursera platform.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": null,
+      "title": "Google AI Essentials",
+      "commute": {
+        "commute_perks": null,
+        "company_shuttle": null,
+        "office_location": null,
+        "schedule_flexibility": null
+      },
+      "company": "Google",
+      "location": "Remote",
+      "confidence": 0.4,
+      "employment": {
+        "benefits": null,
+        "agency_name": null,
+        "relationship": null,
+        "tax_structure": null,
+        "employment_type": null,
+        "contract_duration": null,
+        "employment_type_source": null
+      },
+      "job_domain": {
+        "seniority": null,
+        "tech_stack": null,
+        "testing_focus": null,
+        "testing_level": null,
+        "test_equipment": null,
+        "automation_focus": null,
+        "primary_category": null,
+        "ai_tools_mentioned": null,
+        "generative_ai_usage": null,
+        "test_automation_tools": null
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "Online course providing fundamental skills and knowledge about artificial intelligence and machine learning technologies offered by Google through Coursera platform.",
+      "remote_work": {
+        "policy": "fully_remote",
+        "days_onsite_per_week": null,
+        "timezone_requirement": null,
+        "remote_eligible_states": null
+      },
+      "compensation": {
+        "type": null,
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": null,
+        "salary_min": null,
+        "hourly_rate": null,
+        "equity_offered": null,
+        "bonus_structure": null
+      },
+      "company_industry": "Technology",
+      "extraction_method": "llm",
+      "company_industry_source": "inferred"
+    },
+    "created_at": "2025-10-19T18:29:03.959084-07:00",
+    "updated_at": "2025-10-21T19:58:48.387283-07:00"
+  },
+  {
+    "job_id": "e3345f83-c595-492e-9f14-28cd050e5b44",
+    "title": "Senior Node.JS Application Development Engineer",
+    "company": "SoftSages",
+    "location": "Remote",
+    "salary": null,
+    "description": "Enterprise application development using serverless/microservice architectures on AWS. Responsibilities include designing, developing, and deploying complex applications with Node.js while collaborating with cross-functional teams.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": null,
+      "title": "Senior Node.JS Application Development Engineer",
+      "commute": {
+        "commute_perks": null,
+        "company_shuttle": null,
+        "office_location": null,
+        "schedule_flexibility": null
+      },
+      "company": "SoftSages",
+      "location": "Remote",
+      "confidence": 0.85,
+      "employment": {
+        "benefits": null,
+        "agency_name": null,
+        "relationship": "direct_hire",
+        "tax_structure": "W2",
+        "employment_type": "full_time",
+        "contract_duration": "Through 12/31/2025",
+        "employment_type_source": "extracted"
+      },
+      "job_domain": {
+        "seniority": "senior",
+        "tech_stack": [
+          "Node.js",
+          "AWS",
+          "DynamoDB",
+          "Git",
+          "Terraform",
+          "CloudFormation",
+          "Snowflake"
+        ],
+        "testing_focus": false,
+        "testing_level": null,
+        "test_equipment": null,
+        "automation_focus": true,
+        "primary_category": "software_engineering",
+        "ai_tools_mentioned": null,
+        "generative_ai_usage": null,
+        "test_automation_tools": [
+          "CI/CD"
+        ]
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "Enterprise application development using serverless/microservice architectures on AWS. Responsibilities include designing, developing, and deploying complex applications with Node.js while collaborating with cross-functional teams.",
+      "remote_work": {
+        "policy": "fully_remote",
+        "days_onsite_per_week": null,
+        "timezone_requirement": "US nationwide",
+        "remote_eligible_states": null
+      },
+      "compensation": {
+        "type": "annual_salary",
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": null,
+        "salary_min": null,
+        "hourly_rate": null,
+        "equity_offered": null,
+        "bonus_structure": null
+      },
+      "company_industry": "Software/SaaS",
+      "extraction_method": "llm",
+      "company_industry_source": "inferred"
+    },
+    "created_at": "2025-10-19T18:28:57.724730-07:00",
+    "updated_at": "2025-10-21T19:58:58.386954-07:00"
+  },
+  {
+    "job_id": "6eaefb8a-577f-4e2f-afcd-d5e5266ac896",
+    "title": "Software Design Engineer- Cab-Body-Chassis Function",
+    "company": "Navistar",
+    "location": "Lisle, IL",
+    "salary": null,
+    "description": "Embedded software engineer developing controls and software for Cab-Body-Chassis functions. Responsible for software requirements, design, coding, testing, and integration of vehicle control systems with focus on ECU applications.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": "https://www2.joboppforyou.com/jobseekers/myjobs/emailmerge_response.jsp?d=571_9617379418051_26364379_1444274_1_Aditya+Khuntia&t11=1758564440806",
+      "title": "Software Design Engineer- Cab-Body-Chassis Function",
+      "commute": {
+        "commute_perks": null,
+        "company_shuttle": null,
+        "office_location": "Lisle, IL",
+        "schedule_flexibility": null
+      },
+      "company": "Navistar",
+      "location": "Lisle, IL",
+      "confidence": 0.9,
+      "employment": {
+        "benefits": null,
+        "agency_name": "Diverse Lynx",
+        "relationship": "staffing_agency",
+        "tax_structure": "W2",
+        "employment_type": "full_time",
+        "contract_duration": null,
+        "employment_type_source": "extracted"
+      },
+      "job_domain": {
+        "seniority": "mid",
+        "tech_stack": [
+          "C/C++",
+          "Matlab",
+          "Simulink",
+          "INCA"
+        ],
+        "testing_focus": true,
+        "testing_level": "embedded",
+        "test_equipment": "HIL, engine dyno",
+        "automation_focus": false,
+        "primary_category": "firmware_engineering",
+        "ai_tools_mentioned": null,
+        "generative_ai_usage": null,
+        "test_automation_tools": [
+          "CANalyzer"
+        ]
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "Embedded software engineer developing controls and software for Cab-Body-Chassis functions. Responsible for software requirements, design, coding, testing, and integration of vehicle control systems with focus on ECU applications.",
+      "remote_work": {
+        "policy": "onsite",
+        "days_onsite_per_week": null,
+        "timezone_requirement": null,
+        "remote_eligible_states": null
+      },
+      "compensation": {
+        "type": "annual_salary",
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": null,
+        "salary_min": null,
+        "hourly_rate": null,
+        "equity_offered": null,
+        "bonus_structure": null
+      },
+      "company_industry": "Automotive",
+      "extraction_method": "llm",
+      "company_industry_source": "inferred"
+    },
+    "created_at": "2025-10-19T18:28:54.036883-07:00",
+    "updated_at": "2025-10-21T19:59:10.377596-07:00"
+  },
+  {
+    "job_id": "2bcac89c-2457-4ed7-ba5a-4ec7db8c0d18",
+    "title": "Principal Embedded Software Engineer",
+    "company": "Unknown Company",
+    "location": "Syracuse, NY",
+    "salary": null,
+    "description": "Hands-on technical leadership role developing embedded systems for real-time target detection and tracking. Responsible for designing high-performance software, optimizing data processing pipelines, and mentoring junior engineers in a collaborative environment.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": null,
+      "title": "Principal Embedded Software Engineer",
+      "commute": {
+        "commute_perks": null,
+        "company_shuttle": null,
+        "office_location": "Syracuse, NY",
+        "schedule_flexibility": null
+      },
+      "company": "Unknown Company",
+      "location": "Syracuse, NY",
+      "confidence": 0.85,
+      "employment": {
+        "benefits": null,
+        "agency_name": "SONITALENT CORP",
+        "relationship": "direct_hire",
+        "tax_structure": "W2",
+        "employment_type": "full_time",
+        "contract_duration": "permanent",
+        "employment_type_source": "extracted"
+      },
+      "job_domain": {
+        "seniority": "principal",
+        "tech_stack": [
+          "C++",
+          "Python",
+          "Linux",
+          "Ubuntu",
+          "PetaLinux",
+          "Git",
+          "GitLab CI/CD",
+          "Protocol Buffers",
+          "ZeroMQ"
+        ],
+        "testing_focus": false,
+        "testing_level": null,
+        "test_equipment": null,
+        "automation_focus": false,
+        "primary_category": "firmware_engineering",
+        "ai_tools_mentioned": null,
+        "generative_ai_usage": null,
+        "test_automation_tools": null
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "Hands-on technical leadership role developing embedded systems for real-time target detection and tracking. Responsible for designing high-performance software, optimizing data processing pipelines, and mentoring junior engineers in a collaborative environment.",
+      "remote_work": {
+        "policy": "onsite",
+        "days_onsite_per_week": 5.0,
+        "timezone_requirement": null,
+        "remote_eligible_states": null
+      },
+      "compensation": {
+        "type": "annual_salary",
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": null,
+        "salary_min": null,
+        "hourly_rate": null,
+        "equity_offered": null,
+        "bonus_structure": null
+      },
+      "company_industry": "Technology",
+      "extraction_method": "llm",
+      "company_industry_source": "inferred"
+    },
+    "created_at": "2025-10-19T18:28:47.277864-07:00",
+    "updated_at": "2025-10-21T19:59:20.708155-07:00"
+  },
+  {
+    "job_id": "26a0edd9-67e3-418e-96ef-5801d8aed52a",
+    "title": "View in browser <[[https://go.st.com/v/ODU2LVBWUC03MTUAAAGdGzeFi_xZkbFaZslOsM...",
+    "company": "STMicroelectronics",
+    "location": "Anaheim, CA",
+    "salary": null,
+    "description": "Event invitation for Embedded World North America 2025, featuring interactive demos of embedded systems, processing, sensing, edge AI, connectivity, and security technologies.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": "https://go.st.com/ODU2LVBWUC03MTUAAAGdGzeFizWrX3WzrhwgV-k9sESxO5QYml9kJNefKah4mnLOOTMJ7BqPghcF6nzz0bBZPsDQIhw=",
+      "title": null,
+      "commute": {
+        "commute_perks": null,
+        "company_shuttle": null,
+        "office_location": null,
+        "schedule_flexibility": null
+      },
+      "company": "STMicroelectronics",
+      "location": "Anaheim, CA",
+      "confidence": 0.3,
+      "employment": {
+        "benefits": null,
+        "agency_name": null,
+        "relationship": null,
+        "tax_structure": null,
+        "employment_type": null,
+        "contract_duration": null,
+        "employment_type_source": null
+      },
+      "job_domain": {
+        "seniority": null,
+        "tech_stack": null,
+        "testing_focus": null,
+        "testing_level": null,
+        "test_equipment": null,
+        "automation_focus": null,
+        "primary_category": null,
+        "ai_tools_mentioned": null,
+        "generative_ai_usage": null,
+        "test_automation_tools": null
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "Event invitation for Embedded World North America 2025, featuring interactive demos of embedded systems, processing, sensing, edge AI, connectivity, and security technologies.",
+      "remote_work": {
+        "policy": null,
+        "days_onsite_per_week": null,
+        "timezone_requirement": null,
+        "remote_eligible_states": null
+      },
+      "compensation": {
+        "type": null,
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": null,
+        "salary_min": null,
+        "hourly_rate": null,
+        "equity_offered": null,
+        "bonus_structure": null
+      },
+      "company_industry": "Technology",
+      "extraction_method": "llm",
+      "company_industry_source": "inferred"
+    },
+    "created_at": "2025-10-19T18:28:36.176708-07:00",
+    "updated_at": "2025-10-21T19:59:33.296679-07:00"
+  },
+  {
+    "job_id": "e322aa1f-aad6-4b5b-a1c5-5028d6e8431d",
+    "title": "Board Level Reliability Test Technician",
+    "company": "Unknown Company",
+    "location": "Santa Clara, CA",
+    "salary": null,
+    "description": "Conducting package/PCBA/server level testing in a reliability lab and manufacturing environment. Performing functional tests, failure analysis, and electronic component rework using specialized test equipment.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": null,
+      "title": "Board Level Reliability Test Technician",
+      "commute": {
+        "commute_perks": null,
+        "company_shuttle": null,
+        "office_location": "Santa Clara, CA",
+        "schedule_flexibility": null
+      },
+      "company": "Unknown Company",
+      "location": "Santa Clara, CA",
+      "confidence": 0.85,
+      "employment": {
+        "benefits": null,
+        "agency_name": "Siri InfoSolutions, Inc.",
+        "relationship": "staffing_agency",
+        "tax_structure": "W2",
+        "employment_type": "full_time",
+        "contract_duration": null,
+        "employment_type_source": "extracted"
+      },
+      "job_domain": {
+        "seniority": "mid",
+        "tech_stack": [
+          "Linux",
+          "Windows",
+          "Microsoft Office"
+        ],
+        "testing_focus": true,
+        "testing_level": "board-level",
+        "test_equipment": "Oscilloscopes, Multimeters, Curve Tracers, Environmental Chambers, Reflow Ovens, Bending Machines, Pin Pull Tester",
+        "automation_focus": false,
+        "primary_category": "qa_testing",
+        "ai_tools_mentioned": null,
+        "generative_ai_usage": null,
+        "test_automation_tools": [
+          "Python"
+        ]
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "Conducting package/PCBA/server level testing in a reliability lab and manufacturing environment. Performing functional tests, failure analysis, and electronic component rework using specialized test equipment.",
+      "remote_work": {
+        "policy": "onsite",
+        "days_onsite_per_week": null,
+        "timezone_requirement": null,
+        "remote_eligible_states": null
+      },
+      "compensation": {
+        "type": "annual_salary",
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": null,
+        "salary_min": null,
+        "hourly_rate": null,
+        "equity_offered": null,
+        "bonus_structure": null
+      },
+      "company_industry": "Electronics/Semiconductor",
+      "extraction_method": "llm",
+      "company_industry_source": "inferred"
+    },
+    "created_at": "2025-10-19T18:28:28.310602-07:00",
+    "updated_at": "2025-10-21T19:59:44.261220-07:00"
+  },
+  {
+    "job_id": "34ba30fb-cf90-4162-b9d6-a9f2c3f3443d",
+    "title": "Oklo is conducting full-scale fuel-assembly flow testing at Argonne National ...",
+    "company": "Oklo",
+    "location": "Sunnyvale, CA",
+    "salary": null,
+    "description": "Company newsletter discussing advanced nuclear fission energy developments, including a combined license submission and upcoming webinar about their Aurora clean energy project.",
+    "extraction_method": "llm",
+    "raw_data": {
+      "url": "https://us02web.zoom.us/webinar/register/WN_0J-0wSDST6SfhQVABS5T2A",
+      "title": null,
+      "commute": {
+        "commute_perks": null,
+        "company_shuttle": null,
+        "office_location": "230 East Caribbean Drive, Sunnyvale, CA 94089",
+        "schedule_flexibility": null
+      },
+      "company": "Oklo",
+      "location": "Sunnyvale, CA",
+      "confidence": 0.3,
+      "employment": {
+        "benefits": null,
+        "agency_name": null,
+        "relationship": null,
+        "tax_structure": null,
+        "employment_type": null,
+        "contract_duration": null,
+        "employment_type_source": null
+      },
+      "job_domain": {
+        "seniority": null,
+        "tech_stack": null,
+        "testing_focus": null,
+        "testing_level": null,
+        "test_equipment": null,
+        "automation_focus": null,
+        "primary_category": null,
+        "ai_tools_mentioned": null,
+        "generative_ai_usage": null,
+        "test_automation_tools": null
+      },
+      "salary_max": null,
+      "salary_min": null,
+      "description": "Company newsletter discussing advanced nuclear fission energy developments, including a combined license submission and upcoming webinar about their Aurora clean energy project.",
+      "remote_work": {
+        "policy": "fully_remote",
+        "days_onsite_per_week": null,
+        "timezone_requirement": null,
+        "remote_eligible_states": null
+      },
+      "compensation": {
+        "type": null,
+        "currency": "USD",
+        "daily_rate": null,
+        "salary_max": null,
+        "salary_min": null,
+        "hourly_rate": null,
+        "equity_offered": null,
+        "bonus_structure": null
+      },
+      "company_industry": "Energy",
+      "extraction_method": "llm",
+      "company_industry_source": "inferred"
+    },
+    "created_at": "2025-10-19T18:28:23.068287-07:00",
+    "updated_at": "2025-10-21T19:59:53.947526-07:00"
+  }
+]
