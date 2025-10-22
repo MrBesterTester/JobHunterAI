@@ -1047,6 +1047,34 @@ const JobHunterDashboard: React.FC = () => {
     }
   };
 
+  const handleRescoreAll = async (): Promise<void> => {
+    const confirmed = window.confirm('Rescore all jobs? This will recalculate scores for all jobs in the database.');
+    if (!confirmed) return;
+
+    setRefreshing(true);
+    try {
+      const response = await fetch(`${API_URL}/jobs/calculate-all-scores`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to rescore jobs: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      alert(`Rescoring complete!\n\nScored: ${result.scored_count}\nFailed: ${result.failed_count}`);
+
+      // Refresh data to show updated scores
+      await handleRefresh();
+    } catch (error) {
+      console.error('Error rescoring jobs:', error);
+      alert(`Error rescoring jobs: ${error}`);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const updateJobStatus = useCallback(async (jobId: string, newStatus: string): Promise<void> => {
     try {
       const response = await fetch(`${API_URL}/jobs/${jobId}/status`, {
@@ -1325,7 +1353,7 @@ const JobHunterDashboard: React.FC = () => {
           {/* Header metadata: Score (FIRST), Industry, Employment Type, Extraction Method */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px', fontSize: '12px' }}>
             {/* Overall Score Badge (FIRST) */}
-            {score && score.total_score !== null && (
+            {score && score.total_score !== null ? (
               <span
                 data-testid="header-score"
                 style={{
@@ -1336,6 +1364,21 @@ const JobHunterDashboard: React.FC = () => {
                   ...getScoreBadgeColor(score.total_score)
                 }}>
                 ⭐ Score: {score.total_score.toFixed(1)} {score.rank && `(#${score.rank})`}
+              </span>
+            ) : (
+              <span
+                data-testid="header-score-not-scored"
+                title="This job has not been scored yet. Click 'Rescore All' to calculate scores for all jobs."
+                style={{
+                  padding: '2px 8px',
+                  borderRadius: '3px',
+                  fontSize: '11px',
+                  fontWeight: '600',
+                  backgroundColor: '#f3f4f6',
+                  color: '#6b7280',
+                  cursor: 'help'
+                }}>
+                ⭐ Not Scored
               </span>
             )}
 
@@ -2087,6 +2130,40 @@ const JobHunterDashboard: React.FC = () => {
                 }}
               />
               {refreshing ? 'Refreshing...' : 'Refresh Data'}
+            </button>
+            <button
+              onClick={handleRescoreAll}
+              disabled={refreshing}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '6px',
+                border: '1px solid #f59e0b',
+                backgroundColor: refreshing ? '#fef3c7' : 'white',
+                color: refreshing ? '#6b7280' : '#f59e0b',
+                fontWeight: '600',
+                cursor: refreshing ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '14px',
+                transition: 'all 0.2s',
+                opacity: refreshing ? 0.6 : 1
+              }}
+              onMouseEnter={(e) => {
+                if (!refreshing) {
+                  e.currentTarget.style.backgroundColor = '#f59e0b';
+                  e.currentTarget.style.color = 'white';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!refreshing) {
+                  e.currentTarget.style.backgroundColor = 'white';
+                  e.currentTarget.style.color = '#f59e0b';
+                }
+              }}
+              title="Recalculate scores for all jobs"
+            >
+              ⭐ Rescore All
             </button>
             <button
               onClick={clearAllDescriptions}
