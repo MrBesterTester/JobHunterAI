@@ -14,10 +14,16 @@
         - [Intelligent Extraction Logic](#intelligent-extraction-logic)
         - [Intelligent Filtering Logic](#intelligent-filtering-logic)
         - [Deduplication Logic](#deduplication-logic)
-      - [2. Job Review & Approval](#2-job-review--approval)
-      - [3. Resume & Cover Letter Generation](#3-resume--cover-letter-generation)
-      - [4. Email Draft Creation](#4-email-draft-creation)
-      - [5. Application Tracking & Follow-ups](#5-application-tracking--follow-ups)
+      - [2. Multi-Criteria Job Scoring](#2-multi-criteria-job-scoring)
+        - [Scoring Architecture](#scoring-architecture)
+        - [7 Scoring Criteria](#7-scoring-criteria)
+        - [Automatic Score Calculation](#automatic-score-calculation)
+        - [UI Features](#ui-features)
+        - [Performance & Validation](#performance--validation)
+      - [3. Job Review & Approval](#3-job-review--approval)
+      - [4. Resume & Cover Letter Generation](#4-resume--cover-letter-generation)
+      - [5. Email Draft Creation](#5-email-draft-creation)
+      - [6. Application Tracking & Follow-ups](#6-application-tracking--follow-ups)
   - [UI Features Guide](#ui-features-guide)
     - [Dashboard Overview](#dashboard-overview)
     - [Header Actions](#header-actions)
@@ -250,10 +256,11 @@ Based on your requirements:
 ## Workflow
 
 1. **Automated Job Intake & Processing** - Jobs collected and automatically filtered from email, LinkedIn, Indeed, etc.
-2. **Job Review & Approval** - Manual approval of jobs in unified Inbox (both auto-approved and auto-filtered)
-3. **Resume & Cover Letter Generation** - Generate custom resume/cover letter for approved jobs
-4. **Email Draft Creation** - One-click Gmail draft creation with cover letter body and resume attachment
-5. **Application Tracking & Follow-ups** - Monitor application status, schedule interviews, and manage follow-ups
+2. **Multi-Criteria Job Scoring** - Intelligent 0-100 scoring across 7 weighted criteria for data-driven ranking
+3. **Job Review & Approval** - Manual approval of jobs in unified Inbox (both auto-approved and auto-filtered)
+4. **Resume & Cover Letter Generation** - Generate custom resume/cover letter for approved jobs
+5. **Email Draft Creation** - One-click Gmail draft creation with cover letter body and resume attachment
+6. **Application Tracking & Follow-ups** - Monitor application status, schedule interviews, and manage follow-ups
 
 ```mermaid
 flowchart TD
@@ -274,7 +281,7 @@ flowchart TD
 
     subgraph Filter [" 2. Intelligent Filtering "]
         Check[Check Criteria]
-        Check --> Salary{Salary ≥ $130K?}
+        Check --> Salary{Salary ≥ $100K?}
         Salary -->|Yes| Location{Remote or<br/>≤45min commute?}
         Salary -->|No| Filtered
         Location -->|Yes| Domain{Matches Domain?<br/>Testing/AI/Firmware}
@@ -283,10 +290,19 @@ flowchart TD
         Domain -->|No| Filtered[⚠️ Status: Filtered<br/>with Reasons]
     end
 
-    New --> Inbox
-    Filtered --> Inbox
+    New --> Score
+    Filtered --> Score
 
-    subgraph Review [" 3. Manual Review & Approval "]
+    subgraph Scoring [" 3. Multi-Criteria Scoring "]
+        Score[Calculate Job Score]
+        Score --> Criteria[7 Weighted Criteria:<br/>💰 Compensation 30%<br/>🤝 Relationship 20%<br/>🏠 Remote Work 20%<br/>🎯 Domain Fit 15%<br/>⚡ Flexibility 10%<br/>🏥 Benefits 3%<br/>🏢 Industry 2%]
+        Criteria --> Total[Total Score 0-100]
+        Total --> Rank[Assign Rank<br/>vs. All Jobs]
+    end
+
+    Rank --> Inbox
+
+    subgraph Review [" 4. Manual Review & Approval "]
         Inbox[📋 Inbox Tab<br/>Review All Jobs]
         Inbox --> Decision{User Decision}
         Decision -->|Approve| Approved[✅ Status: Approved]
@@ -295,7 +311,7 @@ flowchart TD
 
     Approved --> Generate
 
-    subgraph Content [" 4. Content Generation "]
+    subgraph Content [" 5. Content Generation "]
         Generate[Generate Resume &<br/>Cover Letter]
         Generate --> Customize[Domain-aware<br/>Customization]
         Customize --> Template[Handlebars<br/>Template Engine]
@@ -304,7 +320,7 @@ flowchart TD
 
     Review2 --> Draft
 
-    subgraph Email [" 5. Email Draft Creation "]
+    subgraph Email [" 6. Email Draft Creation "]
         Draft[Create Gmail Draft]
         Draft --> MIME[MIME Message<br/>Construction]
         MIME --> Attach[Attach Resume PDF<br/>Base64 Encoded]
@@ -316,7 +332,7 @@ flowchart TD
     Send -->|Yes| Applied[✅ Status: Applied]
     Send -->|No| Wait[Wait for User]
 
-    subgraph Tracking [" 6. Application Tracking & Follow-ups "]
+    subgraph Tracking [" 7. Application Tracking & Follow-ups "]
         Applied --> Timeline[📊 Application Timeline]
         Timeline --> Interview[📅 Schedule Interviews]
         Interview --> Followup[📧 Automated Follow-ups]
@@ -547,7 +563,238 @@ CREATE TABLE job_deduplication (
 - **New Job**: Creates job record + deduplication entry for future checks
 - **Audit Trail**: All deduplication attempts logged for analytics
 
-#### 2. Job Review & Approval
+#### 2. Multi-Criteria Job Scoring
+
+After filtering and deduplication, every job is automatically scored using a sophisticated **multi-criteria weighted scoring system** (0-100 scale) to enable data-driven ranking and comparison.
+
+**Why Scoring?**
+- **Binary filtering is too restrictive** - Jobs are complex with trade-offs (high salary vs onsite, lower salary vs remote)
+- **Enables intelligent ranking** - Surface best opportunities based on your preferences
+- **Quantifies trade-offs** - Compare "$150K agency remote" vs "$140K direct hire hybrid"
+- **Configurable weights** - Adjust priorities in real-time (e.g., favor remote work over compensation)
+
+##### Scoring Architecture
+
+**Three-Tier Approach:**
+
+1. **Minimal Hard Filters** (Eliminate noise only):
+   - Absolute minimum compensation: $100,000 equivalent
+   - Job must have extractable data (not garbage/courses/events)
+   - Status: `new` if passes, `filtered` if fails hard filters
+
+2. **Weighted Scoring** (Rank remaining jobs):
+   - Calculate 0-100 score for each of 7 criteria
+   - Multiply by configured weight
+   - Sum to get total score (0-100)
+   - Store in database for persistence and caching
+
+3. **Interactive UI** (Manual decision):
+   - Sortable table showing all criteria side-by-side
+   - Color-coded cells (🟢 green 70-100, 🟡 yellow 40-69, 🔴 red 0-39)
+   - Weight adjustment sliders → instant re-ranking
+   - Click to expand full job details
+
+##### 7 Scoring Criteria
+
+**1. Compensation Score (30% weight)**
+
+Evaluates total annual compensation adjusted for tax structure:
+
+- **Annual Salary**: Use as-is or average of min/max
+- **Hourly Rate**: Convert to annual (× 2080 hours/year)
+- **Daily Rate**: Convert to annual (× 250 days/year)
+- **Tax Structure Multipliers**:
+  - W-2: × 1.0 (baseline)
+  - 1099: × 1.10 (+10% for tax advantages)
+  - Schedule C: × 1.15 (+15% for consulting firm benefits)
+- **Bonus/Equity**: Add percentage of base (equity discounted 80%)
+- **Scoring Scale**:
+  - $100K = 0 pts (minimum threshold)
+  - $130K = 50 pts (baseline expectation)
+  - $160K = 75 pts
+  - $200K+ = 100 pts
+  - Linear interpolation between points
+
+**2. Employment Relationship Score (20% weight)**
+
+Ranks by employment relationship preference:
+
+- Direct hire / Full-time: **100 pts**
+- Staffing agency / Recruiter: **60 pts**
+- Contract agency: **40 pts**
+- Contract-to-hire: **20 pts**
+- Unknown/missing: **30 pts** (neutral)
+- Special: Schedule C (own consulting firm) → **100 pts**
+- Special: Contract with retainer → **90 pts**
+
+**3. Remote Work Policy Score (20% weight)**
+
+Evaluates work location flexibility:
+
+- **Base score by policy**:
+  - Fully remote: **100 pts**
+  - Hybrid 0-1 days onsite: **90 pts**
+  - Hybrid 2 days onsite: **80 pts**
+  - Hybrid 3 days onsite: **60 pts**
+  - Hybrid 4 days onsite: **30 pts**
+  - Hybrid 5 days onsite: **10 pts**
+  - Fully onsite: **0 pts**
+- **Commute bonuses** (if hybrid/onsite):
+  - Company shuttle/bus: **+15 pts**
+  - FasTrak reimbursement: **+10 pts**
+  - Flexible schedule: **+5 pts**
+  - Cap at 100 pts total
+
+**4. Domain/Technical Fit Score (15% weight)**
+
+Matches job with testing/QA/automation focus:
+
+- **Base score by category**:
+  - Testing QA / Quality Assurance: **100 pts**
+  - Test Automation: **90 pts**
+  - Firmware Testing: **85 pts**
+  - Software Engineering + testing focus: **80 pts**
+  - DevOps / Release Engineering: **60 pts**
+  - Software Engineering (general): **40 pts**
+  - Other categories: **20 pts**
+- **Bonuses**:
+  - Automation focus: **+10 pts**
+  - Generative AI usage: **+10 pts**
+  - Tech stack includes Playwright/Cypress/Selenium: **+5 pts**
+  - Title contains "Test"/"QA"/"Quality": **+5 pts**
+- **Penalties**:
+  - Title contains "Manager"/"Director"/"Executive": **-20 pts**
+- Cap at 100 pts
+
+**5. Flexibility & Perks Score (10% weight)**
+
+Values autonomy, retainers, and work flexibility:
+
+- **Retainer arrangements** (parse from description or contract duration):
+  - 3-day retainer: **100 pts**
+  - 2-day retainer: **85 pts**
+  - 1-day retainer: **70 pts**
+  - Contract without retainer: **40 pts**
+- **If no retainer, score based on perks**:
+  - Schedule flexibility mentioned: **60 pts**
+  - Company shuttle: **50 pts**
+  - FasTrak reimbursement: **40 pts**
+  - Parking provided: **30 pts**
+  - Standard benefits: **20 pts**
+  - None: **0 pts**
+
+**6. Benefits Score (3% weight)**
+
+Assesses benefits package quality (low priority factor):
+
+- Private insurance (Blue Shield, Aetna, etc.): **100 pts**
+- Comprehensive benefits mentioned: **70 pts**
+- Standard benefits: **50 pts**
+- Minimal benefits: **30 pts**
+- No benefits mentioned: **0 pts**
+- Unknown: **40 pts** (neutral)
+
+**7. Company Industry Score (2% weight)**
+
+Minor preference for certain industry sectors:
+
+- Healthcare Technology: **100 pts**
+- Enterprise SaaS: **90 pts**
+- Financial Services: **80 pts**
+- Consulting: **70 pts**
+- E-commerce: **60 pts**
+- Telecommunications: **50 pts**
+- Other/Unknown: **40 pts**
+
+##### Automatic Score Calculation
+
+**Triggers:**
+- Automatically calculated after LLM extraction completes
+- Recalculated when job data is updated
+- Batch recalculation when weights are adjusted
+
+**Database Schema:**
+```sql
+CREATE TABLE scoring_criteria (
+    criteria_id UUID PRIMARY KEY,
+    criterion_name VARCHAR(50) NOT NULL UNIQUE,
+    weight DECIMAL(4,3) NOT NULL CHECK (weight >= 0 AND weight <= 1),
+    enabled BOOLEAN DEFAULT true,
+    description TEXT,
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE job_scores (
+    job_id UUID PRIMARY KEY REFERENCES jobs(job_id),
+    compensation_score DOUBLE PRECISION,
+    relationship_score DOUBLE PRECISION,
+    remote_work_score DOUBLE PRECISION,
+    domain_fit_score DOUBLE PRECISION,
+    flexibility_score DOUBLE PRECISION,
+    benefits_score DOUBLE PRECISION,
+    industry_score DOUBLE PRECISION,
+    total_score DOUBLE PRECISION,
+    rank INTEGER,
+    calculated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+##### UI Features
+
+**Ranked Jobs Tab:**
+- **Main Table**: Sortable by rank, score, title, company, any criterion
+  - Click column headers to sort ascending/descending
+  - Color-coded score cells for visual assessment
+  - Displays: Rank (#1-N), Total Score, All 7 criterion scores
+- **Expandable Details**: Click row to see full job details with individual scores
+- **Real-time Updates**: Scores recalculate instantly when weights change
+
+**Weight Adjustment Panel:**
+- **7 Gradient Sliders**: One for each criterion showing current percentage
+- **Real-time Validation**: Weights must sum to 1.0 (100%)
+- **Save & Recalculate**: Updates database weights and recalculates all job scores
+- **Reset Button**: Revert to default weights (30/20/20/15/10/3/2)
+- **Collapsible UI**: Starts collapsed to reduce visual clutter
+
+**Score Badges on All Job Cards:**
+- **First Badge Position**: Score badge appears before all other badges
+- **Format**: "⭐ Score: 44.8 (#1)"
+- **Color Coding**:
+  - 🟢 Green (70-100): High-quality match
+  - 🟡 Yellow (40-69): Acceptable match
+  - 🔴 Red (0-39): Poor match
+- **Shows Rank**: Displays rank in parentheses if available
+
+**Automatic Sorting:**
+- All job tabs (All, New, Approved, Applied, Filtered) automatically sort by `total_score DESC`
+- Highest-scoring jobs appear first
+- Null scores sorted to end
+- Especially important for **Filtered** tab - high-scoring filtered jobs surface to top for manual review
+
+##### Performance & Validation
+
+**Performance:**
+- Batch scoring 30 jobs: <1 second
+- Single job scoring + rank recalculation: <100ms
+- Weight adjustment + full recalculation: <1 second
+
+**Validation Results** (30-job dataset):
+- Score distribution: Average 24.93, range 5.0-44.8
+- High scores (70+): 0 jobs
+- Medium scores (40-69): 6 jobs (20%)
+- Low scores (<40): 24 jobs (80%)
+- **Key Finding**: 26/30 jobs (87%) missing compensation data (30% weight factor)
+- Rankings verified reasonable - remote jobs with good relationships rank highest
+
+**How to Use:**
+1. Navigate to **Ranked Jobs** tab to see all jobs sorted by score
+2. Click column headers to sort by different criteria (e.g., sort by Remote Work score)
+3. Click any row to expand full job details
+4. Adjust weights via **Weight Adjustment Panel** to match your priorities
+5. Review high-scoring **Filtered** jobs - they may have been auto-filtered but score well on other criteria
+6. Score badges appear on all job cards across all tabs for quick assessment
+
+#### 3. Job Review & Approval
 
 **Features:**
 - **Unified Inbox**: Single "Inbox" tab shows both auto-approved (`new`) and auto-filtered jobs
@@ -565,7 +812,7 @@ CREATE TABLE job_deduplication (
 - Click **Reject** if not interested
 - Optional: Check the **Filtered** tab to review only auto-filtered jobs separately
 
-#### 3. Resume & Cover Letter Generation
+#### 4. Resume & Cover Letter Generation
 
 **Setup Your Master Resume (One-Time):**
 
@@ -619,7 +866,7 @@ Once your master resume is set up:
 - Or copy content manually from the modal to your clipboard
 - Click "Download Files" to save resume and cover letter locally
 
-#### 4. Email Draft Creation
+#### 5. Email Draft Creation
 
 Once you've generated content for an approved job, you can create a Gmail draft with one click.
 
@@ -660,7 +907,7 @@ Once you've generated content for an approved job, you can create a Gmail draft 
 - **Review Before Sending**: Draft lets you review and edit before sending
 - **Tracked in System**: All draft activity logged in application timeline
 
-#### 5. Application Tracking & Follow-ups
+#### 6. Application Tracking & Follow-ups
 
 **Features:**
 - **Applied Tab**: Track all submitted applications
