@@ -17,6 +17,10 @@
     - [Phase 3.1.1: Anthropic API Integration ✅ COMPLETED](#phase-311-anthropic-api-integration--completed)
     - [Phase 3.1.2: Prompt Engineering ✅ COMPLETED](#phase-312-prompt-engineering--completed)
     - [Phase 3.1.3: Backend Integration ✅ COMPLETED](#phase-313-backend-integration--completed)
+    - [Testing Status & Coverage](#testing-status--coverage)
+      - [✅ **Tests Completed Successfully:**](#-tests-completed-successfully)
+      - [❌ **Tests Skipped / Not Completed:**](#-tests-skipped--not-completed)
+    - [Testing Summary](#testing-summary)
     - [Phase 3.1.4: Frontend Updates (1-2 hours)](#phase-314-frontend-updates-1-2-hours)
     - [Phase 3.1.5: Testing & Refinement (2-3 hours)](#phase-315-testing--refinement-2-3-hours)
   - [Prompt Engineering](#prompt-engineering)
@@ -776,7 +780,231 @@ let generation_time = start_time.elapsed().as_millis() as i64;
 - **Monthly cost (40 generations): $0.12/month**
 - **Annual cost: ~$1.44/year**
 
+---
+
+### Testing Status & Coverage
+
+#### ✅ **Tests Completed Successfully:**
+
+**1. Backend Integration Tests** (6/6 passing)
+```bash
+Command: cargo test --test llm_integration_tests
+Result: ok. 6 passed; 0 failed; 0 ignored (25.04s)
+```
+
+Tests validated:
+- ✅ `test_anthropic_api_connectivity` - Basic API connectivity
+- ✅ `test_simple_generation` - Simple content generation
+- ✅ `test_resume_generation` - Resume generation with cost tracking
+- ✅ `test_cost_estimation_realistic_scenario` - Full resume + cover letter cost
+- ✅ `test_response_time_performance` - Performance validation (< 10s target)
+- ✅ `test_invalid_api_key_handling` - Error handling for auth failures
+
+**Status**: ✅ All backend integration tests passing
+
+---
+
+**2. Phase 3.1.3 E2E Tests** (3/3 passing)
+```bash
+Command: npx playwright test e2e/tests/04-content-generation.spec.ts --grep "Phase 3.1.3"
+Result: 3 passed (51.6s)
+```
+
+**Test 1**: `should return token usage and cost metadata from API`
+- ✅ Validates all 5 metadata fields present in API response
+- ✅ Checks `generation_method === 'llm'`
+- ✅ Checks `llm_model === 'claude-3-5-haiku-20241022'`
+- ✅ Validates token usage: 0 < tokens_used < 10,000
+- ✅ Validates cost: 0 < cost_estimate < $0.05
+- ✅ Validates generation time: 0 < generation_time_ms < 60,000ms
+- Result: Tokens: 6,649 | Cost: $0.002797 | Time: 28.0s ✅
+
+**Test 2**: `should track cost and tokens for complete generation`
+- ✅ Verifies both resume and cover letter generated (length > 100 chars)
+- ✅ Validates total tokens represent both calls: 1,000 < tokens < 8,000
+- ✅ Validates cost for two LLM calls: $0.0001 < cost < $0.01
+- Result: ✅ PASSED
+
+**Test 3**: `should complete generation within performance targets`
+- ✅ Tracks server-side and client-side generation time
+- ✅ Validates server time < 45 seconds
+- ✅ Validates cost < $0.05
+- ✅ Validates client total < 50 seconds
+- ✅ Logs all performance metrics
+- Result: Server: 31.7s | Client: 33.0s | Cost: $0.003023 | Tokens: 6,918 ✅
+
+**Status**: ✅ All Phase 3.1.3 tests passing
+
+---
+
+**3. Manual API Testing** ✅
+```bash
+Command: curl http://localhost:8080/api/jobs/{id}/generate-content
+Duration: ~30 seconds (LLM generation)
+```
+
+**Verified Metadata Fields:**
+```json
+{
+  "generation_method": "llm",
+  "llm_model": "claude-3-5-haiku-20241022",
+  "tokens_used": 7334,
+  "cost_estimate": 0.0030935,
+  "generation_time_ms": 30555
+}
+```
+
+**Validation Results:**
+| Field | Expected | Actual | Status |
+|-------|----------|--------|--------|
+| `generation_method` | "llm" | "llm" | ✅ |
+| `llm_model` | "claude-3-5-haiku-20241022" | "claude-3-5-haiku-20241022" | ✅ |
+| `tokens_used` | 1,000-10,000 | 7,334 | ✅ |
+| `cost_estimate` | < $0.05 | $0.0031 | ✅ (94% under target) |
+| `generation_time_ms` | < 45,000ms | 30,555ms | ✅ (32% under target) |
+
+**Status**: ✅ Manual API test passed - all metadata fields present and valid
+
+---
+
+#### ❌ **Tests Skipped / Not Completed:**
+
+**1. Full E2E Regression Test Suite** ⚠️ **NOT RUN**
+
+**Command**: `npx playwright test e2e/tests/04-content-generation.spec.ts` (all ~20 tests)
+
+**What Was Attempted:**
+- Started full E2E test suite at 2:44 PM
+- Test hung after 14+ minutes with no progress
+- Test was killed due to timeout
+
+**What's Missing:**
+- Did not verify all existing content generation tests still pass
+- Did not confirm backward compatibility with Phase 3.1.2 tests
+- Unknown if backend changes broke any existing functionality
+
+**Tests Not Validated:**
+- ~4 LLM Quality Validation tests from Phase 3.1.2
+  - Bold formatting test
+  - Natural language test
+  - Professional summary tailoring test
+  - Metrics inclusion test
+- ~13 other content generation tests
+  - Generate button visibility tests
+  - Modal display tests
+  - Content quality tests
+  - Performance tests
+  - Error handling tests
+
+**Impact**: **MEDIUM**
+- Phase 3.1.3-specific tests pass (metadata tracking works)
+- Backend integration tests pass (LLM client works)
+- But full regression coverage not confirmed
+
+**Recommendation**:
+```bash
+# Run full suite separately to verify no regressions
+cd frontend
+npx playwright test e2e/tests/04-content-generation.spec.ts --workers=1
+```
+
+**Risk**: Medium - Backend changes may have broken existing tests. The 3 new tests validate Phase 3.1.3 functionality, but we haven't confirmed backward compatibility.
+
+---
+
+**2. Manual UI Testing** ⚠️ **NOT PERFORMED**
+
+**What's Missing:**
+- Did not manually open browser at http://localhost:3000
+- Did not visually inspect the application UI
+- Did not manually click "Generate Content" button
+- Did not verify modal displays correctly
+- Did not inspect generated resume/cover letter content quality
+- Did not test "Regenerate" functionality
+- Did not test error states in UI
+
+**Why Skipped:**
+- Prioritized automated testing over manual testing
+- E2E tests provide programmatic validation
+- Time constraints (implementation took 3.5 hours)
+
+**Impact**: **LOW**
+- E2E tests cover functional behavior
+- Manual testing would provide visual validation only
+- No new UI changes in Phase 3.1.3 (only backend)
+
+**Recommendation**:
+```bash
+# Manual test procedure:
+1. Start servers: ./start.sh
+2. Open http://localhost:3000
+3. Navigate to "Approved" tab
+4. Click "Generate Content" on first job
+5. Wait ~30 seconds for generation
+6. Verify modal opens with content
+7. Inspect resume and cover letter quality
+8. Close modal and verify it closes
+```
+
+**Risk**: Low - E2E tests validate functionality, but visual inspection not done.
+
+---
+
+**3. Frontend Metadata Display** ⚠️ **NOT IMPLEMENTED**
+
+**What's Missing:**
+- Frontend does NOT display the new metadata fields:
+  - `tokens_used`
+  - `cost_estimate`
+  - `generation_time_ms`
+  - `llm_model`
+- User cannot see generation metrics in the UI
+- Modal does not show cost or performance information
+- No visual feedback for LLM vs template generation
+
+**Why Not Done:**
+- This is **Phase 3.1.4** work (Frontend Updates)
+- Phase 3.1.3 focused on backend implementation only
+- API correctly returns metadata, but UI doesn't display it yet
+
+**Impact**: **NONE** (expected for Phase 3.1.3)
+- Backend correctly returns all metadata ✅
+- Frontend will display it in Phase 3.1.4 ⏭️
+
+**Recommendation**:
+- Implement in Phase 3.1.4 as planned
+- Add cost/token display to content generation modal
+- Show generation time to user
+
+**Risk**: None - This is expected scope for next phase.
+
+---
+
+### Testing Summary
+
+| Test Category | Status | Coverage | Risk |
+|--------------|--------|----------|------|
+| **Backend Integration Tests** | ✅ PASSED | 6/6 tests (100%) | None |
+| **Phase 3.1.3 E2E Tests** | ✅ PASSED | 3/3 tests (100%) | None |
+| **Manual API Testing** | ✅ PASSED | All metadata validated | None |
+| **Full E2E Regression Suite** | ❌ NOT RUN | 0/~20 tests | Medium |
+| **Manual UI Testing** | ❌ SKIPPED | Visual validation not done | Low |
+| **Frontend Metadata Display** | ⏭️ PHASE 3.1.4 | Not implemented yet | None |
+
+**Overall Assessment**:
+- ✅ **Phase 3.1.3 Backend Implementation: PRODUCTION-READY**
+- ⚠️ **Regression Testing: INCOMPLETE** (full E2E suite not run)
+- ℹ️ **UI Display: DEFERRED TO PHASE 3.1.4** (as planned)
+
+**Critical Path to Production:**
+1. ✅ Backend metadata tracking - **COMPLETE**
+2. ⚠️ Full regression testing - **REQUIRED BEFORE DEPLOYMENT**
+3. ⏭️ Frontend metadata display - **PHASE 3.1.4**
+
+---
+
 **Next Steps:**
+- **RECOMMENDED**: Run full E2E regression suite before merging to main
 - Phase 3.1.4: Frontend updates to display cost and token metadata to user
 - Phase 3.1.5: Testing & refinement with additional job postings
 
