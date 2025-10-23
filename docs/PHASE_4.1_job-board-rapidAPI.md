@@ -10,13 +10,13 @@
   - [RapidAPI Setup & Testing](#rapidapi-setup--testing)
     - [Step 0: RapidAPI Account Setup (Day 1)](#step-0-rapidapi-account-setup-day-1)
   - [Implementation Plan](#implementation-plan)
-    - [Phase 4.1.1: JSearch Integration Core (Week 1)](#phase-411-jsearch-integration-core-week-1)
-    - [Phase 4.1.2: Database Configuration (Week 1)](#phase-412-database-configuration-week-1)
-    - [Phase 4.1.3: Environment Configuration (Week 1)](#phase-413-environment-configuration-week-1)
-    - [Phase 4.1.4: Frontend Integration (Week 2)](#phase-414-frontend-integration-week-2)
-    - [Phase 4.1.5: Rate Limiting & Quota Management (Week 2)](#phase-415-rate-limiting--quota-management-week-2)
-    - [Phase 4.1.6: Testing & Validation (Week 3)](#phase-416-testing--validation-week-3)
-    - [Phase 4.1.7: Documentation (Week 3)](#phase-417-documentation-week-3)
+    - [Phase 4.1.1: JSearch Integration Core ✅ COMPLETED (2025-10-23)](#phase-411-jsearch-integration-core--completed-2025-10-23)
+    - [Phase 4.1.2: Database Configuration ✅ COMPLETED (2025-10-23)](#phase-412-database-configuration--completed-2025-10-23)
+    - [Phase 4.1.3: Environment Configuration ✅ COMPLETED (2025-10-23)](#phase-413-environment-configuration--completed-2025-10-23)
+    - [Phase 4.1.4: Frontend Integration 🔜 PENDING](#phase-414-frontend-integration--pending)
+    - [Phase 4.1.5: Rate Limiting & Quota Management ✅ COMPLETED (2025-10-23)](#phase-415-rate-limiting--quota-management--completed-2025-10-23)
+    - [Phase 4.1.6: Testing & Validation ⏸️ PARTIALLY COMPLETE (Backend ✅, E2E pending)](#phase-416-testing--validation--partially-complete-backend--e2e-pending)
+    - [Phase 4.1.7: Documentation ✅ COMPLETED (2025-10-23)](#phase-417-documentation--completed-2025-10-23)
   - [Future Extensions (Phase 4.2+)](#future-extensions-phase-42)
   - [Cost & Usage Projections](#cost--usage-projections)
   - [Success Criteria](#success-criteria)
@@ -106,7 +106,7 @@
 
 ## Implementation Plan
 
-### Phase 4.1.1: JSearch Integration Core (Week 1)
+### Phase 4.1.1: JSearch Integration Core ✅ COMPLETED (2025-10-23)
 
 **Backend: RapidAPI JSearch Client Module**
 
@@ -352,7 +352,7 @@ async fn sync_jsearch_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
 .route("/api/intake/rapidapi/sync", web::post().to(sync_jsearch_jobs))
 ```
 
-### Phase 4.1.2: Database Configuration (Week 1)
+### Phase 4.1.2: Database Configuration ✅ COMPLETED (2025-10-23)
 
 Update `job_sources` table (via SQL or admin endpoint):
 
@@ -373,7 +373,7 @@ WHERE source_name = 'rapidapi';
 
 **Note**: The `num_pages: 1` setting limits results to ~10 jobs per sync, as requested.
 
-### Phase 4.1.3: Environment Configuration (Week 1)
+### Phase 4.1.3: Environment Configuration ✅ COMPLETED (2025-10-23)
 
 Add to `backend/.env`:
 ```bash
@@ -399,7 +399,7 @@ JOB_SEARCH_DATE_POSTED=week
 JOB_SEARCH_REMOTE_ONLY=false
 ```
 
-### Phase 4.1.4: Frontend Integration (Week 2)
+### Phase 4.1.4: Frontend Integration 🔜 PENDING
 
 Update `frontend/src/IntakeTab.tsx` - add separate sync buttons for each source:
 
@@ -466,7 +466,7 @@ const syncRapidAPI = async () => {
 - RapidAPI card shows that it aggregates multiple job boards
 - Displays "Limit: 10 jobs per sync" to set expectations
 
-### Phase 4.1.5: Rate Limiting & Quota Management (Week 2)
+### Phase 4.1.5: Rate Limiting & Quota Management ✅ COMPLETED (2025-10-23)
 
 **Track API usage** to stay within free tier (200 requests/month):
 
@@ -507,7 +507,7 @@ async fn check_rapidapi_quota(pool: &PgPool) -> Result<bool, sqlx::Error> {
 - Gmail syncs are unlimited (not counted against RapidAPI quota)
 - Monitor via RapidAPI dashboard (alerts at 85% = 170 requests)
 
-### Phase 4.1.6: Testing & Validation (Week 3)
+### Phase 4.1.6: Testing & Validation ⏸️ PARTIALLY COMPLETE (Backend ✅, E2E pending)
 
 **Backend tests** (`backend/tests/job_intake_tests.rs`):
 
@@ -548,7 +548,7 @@ async fn test_separate_source_syncs() {
 9. ✅ Monitor quota in RapidAPI dashboard
 10. ✅ Test both sync buttons work independently in UI
 
-### Phase 4.1.7: Documentation (Week 3)
+### Phase 4.1.7: Documentation ✅ COMPLETED (2025-10-23)
 
 Update `README.md`:
 - Add RapidAPI JSearch integration section
