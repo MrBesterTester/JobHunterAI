@@ -3330,41 +3330,48 @@ async fn process_gmail_messages(
 }
 
 // ============================================================================
-// Indeed/RapidAPI Integration (Phase 4.1)
+// JSearch/RapidAPI Integration (Phase 4.1)
 // ============================================================================
 
-/// RapidAPI job listing structure
+/// JSearch API job listing structure (via RapidAPI)
 #[derive(Debug, Deserialize, Serialize)]
-struct RapidApiJobListing {
+struct JSearchJobListing {
     job_id: Option<String>,
     job_title: Option<String>,
-    company_name: Option<String>,
-    job_location: Option<String>,
+    employer_name: Option<String>,
+    employer_logo: Option<String>,
+    job_city: Option<String>,
+    job_state: Option<String>,
+    job_country: Option<String>,
     job_description: Option<String>,
     job_posted_at_datetime_utc: Option<String>,
-    job_salary: Option<String>,
+    job_min_salary: Option<f64>,
+    job_max_salary: Option<f64>,
+    job_salary_currency: Option<String>,
     job_apply_link: Option<String>,
+    job_is_remote: Option<bool>,
+    job_employment_type: Option<String>,
     // Additional fields that might be present
     #[serde(flatten)]
     extra: serde_json::Map<String, serde_json::Value>,
 }
 
-/// Fetch jobs from RapidAPI Indeed endpoint
-async fn fetch_indeed_jobs_rapidapi(
+/// Fetch jobs from RapidAPI JSearch endpoint (aggregates LinkedIn, Indeed, Glassdoor, etc.)
+async fn fetch_jsearch_jobs_rapidapi(
     api_key: &str,
     api_host: &str,
     search_params: &serde_json::Value,
-) -> Result<Vec<RapidApiJobListing>, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<Vec<JSearchJobListing>, Box<dyn std::error::Error + Send + Sync>> {
     let client = reqwest::Client::new();
 
-    // Build query parameters from search_params
-    let query = search_params["query"].as_str().unwrap_or("Software Test Engineer");
-    let location = search_params["location"].as_str().unwrap_or("Fremont, CA");
-    let radius = search_params["radius"].as_str().unwrap_or("45");
-    let date_posted = search_params["datePosted"].as_str().unwrap_or("week");
+    // Build query parameters from search_params (JSearch format)
+    let query = search_params["query"].as_str().unwrap_or("Software Test Engineer OR QA Engineer in Fremont, CA");
+    let date_posted = search_params["date_posted"].as_str().unwrap_or("week");
+    let remote_jobs_only = search_params["remote_jobs_only"].as_bool().unwrap_or(false);
+    let num_pages = search_params["num_pages"].as_str().unwrap_or("1"); // 1 page = ~10 jobs
 
-    log_debug(&format!("Fetching jobs from RapidAPI: query={}, location={}, radius={}, datePosted={}",
-        query, location, radius, date_posted));
+    log_debug(&format!("Fetching jobs from RapidAPI JSearch: query={}, num_pages={}, date_posted={}, remote_jobs_only={}",
+        query, num_pages, date_posted, remote_jobs_only));
 
     let response = client
         .get(&format!("https://{}/search", api_host))
@@ -3372,9 +3379,9 @@ async fn fetch_indeed_jobs_rapidapi(
         .header("X-RapidAPI-Host", api_host)
         .query(&[
             ("query", query),
-            ("location", location),
-            ("radius", radius),
-            ("datePosted", date_posted),
+            ("num_pages", num_pages),
+            ("date_posted", date_posted),
+            ("remote_jobs_only", &remote_jobs_only.to_string()),
         ])
         .send()
         .await?;
@@ -3382,11 +3389,14 @@ async fn fetch_indeed_jobs_rapidapi(
     if !response.status().is_success() {
         let status = response.status();
         let error_text = response.text().await.unwrap_or_default();
-        return Err(format!("RapidAPI error {}: {}", status, error_text).into());
+        return Err(format!("RapidAPI JSearch error {}: {}", status, error_text).into());
     }
 
-    let jobs: Vec<RapidApiJobListing> = response.json().await?;
-    log_debug(&format!("Fetched {} jobs from RapidAPI", jobs.len()));
+    // JSearch wraps results in a "data" array
+    let response_json: serde_json::Value = response.json().await?;
+    let jobs: Vec<JSearchJobListing> = serde_json::from_value(response_json["data"].clone())
+        .unwrap_or_else(|_| Vec::new());
+    log_debug(&format!("Fetched {} jobs from RapidAPI JSearch", jobs.len()));
     Ok(jobs)
 }
 
@@ -3428,8 +3438,8 @@ async fn extract_job_from_text_async(
     extract_job_from_email(&None, &Some(text.to_string()))
 }
 
-/// Process Indeed jobs from RapidAPI
-async fn process_indeed_jobs(
+/// Process JSearch jobs from RapidAPI (aggregates LinkedIn, Indeed, Glassdoor, etc.)
+async fn process_jsearch_jobs(
     source: &JobSource,
     pool: &PgPool,
     _log_id: Uuid,
@@ -3444,12 +3454,12 @@ async fn process_indeed_jobs(
 
     // Get RapidAPI credentials from environment
     let api_key = std::env::var("RAPIDAPI_KEY")
-        .map_err(|_| "RAPIDAPI_KEY not configured. Set this environment variable to enable Indeed integration.")?;
-    let api_host = std::env::var("RAPIDAPI_HOST_INDEED")
-        .map_err(|_| "RAPIDAPI_HOST_INDEED not configured. Set this environment variable to enable Indeed integration.")?;
+        .map_err(|_| "RAPIDAPI_KEY not configured. Set this environment variable to enable JSearch integration.")?;
+    let api_host = std::env::var("RAPIDAPI_HOST_JSEARCH")
+        .map_err(|_| "RAPIDAPI_HOST_JSEARCH not configured. Set this environment variable to enable JSearch integration.")?;
 
-    // Fetch jobs from RapidAPI
-    let listings = fetch_indeed_jobs_rapidapi(&api_key, &api_host, &source.configuration).await?;
+    // Fetch jobs from RapidAPI JSearch (limited to 10 via num_pages=1)
+    let listings = fetch_jsearch_jobs_rapidapi(&api_key, &api_host, &source.configuration).await?;
 
     for listing in listings {
         metrics.discovered += 1;
@@ -3489,21 +3499,38 @@ async fn process_indeed_jobs(
         .await?;
 
         // Extract job data using LLM (reuse existing async extraction)
+        // Build location string from JSearch's separate city/state/country fields
+        let location_str = format!(
+            "{}, {}, {}",
+            listing.job_city.as_deref().unwrap_or(""),
+            listing.job_state.as_deref().unwrap_or(""),
+            listing.job_country.as_deref().unwrap_or("")
+        ).trim_matches(',').trim().to_string();
+
+        // Build salary string from min/max fields
+        let salary_str = match (listing.job_min_salary, listing.job_max_salary) {
+            (Some(min), Some(max)) => format!("${:.0} - ${:.0} {}", min, max, listing.job_salary_currency.as_deref().unwrap_or("")),
+            (Some(min), None) => format!("${:.0}+ {}", min, listing.job_salary_currency.as_deref().unwrap_or("")),
+            (None, Some(max)) => format!("Up to ${:.0} {}", max, listing.job_salary_currency.as_deref().unwrap_or("")),
+            (None, None) => "Not specified".to_string(),
+        };
+
         let job_text = format!(
-            "Title: {}\nCompany: {}\nLocation: {}\nSalary: {}\nDescription: {}",
+            "Title: {}\nCompany: {}\nLocation: {}\nSalary: {}\nRemote: {}\nDescription: {}",
             listing.job_title.as_deref().unwrap_or(""),
-            listing.company_name.as_deref().unwrap_or(""),
-            listing.job_location.as_deref().unwrap_or(""),
-            listing.job_salary.as_deref().unwrap_or("Not specified"),
+            listing.employer_name.as_deref().unwrap_or(""),
+            location_str,
+            salary_str,
+            listing.job_is_remote.map(|r| if r { "Yes" } else { "No" }).unwrap_or("Unknown"),
             listing.job_description.as_deref().unwrap_or("")
         );
 
         if let Some(job_data) = extract_job_from_text_async(&job_text, pool).await {
-            // Use listing fields as fallbacks for extraction
+            // Use JSearch fields as fallbacks for extraction
             let mut enhanced_data = job_data;
             enhanced_data.title = enhanced_data.title.or(listing.job_title.clone());
-            enhanced_data.company = enhanced_data.company.or(listing.company_name.clone());
-            enhanced_data.location = enhanced_data.location.or(listing.job_location.clone());
+            enhanced_data.company = enhanced_data.company.or(listing.employer_name.clone());
+            enhanced_data.location = enhanced_data.location.or(Some(location_str));
             enhanced_data.url = enhanced_data.url.or(listing.job_apply_link.clone());
             enhanced_data.description = Some(job_text.clone());
 
@@ -3530,23 +3557,23 @@ async fn process_indeed_jobs(
         }
     }
 
-    log_debug(&format!("Indeed sync complete - Discovered: {}, Failed: {}, Filtered: {}, Duplicated: {}, Created: {}",
+    log_debug(&format!("JSearch sync complete - Discovered: {}, Failed: {}, Filtered: {}, Duplicated: {}, Created: {}",
         metrics.discovered, metrics.failed_processing, metrics.filtered_out, metrics.duplicated, metrics.created));
 
     Ok(metrics)
 }
 
-/// Sync Indeed jobs endpoint (mirrors Gmail sync)
-async fn sync_indeed_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+/// Sync RapidAPI JSearch jobs endpoint (mirrors Gmail sync)
+async fn sync_jsearch_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     let log_id = Uuid::new_v4();
 
-    // Get Indeed source
+    // Get RapidAPI (JSearch) source
     let source = sqlx::query_as::<_, JobSource>(
-        "SELECT * FROM job_sources WHERE source_name = 'indeed' AND is_active = true LIMIT 1"
+        "SELECT * FROM job_sources WHERE source_name = 'rapidapi' AND is_active = true LIMIT 1"
     )
     .fetch_one(pool.get_ref())
     .await
-    .map_err(|_| actix_web::error::ErrorNotFound("Indeed source not found or inactive"))?;
+    .map_err(|_| actix_web::error::ErrorNotFound("RapidAPI source not found or inactive"))?;
 
     // Create intake log
     sqlx::query!(
@@ -3558,7 +3585,7 @@ async fn sync_indeed_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to create log: {}", e)))?;
 
     // Process jobs
-    match process_indeed_jobs(&source, pool.get_ref(), log_id).await {
+    match process_jsearch_jobs(&source, pool.get_ref(), log_id).await {
         Ok(metrics) => {
             // Validate counters (mutually exclusive and collectively exhaustive)
             let expected_total = metrics.failed_processing + metrics.filtered_out + metrics.duplicated + metrics.created;
@@ -3603,7 +3630,7 @@ async fn sync_indeed_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
             .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to update log: {}", e)))?;
 
             Ok(HttpResponse::Ok().json(serde_json::json!({
-                "message": "Indeed sync completed successfully",
+                "message": "RapidAPI JSearch sync completed successfully",
                 "metrics": {
                     "jobs_discovered": metrics.discovered,
                     "jobs_failed_processing": metrics.failed_processing,
@@ -3630,7 +3657,7 @@ async fn sync_indeed_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
             .await
             .ok();
 
-            Err(actix_web::error::ErrorInternalServerError(format!("Indeed sync failed: {}", e)))
+            Err(actix_web::error::ErrorInternalServerError(format!("RapidAPI JSearch sync failed: {}", e)))
         }
     }
 }
@@ -6388,7 +6415,7 @@ async fn main() -> std::io::Result<()> {
             .route("/api/auth/gmail/url", web::get().to(get_gmail_oauth_url))
             .route("/auth/gmail/callback", web::get().to(handle_gmail_oauth_callback))
             .route("/api/intake/gmail/sync", web::post().to(sync_gmail_jobs))
-            .route("/api/intake/indeed/sync", web::post().to(sync_indeed_jobs))
+            .route("/api/intake/rapidapi/sync", web::post().to(sync_jsearch_jobs))
             .route("/api/intake/linkedin/sync", web::post().to(sync_linkedin_jobs))
             .route("/api/intake/sync-all", web::post().to(sync_all_sources))
             .route("/api/intake/schedule", web::get().to(schedule_job_sync))

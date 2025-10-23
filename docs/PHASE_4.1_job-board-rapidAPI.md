@@ -24,7 +24,8 @@
   - [Risk Mitigation](#risk-mitigation)
   - [Phase 4.1.1 Implementation Status](#phase-411-implementation-status)
     - [🔄 CHANGE ORDER (2025-10-23)](#-change-order-2025-10-23)
-    - [⚠️ PREVIOUS IMPLEMENTATION - Needs Revision](#-previous-implementation---needs-revision)
+    - [✅ COMPLETED (2025-10-23) - JSearch API Revision](#-completed-2025-10-23---jsearch-api-revision)
+    - [⚠️ PREVIOUS IMPLEMENTATION - Superseded](#-previous-implementation---superseded)
     - [✅ COMPLETED (2025-10-22) - Core Implementation (Indeed - Superseded)](#-completed-2025-10-22---core-implementation-indeed---superseded)
     - [✅ COMPLETED - Automated Testing](#-completed---automated-testing)
     - [⏸️ DEFERRED - Live API Testing](#-deferred---live-api-testing)
@@ -660,11 +661,91 @@ Update `README.md`:
 4. Source count: Two sources only (Gmail + RapidAPI)
 5. Each source requires separate sync button in UI
 
-**Status**: Previous Indeed implementation needs revision to match JSearch API.
+**Status**: ✅ COMPLETE - JSearch revision implemented (2025-10-23 afternoon)
 
-### ⚠️ PREVIOUS IMPLEMENTATION - Needs Revision
+### ✅ COMPLETED (2025-10-23) - JSearch API Revision
 
-**Note**: The implementation below was completed for Indeed API. It needs to be updated for JSearch API per the change order above.
+**Revision completed**: October 23, 2025 (afternoon session)
+
+**Backend Changes** (`backend/src/main.rs`):
+- ✅ Updated struct: `RapidApiJobListing` → `JSearchJobListing` with JSearch field structure
+  - `company_name` → `employer_name`
+  - `job_location` → split into `job_city`, `job_state`, `job_country`
+  - `job_salary` (String) → `job_min_salary`, `job_max_salary` (f64), `job_salary_currency`
+  - Added fields: `employer_logo`, `job_is_remote`, `job_employment_type`
+- ✅ Updated function: `fetch_indeed_jobs_rapidapi()` → `fetch_jsearch_jobs_rapidapi()`
+  - Changed API host from `job-search15.p.rapidapi.com` to `jsearch.p.rapidapi.com`
+  - Updated parameters: `location`, `radius`, `datePosted` → `query`, `num_pages`, `date_posted`, `remote_jobs_only`
+  - Added JSON response unwrapping for JSearch's `data` array wrapper
+- ✅ Updated function: `process_indeed_jobs()` → `process_jsearch_jobs()`
+  - Updated environment variable: `RAPIDAPI_HOST_INDEED` → `RAPIDAPI_HOST_JSEARCH`
+  - Updated location building: builds location string from city/state/country fields
+  - Updated salary building: formats from min/max salary fields
+- ✅ Updated function: `sync_indeed_jobs()` → `sync_jsearch_jobs()`
+  - Changed source name: `indeed` → `rapidapi`
+  - Updated error messages to reference JSearch
+- ✅ Updated endpoint: `/api/intake/indeed/sync` → `/api/intake/rapidapi/sync` (line 6418)
+
+**Environment Configuration Changes**:
+- ✅ Updated `backend/.env.example`:
+  - `RAPIDAPI_HOST_INDEED` → `RAPIDAPI_HOST_JSEARCH=jsearch.p.rapidapi.com`
+  - Free tier: 500 → 200 requests/month
+  - Parameters: `JOB_SEARCH_LOCATION`, `JOB_SEARCH_RADIUS`, `JOB_SEARCH_KEYWORDS` → `JOB_SEARCH_QUERY`, `JOB_SEARCH_DATE_POSTED`, `JOB_SEARCH_REMOTE_ONLY`
+- ✅ Updated `backend/.env` with same changes
+
+**Test Updates** (`backend/tests/job_intake_tests.rs`):
+- ✅ `test_indeed_api_job_sources_table` → `test_jsearch_api_job_sources_table`
+  - Updated mock data to JSearch format (employer_name, city/state/country, min/max salary)
+- ✅ `test_indeed_job_deduplication_by_external_id` → `test_jsearch_job_deduplication_by_external_id`
+  - Updated test data and source names
+- ✅ `test_indeed_rapidapi_response_parsing` → `test_jsearch_rapidapi_response_parsing`
+  - Updated to validate JSearch field structure
+- ✅ `test_indeed_job_creation_from_api_data` → `test_jsearch_job_creation_from_api_data`
+  - Changed source from `indeed` to `rapidapi`
+- ✅ `test_indeed_search_parameters` → `test_jsearch_search_parameters`
+  - Updated to JSearch parameter format (query, num_pages, date_posted, remote_jobs_only)
+- ✅ `test_indeed_intake_log_tracking` → `test_jsearch_intake_log_tracking`
+  - Updated to reflect 10-job limit (num_pages=1)
+- ✅ `test_indeed_counter_validation` → `test_jsearch_counter_validation`
+  - Updated test values to reflect 10-job limit
+- ✅ `test_rapidapi_quota_tracking` - Updated quota limit from 450 (90% of 500) to 170 (85% of 200)
+- ✅ `test_indeed_error_handling` → `test_jsearch_error_handling`
+  - Updated error messages to reference JSearch
+
+**Build Status**:
+- ✅ Backend compiles successfully: `cargo build` passes (16.68s)
+- ✅ Tests compile successfully: `cargo test --test job_intake_tests test_jsearch --no-run` passes (12.02s)
+- ⚠️  4 minor warnings (unused imports in llm module - non-blocking)
+
+**Files Modified**:
+- `backend/src/main.rs` - JSearch API client and integration (lines 3332-3663)
+- `backend/tests/job_intake_tests.rs` - All 9 tests updated for JSearch
+- `backend/.env` - Environment variables updated
+- `backend/.env.example` - Environment variable documentation updated
+
+**Code Changes Summary**:
+- Struct: 1 updated (9 new fields, 3 modified)
+- Functions: 3 renamed + updated (`fetch_*`, `process_*`, `sync_*`)
+- Endpoint: 1 updated (`/api/intake/rapidapi/sync`)
+- Tests: 9 updated (all test_indeed_* → test_jsearch_*)
+- Environment vars: 4 updated (host, query format, rate limit)
+
+**Total Implementation Time**: ~2 hours (code updates + tests + build verification)
+
+**Next Steps** (deferred until RapidAPI signup):
+- [ ] Create RapidAPI account at rapidapi.com
+- [ ] Subscribe to JSearch API (free Basic plan)
+- [ ] Update RAPIDAPI_KEY in backend/.env
+- [ ] Test API in RapidAPI web UI
+- [ ] Run live sync via `/api/intake/rapidapi/sync`
+- [ ] Verify jobs created in database
+- [ ] Frontend integration (Phase 4.1.4)
+
+---
+
+### ⚠️ PREVIOUS IMPLEMENTATION - Superseded
+
+**Note**: The implementation below was completed for Indeed API on 2025-10-22. It has been superseded by the JSearch implementation above.
 
 ### ✅ COMPLETED (2025-10-22) - Core Implementation (Indeed - Superseded)
 

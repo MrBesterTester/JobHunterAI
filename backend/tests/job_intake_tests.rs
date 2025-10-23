@@ -548,24 +548,31 @@ mod job_intake_tests {
 
     #[tokio::test]
     #[serial]
-    async fn test_indeed_api_job_sources_table() {
+    async fn test_jsearch_api_job_sources_table() {
         let pool = create_test_pool().await;
         cleanup_test_data(&pool).await;
 
-        let source_id = insert_test_source(&pool, "indeed_test", "job_board").await
-            .expect("Should create Indeed source");
+        let source_id = insert_test_source(&pool, "rapidapi_test", "job_board").await
+            .expect("Should create RapidAPI/JSearch source");
 
-        // Simulate RapidAPI job being stored
+        // Simulate RapidAPI JSearch job being stored
         let api_job_id = Uuid::new_v4();
-        let external_job_id = "indeed_12345";
+        let external_job_id = "jsearch_12345";
         let mock_response = json!({
             "job_id": external_job_id,
             "job_title": "Senior QA Automation Engineer",
-            "company_name": "TestIndeedCompany",
-            "job_location": "Fremont, CA",
+            "employer_name": "TestJSearchCompany",
+            "employer_logo": "https://example.com/logo.png",
+            "job_city": "Fremont",
+            "job_state": "CA",
+            "job_country": "US",
             "job_description": "We are looking for a Senior QA Engineer...",
-            "job_salary": "$140,000 - $160,000",
-            "job_apply_link": "https://www.indeed.com/viewjob?jk=12345"
+            "job_min_salary": 140000.0,
+            "job_max_salary": 160000.0,
+            "job_salary_currency": "USD",
+            "job_is_remote": false,
+            "job_employment_type": "FULLTIME",
+            "job_apply_link": "https://www.example.com/jobs/12345"
         });
 
         let result = sqlx::query!(
@@ -606,17 +613,18 @@ mod job_intake_tests {
 
     #[tokio::test]
     #[serial]
-    async fn test_indeed_job_deduplication_by_external_id() {
+    async fn test_jsearch_job_deduplication_by_external_id() {
         let pool = create_test_pool().await;
         cleanup_test_data(&pool).await;
 
-        let source_id = insert_test_source(&pool, "indeed_dedup_test", "job_board").await
+        let source_id = insert_test_source(&pool, "rapidapi_dedup_test", "job_board").await
             .expect("Should create source");
 
-        let external_job_id = "indeed_duplicate_test_123";
+        let external_job_id = "jsearch_duplicate_test_123";
         let mock_response = json!({
             "job_id": external_job_id,
-            "job_title": "Test Engineer"
+            "job_title": "Test Engineer",
+            "employer_name": "TestCompany"
         });
 
         // Insert first occurrence
@@ -653,61 +661,70 @@ mod job_intake_tests {
 
     #[tokio::test]
     #[serial]
-    async fn test_indeed_rapidapi_response_parsing() {
-        // Test RapidAPI Indeed response structure (no database needed)
+    async fn test_jsearch_rapidapi_response_parsing() {
+        // Test RapidAPI JSearch response structure (no database needed)
         let mock_rapidapi_response = json!({
             "job_id": "abc123",
             "job_title": "Senior Test Automation Engineer",
-            "company_name": "TechCorp",
-            "job_location": "San Francisco, CA",
+            "employer_name": "TechCorp",
+            "employer_logo": "https://example.com/logo.png",
+            "job_city": "San Francisco",
+            "job_state": "CA",
+            "job_country": "US",
             "job_description": "We're looking for a talented engineer...",
             "job_posted_at_datetime_utc": "2025-10-20T10:00:00Z",
-            "job_salary": "$150,000 - $170,000",
-            "job_apply_link": "https://www.indeed.com/viewjob?jk=abc123"
+            "job_min_salary": 150000.0,
+            "job_max_salary": 170000.0,
+            "job_salary_currency": "USD",
+            "job_is_remote": false,
+            "job_employment_type": "FULLTIME",
+            "job_apply_link": "https://www.example.com/jobs/abc123"
         });
 
         // Verify all expected fields are present
         assert!(mock_rapidapi_response["job_id"].is_string());
         assert!(mock_rapidapi_response["job_title"].is_string());
-        assert!(mock_rapidapi_response["company_name"].is_string());
-        assert!(mock_rapidapi_response["job_location"].is_string());
+        assert!(mock_rapidapi_response["employer_name"].is_string());
+        assert!(mock_rapidapi_response["job_city"].is_string());
+        assert!(mock_rapidapi_response["job_state"].is_string());
         assert!(mock_rapidapi_response["job_description"].is_string());
-        assert!(mock_rapidapi_response["job_salary"].is_string());
+        assert!(mock_rapidapi_response["job_min_salary"].is_number());
+        assert!(mock_rapidapi_response["job_max_salary"].is_number());
         assert!(mock_rapidapi_response["job_apply_link"].is_string());
 
         // Verify field values
         let title = mock_rapidapi_response["job_title"].as_str().unwrap();
         assert!(title.contains("Test Automation"));
 
-        let salary = mock_rapidapi_response["job_salary"].as_str().unwrap();
-        assert!(salary.contains("$150,000"));
+        let min_salary = mock_rapidapi_response["job_min_salary"].as_f64().unwrap();
+        assert_eq!(min_salary, 150000.0);
     }
 
     #[tokio::test]
     #[serial]
-    async fn test_indeed_job_creation_from_api_data() {
+    async fn test_jsearch_job_creation_from_api_data() {
         let pool = create_test_pool().await;
         cleanup_test_data(&pool).await;
 
-        // Create job from Indeed data
+        // Create job from JSearch/RapidAPI data
         let job_id = Uuid::new_v4();
         let result = sqlx::query!(
             r#"
             INSERT INTO jobs (
                 job_id, source, title, company, location, url, salary, status
-            ) VALUES ($1, 'indeed', $2, $3, $4, $5, $6, 'new')
+            ) VALUES ($1, 'rapidapi', $2, $3, $4, $5, $6, 'new')
             "#,
             job_id,
             "Senior QA Automation Engineer",
-            "TestIndeedJobCompany",
-            "Fremont, CA",
-            "https://www.indeed.com/viewjob?jk=test123",
+            "TestJSearchCompany",
+            "Fremont, CA, US",
+            "https://www.example.com/jobs/test123",
             145000
         )
         .execute(&pool)
         .await;
 
-        assert!(result.is_ok(), "Should create job from Indeed data");
+        assert!(result.is_ok(), "Should create job from JSearch data");
 
         // Verify job was created
         let job = sqlx::query!(
@@ -718,8 +735,8 @@ mod job_intake_tests {
         .await
         .expect("Should fetch created job");
 
-        assert_eq!(job.source, "indeed");
-        assert_eq!(job.company, "TestIndeedJobCompany");
+        assert_eq!(job.source, "rapidapi");
+        assert_eq!(job.company, "TestJSearchCompany");
         assert_eq!(job.salary, Some(145000));
 
         cleanup_test_data(&pool).await;
@@ -727,39 +744,40 @@ mod job_intake_tests {
 
     #[tokio::test]
     #[serial]
-    async fn test_indeed_search_parameters() {
-        // Test RapidAPI Indeed search parameter construction (no database needed)
+    async fn test_jsearch_search_parameters() {
+        // Test RapidAPI JSearch search parameter construction (no database needed)
         let search_params = json!({
-            "query": "Software Test Engineer OR QA Engineer",
-            "location": "Fremont, CA",
-            "radius": "45",
-            "datePosted": "week"
+            "query": "Software Test Engineer OR QA Engineer in Fremont, CA",
+            "num_pages": "1",
+            "date_posted": "week",
+            "remote_jobs_only": false
         });
 
         // Validate search parameters
         assert!(search_params["query"].as_str().unwrap().contains("Test Engineer"));
-        assert!(search_params["location"].as_str().unwrap().contains("Fremont"));
-        assert_eq!(search_params["radius"].as_str().unwrap(), "45");
-        assert_eq!(search_params["datePosted"].as_str().unwrap(), "week");
+        assert!(search_params["query"].as_str().unwrap().contains("Fremont"));
+        assert_eq!(search_params["num_pages"].as_str().unwrap(), "1");
+        assert_eq!(search_params["date_posted"].as_str().unwrap(), "week");
+        assert_eq!(search_params["remote_jobs_only"].as_bool().unwrap(), false);
     }
 
     #[tokio::test]
     #[serial]
-    async fn test_indeed_intake_log_tracking() {
+    async fn test_jsearch_intake_log_tracking() {
         let pool = create_test_pool().await;
         cleanup_test_data(&pool).await;
 
-        let source_id = insert_test_source(&pool, "indeed_log_test", "job_board").await
+        let source_id = insert_test_source(&pool, "rapidapi_log_test", "job_board").await
             .expect("Should create source");
 
-        // Simulate successful Indeed sync
+        // Simulate successful JSearch sync (limited to 10 jobs via num_pages=1)
         let log_id = Uuid::new_v4();
         sqlx::query!(
             r#"
             INSERT INTO job_intake_logs (
                 log_id, source_id, sync_status, sync_started_at, sync_completed_at,
                 jobs_discovered, jobs_created, jobs_duplicated, jobs_filtered_out
-            ) VALUES ($1, $2, 'completed', NOW(), NOW(), 25, 8, 12, 5)
+            ) VALUES ($1, $2, 'completed', NOW(), NOW(), 10, 4, 3, 3)
             "#,
             log_id,
             source_id
@@ -778,27 +796,28 @@ mod job_intake_tests {
         .expect("Should fetch log");
 
         assert_eq!(log.sync_status, Some("completed".to_string()));
-        assert_eq!(log.jobs_discovered, Some(25));
-        assert_eq!(log.jobs_created, Some(8));
+        assert_eq!(log.jobs_discovered, Some(10));
+        assert_eq!(log.jobs_created, Some(4));
 
         cleanup_test_data(&pool).await;
     }
 
     #[tokio::test]
     #[serial]
-    async fn test_indeed_counter_validation() {
+    async fn test_jsearch_counter_validation() {
         // Test MECE (Mutually Exclusive, Collectively Exhaustive) counter validation
-        let discovered = 50;
-        let failed_processing = 5;
-        let filtered_out = 10;
-        let duplicated = 20;
-        let created = 15;
+        // JSearch limited to 10 jobs per sync (num_pages=1)
+        let discovered = 10;
+        let failed_processing = 1;
+        let filtered_out = 2;
+        let duplicated = 3;
+        let created = 4;
 
         let total = failed_processing + filtered_out + duplicated + created;
         assert_eq!(total, discovered, "Counters should be MECE");
 
         // Test invalid counter case
-        let invalid_created = 16; // Should be 15
+        let invalid_created = 5; // Should be 4
         let invalid_total = failed_processing + filtered_out + duplicated + invalid_created;
         assert_ne!(invalid_total, discovered, "Invalid counters should be detected");
     }
@@ -809,10 +828,10 @@ mod job_intake_tests {
         let pool = create_test_pool().await;
         cleanup_test_data(&pool).await;
 
-        let source_id = insert_test_source(&pool, "indeed_quota_test", "job_board").await
+        let source_id = insert_test_source(&pool, "rapidapi_quota_test", "job_board").await
             .expect("Should create source");
 
-        // Simulate multiple API calls this month
+        // Simulate multiple API calls this month (JSearch free tier: 200/month)
         for i in 0..10 {
             let log_id = Uuid::new_v4();
             sqlx::query!(
@@ -820,7 +839,7 @@ mod job_intake_tests {
                 INSERT INTO job_intake_logs (
                     log_id, source_id, sync_status, sync_started_at,
                     jobs_discovered
-                ) VALUES ($1, $2, 'completed', NOW() - INTERVAL '1 day' * $3, 20)
+                ) VALUES ($1, $2, 'completed', NOW() - INTERVAL '1 day' * $3, 10)
                 "#,
                 log_id,
                 source_id,
@@ -848,8 +867,8 @@ mod job_intake_tests {
         let calls_this_month = usage.count.unwrap_or(0);
         assert_eq!(calls_this_month, 10, "Should track 10 API calls");
 
-        // Check if approaching limit (500 for free tier)
-        let approaching_limit = calls_this_month >= 450;
+        // Check if approaching limit (200 for JSearch free tier, alert at 85% = 170)
+        let approaching_limit = calls_this_month >= 170;
         assert!(!approaching_limit, "Should not be approaching limit with 10 calls");
 
         cleanup_test_data(&pool).await;
@@ -857,18 +876,18 @@ mod job_intake_tests {
 
     #[tokio::test]
     #[serial]
-    async fn test_indeed_error_handling() {
+    async fn test_jsearch_error_handling() {
         let pool = create_test_pool().await;
         cleanup_test_data(&pool).await;
 
-        let source_id = insert_test_source(&pool, "indeed_error_test", "job_board").await
+        let source_id = insert_test_source(&pool, "rapidapi_error_test", "job_board").await
             .expect("Should create source");
 
         // Simulate failed sync with error details
         let log_id = Uuid::new_v4();
         let error_details = json!({
-            "error": "RapidAPI error 401: Invalid API key",
-            "timestamp": "2025-10-22T12:00:00Z"
+            "error": "RapidAPI JSearch error 401: Invalid API key",
+            "timestamp": "2025-10-23T12:00:00Z"
         });
 
         sqlx::query!(
