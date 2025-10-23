@@ -1,17 +1,18 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-  - [id: BUG-0004
+  - [id: ISSUE-007
 title: Phase Documentation Naming Conflict
-status: open
+status: fixed
 priority: medium
 severity: medium
 component: docs
 created: 2025-10-23
 updated: 2025-10-23
+fixed: 2025-10-23
 affects: [documentation, planning, git-history]
-related: []](#id-bug-0004%0Atitle-phase-documentation-naming-conflict%0Astatus-open%0Apriority-medium%0Aseverity-medium%0Acomponent-docs%0Acreated-2025-10-23%0Aupdated-2025-10-23%0Aaffects-documentation-planning-git-history%0Arelated-)
-- [BUG-0004: Phase Documentation Naming Conflict](#bug-0004-phase-documentation-naming-conflict)
+related: []](#id-issue-007%0Atitle-phase-documentation-naming-conflict%0Astatus-fixed%0Apriority-medium%0Aseverity-medium%0Acomponent-docs%0Acreated-2025-10-23%0Aupdated-2025-10-23%0Afixed-2025-10-23%0Aaffects-documentation-planning-git-history%0Arelated-)
+- [ISSUE-007: Phase Documentation Naming Conflict](#issue-007-phase-documentation-naming-conflict)
   - [Summary](#summary)
   - [Impact](#impact)
   - [Steps to Reproduce](#steps-to-reproduce)
@@ -36,12 +37,13 @@ related: []](#id-bug-0004%0Atitle-phase-documentation-naming-conflict%0Astatus-o
 ---
 id: ISSUE-007
 title: Phase Documentation Naming Conflict
-status: open
+status: fixed
 priority: medium
 severity: medium
 component: docs
 created: 2025-10-23
 updated: 2025-10-23
+fixed: 2025-10-23
 affects: [documentation, planning, git-history]
 related: []
 ---
@@ -319,19 +321,42 @@ EOF
 
 ## Decision
 
-**Awaiting user input on preferred solution.**
+**Selected Option 1: Rename Files to Phase 2.x Sub-phases**
 
-**Recommendation:** Option 1 (Rename to Phase 2.x) or Option 5 (Archive) are the cleanest long-term solutions. Option 4 (Update definitions) is the quickest but least satisfying.
+User chose Option 1 with full understanding that git history would be impacted. The decision prioritizes semantic accuracy and proper documentation organization over git history readability.
 
-**Considerations:**
-- If git history readability is critical → Option 4 or Option 5
-- If semantic accuracy is critical → Option 1
-- If feature discoverability is critical → Option 3
-- If implementation time is critical → Option 4
+**Rationale:**
+- Accurately reflects that these features are sub-phases of Phase 2 (Gmail integration)
+- Makes Phase 5 available for its intended purpose (Advanced features: scheduling, analytics, mobile)
+- Creates logical sub-phase hierarchy (2.4, 2.5, 2.6)
+- Clear semantic meaning going forward
 
 ## Implementation
 
-[To be completed after decision]
+**Completed: October 23, 2025**
+
+**Files Renamed (using git mv):**
+```bash
+git mv docs/PHASE_5.1_IMPLEMENTATION.md docs/PHASE_2.4_calendar-follow-ups.md
+git mv docs/PHASE_5.2_IMPLEMENTATION.md docs/PHASE_2.5_email-composition.md
+git mv docs/PHASE_5.3_robust-email-extraction-plan.md docs/PHASE_2.6_llm-job-extraction.md
+```
+
+**Cross-References Updated:**
+- README.md (2 references updated)
+- README_auto-test.md (1 reference updated)
+- docs/PHASE_3.1_claude-haiku-integration-plan.md (2 references updated)
+- docs/PHASE_2.5_email-composition.md (2 self-references updated)
+- docs/PHASE_2.7_samkirk-email-source-plan.md (1 reference updated)
+
+**Bug Index Regenerated:**
+- Ran `python3 scripts/generate-bug-index.py`
+- Updated bugs/README.md
+
+**Commit:**
+- Commit: 65d13c9
+- Message: "refactor: Rename Phase 5.x files to Phase 2.x sub-phases"
+- All changes committed with comprehensive migration notes
 
 ## Testing
 
@@ -371,7 +396,13 @@ git status
 
 - 2025-10-23: Bug discovered and documented
 - 2025-10-23: Five solution options proposed
-- Awaiting decision from user
+- 2025-10-23: User selected Option 1 (Rename to Phase 2.x)
+- 2025-10-23: Implementation completed
+  - Files renamed using git mv
+  - All cross-references updated (5 files)
+  - Bug index regenerated
+  - Changes committed (65d13c9)
+- 2025-10-23: Issue resolved and moved to bugs/fixed/
 
 ## Notes
 
