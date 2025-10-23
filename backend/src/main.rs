@@ -3329,6 +3329,312 @@ async fn process_gmail_messages(
     Ok(metrics)
 }
 
+// ============================================================================
+// Indeed/RapidAPI Integration (Phase 4.1)
+// ============================================================================
+
+/// RapidAPI job listing structure
+#[derive(Debug, Deserialize, Serialize)]
+struct RapidApiJobListing {
+    job_id: Option<String>,
+    job_title: Option<String>,
+    company_name: Option<String>,
+    job_location: Option<String>,
+    job_description: Option<String>,
+    job_posted_at_datetime_utc: Option<String>,
+    job_salary: Option<String>,
+    job_apply_link: Option<String>,
+    // Additional fields that might be present
+    #[serde(flatten)]
+    extra: serde_json::Map<String, serde_json::Value>,
+}
+
+/// Fetch jobs from RapidAPI Indeed endpoint
+async fn fetch_indeed_jobs_rapidapi(
+    api_key: &str,
+    api_host: &str,
+    search_params: &serde_json::Value,
+) -> Result<Vec<RapidApiJobListing>, Box<dyn std::error::Error + Send + Sync>> {
+    let client = reqwest::Client::new();
+
+    // Build query parameters from search_params
+    let query = search_params["query"].as_str().unwrap_or("Software Test Engineer");
+    let location = search_params["location"].as_str().unwrap_or("Fremont, CA");
+    let radius = search_params["radius"].as_str().unwrap_or("45");
+    let date_posted = search_params["datePosted"].as_str().unwrap_or("week");
+
+    log_debug(&format!("Fetching jobs from RapidAPI: query={}, location={}, radius={}, datePosted={}",
+        query, location, radius, date_posted));
+
+    let response = client
+        .get(&format!("https://{}/search", api_host))
+        .header("X-RapidAPI-Key", api_key)
+        .header("X-RapidAPI-Host", api_host)
+        .query(&[
+            ("query", query),
+            ("location", location),
+            ("radius", radius),
+            ("datePosted", date_posted),
+        ])
+        .send()
+        .await?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_default();
+        return Err(format!("RapidAPI error {}: {}", status, error_text).into());
+    }
+
+    let jobs: Vec<RapidApiJobListing> = response.json().await?;
+    log_debug(&format!("Fetched {} jobs from RapidAPI", jobs.len()));
+    Ok(jobs)
+}
+
+/// Extract job information from plain text (for API responses, not emails)
+async fn extract_job_from_text_async(
+    text: &str,
+    pool: &PgPool,
+) -> Option<JobExtractionResult> {
+    // Try LLM extraction first if API key is available
+    if let Ok(api_key) = std::env::var("ANTHROPIC_API_KEY") {
+        if !api_key.is_empty() {
+            // Fetch active prompt
+            if let Ok(prompt) = get_active_extraction_prompt(pool).await {
+                // For text extraction, we'll pass the text as the "body" and empty subject
+                match call_claude_api(&api_key, &prompt.prompt_content, "", text).await {
+                    Ok(extraction) => {
+                        log_debug(&format!("LLM text extraction succeeded - Title: {:?}, Company: {:?}, Confidence: {:.2}",
+                            extraction.title, extraction.company, extraction.confidence));
+
+                        // Only return if confidence is high enough (>= 0.3 as per prompt spec)
+                        if extraction.confidence >= 0.3 {
+                            return Some(extraction);
+                        } else {
+                            log_debug(&format!("LLM text extraction confidence too low: {:.2}, falling back to regex", extraction.confidence));
+                        }
+                    }
+                    Err(e) => {
+                        log_debug(&format!("LLM text extraction failed: {}, falling back to regex", e));
+                    }
+                }
+            } else {
+                log_debug("No active extraction prompt found, falling back to regex");
+            }
+        }
+    }
+
+    // Fallback to regex-based extraction
+    log_debug("Using regex-based extraction for text");
+    extract_job_from_email(&None, &Some(text.to_string()))
+}
+
+/// Process Indeed jobs from RapidAPI
+async fn process_indeed_jobs(
+    source: &JobSource,
+    pool: &PgPool,
+    _log_id: Uuid,
+) -> std::result::Result<SyncMetrics, Box<dyn std::error::Error + Send + Sync>> {
+    let mut metrics = SyncMetrics {
+        discovered: 0,
+        failed_processing: 0,
+        filtered_out: 0,
+        duplicated: 0,
+        created: 0,
+    };
+
+    // Get RapidAPI credentials from environment
+    let api_key = std::env::var("RAPIDAPI_KEY")
+        .map_err(|_| "RAPIDAPI_KEY not configured. Set this environment variable to enable Indeed integration.")?;
+    let api_host = std::env::var("RAPIDAPI_HOST_INDEED")
+        .map_err(|_| "RAPIDAPI_HOST_INDEED not configured. Set this environment variable to enable Indeed integration.")?;
+
+    // Fetch jobs from RapidAPI
+    let listings = fetch_indeed_jobs_rapidapi(&api_key, &api_host, &source.configuration).await?;
+
+    for listing in listings {
+        metrics.discovered += 1;
+
+        // Check if already processed (by external_job_id)
+        if let Some(ext_id) = &listing.job_id {
+            let existing = sqlx::query!(
+                "SELECT api_job_id FROM api_job_sources WHERE source_id = $1 AND external_job_id = $2",
+                source.source_id,
+                ext_id
+            )
+            .fetch_optional(pool)
+            .await?;
+
+            if existing.is_some() {
+                metrics.duplicated += 1;
+                continue;
+            }
+        }
+
+        // Store in api_job_sources table
+        let api_job_id = Uuid::new_v4();
+        sqlx::query!(
+            r#"
+            INSERT INTO api_job_sources (
+                api_job_id, source_id, external_job_id, external_url,
+                raw_response, processed
+            ) VALUES ($1, $2, $3, $4, $5, false)
+            "#,
+            api_job_id,
+            source.source_id,
+            listing.job_id,
+            listing.job_apply_link,
+            serde_json::to_value(&listing).unwrap()
+        )
+        .execute(pool)
+        .await?;
+
+        // Extract job data using LLM (reuse existing async extraction)
+        let job_text = format!(
+            "Title: {}\nCompany: {}\nLocation: {}\nSalary: {}\nDescription: {}",
+            listing.job_title.as_deref().unwrap_or(""),
+            listing.company_name.as_deref().unwrap_or(""),
+            listing.job_location.as_deref().unwrap_or(""),
+            listing.job_salary.as_deref().unwrap_or("Not specified"),
+            listing.job_description.as_deref().unwrap_or("")
+        );
+
+        if let Some(job_data) = extract_job_from_text_async(&job_text, pool).await {
+            // Use listing fields as fallbacks for extraction
+            let mut enhanced_data = job_data;
+            enhanced_data.title = enhanced_data.title.or(listing.job_title.clone());
+            enhanced_data.company = enhanced_data.company.or(listing.company_name.clone());
+            enhanced_data.location = enhanced_data.location.or(listing.job_location.clone());
+            enhanced_data.url = enhanced_data.url.or(listing.job_apply_link.clone());
+            enhanced_data.description = Some(job_text.clone());
+
+            // Create job (with filtering and deduplication)
+            match create_job_from_extraction(&enhanced_data, source, pool, None).await {
+                Ok(JobCreationResult::Created(job_id)) => {
+                    sqlx::query!(
+                        "UPDATE api_job_sources SET processed = true, job_id = $1 WHERE api_job_id = $2",
+                        job_id, api_job_id
+                    )
+                    .execute(pool)
+                    .await?;
+                    metrics.created += 1;
+                }
+                Ok(JobCreationResult::Duplicate(_)) => {
+                    metrics.duplicated += 1;
+                }
+                Err(_) => {
+                    metrics.failed_processing += 1;
+                }
+            }
+        } else {
+            metrics.failed_processing += 1;
+        }
+    }
+
+    log_debug(&format!("Indeed sync complete - Discovered: {}, Failed: {}, Filtered: {}, Duplicated: {}, Created: {}",
+        metrics.discovered, metrics.failed_processing, metrics.filtered_out, metrics.duplicated, metrics.created));
+
+    Ok(metrics)
+}
+
+/// Sync Indeed jobs endpoint (mirrors Gmail sync)
+async fn sync_indeed_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    let log_id = Uuid::new_v4();
+
+    // Get Indeed source
+    let source = sqlx::query_as::<_, JobSource>(
+        "SELECT * FROM job_sources WHERE source_name = 'indeed' AND is_active = true LIMIT 1"
+    )
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|_| actix_web::error::ErrorNotFound("Indeed source not found or inactive"))?;
+
+    // Create intake log
+    sqlx::query!(
+        "INSERT INTO job_intake_logs (log_id, source_id, sync_status) VALUES ($1, $2, 'running')",
+        log_id, source.source_id
+    )
+    .execute(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to create log: {}", e)))?;
+
+    // Process jobs
+    match process_indeed_jobs(&source, pool.get_ref(), log_id).await {
+        Ok(metrics) => {
+            // Validate counters (mutually exclusive and collectively exhaustive)
+            let expected_total = metrics.failed_processing + metrics.filtered_out + metrics.duplicated + metrics.created;
+            let validation_error = if expected_total != metrics.discovered {
+                Some(format!(
+                    "Counter mismatch: discovered={} but failed+filtered+duplicated+created={}+{}+{}+{}={}",
+                    metrics.discovered, metrics.failed_processing, metrics.filtered_out, metrics.duplicated,
+                    metrics.created, expected_total
+                ))
+            } else {
+                None
+            };
+
+            if let Some(ref error_msg) = validation_error {
+                log_debug(&format!("⚠️  VALIDATION ERROR: {}", error_msg));
+            }
+
+            // Update log as completed with all metrics
+            sqlx::query!(
+                r#"
+                UPDATE job_intake_logs
+                SET sync_completed_at = NOW(),
+                    jobs_discovered = $1,
+                    jobs_failed_processing = $2,
+                    jobs_filtered_out = $3,
+                    jobs_duplicated = $4,
+                    jobs_created = $5,
+                    validation_error = $6,
+                    sync_status = 'completed'
+                WHERE log_id = $7
+                "#,
+                metrics.discovered,
+                metrics.failed_processing,
+                metrics.filtered_out,
+                metrics.duplicated,
+                metrics.created,
+                validation_error,
+                log_id
+            )
+            .execute(pool.get_ref())
+            .await
+            .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to update log: {}", e)))?;
+
+            Ok(HttpResponse::Ok().json(serde_json::json!({
+                "message": "Indeed sync completed successfully",
+                "metrics": {
+                    "jobs_discovered": metrics.discovered,
+                    "jobs_failed_processing": metrics.failed_processing,
+                    "jobs_filtered_out": metrics.filtered_out,
+                    "jobs_duplicated": metrics.duplicated,
+                    "jobs_created": metrics.created
+                },
+                "validation_error": validation_error
+            })))
+        }
+        Err(e) => {
+            // Update log as failed
+            sqlx::query!(
+                r#"
+                UPDATE job_intake_logs
+                SET sync_completed_at = NOW(), sync_status = 'failed', errors_count = 1,
+                    error_details = $1
+                WHERE log_id = $2
+                "#,
+                serde_json::json!({"error": e.to_string()}),
+                log_id
+            )
+            .execute(pool.get_ref())
+            .await
+            .ok();
+
+            Err(actix_web::error::ErrorInternalServerError(format!("Indeed sync failed: {}", e)))
+        }
+    }
+}
+
 fn extract_email_body(payload: &GmailPayload) -> Option<String> {
     log_debug(&format!("extract_email_body: starting extraction, has body={}, has parts={}",
         payload.body.is_some(), payload.parts.is_some()));
@@ -6082,6 +6388,7 @@ async fn main() -> std::io::Result<()> {
             .route("/api/auth/gmail/url", web::get().to(get_gmail_oauth_url))
             .route("/auth/gmail/callback", web::get().to(handle_gmail_oauth_callback))
             .route("/api/intake/gmail/sync", web::post().to(sync_gmail_jobs))
+            .route("/api/intake/indeed/sync", web::post().to(sync_indeed_jobs))
             .route("/api/intake/linkedin/sync", web::post().to(sync_linkedin_jobs))
             .route("/api/intake/sync-all", web::post().to(sync_all_sources))
             .route("/api/intake/schedule", web::get().to(schedule_job_sync))

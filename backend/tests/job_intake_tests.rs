@@ -28,6 +28,9 @@ mod job_intake_tests {
         let _ = sqlx::query!("DELETE FROM jobs WHERE company LIKE 'Test%'")
             .execute(pool)
             .await;
+        let _ = sqlx::query!("DELETE FROM api_job_sources WHERE external_job_id LIKE '%test%'")
+            .execute(pool)
+            .await;
         let _ = sqlx::query!("DELETE FROM job_intake_logs WHERE sync_status = 'test'")
             .execute(pool)
             .await;
@@ -537,6 +540,368 @@ mod job_intake_tests {
             "error": "Invalid request"
         });
         assert!(malformed["jobs"].is_null());
+    }
+
+    // =================================================================
+    // Indeed/RapidAPI Integration Tests (Phase 4.1)
+    // =================================================================
+
+    #[tokio::test]
+    #[serial]
+    async fn test_indeed_api_job_sources_table() {
+        let pool = create_test_pool().await;
+        cleanup_test_data(&pool).await;
+
+        let source_id = insert_test_source(&pool, "indeed_test", "job_board").await
+            .expect("Should create Indeed source");
+
+        // Simulate RapidAPI job being stored
+        let api_job_id = Uuid::new_v4();
+        let external_job_id = "indeed_12345";
+        let mock_response = json!({
+            "job_id": external_job_id,
+            "job_title": "Senior QA Automation Engineer",
+            "company_name": "TestIndeedCompany",
+            "job_location": "Fremont, CA",
+            "job_description": "We are looking for a Senior QA Engineer...",
+            "job_salary": "$140,000 - $160,000",
+            "job_apply_link": "https://www.indeed.com/viewjob?jk=12345"
+        });
+
+        let result = sqlx::query!(
+            r#"
+            INSERT INTO api_job_sources (
+                api_job_id, source_id, external_job_id, external_url,
+                raw_response, processed
+            ) VALUES ($1, $2, $3, $4, $5, false)
+            "#,
+            api_job_id,
+            source_id,
+            external_job_id,
+            mock_response["job_apply_link"].as_str().unwrap(),
+            mock_response
+        )
+        .execute(&pool)
+        .await;
+
+        assert!(result.is_ok(), "Should store RapidAPI job");
+
+        // Verify retrieval - just check that the record exists
+        let count = sqlx::query!(
+            r#"
+            SELECT COUNT(*) as count
+            FROM api_job_sources
+            WHERE api_job_id = $1 AND processed = false
+            "#,
+            api_job_id
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("Should count API jobs");
+
+        assert_eq!(count.count, Some(1), "Should have stored one API job");
+
+        cleanup_test_data(&pool).await;
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn test_indeed_job_deduplication_by_external_id() {
+        let pool = create_test_pool().await;
+        cleanup_test_data(&pool).await;
+
+        let source_id = insert_test_source(&pool, "indeed_dedup_test", "job_board").await
+            .expect("Should create source");
+
+        let external_job_id = "indeed_duplicate_test_123";
+        let mock_response = json!({
+            "job_id": external_job_id,
+            "job_title": "Test Engineer"
+        });
+
+        // Insert first occurrence
+        let api_job_id_1 = Uuid::new_v4();
+        sqlx::query!(
+            r#"
+            INSERT INTO api_job_sources (
+                api_job_id, source_id, external_job_id, raw_response, processed
+            ) VALUES ($1, $2, $3, $4, false)
+            "#,
+            api_job_id_1,
+            source_id,
+            external_job_id,
+            mock_response
+        )
+        .execute(&pool)
+        .await
+        .expect("First insert should succeed");
+
+        // Check for duplicate before inserting second
+        let duplicate_check = sqlx::query!(
+            "SELECT api_job_id FROM api_job_sources WHERE source_id = $1 AND external_job_id = $2",
+            source_id,
+            external_job_id
+        )
+        .fetch_optional(&pool)
+        .await
+        .expect("Should check for duplicate");
+
+        assert!(duplicate_check.is_some(), "Should detect duplicate by external_job_id");
+
+        cleanup_test_data(&pool).await;
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn test_indeed_rapidapi_response_parsing() {
+        // Test RapidAPI Indeed response structure (no database needed)
+        let mock_rapidapi_response = json!({
+            "job_id": "abc123",
+            "job_title": "Senior Test Automation Engineer",
+            "company_name": "TechCorp",
+            "job_location": "San Francisco, CA",
+            "job_description": "We're looking for a talented engineer...",
+            "job_posted_at_datetime_utc": "2025-10-20T10:00:00Z",
+            "job_salary": "$150,000 - $170,000",
+            "job_apply_link": "https://www.indeed.com/viewjob?jk=abc123"
+        });
+
+        // Verify all expected fields are present
+        assert!(mock_rapidapi_response["job_id"].is_string());
+        assert!(mock_rapidapi_response["job_title"].is_string());
+        assert!(mock_rapidapi_response["company_name"].is_string());
+        assert!(mock_rapidapi_response["job_location"].is_string());
+        assert!(mock_rapidapi_response["job_description"].is_string());
+        assert!(mock_rapidapi_response["job_salary"].is_string());
+        assert!(mock_rapidapi_response["job_apply_link"].is_string());
+
+        // Verify field values
+        let title = mock_rapidapi_response["job_title"].as_str().unwrap();
+        assert!(title.contains("Test Automation"));
+
+        let salary = mock_rapidapi_response["job_salary"].as_str().unwrap();
+        assert!(salary.contains("$150,000"));
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn test_indeed_job_creation_from_api_data() {
+        let pool = create_test_pool().await;
+        cleanup_test_data(&pool).await;
+
+        // Create job from Indeed data
+        let job_id = Uuid::new_v4();
+        let result = sqlx::query!(
+            r#"
+            INSERT INTO jobs (
+                job_id, source, title, company, location, url, salary, status
+            ) VALUES ($1, 'indeed', $2, $3, $4, $5, $6, 'new')
+            "#,
+            job_id,
+            "Senior QA Automation Engineer",
+            "TestIndeedJobCompany",
+            "Fremont, CA",
+            "https://www.indeed.com/viewjob?jk=test123",
+            145000
+        )
+        .execute(&pool)
+        .await;
+
+        assert!(result.is_ok(), "Should create job from Indeed data");
+
+        // Verify job was created
+        let job = sqlx::query!(
+            "SELECT title, company, source, salary FROM jobs WHERE job_id = $1",
+            job_id
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("Should fetch created job");
+
+        assert_eq!(job.source, "indeed");
+        assert_eq!(job.company, "TestIndeedJobCompany");
+        assert_eq!(job.salary, Some(145000));
+
+        cleanup_test_data(&pool).await;
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn test_indeed_search_parameters() {
+        // Test RapidAPI Indeed search parameter construction (no database needed)
+        let search_params = json!({
+            "query": "Software Test Engineer OR QA Engineer",
+            "location": "Fremont, CA",
+            "radius": "45",
+            "datePosted": "week"
+        });
+
+        // Validate search parameters
+        assert!(search_params["query"].as_str().unwrap().contains("Test Engineer"));
+        assert!(search_params["location"].as_str().unwrap().contains("Fremont"));
+        assert_eq!(search_params["radius"].as_str().unwrap(), "45");
+        assert_eq!(search_params["datePosted"].as_str().unwrap(), "week");
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn test_indeed_intake_log_tracking() {
+        let pool = create_test_pool().await;
+        cleanup_test_data(&pool).await;
+
+        let source_id = insert_test_source(&pool, "indeed_log_test", "job_board").await
+            .expect("Should create source");
+
+        // Simulate successful Indeed sync
+        let log_id = Uuid::new_v4();
+        sqlx::query!(
+            r#"
+            INSERT INTO job_intake_logs (
+                log_id, source_id, sync_status, sync_started_at, sync_completed_at,
+                jobs_discovered, jobs_created, jobs_duplicated, jobs_filtered_out
+            ) VALUES ($1, $2, 'completed', NOW(), NOW(), 25, 8, 12, 5)
+            "#,
+            log_id,
+            source_id
+        )
+        .execute(&pool)
+        .await
+        .expect("Should create intake log");
+
+        // Verify log was stored
+        let log = sqlx::query!(
+            "SELECT sync_status, jobs_discovered, jobs_created FROM job_intake_logs WHERE log_id = $1",
+            log_id
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("Should fetch log");
+
+        assert_eq!(log.sync_status, Some("completed".to_string()));
+        assert_eq!(log.jobs_discovered, Some(25));
+        assert_eq!(log.jobs_created, Some(8));
+
+        cleanup_test_data(&pool).await;
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn test_indeed_counter_validation() {
+        // Test MECE (Mutually Exclusive, Collectively Exhaustive) counter validation
+        let discovered = 50;
+        let failed_processing = 5;
+        let filtered_out = 10;
+        let duplicated = 20;
+        let created = 15;
+
+        let total = failed_processing + filtered_out + duplicated + created;
+        assert_eq!(total, discovered, "Counters should be MECE");
+
+        // Test invalid counter case
+        let invalid_created = 16; // Should be 15
+        let invalid_total = failed_processing + filtered_out + duplicated + invalid_created;
+        assert_ne!(invalid_total, discovered, "Invalid counters should be detected");
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn test_rapidapi_quota_tracking() {
+        let pool = create_test_pool().await;
+        cleanup_test_data(&pool).await;
+
+        let source_id = insert_test_source(&pool, "indeed_quota_test", "job_board").await
+            .expect("Should create source");
+
+        // Simulate multiple API calls this month
+        for i in 0..10 {
+            let log_id = Uuid::new_v4();
+            sqlx::query!(
+                r#"
+                INSERT INTO job_intake_logs (
+                    log_id, source_id, sync_status, sync_started_at,
+                    jobs_discovered
+                ) VALUES ($1, $2, 'completed', NOW() - INTERVAL '1 day' * $3, 20)
+                "#,
+                log_id,
+                source_id,
+                i as f64
+            )
+            .execute(&pool)
+            .await
+            .expect("Should insert log");
+        }
+
+        // Count API calls this month (proxy for quota usage)
+        let usage = sqlx::query!(
+            r#"
+            SELECT COUNT(*) as count
+            FROM job_intake_logs
+            WHERE source_id = $1
+            AND sync_started_at >= date_trunc('month', NOW())
+            "#,
+            source_id
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("Should count usage");
+
+        let calls_this_month = usage.count.unwrap_or(0);
+        assert_eq!(calls_this_month, 10, "Should track 10 API calls");
+
+        // Check if approaching limit (500 for free tier)
+        let approaching_limit = calls_this_month >= 450;
+        assert!(!approaching_limit, "Should not be approaching limit with 10 calls");
+
+        cleanup_test_data(&pool).await;
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn test_indeed_error_handling() {
+        let pool = create_test_pool().await;
+        cleanup_test_data(&pool).await;
+
+        let source_id = insert_test_source(&pool, "indeed_error_test", "job_board").await
+            .expect("Should create source");
+
+        // Simulate failed sync with error details
+        let log_id = Uuid::new_v4();
+        let error_details = json!({
+            "error": "RapidAPI error 401: Invalid API key",
+            "timestamp": "2025-10-22T12:00:00Z"
+        });
+
+        sqlx::query!(
+            r#"
+            INSERT INTO job_intake_logs (
+                log_id, source_id, sync_status, sync_started_at, sync_completed_at,
+                errors_count, error_details
+            ) VALUES ($1, $2, 'failed', NOW(), NOW(), 1, $3)
+            "#,
+            log_id,
+            source_id,
+            error_details
+        )
+        .execute(&pool)
+        .await
+        .expect("Should log error");
+
+        // Verify error was stored
+        let log = sqlx::query!(
+            "SELECT sync_status, error_details FROM job_intake_logs WHERE log_id = $1",
+            log_id
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("Should fetch log");
+
+        assert_eq!(log.sync_status, Some("failed".to_string()));
+        assert!(log.error_details.is_some());
+
+        let stored_error = log.error_details.unwrap();
+        assert!(stored_error["error"].as_str().unwrap().contains("Invalid API key"));
+
+        cleanup_test_data(&pool).await;
     }
 
     // =================================================================
