@@ -2,6 +2,7 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Afternoon Work Plan - October 23, 2025](#afternoon-work-plan---october-23-2025)
+  - [Prompt](#prompt)
   - [Prioritized Action Items](#prioritized-action-items)
     - [1. **ISSUE-007: Resolve Phase Documentation Naming Conflict** 🔴 HIGH PRIORITY](#1-issue-007-resolve-phase-documentation-naming-conflict--high-priority)
     - [2. **ISSUE-008: Split README.md for Token Efficiency** 🟡 MEDIUM-HIGH PRIORITY](#2-issue-008-split-readmemd-for-token-efficiency--medium-high-priority)
@@ -17,6 +18,10 @@
 # Afternoon Work Plan - October 23, 2025
 
 **Generated from**: Morning work summary (README_work-summary-10-23-2025-am.md)
+
+## Prompt
+
+> Now using that document, create a prioritized plan with the most important first that I can use this afternoon when I resume work with you.
 
 ---
 
