@@ -327,6 +327,46 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
     }
   };
 
+  // RapidAPI (JSearch) sync
+  const handleRapidAPISync = async (): Promise<void> => {
+    const rapidapiSource = sources.find(s => s.source_name === 'rapidapi');
+    if (!rapidapiSource) return;
+
+    setSyncingSource(rapidapiSource.source_id);
+    setError(null);
+
+    try {
+      const response = await fetch(`${API_URL}/intake/rapidapi/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Sync failed: ${response.status}`);
+      }
+
+      const data: SyncResponse = await response.json();
+      setLastSyncResult(data);
+
+      // Refresh all data
+      await Promise.all([
+        fetchSources(),
+        fetchLogs(),
+        fetchSummary()
+      ]);
+
+      // Notify parent component to refresh jobs list
+      if (onJobsUpdated) {
+        onJobsUpdated();
+      }
+    } catch (err) {
+      console.error('Error syncing RapidAPI:', err);
+      setError('Failed to sync RapidAPI jobs');
+    } finally {
+      setSyncingSource(null);
+    }
+  };
+
   // Sync all sources
   const handleSyncAll = async (): Promise<void> => {
     setSyncingAll(true);
@@ -402,10 +442,6 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
     }
   };
 
-  const getSourceByType = (type: string): JobSource | undefined => {
-    return sources.find(s => s.source_type === type);
-  };
-
   const getSourceByName = (name: string): JobSource | undefined => {
     return sources.find(s => s.source_name === name);
   };
@@ -453,10 +489,14 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
   // This allows multiple sources of the same type (e.g., Gmail, Outlook, Yahoo all have type 'email')
   const gmailSource = getSourceByName('gmail');
   const linkedinSource = getSourceByName('linkedin');
+  const rapidapiSource = getSourceByName('rapidapi');
   // Check if OAuth credentials actually exist
   const isGmailConnected = gmailSource ? (gmailSource.has_credentials === true) : false;
   const isGmailSyncing = syncingSource === gmailSource?.source_id;
   const isLinkedInSyncing = syncingSource === linkedinSource?.source_id;
+  const isRapidAPISyncing = syncingSource === rapidapiSource?.source_id;
+  // RapidAPI is considered "connected" if the source exists and is active
+  const isRapidAPIConnected = rapidapiSource ? rapidapiSource.is_active : false;
 
   return (
     <div style={{ width: '100%' }}>
@@ -818,18 +858,22 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
           </div>
         </div>
 
-        {/* Indeed Integration Card */}
+        {/* RapidAPI JSearch Integration Card */}
         <div style={{
           backgroundColor: 'white',
           border: '1px solid #e5e7eb',
           borderRadius: '8px',
           padding: '20px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          opacity: 0.6
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-            <Search style={{ width: '32px', height: '32px', color: '#2164f3' }} />
-            <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Indeed Job Discovery</h3>
+            <Search style={{ width: '32px', height: '32px', color: '#8b5cf6' }} />
+            <div>
+              <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>RapidAPI JSearch</h3>
+              <p style={{ fontSize: '12px', color: '#6b7280', margin: '2px 0 0 0' }}>
+                Aggregates LinkedIn, Indeed, Glassdoor + 30 more
+              </p>
+            </div>
           </div>
 
           <div style={{ marginBottom: '16px' }}>
@@ -838,33 +882,69 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
                 width: '10px',
                 height: '10px',
                 borderRadius: '50%',
-                backgroundColor: '#9ca3af'
+                backgroundColor: isRapidAPIConnected ? '#10b981' : '#9ca3af'
               }} />
               <span style={{ fontSize: '14px', color: '#6b7280' }}>
-                Status: Not Implemented
+                Status: {isRapidAPIConnected ? 'Active' : 'Inactive'}
               </span>
             </div>
-            <p style={{ fontSize: '14px', color: '#6b7280', margin: '12px 0' }}>
-              Coming Soon: Indeed API integration planned for Phase 4.1
+            {rapidapiSource?.last_sync ? (
+              <p style={{ fontSize: '14px', color: '#6b7280', margin: '4px 0' }}>
+                Last Sync: {formatRelativeTime(rapidapiSource.last_sync)}
+              </p>
+            ) : (
+              <p style={{ fontSize: '14px', color: '#6b7280', margin: '4px 0' }}>
+                Last Sync: Never
+              </p>
+            )}
+            <p style={{ fontSize: '14px', color: '#6b7280', margin: '4px 0' }}>
+              Limit: 10 jobs per sync
             </p>
+            {rapidapiSource && (
+              <p style={{ fontSize: '14px', color: '#6b7280', margin: '4px 0' }}>
+                Auto-sync: {rapidapiSource.is_active ? `Every ${rapidapiSource.sync_interval_minutes} minutes` : 'Disabled'}
+              </p>
+            )}
           </div>
 
-          <button
-            disabled
-            style={{
-              width: '100%',
-              padding: '10px 16px',
-              borderRadius: '6px',
-              border: '1px solid #d1d5db',
-              backgroundColor: '#f3f4f6',
-              color: '#9ca3af',
-              fontWeight: '500',
-              cursor: 'not-allowed',
-              fontSize: '14px'
-            }}
-          >
-            Request Implementation
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={handleRapidAPISync}
+              disabled={isRapidAPISyncing || syncingAll || !isRapidAPIConnected}
+              style={{
+                flex: 1,
+                padding: '10px 16px',
+                borderRadius: '6px',
+                border: 'none',
+                backgroundColor: isRapidAPISyncing || syncingAll || !isRapidAPIConnected ? '#9ca3af' : '#8b5cf6',
+                color: 'white',
+                fontWeight: '500',
+                cursor: isRapidAPISyncing || syncingAll || !isRapidAPIConnected ? 'not-allowed' : 'pointer',
+                fontSize: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                opacity: isRapidAPISyncing || syncingAll || !isRapidAPIConnected ? 0.6 : 1
+              }}
+            >
+              <RefreshCw style={{ width: '16px', height: '16px', animation: isRapidAPISyncing ? 'spin 1s linear infinite' : 'none' }} />
+              {isRapidAPISyncing ? 'Syncing...' : 'Sync Now'}
+            </button>
+          </div>
+
+          {!isRapidAPIConnected && (
+            <div style={{
+              marginTop: '12px',
+              padding: '8px',
+              backgroundColor: '#fee2e2',
+              borderRadius: '4px',
+              fontSize: '12px',
+              color: '#991b1b'
+            }}>
+              Configure RAPIDAPI_KEY in backend/.env to enable
+            </div>
+          )}
         </div>
       </div>
 
