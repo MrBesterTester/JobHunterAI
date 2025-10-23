@@ -410,7 +410,7 @@ find /Users/sam/Projects/JobHunterAI-Claude -name "*.md" -type f \
 - `/frontend/` - e2e README, test results (2 files)
 - `/prompts/` - All prompt templates (4 files)
 - `/data/resumes/` - Master resume (1 file)
-- Root files: DATABASE_SETUP.md, CLAUDE.md
+- Root files: README_database-setup.md, CLAUDE.md
 
 **Confirmation:**
 - ✅ 100% of active documentation updated

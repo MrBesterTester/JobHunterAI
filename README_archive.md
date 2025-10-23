@@ -2000,7 +2000,7 @@ This script will:
 - `database/backups/` - Your personal database backups
 - `backend/.env.backup` - Backup files created by switch scripts
 
-See [`DATABASE_SETUP.md`](DATABASE_SETUP.md) for detailed database setup instructions.
+See [`README_database-setup.md`](README_database-setup.md) for detailed database setup instructions.
 
 ## API Endpoints
 
