@@ -5,7 +5,7 @@
   - [Prompt](#prompt)
   - [Prioritized Action Items](#prioritized-action-items)
     - [1. **ISSUE-007: Resolve Phase Documentation Naming Conflict** ✅ **COMPLETE**](#1-issue-007-resolve-phase-documentation-naming-conflict--complete)
-    - [2. **ISSUE-008: Split README.md for Token Efficiency** 🟡 MEDIUM-HIGH PRIORITY](#2-issue-008-split-readmemd-for-token-efficiency--medium-high-priority)
+    - [2. **ISSUE-008: Split README.md for Token Efficiency** ✅ **COMPLETE**](#2-issue-008-split-readmemd-for-token-efficiency--complete)
     - [3. **ISSUE-009: Add Session Management Reminders to CLAUDE.md** 🟢 MEDIUM PRIORITY](#3-issue-009-add-session-management-reminders-to-claudemd--medium-priority)
     - [4. **Phase 4.1: Revise Backend Implementation for JSearch API** 🟡 MEDIUM PRIORITY](#4-phase-41-revise-backend-implementation-for-jsearch-api--medium-priority)
     - [5. **Phase 2.7: Begin Prerequisites for Microsoft Email Integration** 🔵 LOWER PRIORITY](#5-phase-27-begin-prerequisites-for-microsoft-email-integration--lower-priority)
@@ -58,25 +58,42 @@
 
 ---
 
-### 2. **ISSUE-008: Split README.md for Token Efficiency** 🟡 MEDIUM-HIGH PRIORITY
+### 2. **ISSUE-008: Split README.md for Token Efficiency** ✅ **COMPLETE**
 
 **Why Second**: Quick win for token efficiency that affects every Claude Code session going forward. Morning's work identified this as a significant pain point.
 
 **Action Items**:
-- [ ] Decide between Option 1 (3-file split) or Option 2 (2-file split)
-- [ ] Execute the split:
-  - [ ] Create `README_dev.md` with technical content
-  - [ ] Create `README_archive.md` (if Option 1)
-  - [ ] Rewrite `README.md` for end-user focus
-  - [ ] Add cross-references between files
-- [ ] Update CLAUDE.md if it references README structure
-- [ ] Test all markdown links
-- [ ] Commit changes
-- [ ] Move ISSUE-008 to `bugs/fixed/`
+- [x] Decide between Option 1 (3-file split) or Option 2 (2-file split) - **Selected Option 1**
+- [x] Execute the split:
+  - [x] Create `README_dev.md` with technical content
+  - [x] Create `README_archive.md` (if Option 1)
+  - [x] Rewrite `README.md` for end-user focus
+  - [x] Add cross-references between files
+- [x] Update CLAUDE.md if it references README structure - **No updates needed**
+- [x] Test all markdown links - **All working**
+- [x] Commit changes
+- [x] Move ISSUE-008 to `bugs/fixed/`
 
-**Estimated Time**: 1-2 hours
+**Follow-up Improvements** (based on user feedback):
+- [x] Add workflow diagram to README.md for better end-user UX
+- [x] Create README_master-plan.md for project implementation history
+- [x] Move Implementation Status from README_dev.md to master plan (33% token savings)
+- [x] Add cross-references to PHASE docs (avoiding duplication)
 
-**Impact**: ~70% reduction in README token usage, better documentation navigation, improved developer and end-user experience
+**Actual Time**: ~2 hours (initial split + follow-up improvements)
+
+**Impact Achieved**:
+- **Initial**: 97% token reduction for end users (45K → 1.4K tokens)
+- **Follow-up**: 33% token reduction for developers (45K → 30K tokens)
+- **New**: 15K token dedicated project status document (README_master-plan.md)
+- Better documentation navigation with clear audience separation
+- Workflow diagram improves end-user understanding
+
+**Commits**:
+- `3df3098` - Initial README split (97% token savings)
+- `2ccbe88` - Mark ISSUE-008 complete
+- `94b2e6c` - Add master plan + workflow diagram (33% dev savings)
+- `0b07724` - Update ISSUE-008 with follow-up details
 
 ---
 
