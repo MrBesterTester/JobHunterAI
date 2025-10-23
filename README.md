@@ -84,6 +84,8 @@ GRANT ALL PRIVILEGES ON DATABASE jobhunter TO jobhunter_user;
 psql -U jobhunter_user -d jobhunter -f database/schema.sql
 ```
 
+> **Advanced Database Setup**: See [`DATABASE_SETUP.md`](DATABASE_SETUP.md) for instructions on setting up separate personal/dev databases, backup/restore procedures, and database switching scripts.
+
 **2. Backend Setup**
 
 ```bash
