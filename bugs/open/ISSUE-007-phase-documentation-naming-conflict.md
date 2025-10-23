@@ -34,7 +34,7 @@ related: []](#id-bug-0004%0Atitle-phase-documentation-naming-conflict%0Astatus-o
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ---
-id: BUG-0004
+id: ISSUE-007
 title: Phase Documentation Naming Conflict
 status: open
 priority: medium
@@ -46,7 +46,7 @@ affects: [documentation, planning, git-history]
 related: []
 ---
 
-# BUG-0004: Phase Documentation Naming Conflict
+# ISSUE-007: Phase Documentation Naming Conflict
 
 ## Summary
 
