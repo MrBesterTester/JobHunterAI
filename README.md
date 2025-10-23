@@ -2965,7 +2965,7 @@ LLM Analysis (Claude 3.5 Haiku on subject + body)
 **Documentation Updates**:
 - **docs/PRD.md**: Expanded Section 3 with trade-off evaluation framework (14 → 167 lines)
 - **prompts/job_extraction_default.md**: Nested JSON + 200+ lines of extraction rules
-- **docs/PHASE_5.3_robust-email-extraction-plan.md**: Complete Phase 5.3.4 documentation
+- **docs/PHASE_2.6_llm-job-extraction.md**: Complete Phase 2.6 documentation
 
 **Comprehensive E2E Testing** ✅
 - **31 E2E Tests** across 2 dedicated test files
@@ -3192,7 +3192,7 @@ JobHuntAI/
 ├── docs/                      # Documentation
 │   ├── PRD.md                 # Original product requirements
 │   ├── CLAUDE.md              # Development guide for Claude Code
-│   └── PHASE_5.3_robust-email-extraction-plan.md  # Phase 5.3 implementation guide
+│   └── PHASE_2.6_llm-job-extraction.md  # Phase 2.6 implementation guide
 └── README.md                  # This comprehensive guide
 ```
 

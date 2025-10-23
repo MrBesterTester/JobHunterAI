@@ -1656,5 +1656,5 @@ The foundation is solid, comprehensive, and ready to scale with the JobHunter pl
 **For more detailed information:**
 - **Strategy & Architecture**: [README_auto-test-plan.md](README_auto-test-plan.md)
 - **Current Status & Metrics**: [README_auto-test-results.md](README_auto-test-results.md)
-- **Phase 5.3 Implementation**: [docs/PHASE_5.3_robust-email-extraction-plan.md](docs/PHASE_5.3_robust-email-extraction-plan.md)
+- **Phase 2.6 Implementation**: [docs/PHASE_2.6_llm-job-extraction.md](docs/PHASE_2.6_llm-job-extraction.md)
 - **Main Project Documentation**: [README.md](README.md)

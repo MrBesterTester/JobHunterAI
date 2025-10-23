@@ -2279,8 +2279,8 @@ CREATE TABLE content_versions (
 
 ### Existing Phase Documents
 
-- `docs/PHASE_5.3_robust-email-extraction-plan.md` - Email extraction with LLM
-- `docs/PHASE_5.2_IMPLEMENTATION.md` - Gmail integration implementation
+- `docs/PHASE_2.6_llm-job-extraction.md` - Email extraction with LLM
+- `docs/PHASE_2.5_email-composition.md` - Gmail integration implementation
 
 ### Related Files
 

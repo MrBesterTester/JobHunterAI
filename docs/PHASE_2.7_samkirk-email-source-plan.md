@@ -709,7 +709,7 @@ mod tests {
 - **Microsoft Graph API Documentation**: https://docs.microsoft.com/en-us/graph/api/resources/mail-api-overview
 - **OAuth 2.0 Flow for Microsoft**: https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-auth-code-flow
 - **PRD Section 4.1 (Intake Sources)**: `docs/PRD.md`
-- **Phase 5.3 (LLM Extraction)**: `docs/PHASE_5.3_robust-email-extraction-plan.md`
+- **Phase 2.6 (LLM Extraction)**: `docs/PHASE_2.6_llm-job-extraction.md`
 - **ISSUE-007 (Naming Conflict)**: `bugs/open/ISSUE-007-phase-documentation-naming-conflict.md`
 - **Existing Gmail Integration**: `backend/src/main.rs` (Gmail API client)
 
