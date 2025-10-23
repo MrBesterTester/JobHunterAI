@@ -234,14 +234,59 @@ const generateContent = useCallback(async (jobId: string): Promise<void> => {
 
 ## Implementation
 
-**Status**: Not yet implemented
+**Status**: In Progress - Multiple attempts made, tests still failing
 
-**Plan**:
-1. Add `setGeneratedContent(null)` at start of `generateContent()` function
-2. Run E2E tests to verify fix
-3. Test manually in browser
-4. If successful, commit and update documentation
-5. If unsuccessful, investigate with Option 3 approach
+**Investigation Log** (2025-10-22):
+
+**Attempt 1: Option 1 (Reset state in generateContent)**
+- Added `setGeneratedContent(null)` and `setGeneratedContentJob(null)` at start of `generateContent()` function
+- Result: ❌ Tests still failing - modal doesn't reopen
+
+**Attempt 2: Promise.resolve() timing fix**
+- Added `await Promise.resolve()` after state reset to ensure batching completes
+- Result: ❌ Tests still failing
+
+**Attempt 3: setTimeout delay**
+- Added 10ms setTimeout before showing modal
+- Result: ❌ Tests failing earlier - broke first generation attempt
+
+**Attempt 4: State clearing in button onClick**
+- Moved state clearing to job card button's onClick handler (frontend/src/App.tsx:2118-2124)
+- Clears `generatedContent`, `generatedContentJob`, and `showContentGeneration` before calling `generateContent()`
+- Result: ❌ Tests still failing - modal doesn't reopen on second generation
+
+**Current Code Changes:**
+1. `frontend/src/App.tsx:2118-2124` - Job card Generate button now clears state before calling `generateContent()`
+2. `frontend/src/App.tsx:1109-1147` - Added extensive console.log debugging to `generateContent()` function
+3. Modal state clearing happens in button click, not in function
+
+**Test Results:**
+```bash
+npx playwright test e2e/tests/04-content-generation.spec.ts \
+  --grep "should allow re-opening modal after closing|should maintain content when re-opened"
+
+Result: 2 failed (both tests timeout waiting for modal to appear)
+```
+
+**Root Cause Analysis:**
+After extensive investigation, the issue appears to be more complex than simple state management:
+- State is being cleared correctly (verified in code)
+- `generateContent()` is being called (would need browser console to confirm)
+- Modal conditional rendering: `{showContentGeneration && generatedContent && (`
+- Both conditions should be true after generation completes, but modal doesn't appear
+
+**Hypothesis:**
+Possible causes include:
+1. React batching causing state updates to not trigger re-render correctly
+2. Modal unmounting/remounting issue preventing second render
+3. Event handler not firing on second click (needs manual verification)
+4. Some other component lifecycle issue
+
+**Next Steps Required:**
+1. Manual browser testing with console open to see actual state changes and log messages
+2. Add React DevTools inspection to verify component re-renders
+3. Consider using a `key` prop on modal to force unmount/remount
+4. Investigate if feature ever worked or if tests were aspirational
 
 ## Testing
 
@@ -270,6 +315,10 @@ npx playwright test e2e/tests/04-content-generation.spec.ts \
 - 2025-10-22: Reproduced in Phase 3.1.4 verification
 - 2025-10-22: Bug report filed (BUG-0003)
 - 2025-10-22: Root cause analysis and solution options documented
+- 2025-10-22: Investigation commenced - Option 3 (deep fix) attempted
+- 2025-10-22: Multiple fix attempts made, all unsuccessful - tests still failing
+- 2025-10-22: Investigation documented with detailed findings and next steps
+- 2025-10-22: Status: IN PROGRESS - requires manual browser debugging
 
 ## Notes
 

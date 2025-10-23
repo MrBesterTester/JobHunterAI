@@ -1107,30 +1107,44 @@ const JobHunterDashboard: React.FC = () => {
   }, []); // Empty dependency array since we use functional setState and fetchJobs/fetchStats are stable
 
   const generateContent = useCallback(async (jobId: string): Promise<void> => {
+    console.log('[generateContent] Called for job:', jobId);
     setGeneratingContent(true);
+
     try {
+      console.log('[generateContent] Fetching content from API');
       const response = await fetch(`${API_URL}/jobs/${jobId}/generate-content`);
       if (response.ok) {
         const content: GeneratedContent = await response.json();
-        setGeneratedContent(content);
+        console.log('[generateContent] Content received, updating state');
+
         // Use functional setState to get the current job
         setJobs(prevJobs => {
           const job = prevJobs.find(j => j.job_id === jobId);
+          console.log('[generateContent] Found job:', job ? job.title : 'not found');
           setGeneratedContentJob(job || null);
           return prevJobs; // Return unchanged
         });
+
+        // Set generated content
+        setGeneratedContent(content);
+
+        // Open the modal
         setShowContentGeneration(true);
+
+        console.log('[generateContent] Modal state updated, should be visible now');
+
         // Fetch applications to ensure we have the latest application_id
         await fetchApplications();
       } else {
-        console.error('Failed to generate content');
+        console.error('[generateContent] Failed to generate content:', response.status);
       }
     } catch (error) {
-      console.error('Error generating content:', error);
+      console.error('[generateContent] Error generating content:', error);
     } finally {
       setGeneratingContent(false);
+      console.log('[generateContent] Generation complete');
     }
-  }, []); // Empty dependency array
+  }, []); // Empty dependency array - use functional setState to access current jobs
 
   const downloadGeneratedContent = (): void => {
     if (!generatedContent || !generatedContentJob) return;
@@ -2091,7 +2105,14 @@ const JobHunterDashboard: React.FC = () => {
       {job.status === 'approved' && (
         <div style={{ marginTop: '12px' }}>
           <button
-            onClick={(e) => { e.stopPropagation(); generateContent(job.job_id); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              // BUG-0003 FIX: Clear old content before triggering new generation
+              setGeneratedContent(null);
+              setGeneratedContentJob(null);
+              setShowContentGeneration(false);
+              generateContent(job.job_id);
+            }}
             disabled={generatingContent}
             style={{
               width: '100%',
