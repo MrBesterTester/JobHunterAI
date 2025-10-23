@@ -1418,7 +1418,7 @@ Based on failures, these files likely need review:
 **Files Modified**:
 - `frontend/src/App.tsx`: Added 10 new badge components (lines 706-889), updated interfaces
 - `frontend/e2e/tests/05b-new-job-badges.spec.ts`: Created comprehensive test suite (29 tests, 657 lines)
-- `README_trade-off-info-plan.md`: Implementation plan with badge specifications
+- `planning/trade-off-info-plan.md`: Implementation plan with badge specifications
 - `TEST_RESULTS_job-badges.md`: Detailed test results documentation (merged into this file)
 
 **Test Results Summary**:

@@ -85,7 +85,8 @@
       "WebFetch(domain:docs.rs)",
       "Read(//private/tmp/**)",
       "Bash(TMPDIR=$HOME/tmp cargo test:*)",
-      "WebFetch"
+      "WebFetch",
+      "Bash(awk:*)"
     ],
     "deny": [],
     "ask": [

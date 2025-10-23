@@ -371,7 +371,7 @@ After initial completion, user requested update of all internal content referenc
 - README_auto-test.md (~30 references)
 - README_auto-test-plan.md (~20 references)
 - README_auto-test-results.md (~10 references)
-- README_ui-tab-button-plan.md (1 reference)
+- planning/ui-tab-button-plan.md (1 reference, moved to planning/)
 
 **Files Intentionally Skipped (Historical Documents):**
 - README_work-summary-10-23-2025-am.md (historical work summary)

@@ -154,10 +154,10 @@
       - [Alternative: White-Label Licensing](#alternative-white-label-licensing)
     - [Q5: Should I build the SaaS version or just deploy single-user?](#q5-should-i-build-the-saas-version-or-just-deploy-single-user)
   - [References & Related Documentation](#references--related-documentation)
-    - [1. **[README_server-deploy-plan.md](README_server-deploy-plan.md)** (This Document)](#1-readme_server-deploy-planmdreadme_server-deploy-planmd-this-document)
-    - [2. **[README_multi-user-saas-plan.md](README_multi-user-saas-plan.md)**](#2-readme_multi-user-saas-planmdreadme_multi-user-saas-planmd)
-    - [3. **[README_ci-cd-github-plan.md](README_ci-cd-github-plan.md)**](#3-readme_ci-cd-github-planmdreadme_ci-cd-github-planmd)
-    - [4. **[README_dmg-tauri-plan.md](README_dmg-tauri-plan.md)**](#4-readme_dmg-tauri-planmdreadme_dmg-tauri-planmd)
+    - [1. **[server-deploy-plan.md](server-deploy-plan.md)** (This Document)](#1-server-deploy-planmdserver-deploy-planmd-this-document)
+    - [2. **[multi-user-saas-plan.md](multi-user-saas-plan.md)**](#2-multi-user-saas-planmdmulti-user-saas-planmd)
+    - [3. **[ci-cd-github-plan.md](ci-cd-github-plan.md)**](#3-ci-cd-github-planmdci-cd-github-planmd)
+    - [4. **[dmg-tauri-plan.md](dmg-tauri-plan.md)**](#4-dmg-tauri-plandmddmg-tauri-planmd)
     - [Recommended Reading Order](#recommended-reading-order)
   - [Conclusion](#conclusion)
 
@@ -1864,7 +1864,7 @@ Integrate with your existing CI/CD plan for automated testing before deployment.
 
 ### Step 8.1: Use Existing GitHub Actions Workflows
 
-You already have CI/CD plan at `README_ci-cd-github-plan.md`. Implement it now:
+You already have CI/CD plan at `ci-cd-github-plan.md`. Implement it now:
 
 ```bash
 # Create GitHub Actions directory
@@ -2630,7 +2630,7 @@ async fn main(
 - Don't include sensitive info (salary negotiations, personal notes)
 - Consider adding basic auth if sharing publicly
 
-**For production multi-user SaaS** (see [Multi-User SaaS Plan](README_multi-user-saas-plan.md)):
+**For production multi-user SaaS** (see [Multi-User SaaS Plan](multi-user-saas-plan.md)):
 - Implement proper authentication (JWT tokens)
 - Add `user_id` to all database tables
 - Filter all queries by authenticated user: `WHERE user_id = $1`
@@ -2694,7 +2694,7 @@ let jobs = sqlx::query_as!(
 
 **Shuttle users don't create accounts on Shuttle.rs** - they create accounts in YOUR application, stored in YOUR database. Shuttle just hosts the infrastructure.
 
-**For detailed implementation**: See [Multi-User SaaS Conversion Plan](README_multi-user-saas-plan.md) (110-150 hours of work).
+**For detailed implementation**: See [Multi-User SaaS Conversion Plan](multi-user-saas-plan.md) (110-150 hours of work).
 
 ---
 
@@ -2850,7 +2850,7 @@ Instead of SaaS, **license JobHunter to companies**:
 **Pros**: Higher per-customer revenue, they host it themselves
 **Cons**: Harder to find customers, no recurring visibility
 
-**For complete implementation details**: See [Multi-User SaaS Conversion Plan](README_multi-user-saas-plan.md).
+**For complete implementation details**: See [Multi-User SaaS Conversion Plan](multi-user-saas-plan.md).
 
 ---
 
@@ -2896,14 +2896,14 @@ Total: 110-150 hours
 
 This deployment plan is part of a comprehensive documentation suite for JobHunter. Here are all available guides:
 
-### 1. **[README_server-deploy-plan.md](README_server-deploy-plan.md)** (This Document)
+### 1. **[server-deploy-plan.md](server-deploy-plan.md)** (This Document)
 **Detailed step-by-step guide to deploy JobHunter to production on Shuttle.rs + Vercel**
 - Single-user deployment (free hosting)
 - 10 implementation phases with copy-paste commands
 - Time: 2-4 hours | Cost: $0/month
 - Portfolio-ready with live demo URL
 
-### 2. **[README_multi-user-saas-plan.md](README_multi-user-saas-plan.md)**
+### 2. **[multi-user-saas-plan.md](multi-user-saas-plan.md)**
 **Complete guide to convert JobHunter into a multi-tenant SaaS business**
 - User authentication (JWT, OAuth, or Clerk.dev)
 - Database schema changes for multi-user support
@@ -2911,7 +2911,7 @@ This deployment plan is part of a comprehensive documentation suite for JobHunte
 - Pricing strategy and profit projections
 - Time: 110-150 hours | Revenue: $1,000-10,000+/month potential
 
-### 3. **[README_ci-cd-github-plan.md](README_ci-cd-github-plan.md)**
+### 3. **[ci-cd-github-plan.md](ci-cd-github-plan.md)**
 **Professional CI/CD pipeline with GitHub Actions and branch protection**
 - Automated testing on every pull request
 - Backend tests (Rust) + Frontend E2E tests (Playwright)
@@ -2919,7 +2919,7 @@ This deployment plan is part of a comprehensive documentation suite for JobHunte
 - Status badges for README
 - Time: 1-2 hours | Cost: $0 (free on public repos)
 
-### 4. **[README_dmg-tauri-plan.md](README_dmg-tauri-plan.md)**
+### 4. **[dmg-tauri-plan.md](dmg-tauri-plan.md)**
 **Build native macOS desktop application using Tauri**
 - Self-contained .app/.dmg installer
 - SQLite embedded database (offline functionality)
@@ -2930,20 +2930,20 @@ This deployment plan is part of a comprehensive documentation suite for JobHunte
 ### Recommended Reading Order
 
 **For Job Search** (immediate):
-1. ✅ Read: README_server-deploy-plan.md (this document)
+1. ✅ Read: server-deploy-plan.md (this document)
 2. ✅ Execute: Deploy single-user version to Shuttle
-3. ✅ Optional: Add CI/CD (README_ci-cd-github-plan.md)
+3. ✅ Optional: Add CI/CD (ci-cd-github-plan.md)
 4. ✅ Update resume with live demo URL
 5. 🎯 Use JobHunter for your job search!
 
 **For Monetization** (later, after getting hired):
-1. ✅ Read: README_multi-user-saas-plan.md
+1. ✅ Read: multi-user-saas-plan.md
 2. ✅ Validate: Get 3-5 beta users interested
 3. ✅ Execute: Implement authentication + billing (3-6 months)
 4. ✅ Launch: Build customer base to $1,000+ MRR
 
 **For Desktop Experience** (optional):
-1. ✅ Read: README_dmg-tauri-plan.md
+1. ✅ Read: dmg-tauri-plan.md
 2. ✅ Execute: Build native macOS app (6-9 hours)
 3. ✅ Use: Offline personal tool for daily job hunting
 

@@ -1141,7 +1141,7 @@ LLM Analysis (Claude 3.5 Haiku on subject + body)
 - Adds 6-8 weeks: authentication, billing, multi-tenancy, user isolation
 - Better to validate single-user value first
 - Can revisit when 5+ interested users identified
-- See `README_multi-user-saas-plan.md` for future implementation
+- See `planning/multi-user-saas-plan.md` for future implementation
 
 #### ❌ Advanced Analytics Dashboard
 **Why Defer**:

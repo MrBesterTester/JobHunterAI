@@ -1264,7 +1264,7 @@ Instead of running a SaaS, **license JobHunter to other companies**:
 ## Next Steps
 
 **If pursuing SaaS**:
-1. Deploy single-user version first (README_server-deploy-plan.md)
+1. Deploy single-user version first (server-deploy-plan.md)
 2. Use it yourself for 2-4 weeks
 3. Validate people want this (beta users)
 4. Implement Phase 1 (Authentication) - 20-30 hours
