@@ -116,12 +116,103 @@ Configure your preferences (default criteria shown):
 
 ## How It Works
 
-1. **Automated Job Intake** - Jobs collected from Gmail, LinkedIn, Indeed, etc.
-2. **Smart Filtering** - Automatically filters based on your criteria
-3. **Review & Approve** - Review jobs in the Inbox tab and approve promising ones
-4. **Generate Materials** - AI creates custom resume and cover letter for each job
-5. **Create Gmail Draft** - One-click draft with cover letter and resume
-6. **Track Applications** - Monitor status, schedule interviews, manage follow-ups
+1. **Automated Job Intake & Processing** - Jobs collected and automatically filtered from email, LinkedIn, Indeed, etc.
+2. **Multi-Criteria Job Scoring** - Intelligent 0-100 scoring across 7 weighted criteria for data-driven ranking
+3. **Job Review & Approval** - Manual approval of jobs in unified Inbox (both auto-approved and auto-filtered)
+4. **Resume & Cover Letter Generation** - Generate custom resume/cover letter for approved jobs
+5. **Email Draft Creation** - One-click Gmail draft creation with cover letter body and resume attachment
+6. **Application Tracking & Follow-ups** - Monitor application status, schedule interviews, and manage follow-ups
+
+```mermaid
+flowchart TD
+    Start([Job Sources]) --> Sources
+
+    subgraph Sources [" 1. Automated Job Intake "]
+        Gmail[📧 Gmail] --> HTMLClean
+        LinkedIn[💼 LinkedIn] --> HTMLClean
+        Indeed[🔍 Indeed] --> HTMLClean
+        Manual[✍️ Manual Entry] --> Extract
+        HTMLClean[HTML Preprocessing<br/>Mozilla Readability] --> Extract
+        Extract[LLM Extraction<br/>Title, Company, Salary, Location]
+    end
+
+    Extract --> Dedup{Deduplication<br/>SHA256 Hash}
+    Dedup -->|Duplicate| Reject1[❌ Reject<br/>Already Exists]
+    Dedup -->|New| Filter
+
+    subgraph Filter [" 2. Intelligent Filtering "]
+        Check[Check Criteria]
+        Check --> Salary{Salary ≥ $100K?}
+        Salary -->|Yes| Location{Remote or<br/>≤45min commute?}
+        Salary -->|No| Filtered
+        Location -->|Yes| Domain{Matches Domain?<br/>Testing/AI/Firmware}
+        Location -->|No| Filtered
+        Domain -->|Yes| New[✅ Status: New]
+        Domain -->|No| Filtered[⚠️ Status: Filtered<br/>with Reasons]
+    end
+
+    New --> Score
+    Filtered --> Score
+
+    subgraph Scoring [" 3. Multi-Criteria Scoring "]
+        Score[Calculate Job Score]
+        Score --> Criteria[7 Weighted Criteria:<br/>💰 Compensation 30%<br/>🤝 Relationship 20%<br/>🏠 Remote Work 20%<br/>🎯 Domain Fit 15%<br/>⚡ Flexibility 10%<br/>🏥 Benefits 3%<br/>🏢 Industry 2%]
+        Criteria --> Total[Total Score 0-100]
+        Total --> Rank[Assign Rank<br/>vs. All Jobs]
+    end
+
+    Rank --> Inbox
+
+    subgraph Review [" 4. Manual Review & Approval "]
+        Inbox[📋 Inbox Tab<br/>Review All Jobs]
+        Inbox --> Decision{User Decision}
+        Decision -->|Approve| Approved[✅ Status: Approved]
+        Decision -->|Reject| Reject2[❌ Status: Rejected]
+    end
+
+    Approved --> Generate
+
+    subgraph Content [" 5. Content Generation "]
+        Generate[Generate Resume &<br/>Cover Letter]
+        Generate --> Customize[Domain-aware<br/>Customization]
+        Customize --> Template[Handlebars<br/>Template Engine]
+        Template --> Review2[Review Generated<br/>Content]
+    end
+
+    Review2 --> Draft
+
+    subgraph Email [" 6. Email Draft Creation "]
+        Draft[Create Gmail Draft]
+        Draft --> MIME[MIME Message<br/>Construction]
+        MIME --> Attach[Attach Resume PDF<br/>Base64 Encoded]
+        Attach --> GmailAPI[Gmail API<br/>Create Draft]
+        GmailAPI --> OpenGmail[📤 Open in Gmail]
+    end
+
+    OpenGmail --> Send{Send Email?}
+    Send -->|Yes| Applied[✅ Status: Applied]
+    Send -->|No| Wait[Wait for User]
+
+    subgraph Tracking [" 7. Application Tracking & Follow-ups "]
+        Applied --> Timeline[📊 Application Timeline]
+        Timeline --> Interview[📅 Schedule Interviews]
+        Interview --> Followup[📧 Automated Follow-ups]
+        Followup --> Track[Track Response &<br/>Offer Status]
+    end
+
+    Track --> End([Complete])
+    Reject1 --> End
+    Reject2 --> End
+
+    style Start fill:#e1f5ff
+    style End fill:#e1f5ff
+    style New fill:#d4edda
+    style Filtered fill:#fff3cd
+    style Approved fill:#d4edda
+    style Applied fill:#d4edda
+    style Reject1 fill:#f8d7da
+    style Reject2 fill:#f8d7da
+```
 
 ## UI Overview
 
