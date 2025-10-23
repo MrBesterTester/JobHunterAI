@@ -1,27 +1,3 @@
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-
-  - [id: ISSUE-009
-title: Session Management and Documentation Best Practices
-status: open
-priority: low
-severity: low
-component: docs
-created: 2025-10-23
-updated: 2025-10-23
-affects: [claude-code-workflow, documentation-quality, token-efficiency]
-related: [ISSUE-008]](#id-issue-009%0Atitle-session-management-and-documentation-best-practices%0Astatus-open%0Apriority-low%0Aseverity-low%0Acomponent-docs%0Acreated-2025-10-23%0Aupdated-2025-10-23%0Aaffects-claude-code-workflow-documentation-quality-token-efficiency%0Arelated-issue-008)
-- [ISSUE-009: Session Management and Documentation Best Practices](#issue-009-session-management-and-documentation-best-practices)
-  - [Summary](#summary)
-  - [Impact](#impact)
-  - [Current State](#current-state)
-  - [Desired Outcome](#desired-outcome)
-  - [Root Cause](#root-cause)
-  - [Proposed Solutions](#proposed-solutions)
-    - [Option 1: Add to CLAUDE.md (Recommended)](#option-1-add-to-claudemd-recommended)
-
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
 ---
 id: ISSUE-009
 title: Session Management and Documentation Best Practices
@@ -34,6 +10,27 @@ updated: 2025-10-23
 affects: [claude-code-workflow, documentation-quality, token-efficiency]
 related: [ISSUE-008]
 ---
+
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+- [ISSUE-009: Session Management and Documentation Best Practices](#issue-009-session-management-and-documentation-best-practices)
+  - [Summary](#summary)
+  - [Impact](#impact)
+  - [Current State](#current-state)
+  - [Desired Outcome](#desired-outcome)
+  - [Root Cause](#root-cause)
+  - [Proposed Solutions](#proposed-solutions)
+    - [Option 1: Add to CLAUDE.md (Recommended)](#option-1-add-to-claudemd-recommended)
+    - [Option 2: Create Standalone docs/BEST-PRACTICES.md](#option-2-create-standalone-docsbest-practicesmd)
+    - [Option 3: Keep as ISSUE Only](#option-3-keep-as-issue-only)
+  - [Decision](#decision)
+  - [Implementation](#implementation)
+  - [Testing](#testing)
+  - [Status History](#status-history)
+  - [Notes](#notes)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # ISSUE-009: Session Management and Documentation Best Practices
 
@@ -122,7 +119,7 @@ Establish systematic reminders for two key Claude Code workflow best practices: 
 **Implementation Effort**: 30 minutes
 
 **Section Structure**:
-```markdown
+````markdown
 ## Session Management & Documentation Workflow
 
 ### Token Efficiency & Session Restarts
@@ -149,7 +146,7 @@ Establish systematic reminders for two key Claude Code workflow best practices: 
 4. Reference specific commits in doc updates when relevant
 
 **Why**: Commit messages capture exact details that might be forgotten when updating docs manually.
-```
+````
 
 ### Option 2: Create Standalone docs/BEST-PRACTICES.md
 
