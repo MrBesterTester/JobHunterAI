@@ -52,6 +52,7 @@
   - [Configuration, Setups and Development Helper Scripts](#configuration-setups-and-development-helper-scripts)
     - [Database Configuration](#database-configuration)
     - [Gmail Integration Setup](#gmail-integration-setup)
+    - [Claude Code Notification Setup](#claude-code-notification-setup)
     - [Quick Start: Database Setup](#quick-start-database-setup)
     - [Understanding Your Workflow: Setup vs. Daily Use](#understanding-your-workflow-setup-vs-daily-use)
       - [One-Time Setup (Do This Once)](#one-time-setup-do-this-once)
@@ -1445,6 +1446,32 @@ GMAIL_REDIRECT_URI=http://localhost:8080/auth/gmail/callback
 - **OAuth error in popup** - Verify redirect URI matches exactly: `http://localhost:8080/auth/gmail/callback`
 - **"Unauthorized"** - Make sure your Gmail address is added as a test user in the OAuth consent screen
 - **Still not working** - Check backend logs for detailed error messages
+
+### Claude Code Notification Setup
+
+When working with Claude Code on long-running tasks (tests, builds, complex implementations), you'll want to be notified when tasks complete. The iPhone notification system sends alerts to both your Mac and iPhone, so you don't need to constantly monitor the terminal.
+
+**Why This Matters for Development:**
+- ✅ **Long test suites**: Get notified when your test run finishes (30+ seconds)
+- ✅ **Complex builds**: Know when `cargo build` or multi-step operations complete
+- ✅ **Extended automation**: Claude can work autonomously while you focus elsewhere
+- ✅ **Time savings**: No more checking back every few minutes to see if it's done
+
+**Setup Instructions:**
+
+See [`README_iPhone-notify-setup.md`](README_iPhone-notify-setup.md) for complete configuration guide including:
+- Terminal notifier installation (macOS notifications)
+- Pushover setup for iPhone push notifications ($5 one-time)
+- Claude Code hooks configuration
+- iOS 26 continuity features
+- Troubleshooting guide
+
+**Quick Overview:**
+The system uses two notification methods:
+1. **terminal-notifier** - Displays notifications on your Mac
+2. **Pushover** (optional) - Sends push notifications directly to your iPhone
+
+Combined, these provide reliable notifications whether you're at your desk or away from your Mac.
 
 ### Quick Start: Database Setup
 
