@@ -3077,9 +3077,10 @@ async fn process_gmail_messages(
 
     // Search for all unread emails, excluding those already tagged as JobOp
     // This allows the LLM to classify ALL emails, not just subject-matched ones
+    // Limited to 10 emails per sync to match RapidAPI/JSearch limit
     let query = "is:unread -label:JobOp";
     let url = format!(
-        "https://gmail.googleapis.com/gmail/v1/users/me/messages?q={}&maxResults=50",
+        "https://gmail.googleapis.com/gmail/v1/users/me/messages?q={}&maxResults=10",
         urlencoding::encode(query)
     );
 
