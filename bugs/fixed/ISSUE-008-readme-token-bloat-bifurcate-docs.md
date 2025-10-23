@@ -3,14 +3,15 @@
 
   - [id: ISSUE-008
 title: README.md Token Bloat - Bifurcate Developer and End-User Documentation
-status: open
+status: fixed
 priority: medium
 severity: low
 component: docs
 created: 2025-10-23
 updated: 2025-10-23
+fixed: 2025-10-23
 affects: [documentation, token-efficiency, developer-experience]
-related: []](#id-issue-008%0Atitle-readmemd-token-bloat---bifurcate-developer-and-end-user-documentation%0Astatus-open%0Apriority-medium%0Aseverity-low%0Acomponent-docs%0Acreated-2025-10-23%0Aupdated-2025-10-23%0Aaffects-documentation-token-efficiency-developer-experience%0Arelated-)
+related: []](#id-issue-008%0Atitle-readmemd-token-bloat---bifurcate-developer-and-end-user-documentation%0Astatus-fixed%0Apriority-medium%0Aseverity-low%0Acomponent-docs%0Acreated-2025-10-23%0Aupdated-2025-10-23%0Afixed-2025-10-23%0Aaffects-documentation-token-efficiency-developer-experience%0Arelated-)
 - [ISSUE-008: README.md Token Bloat - Bifurcate Developer and End-User Documentation](#issue-008-readmemd-token-bloat---bifurcate-developer-and-end-user-documentation)
   - [Summary](#summary)
   - [Impact](#impact)
@@ -213,6 +214,11 @@ Natural documentation evolution without audience segmentation:
 - 2025-10-23: User selected Option 1 (Three-File Split)
 - 2025-10-23: Implementation completed - 97% token reduction achieved ✅
 - 2025-10-23: Moved to bugs/fixed/
+- 2025-10-23: Follow-up improvements implemented based on user feedback:
+  * Added workflow diagram to README.md for better end-user understanding
+  * Created README_master-plan.md for project implementation history
+  * Moved Implementation Status from README_dev.md to master plan (33% token savings for developers)
+  * Added cross-references to PHASE docs (avoiding duplication)
 
 ## Notes
 
@@ -222,12 +228,27 @@ Natural documentation evolution without audience segmentation:
 - Consider applying similar principles to other documentation as project grows
 
 **Token Efficiency Comparison** ✅:
+
+*Initial Implementation (Phase 1)*:
 - Original README.md: 169,640 bytes (~45,000 tokens)
 - New README.md: 5,084 bytes (~1,400 tokens) = 3% of original
 - README_dev.md: 169,837 bytes (~45,000 tokens) - technical details preserved
 - Net savings: 97% token reduction when reading README.md (exceeded 70% target!)
 
+*Follow-up Improvements (Phase 2)*:
+- README.md: 5,084 → 9,000 bytes (~1.4K → 2.5K tokens) - Added workflow diagram for better UX
+- README_dev.md: 169,837 → 109,000 bytes (~45K → 30K tokens) - Moved Implementation Status out (33% reduction!)
+- README_master-plan.md: 62,000 bytes (~15K tokens) - NEW: Dedicated project status document
+- Developer token savings: 33% reduction (45K → 30K tokens when reading technical docs)
+- End-user experience: Improved with visual workflow diagram
+- Project status: Now has dedicated document with PHASE doc cross-references
+
 **File References**:
-- Current README.md location: `/Users/sam/Projects/JobHunterAI-Claude/README.md`
-- To be created: `/Users/sam/Projects/JobHunterAI-Claude/README_dev.md`
-- To be created: `/Users/sam/Projects/JobHunterAI-Claude/README_archive.md`
+- `/Users/sam/Projects/JobHunterAI-Claude/README.md` - End-user documentation (282 lines, 9KB, ~2.5K tokens)
+- `/Users/sam/Projects/JobHunterAI-Claude/README_dev.md` - Developer technical reference (2,506 lines, 109KB, ~30K tokens)
+- `/Users/sam/Projects/JobHunterAI-Claude/README_master-plan.md` - Project implementation status (1,201 lines, 62KB, ~15K tokens)
+- `/Users/sam/Projects/JobHunterAI-Claude/README_archive.md` - Original README backup (3,586 lines, 170KB, ~45K tokens)
+
+**Related Commits**:
+- Initial split: 3df3098 - "docs: Split README.md for 97% token efficiency improvement (ISSUE-008 Option 1)"
+- Follow-up improvements: 94b2e6c - "docs: Restructure README docs - add master plan + workflow diagram (ISSUE-008 follow-up)"
