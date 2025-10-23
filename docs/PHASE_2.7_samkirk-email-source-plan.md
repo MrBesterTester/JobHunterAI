@@ -51,11 +51,11 @@
 **IMPORTANT**: This document is numbered as **Phase 2.7** to account for the expected resolution of **ISSUE-007** (Phase Documentation Naming Conflict).
 
 **Context from ISSUE-007:**
-- Phase 5.1, 5.2, and 5.3 are currently misnamed and should be sub-phases of Phase 2 (email/Gmail integration)
+- Phase 2.4, 5.2, and 5.3 are currently misnamed and should be sub-phases of Phase 2 (email/Gmail integration)
 - When ISSUE-007 is resolved, the expected renaming will be:
-  1. **Phase 5.1 (Calendar)** → **Phase 2.4**
-  2. **Phase 5.2 (Email Composition)** → **Phase 2.5**
-  3. **Phase 5.3 (LLM Extraction)** → **Phase 2.6**
+  1. **Phase 2.4 (Calendar)** → **Phase 2.4**
+  2. **Phase 2.5 (Email Composition)** → **Phase 2.5**
+  3. **Phase 2.6 (LLM Extraction)** → **Phase 2.6**
   4. **Microsoft email (this document)** → **Phase 2.7**
 
 This numbering ensures:
@@ -85,7 +85,7 @@ This phase adds support for a **second email source** (`sam@samkirk.com`) using 
 
 **Current State:**
 - Phase 2 (Gmail integration) successfully extracts job offers from Gmail inbox ✅
-- Phase 5.3 (LLM-based extraction) provides robust job parsing ✅
+- Phase 2.6 (LLM-based extraction) provides robust job parsing ✅
 - All email processing infrastructure exists for Gmail
 
 **Business Need:**
@@ -102,7 +102,7 @@ This phase adds support for a **second email source** (`sam@samkirk.com`) using 
 ## Objectives
 
 1. **Add Microsoft email as intake source** without disrupting Gmail integration
-2. **Reuse existing LLM extraction pipeline** (Phase 5.3) for job parsing
+2. **Reuse existing LLM extraction pipeline** (Phase 2.6) for job parsing
 3. **Support folder-based filtering** (JobOps folder) for sparse job offers
 4. **Maintain separate authentication** for Gmail and Microsoft accounts
 5. **Provide unified job approval UI** regardless of source
@@ -146,7 +146,7 @@ This phase adds support for a **second email source** (`sam@samkirk.com`) using 
 - Different recruiter patterns
 
 **Proposed Solution**:
-- Leverage existing LLM-based extraction (Phase 5.3) which is format-agnostic
+- Leverage existing LLM-based extraction (Phase 2.6) which is format-agnostic
 - Monitor extraction quality metrics separately per source
 - Adjust prompts if needed based on empirical data
 
@@ -595,7 +595,7 @@ MICROSOFT_TENANT_ID=common
 - ✅ **No per-request charges** for basic Mail API operations
 - ✅ **No additional Azure costs** for personal accounts
 
-**LLM Costs (Phase 5.3 - Claude Haiku):**
+**LLM Costs (Phase 2.6 - Claude Haiku):**
 - Same as Gmail integration (~$3-5/month for 100 emails)
 - Potentially lower if folder filtering reduces volume
 

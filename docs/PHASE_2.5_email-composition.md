@@ -1,7 +1,7 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-- [Phase 5.2 Implementation: Email Composition & Sending](#phase-52-implementation-email-composition--sending)
+- [Phase 2.5 Implementation: Email Composition & Sending](#phase-25-implementation-email-composition--sending)
   - [Overview](#overview)
   - [Implementation Roadmap](#implementation-roadmap)
     - [📋 Week 1 - Days 1-2: Backend Gmail Draft API](#-week-1---days-1-2-backend-gmail-draft-api)
@@ -41,9 +41,9 @@
   - [Integration with Existing Features](#integration-with-existing-features)
     - [Phase 4 (Gmail Integration)](#phase-4-gmail-integration)
     - [Phase 3 (Content Generation)](#phase-3-content-generation)
-    - [Phase 5.1 (Calendar & Follow-ups)](#phase-51-calendar--follow-ups)
-  - [Future Enhancements (Post Phase 5.2)](#future-enhancements-post-phase-52)
-    - [Phase 5.3 Ideas:](#phase-53-ideas)
+    - [Phase 2.4 (Calendar & Follow-ups)](#phase-24-calendar--follow-ups)
+  - [Future Enhancements (Post Phase 2.5)](#future-enhancements-post-phase-25)
+    - [Phase 2.6 Ideas:](#phase-26-ideas)
   - [Progress Log](#progress-log)
     - [October 9, 2025 - Session 1: Planning & Documentation](#october-9-2025---session-1-planning--documentation)
   - [Estimated Timeline](#estimated-timeline)
@@ -52,7 +52,7 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# Phase 5.2 Implementation: Email Composition & Sending
+# Phase 2.5 Implementation: Email Composition & Sending
 
 **Status**: Planning → Implementation
 **Priority**: CRITICAL (completes core PRD workflow)
@@ -63,7 +63,7 @@
 
 ## Overview
 
-Phase 5.2 implements the **Email Composition & Sending** feature (PRD Section 4.4) - the final critical piece of the job application workflow. This phase enables the system to automatically create Gmail drafts with cover letters as email body and resumes as attachments, allowing you to review and send application emails directly from Gmail.
+Phase 2.5 implements the **Email Composition & Sending** feature (PRD Section 4.4) - the final critical piece of the job application workflow. This phase enables the system to automatically create Gmail drafts with cover letters as email body and resumes as attachments, allowing you to review and send application emails directly from Gmail.
 
 **What This Completes:**
 - End-to-end job application automation: Intake → Filter → Approve → Generate → **Create Draft** → Send
@@ -305,7 +305,7 @@ GMAIL_CLIENT_ID=...
 GMAIL_CLIENT_SECRET=...
 GMAIL_REDIRECT_URI=http://localhost:8080/auth/gmail/callback
 
-# New for Phase 5.2 (update OAuth scope)
+# New for Phase 2.5 (update OAuth scope)
 GMAIL_SCOPES=https://www.googleapis.com/auth/gmail.readonly,https://www.googleapis.com/auth/gmail.compose,https://www.googleapis.com/auth/gmail.modify
 ```
 
@@ -404,7 +404,7 @@ GMAIL_SCOPES=https://www.googleapis.com/auth/gmail.readonly,https://www.googleap
 
 ### Challenge 4: Draft Status Monitoring
 **Issue**: No webhook for "draft sent" - must poll Gmail API.
-**Solution**: Check draft status when user views application, or periodic background job (Phase 5.3).
+**Solution**: Check draft status when user views application, or periodic background job (Phase 2.6).
 
 ### Challenge 5: Email Rate Limits
 **Issue**: Gmail API has sending limits (500/day for free tier).
@@ -422,15 +422,15 @@ GMAIL_SCOPES=https://www.googleapis.com/auth/gmail.readonly,https://www.googleap
 - **Consumes**: Generated resume and cover letter
 - **Triggers on**: "Generate Resume & Cover Letter" → "Create Email Draft"
 
-### Phase 5.1 (Calendar & Follow-ups)
+### Phase 2.4 (Calendar & Follow-ups)
 - **Coordinates with**: Application tracking, communication history
 - **Future**: Link draft creation to follow-up schedule
 
 ---
 
-## Future Enhancements (Post Phase 5.2)
+## Future Enhancements (Post Phase 2.5)
 
-### Phase 5.3 Ideas:
+### Phase 2.6 Ideas:
 1. **Automatic Draft Status Monitoring**
    - Background job to check all drafts every 30 minutes
    - Auto-update status when sent
@@ -466,8 +466,8 @@ GMAIL_SCOPES=https://www.googleapis.com/auth/gmail.readonly,https://www.googleap
 - ⏳ Need to delete GAP_ANALYSIS.md
 
 **Next Steps**
-- [ ] Update README.md to add Phase 5.2 section
-- [ ] Delete GAP_ANALYSIS.md (content now in Phase 5.2)
+- [ ] Update README.md to add Phase 2.5 section
+- [ ] Delete GAP_ANALYSIS.md (content now in Phase 2.5)
 - [ ] Begin backend implementation: Gmail draft API
 - [ ] Create database migration for email_drafts table
 - [ ] Implement create_gmail_draft() function
@@ -514,7 +514,7 @@ This phase completes **PRD Section 4.4: Email Composition & Sending**, which is 
 - [✓] Record in Communications table
 - [✓] Update application status
 
-**After Phase 5.2:**
+**After Phase 2.5:**
 - ✅ **100% of PRD core requirements complete**
 - ✅ **Full end-to-end workflow operational**
 - ✅ **Ready for production use**
@@ -524,7 +524,7 @@ This phase completes **PRD Section 4.4: Email Composition & Sending**, which is 
 ## References
 
 - **PRD Section 4.4**: Email Composition & Sending (docs/PRD.md:70-83)
-- **Phase 5.1**: Calendar & Follow-ups (completed October 1, 2025)
+- **Phase 2.4**: Calendar & Follow-ups (completed October 1, 2025)
 - **Phase 4**: Automated Job Intake with Gmail integration (completed)
 - **Gmail API Docs**: https://developers.google.com/gmail/api/guides/drafts
 - **MIME RFC**: https://tools.ietf.org/html/rfc2045 (multipart messages)

@@ -1,7 +1,7 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-- [Phase 5.3: Robust Email Extraction Plan](#phase-53-robust-email-extraction-plan)
+- [Phase 2.6: Robust Email Extraction Plan](#phase-26-robust-email-extraction-plan)
   - [Table of Contents](#table-of-contents)
   - [Executive Summary](#executive-summary)
   - [Current State Analysis](#current-state-analysis)
@@ -49,42 +49,42 @@
     - [✅ COMPLETED (2025-10-11)](#-completed-2025-10-11)
     - [How the System Works](#how-the-system-works)
     - [Expected Improvements](#expected-improvements)
-  - [Phase 5.3.1: MECE Counter System](#phase-531-mece-counter-system)
+  - [Phase 2.6.1: MECE Counter System](#phase-261-mece-counter-system)
     - [✅ COMPLETED (2025-10-13)](#-completed-2025-10-13)
-    - [Implementation Details (Phase 5.3.1)](#implementation-details-phase-531)
-    - [Database Changes (Phase 5.3.1)](#database-changes-phase-531)
-    - [Backend Changes (Phase 5.3.1)](#backend-changes-phase-531)
-    - [Frontend Changes (Phase 5.3.1)](#frontend-changes-phase-531)
-    - [Testing (Phase 5.3.1)](#testing-phase-531)
-  - [Phase 5.3.2: Progressive Email Processing & Date Tracking](#phase-532-progressive-email-processing--date-tracking)
+    - [Implementation Details (Phase 2.6.1)](#implementation-details-phase-261)
+    - [Database Changes (Phase 2.6.1)](#database-changes-phase-261)
+    - [Backend Changes (Phase 2.6.1)](#backend-changes-phase-261)
+    - [Frontend Changes (Phase 2.6.1)](#frontend-changes-phase-261)
+    - [Testing (Phase 2.6.1)](#testing-phase-261)
+  - [Phase 2.6.2: Progressive Email Processing & Date Tracking](#phase-262-progressive-email-processing--date-tracking)
     - [✅ COMPLETED (2025-10-13)](#-completed-2025-10-13-1)
-    - [Implementation Details (Phase 5.3.2)](#implementation-details-phase-532)
+    - [Implementation Details (Phase 2.6.2)](#implementation-details-phase-262)
     - [OAuth Scope Enhancement](#oauth-scope-enhancement)
     - [Mark-as-Read Implementation](#mark-as-read-implementation)
     - [Progressive Query Filter](#progressive-query-filter)
     - [Frontend Re-authentication](#frontend-re-authentication)
     - [Accurate Date Tracking Implementation](#accurate-date-tracking-implementation)
-    - [Testing (Phase 5.3.2)](#testing-phase-532)
-  - [Phase 5.3.3: LLM-Based Email Filtering with Gmail Labels](#phase-533-llm-based-email-filtering-with-gmail-labels)
-    - [Problem Statement (Phase 5.3.3)](#problem-statement-phase-533)
-    - [Proposed Solution (Phase 5.3.3)](#proposed-solution-phase-533)
-    - [Current State Analysis (Phase 5.3.3)](#current-state-analysis-phase-533)
-    - [Architecture Changes (Phase 5.3.3)](#architecture-changes-phase-533)
-    - [Implementation Plan (Phase 5.3.3)](#implementation-plan-phase-533)
-    - [Benefits & Considerations (Phase 5.3.3)](#benefits--considerations-phase-533)
-    - [Cost Impact (Phase 5.3.3)](#cost-impact-phase-533)
-    - [Testing Strategy (Phase 5.3.3)](#testing-strategy-phase-533)
-  - [Phase 5.3.4: Trade-off Based Job Evaluation Display](#phase-534-trade-off-based-job-evaluation-display)
+    - [Testing (Phase 2.6.2)](#testing-phase-262)
+  - [Phase 2.6.3: LLM-Based Email Filtering with Gmail Labels](#phase-263-llm-based-email-filtering-with-gmail-labels)
+    - [Problem Statement (Phase 2.6.3)](#problem-statement-phase-263)
+    - [Proposed Solution (Phase 2.6.3)](#proposed-solution-phase-263)
+    - [Current State Analysis (Phase 2.6.3)](#current-state-analysis-phase-263)
+    - [Architecture Changes (Phase 2.6.3)](#architecture-changes-phase-263)
+    - [Implementation Plan (Phase 2.6.3)](#implementation-plan-phase-263)
+    - [Benefits & Considerations (Phase 2.6.3)](#benefits--considerations-phase-263)
+    - [Cost Impact (Phase 2.6.3)](#cost-impact-phase-263)
+    - [Testing Strategy (Phase 2.6.3)](#testing-strategy-phase-263)
+  - [Phase 2.6.4: Trade-off Based Job Evaluation Display](#phase-264-trade-off-based-job-evaluation-display)
     - [✅ COMPLETED (2025-10-14)](#-completed-2025-10-14)
-    - [Problem Statement (Phase 5.3.4)](#problem-statement-phase-534)
-    - [Proposed Solution (Phase 5.3.4)](#proposed-solution-phase-534)
-    - [Implementation Details (Phase 5.3.4)](#implementation-details-phase-534)
+    - [Problem Statement (Phase 2.6.4)](#problem-statement-phase-264)
+    - [Proposed Solution (Phase 2.6.4)](#proposed-solution-phase-264)
+    - [Implementation Details (Phase 2.6.4)](#implementation-details-phase-264)
       - [1. Documentation Updates](#1-documentation-updates)
       - [2. Extraction Prompt Expansion](#2-extraction-prompt-expansion)
       - [3. Backend Implementation](#3-backend-implementation)
       - [4. Frontend Implementation](#4-frontend-implementation)
       - [5. E2E Testing](#5-e2e-testing)
-    - [Benefits (Phase 5.3.4)](#benefits-phase-534)
+    - [Benefits (Phase 2.6.4)](#benefits-phase-264)
   - [Next Steps](#next-steps)
   - [Appendix A: Sample Extraction Prompt](#appendix-a-sample-extraction-prompt)
   - [Appendix B: Current Regex Patterns (For Reference)](#appendix-b-current-regex-patterns-for-reference)
@@ -93,7 +93,7 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# Phase 5.3: Robust Email Extraction Plan
+# Phase 2.6: Robust Email Extraction Plan
 
 ## Table of Contents
 
@@ -143,14 +143,14 @@
   - [✅ COMPLETED (2025-10-11)](#-completed-2025-10-11)
   - [How the System Works](#how-the-system-works)
   - [Expected Improvements](#expected-improvements)
-- [Phase 5.3.1: MECE Counter System](#phase-531-mece-counter-system)
+- [Phase 2.6.1: MECE Counter System](#phase-531-mece-counter-system)
   - [✅ COMPLETED (2025-10-13)](#-completed-2025-10-13)
   - [Implementation Details](#implementation-details-phase-531)
   - [Database Changes](#database-changes-phase-531)
   - [Backend Changes](#backend-changes-phase-531)
   - [Frontend Changes](#frontend-changes-phase-531)
   - [Testing](#testing-phase-531)
-- [Phase 5.3.2: Progressive Email Processing & Date Tracking](#phase-532-progressive-email-processing--date-tracking)
+- [Phase 2.6.2: Progressive Email Processing & Date Tracking](#phase-532-progressive-email-processing--date-tracking)
   - [✅ COMPLETED (2025-10-13)](#-completed-2025-10-13-1)
   - [Implementation Details](#implementation-details-phase-532)
   - [OAuth Scope Enhancement](#oauth-scope-enhancement)
@@ -158,7 +158,7 @@
   - [Progressive Query Filter](#progressive-query-filter)
   - [Accurate Date Tracking Implementation](#accurate-date-tracking-implementation)
   - [Testing](#testing-phase-532)
-- [Phase 5.3.3: LLM-Based Email Filtering with Gmail Labels](#phase-533-llm-based-email-filtering-with-gmail-labels)
+- [Phase 2.6.3: LLM-Based Email Filtering with Gmail Labels](#phase-533-llm-based-email-filtering-with-gmail-labels)
   - [Problem Statement](#problem-statement-phase-533)
   - [Proposed Solution](#proposed-solution-phase-533)
   - [Current State Analysis](#current-state-analysis-phase-533)
@@ -167,7 +167,7 @@
   - [Benefits & Considerations](#benefits--considerations-phase-533)
   - [Cost Impact](#cost-impact-phase-533)
   - [Testing Strategy](#testing-strategy-phase-533)
-- [Phase 5.3.4: Trade-off Based Job Evaluation Display](#phase-534-trade-off-based-job-evaluation-display)
+- [Phase 2.6.4: Trade-off Based Job Evaluation Display](#phase-534-trade-off-based-job-evaluation-display)
   - [Problem Statement](#problem-statement-phase-534)
   - [Proposed Solution](#proposed-solution-phase-534)
   - [Implementation Details](#implementation-details-phase-534)
@@ -186,7 +186,7 @@ This phase successfully replaced regex-based email extraction with Claude Haiku 
 
 ## Current State Analysis
 
-> **Note**: This section describes the system state **BEFORE** Phase 5.3 implementation (October 2025). For current performance, see [Implementation Status](#implementation-status) and [Success Metrics](#success-metrics).
+> **Note**: This section describes the system state **BEFORE** Phase 2.6 implementation (October 2025). For current performance, see [Implementation Status](#implementation-status) and [Success Metrics](#success-metrics).
 
 ### Metrics
 - **50 emails** discovered from Gmail
@@ -1231,19 +1231,19 @@ When Gmail sync runs:
 - **Cost**: ~$1-2/month for daily syncs
 - **Quality**: Better company detection, salary ranges, confidence
 
-## Phase 5.3.1: MECE Counter System
+## Phase 2.6.1: MECE Counter System
 
 ### ✅ COMPLETED (2025-10-13)
 
 **Status**: ✅ **IMPLEMENTATION COMPLETE**
 
-Phase 5.3.1 implemented Mutually Exclusive and Collectively Exhaustive (MECE) tracking for complete transparency and accountability in job intake processing.
+Phase 2.6.1 implemented Mutually Exclusive and Collectively Exhaustive (MECE) tracking for complete transparency and accountability in job intake processing.
 
 **Problem Statement**: When 50 emails were discovered but only 43 jobs appeared in the UI, users had no visibility into what happened to the missing 7 emails. Were they duplicates? Did they fail processing? The system lacked comprehensive, accountable metrics.
 
 **Solution**: Implement MECE counter system where every discovered email is categorized into exactly one bucket, and all buckets sum to the total.
 
-### Implementation Details (Phase 5.3.1)
+### Implementation Details (Phase 2.6.1)
 
 **MECE Architecture**:
 ```
@@ -1261,7 +1261,7 @@ Example:
 
 **Validation**: Backend automatically validates MECE invariant and reports `validation_error` if counters don't sum correctly.
 
-### Database Changes (Phase 5.3.1)
+### Database Changes (Phase 2.6.1)
 
 **File**: `database/migrations/add_intake_tracking_fields.sql`
 
@@ -1281,7 +1281,7 @@ WHERE jobs_created IS NULL;
 
 **Schema Update**: `database/schema.sql` updated with new columns.
 
-### Backend Changes (Phase 5.3.1)
+### Backend Changes (Phase 2.6.1)
 
 **File**: `backend/src/main.rs`
 
@@ -1336,7 +1336,7 @@ let validation_error = if sum != metrics.discovered {
 };
 ```
 
-### Frontend Changes (Phase 5.3.1)
+### Frontend Changes (Phase 2.6.1)
 
 **File**: `frontend/src/IntakeTab.tsx` (lines 1003-1018)
 
@@ -1370,7 +1370,7 @@ let validation_error = if sum != metrics.discovered {
 {(stats.filtered || 0) + (stats.duplicated || 0) + (stats.failed || 0)}
 ```
 
-### Testing (Phase 5.3.1)
+### Testing (Phase 2.6.1)
 
 **Test Scripts Created**:
 
@@ -1420,13 +1420,13 @@ Validation:
 
 ---
 
-## Phase 5.3.2: Progressive Email Processing & Date Tracking
+## Phase 2.6.2: Progressive Email Processing & Date Tracking
 
 ### ✅ COMPLETED (2025-10-13)
 
 **Status**: ✅ **IMPLEMENTATION COMPLETE**
 
-Phase 5.3.2 implemented two key enhancements:
+Phase 2.6.2 implemented two key enhancements:
 1. **Progressive Email Processing**: Mark-as-read functionality to enable progressive batching through Gmail inbox
 2. **Accurate Date Tracking**: Renamed `date_collected` to `date_email_sent` and modified pipeline to record actual email sent date
 
@@ -1438,7 +1438,7 @@ Phase 5.3.2 implemented two key enhancements:
 1. Mark processed emails as read in Gmail, use `is:unread` filter to fetch only unread emails, enabling automatic progression through inbox.
 2. Pass email `received_date` from Gmail API through job creation pipeline, rename database field for semantic clarity.
 
-### Implementation Details (Phase 5.3.2)
+### Implementation Details (Phase 2.6.2)
 
 **Progressive Workflow**:
 ```
@@ -1676,7 +1676,7 @@ interface Job {
 - ✅ **Manual Entry Support**: Falls back to `NOW()` for manual entries without email
 - ✅ **Database Consistency**: Index and view updated to match new column name
 
-### Testing (Phase 5.3.2)
+### Testing (Phase 2.6.2)
 
 **Manual Testing Results**:
 
@@ -1727,9 +1727,9 @@ interface Job {
 
 ---
 
-## Phase 5.3.3: LLM-Based Email Filtering with Gmail Labels
+## Phase 2.6.3: LLM-Based Email Filtering with Gmail Labels
 
-### Problem Statement (Phase 5.3.3)
+### Problem Statement (Phase 2.6.3)
 
 **Current Issues:**
 1. **Inaccurate Subject-Line Filter**: The deterministic query `is:unread subject:(job OR position OR opportunity...)` catches too many false positives:
@@ -1746,7 +1746,7 @@ interface Job {
 - Inbox gets cluttered with unread non-job emails mixed with unprocessed job emails
 - LLM costs include processing spam/marketing emails
 
-### Proposed Solution (Phase 5.3.3)
+### Proposed Solution (Phase 2.6.3)
 
 **Smart LLM-Based Filtering with Gmail Labels:**
 
@@ -1781,7 +1781,7 @@ LLM Analysis (subject + body)
         └─ No job created
 ```
 
-### Current State Analysis (Phase 5.3.3)
+### Current State Analysis (Phase 2.6.3)
 
 **Existing Implementation** (backend/src/main.rs:1816):
 ```rust
@@ -1805,7 +1805,7 @@ let query = "is:unread subject:(job OR position OR opportunity OR career OR hiri
 - Marks email as read regardless of confidence
 - No Gmail labeling implemented
 
-### Architecture Changes (Phase 5.3.3)
+### Architecture Changes (Phase 2.6.3)
 
 **1. Create Gmail Label Functions**
 
@@ -2011,7 +2011,7 @@ Return confidence < 0.3 for:
 - Generic recruiter outreach without specific positions
 ```
 
-### Implementation Plan (Phase 5.3.3)
+### Implementation Plan (Phase 2.6.3)
 
 **Changes Required:**
 
@@ -2036,9 +2036,9 @@ Return confidence < 0.3 for:
    - Strengthen guidance on confidence < 0.3 for non-job emails
    - Add more examples of spam/marketing to reject
 
-**No OAuth Changes Needed:** `gmail.modify` scope already granted in Phase 5.3.2
+**No OAuth Changes Needed:** `gmail.modify` scope already granted in Phase 2.6.2
 
-### Benefits & Considerations (Phase 5.3.3)
+### Benefits & Considerations (Phase 2.6.3)
 
 **Benefits:**
 
@@ -2064,16 +2064,16 @@ Return confidence < 0.3 for:
 - User can manually mark emails as unread to reprocess
 - Monitor prompt accuracy and iterate
 
-### Cost Impact (Phase 5.3.3)
+### Cost Impact (Phase 2.6.3)
 
 **LLM Usage Comparison:**
 
-**Before Phase 5.3.3** (subject-based filter):
+**Before Phase 2.6.3** (subject-based filter):
 - Processes ~50 emails per sync (subject-filtered)
 - ~40 are real job emails, ~10 are false positives
 - Cost: 50 emails × $0.0005 = **$0.025 per sync**
 
-**After Phase 5.3.3** (LLM-based filter):
+**After Phase 2.6.3** (LLM-based filter):
 - Processes ~50 unread emails per sync (no subject filter)
 - ~40 are real job emails, ~10 are spam/marketing
 - Same cost: 50 emails × $0.0005 = **$0.025 per sync**
@@ -2088,7 +2088,7 @@ Return confidence < 0.3 for:
 - Additional API calls: ~2 per real job email (get label, add label)
 - Gmail API quota: 1 billion requests/day → No concern
 
-### Testing Strategy (Phase 5.3.3)
+### Testing Strategy (Phase 2.6.3)
 
 **Unit Tests:**
 1. Test `get_or_create_jobop_label()` creates label if not exists
@@ -2120,15 +2120,15 @@ If LLM filtering causes issues:
 
 ---
 
-## Phase 5.3.4: Trade-off Based Job Evaluation Display
+## Phase 2.6.4: Trade-off Based Job Evaluation Display
 
 ### ✅ COMPLETED (2025-10-14)
 
 **Status**: ✅ **IMPLEMENTATION COMPLETE**
 
-Phase 5.3.4 transformed the job evaluation system from binary pass/fail filtering to rich trade-off based decision making. The system now extracts and displays comprehensive data across 5 dimensions to support informed manual decisions.
+Phase 2.6.4 transformed the job evaluation system from binary pass/fail filtering to rich trade-off based decision making. The system now extracts and displays comprehensive data across 5 dimensions to support informed manual decisions.
 
-### Problem Statement (Phase 5.3.4)
+### Problem Statement (Phase 2.6.4)
 
 **Previous Approach**: The system used binary filtering (pass/fail) based on rigid criteria like minimum salary thresholds. This oversimplified job evaluation and missed important trade-offs.
 
@@ -2145,7 +2145,7 @@ Phase 5.3.4 transformed the job evaluation system from binary pass/fail filterin
 - Fully remote vs hybrid with flexible schedule
 - Testing focus + automation vs generative AI usage
 
-### Proposed Solution (Phase 5.3.4)
+### Proposed Solution (Phase 2.6.4)
 
 **Multi-Dimensional Trade-off Extraction**:
 
@@ -2164,7 +2164,7 @@ Expand the job extraction system to capture rich data across 5 dimensions:
 
 **Key Design Decision**: Use existing `raw_data JSONB` field to store nested structures - **zero database schema changes required**.
 
-### Implementation Details (Phase 5.3.4)
+### Implementation Details (Phase 2.6.4)
 
 #### 1. Documentation Updates
 
@@ -2373,7 +2373,7 @@ Added 4 comprehensive sections:
 - Modal section grid layout consistency (grid, repeat(2, 1fr), gap: 12px, font-size: 14px)
 - Modal label/value styling consistency
 
-### Benefits (Phase 5.3.4)
+### Benefits (Phase 2.6.4)
 
 ✅ **Informed Decision-Making**: Users see full picture across 5 dimensions to evaluate trade-offs
 ✅ **Zero Schema Changes**: Used existing `raw_data JSONB` field - no database migrations required
@@ -2398,11 +2398,11 @@ Added 4 comprehensive sections:
 
 ## Next Steps
 
-1. **✅ Phase 5.3 Complete** - LLM-based extraction with Claude Haiku
-2. **✅ Phase 5.3.1 Complete** - MECE Counter System with validation
-3. **✅ Phase 5.3.2 Complete** - Progressive email processing with mark-as-read
-4. **🎯 Phase 5.3.3 Proposed** - LLM-based email filtering with Gmail labels
-5. **✅ Phase 5.3.4 Complete** - Trade-off based job evaluation display
+1. **✅ Phase 2.6 Complete** - LLM-based extraction with Claude Haiku
+2. **✅ Phase 2.6.1 Complete** - MECE Counter System with validation
+3. **✅ Phase 2.6.2 Complete** - Progressive email processing with mark-as-read
+4. **🎯 Phase 2.6.3 Proposed** - LLM-based email filtering with Gmail labels
+5. **✅ Phase 2.6.4 Complete** - Trade-off based job evaluation display
 6. **Ongoing**: Monitor extraction quality and iterate on prompt if needed
 7. **Ongoing**: Track API costs and optimize if necessary
 8. **Future**: Consider additional job sources (LinkedIn, Indeed APIs)
@@ -2484,7 +2484,7 @@ After implementation, we expect to successfully extract jobs like:
 **Document Version**: 3.1
 **Last Updated**: 2025-10-13
 **Author**: Claude Code
-**Status**: ✅ All Phases Complete - Phase 5.3 (LLM Extraction), 5.3.1 (MECE Counters), and 5.3.2 (Progressive Email Processing & Date Tracking)
+**Status**: ✅ All Phases Complete - Phase 2.6 (LLM Extraction), 5.3.1 (MECE Counters), and 5.3.2 (Progressive Email Processing & Date Tracking)
 
 ## Quick Start for Testing
 

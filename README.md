@@ -82,9 +82,9 @@
     - [Job Criteria](#job-criteria-1)
     - [Content Generation & Resume Management](#content-generation--resume-management)
     - [Automated Job Intake (Phase 4)](#automated-job-intake-phase-4)
-    - [LLM Job Extraction (Phase 5.3)](#llm-job-extraction-phase-53)
-    - [Calendar & Follow-ups (Phase 5.1)](#calendar--follow-ups-phase-51)
-    - [Email Composition & Sending (Phase 5.2)](#email-composition--sending-phase-52)
+    - [LLM Job Extraction (Phase 2.6)](#llm-job-extraction-phase-26)
+    - [Calendar & Follow-ups (Phase 2.4)](#calendar--follow-ups-phase-24)
+    - [Email Composition & Sending (Phase 2.5)](#email-composition--sending-phase-25)
   - [Implementation Status](#implementation-status)
     - [Phase 1 - Core System ✅ **COMPLETE**](#phase-1---core-system--complete)
     - [Phase 2 - Intelligent Automation ✅ **COMPLETE**](#phase-2---intelligent-automation--complete)
@@ -100,26 +100,26 @@
         - [Implementation Details](#implementation-details)
         - [Known Issues & Production Status](#known-issues--production-status)
     - [Phase 4 - Automated Job Intake ✅ **COMPLETE**](#phase-4---automated-job-intake--complete)
-    - [Phase 5.1 - Calendar Integration & Follow-ups ✅ **COMPLETE**](#phase-51---calendar-integration--follow-ups--complete)
+    - [Phase 2.4 - Calendar Integration & Follow-ups ✅ **COMPLETE**](#phase-24---calendar-integration--follow-ups--complete)
       - [Implemented Features](#implemented-features)
       - [Technical Implementation ✅](#technical-implementation-)
       - [Achievement Summary](#achievement-summary)
-    - [Phase 5.2 - Email Composition & Sending ✅ **COMPLETE**](#phase-52---email-composition--sending--complete)
+    - [Phase 2.5 - Email Composition & Sending ✅ **COMPLETE**](#phase-25---email-composition--sending--complete)
       - [Implemented Features](#implemented-features-1)
       - [Technical Implementation ✅](#technical-implementation--1)
       - [Success Criteria (All Achieved ✅)](#success-criteria-all-achieved-)
-    - [Phase 5.3 - LLM-based Job Extraction ✅ **COMPLETE**](#phase-53---llm-based-job-extraction--complete)
+    - [Phase 2.6 - LLM-based Job Extraction ✅ **COMPLETE**](#phase-26---llm-based-job-extraction--complete)
       - [Implemented Features](#implemented-features-2)
       - [Technical Implementation ✅](#technical-implementation--2)
       - [Code Locations](#code-locations)
       - [Success Criteria (All Achieved ✅)](#success-criteria-all-achieved--1)
       - [Cost Analysis](#cost-analysis)
       - [Performance Metrics](#performance-metrics)
-      - [Phase 5.3.1 - MECE Counter System ✅ **COMPLETE**](#phase-531---mece-counter-system--complete)
-      - [Phase 5.3.2 - Progressive Email Processing & Date Tracking ✅ **COMPLETE**](#phase-532---progressive-email-processing--date-tracking--complete)
-      - [Phase 5.3.3 - LLM-Based Email Filtering with Gmail Labels ✅ **COMPLETE**](#phase-533---llm-based-email-filtering-with-gmail-labels--complete)
-      - [Phase 5.3.4 - Trade-off Based Job Evaluation Display ✅ **COMPLETE**](#phase-534---trade-off-based-job-evaluation-display--complete)
-      - [Phase 5.3.5 - Enhanced Extraction: Industry & Employment Type Tracking ✅ **COMPLETE**](#phase-535---enhanced-extraction-industry--employment-type-tracking--complete)
+      - [Phase 2.6.1 - MECE Counter System ✅ **COMPLETE**](#phase-261---mece-counter-system--complete)
+      - [Phase 2.6.2 - Progressive Email Processing & Date Tracking ✅ **COMPLETE**](#phase-262---progressive-email-processing--date-tracking--complete)
+      - [Phase 2.6.3 - LLM-Based Email Filtering with Gmail Labels ✅ **COMPLETE**](#phase-263---llm-based-email-filtering-with-gmail-labels--complete)
+      - [Phase 2.6.4 - Trade-off Based Job Evaluation Display ✅ **COMPLETE**](#phase-264---trade-off-based-job-evaluation-display--complete)
+      - [Phase 2.6.5 - Enhanced Extraction: Industry & Employment Type Tracking ✅ **COMPLETE**](#phase-265---enhanced-extraction-industry--employment-type-tracking--complete)
     - [What NOT to Build (For Now)](#what-not-to-build-for-now)
       - [❌ Apple Mail Integration](#-apple-mail-integration)
       - [❌ Apple Messages/iMessage Integration](#-apple-messagesimessage-integration)
@@ -1471,7 +1471,7 @@ GMAIL_REDIRECT_URI=http://localhost:8080/auth/gmail/callback
 - Complete the OAuth flow in the popup window
 - You should see "Connected" status
 
-**7. Create Gmail Label (Required for Phase 5.3.3):**
+**7. Create Gmail Label (Required for Phase 2.6.3):**
 - Go to your Gmail account (gmail.com)
 - Click the gear icon → "See all settings" → "Labels"
 - Scroll to the "Labels" section
@@ -1479,7 +1479,7 @@ GMAIL_REDIRECT_URI=http://localhost:8080/auth/gmail/callback
 - Name it **"JobOp"** (case-sensitive, exactly as shown)
 - Click "Create"
 
-**Important**: The app will automatically apply the "JobOp" label to emails containing job opportunities during the sync process (Phase 5.3.3). You don't need to manually label any emails - just create the empty label and let the app handle the rest.
+**Important**: The app will automatically apply the "JobOp" label to emails containing job opportunities during the sync process (Phase 2.6.3). You don't need to manually label any emails - just create the empty label and let the app handle the rest.
 
 **Troubleshooting:**
 - **"Failed to initiate Gmail authentication"** - Check that `GMAIL_CLIENT_ID` is set in `.env`
@@ -2042,11 +2042,11 @@ See [`DATABASE_SETUP.md`](DATABASE_SETUP.md) for detailed database setup instruc
 - `GET /api/job-sources` - List all configured job sources
 - `GET /api/intake/logs` - View detailed intake operation logs
 
-### LLM Job Extraction (Phase 5.3)
+### LLM Job Extraction (Phase 2.6)
 - `GET /api/extraction/prompts` - Get active extraction prompt with version info
 - `PUT /api/extraction/prompts/active` - Update extraction prompt (creates new version)
 
-### Calendar & Follow-ups (Phase 5.1)
+### Calendar & Follow-ups (Phase 2.4)
 
 **Interview Management:**
 - `POST /api/interviews` - Schedule new interview with date, type, location, and interviewer details
@@ -2064,7 +2064,7 @@ See [`DATABASE_SETUP.md`](DATABASE_SETUP.md) for detailed database setup instruc
 **Application Timeline:**
 - `GET /api/applications/{id}/timeline` - Get complete application timeline with all events (applications, communications, interviews, follow-ups)
 
-### Email Composition & Sending (Phase 5.2)
+### Email Composition & Sending (Phase 2.5)
 
 **Gmail Draft Creation:**
 - `POST /api/applications/{id}/create-draft` - Create Gmail draft with cover letter body and resume attachment
@@ -2384,7 +2384,7 @@ The system is fully operational and ready for real-world usage. The identified b
 - **Performance Monitoring**: Detailed statistics on discovery and processing rates
 - **Source Management**: Active/inactive source control with last sync tracking
 
-### Phase 5.1 - Calendar Integration & Follow-ups ✅ **COMPLETE**
+### Phase 2.4 - Calendar Integration & Follow-ups ✅ **COMPLETE**
 **Completion Date**: October 1, 2025
 **Status**: Fully implemented and tested
 
@@ -2457,11 +2457,11 @@ The system is fully operational and ready for real-world usage. The identified b
 - **API-Ready**: 10 new endpoints for calendar and follow-up operations
 - **Single-User Optimized**: Simple, focused features without enterprise complexity
 
-**Phase 5.1 Complete** - The system now provides complete application lifecycle management from initial application through interviews and follow-ups, with full timeline visibility and response tracking.
+**Phase 2.4 Complete** - The system now provides complete application lifecycle management from initial application through interviews and follow-ups, with full timeline visibility and response tracking.
 
 ---
 
-### Phase 5.2 - Email Composition & Sending ✅ **COMPLETE**
+### Phase 2.5 - Email Composition & Sending ✅ **COMPLETE**
 **Completion Date**: October 9, 2025
 **Status**: Fully implemented and tested
 **Achievement**: 🎉 **100% of PRD core requirements complete**
@@ -2519,11 +2519,11 @@ The system is fully operational and ready for real-world usage. The identified b
 - ✅ Application records automatically created during content generation
 - ✅ **100% of PRD core requirements complete**
 
-**Phase 5.2 Complete** - The system now provides end-to-end automation from job discovery through content generation to ready-to-send Gmail drafts, completing the full workflow specified in the original PRD.
+**Phase 2.5 Complete** - The system now provides end-to-end automation from job discovery through content generation to ready-to-send Gmail drafts, completing the full workflow specified in the original PRD.
 
 ---
 
-### Phase 5.3 - LLM-based Job Extraction ✅ **COMPLETE**
+### Phase 2.6 - LLM-based Job Extraction ✅ **COMPLETE**
 **Completion Date**: October 11, 2025
 **Status**: Fully implemented and tested
 **Achievement**: 🎉 **85%+ extraction success rate** (up from 30%)
@@ -2637,9 +2637,9 @@ The system is fully operational and ready for real-world usage. The identified b
 - **Confidence threshold**: ≥0.3 for job creation
 - **Fallback rate**: <5% (API failures are rare)
 
-**Phase 5.3 Complete** - The system now uses state-of-the-art LLM technology for job extraction, dramatically improving data quality and success rates while maintaining low costs through efficient prompt engineering and Claude 3.5 Haiku usage.
+**Phase 2.6 Complete** - The system now uses state-of-the-art LLM technology for job extraction, dramatically improving data quality and success rates while maintaining low costs through efficient prompt engineering and Claude 3.5 Haiku usage.
 
-#### Phase 5.3.1 - MECE Counter System ✅ **COMPLETE**
+#### Phase 2.6.1 - MECE Counter System ✅ **COMPLETE**
 **Completion Date**: October 13, 2025
 **Status**: Fully implemented and tested
 
@@ -2708,9 +2708,9 @@ Total Discovered: 50
 - ✅ **Debugging Aid**: Easy identification of processing issues
 - ✅ **Audit Trail**: Full accountability in job intake logs
 
-**Phase 5.3.1 Complete** - The system now provides complete transparency and accountability in job intake tracking, ensuring users understand exactly what happened to every discovered email with mathematically validated MECE counters.
+**Phase 2.6.1 Complete** - The system now provides complete transparency and accountability in job intake tracking, ensuring users understand exactly what happened to every discovered email with mathematically validated MECE counters.
 
-#### Phase 5.3.2 - Progressive Email Processing & Date Tracking ✅ **COMPLETE**
+#### Phase 2.6.2 - Progressive Email Processing & Date Tracking ✅ **COMPLETE**
 **Completion Date**: October 13, 2025
 **Status**: Fully implemented and tested
 
@@ -2785,9 +2785,9 @@ Sync 3: Fetch next 50 unread emails (101-150) → Process → Mark as read
 - **Frontend**: frontend/src/App.tsx (Job interface, JobCard, JobDetails modal)
 - **Schema**: database/schema.sql (jobs table definition, indexes, views)
 
-**Phase 5.3.2 Complete** - The system now accurately tracks when job opportunities were originally sent (not when they were processed), and progressively processes emails without duplication, providing better historical tracking and cleaner inbox management.
+**Phase 2.6.2 Complete** - The system now accurately tracks when job opportunities were originally sent (not when they were processed), and progressively processes emails without duplication, providing better historical tracking and cleaner inbox management.
 
-#### Phase 5.3.3 - LLM-Based Email Filtering with Gmail Labels ✅ **COMPLETE**
+#### Phase 2.6.3 - LLM-Based Email Filtering with Gmail Labels ✅ **COMPLETE**
 **Completion Date**: October 13, 2025
 **Status**: Fully implemented and tested
 
@@ -2873,9 +2873,9 @@ LLM Analysis (Claude 3.5 Haiku on subject + body)
 - ✅ Subsequent syncs only process NEW unread emails
 - ✅ Backend compiled successfully with all changes
 
-**Phase 5.3.3 Complete** - The system now uses LLM-based email filtering with Gmail labels to accurately distinguish real job opportunities from spam, providing better inbox management and more accurate job discovery while maintaining cost efficiency through smart label-based skipping.
+**Phase 2.6.3 Complete** - The system now uses LLM-based email filtering with Gmail labels to accurately distinguish real job opportunities from spam, providing better inbox management and more accurate job discovery while maintaining cost efficiency through smart label-based skipping.
 
-#### Phase 5.3.4 - Trade-off Based Job Evaluation Display ✅ **COMPLETE**
+#### Phase 2.6.4 - Trade-off Based Job Evaluation Display ✅ **COMPLETE**
 **Completion Date**: October 14, 2025
 **Status**: Fully implemented and tested with 31 E2E tests
 
@@ -3017,9 +3017,9 @@ LLM Analysis (Claude 3.5 Haiku on subject + body)
 - ✅ Full email body preserved for context
 - ✅ Graceful handling of missing data (sections only appear if data exists)
 
-**Phase 5.3.4 Complete** - The system now provides comprehensive trade-off based job evaluation with color-coded visual indicators and detailed data display, enabling informed manual decisions based on the complete picture across compensation, employment, remote work, commute, and technical dimensions.
+**Phase 2.6.4 Complete** - The system now provides comprehensive trade-off based job evaluation with color-coded visual indicators and detailed data display, enabling informed manual decisions based on the complete picture across compensation, employment, remote work, commute, and technical dimensions.
 
-#### Phase 5.3.5 - Enhanced Extraction: Industry & Employment Type Tracking ✅ **COMPLETE**
+#### Phase 2.6.5 - Enhanced Extraction: Industry & Employment Type Tracking ✅ **COMPLETE**
 **Completion Date**: October 16, 2025
 **Status**: Fully implemented and tested
 **Prompt Version**: 1.2
@@ -3089,7 +3089,7 @@ LLM Analysis (Claude 3.5 Haiku on subject + body)
 - Enhanced examples to demonstrate null handling and inference tracking
 - Updated all edge case examples to show complete JSON structure
 
-**Phase 5.3.5 Complete** - The job extraction system now captures company industry and employment type with transparent source tracking, enabling better job classification and decision support while maintaining data integrity through comprehensive null handling.
+**Phase 2.6.5 Complete** - The job extraction system now captures company industry and employment type with transparent source tracking, enabling better job classification and decision support while maintaining data integrity through comprehensive null handling.
 
 ---
 
@@ -3137,7 +3137,7 @@ LLM Analysis (Claude 3.5 Haiku on subject + body)
 - Lower priority than workflow automation
 - Need more data first (apply to 50+ jobs before analytics meaningful)
 - Basic statistics already implemented in Phase 2
-- Can add later as Phase 5.3
+- Can add later as Phase 2.6
 
 #### ❌ AI-Powered Interview Prep
 **Why Defer**:
@@ -3157,7 +3157,7 @@ LLM Analysis (Claude 3.5 Haiku on subject + body)
   - Implementation complexity comparable to existing Gmail integration
   - Could reuse much of the existing email parsing logic
   - Deduplication system already handles multi-source scenarios
-  - Note: Detailed planning deferred - will revisit when prioritizing Phase 5.3+
+  - Note: Detailed planning deferred - will revisit when prioritizing Phase 2.6+
 - Advanced success metrics (time-to-interview, offer rates by source)
 - Job market trend analysis and salary benchmarking
 - Salary negotiation tracking and offer comparison
@@ -3182,7 +3182,7 @@ JobHuntAI/
 │   └── tsconfig.json          # Strict TypeScript configuration
 ├── database/                   # PostgreSQL Schema
 │   ├── schema.sql             # 12 tables: jobs, deduplication, resume, templates, intake
-│   └── migration_phase5.3.sql # Phase 5.3: extraction_prompts table
+│   └── migration_phase5.3.sql # Phase 2.6: extraction_prompts table
 ├── prompts/                   # LLM Prompts
 │   ├── job_extraction_default.md  # Job extraction prompt template (5.7KB, loaded into DB)
 │   └── job_condensed_description.md  # Condensed summary prompt (file-based)
@@ -3344,7 +3344,7 @@ JobHunter maintains high standards through comprehensive automated testing cover
 - ✅ **Frontend**: 241/256 tests (94.1%)
 - ✅ **Total**: 334/349 automated tests
 - ✅ **Database**: 103 jobs for large-scale testing
-- ✅ **Coverage**: Comprehensive E2E including performance stress testing and Phase 5.1 features
+- ✅ **Coverage**: Comprehensive E2E including performance stress testing and Phase 2.4 features
 
 ![Test Results](docs/screenshots/test-results-summary.svg)
 
@@ -3354,10 +3354,10 @@ JobHunter maintains high standards through comprehensive automated testing cover
 - **Phase 2 (27 tests)**: Intelligent filtering, SHA256 deduplication, real-time analytics
 - **Phase 3 (16 tests)**: Resume customization, cover letter generation, template rendering
 - **Phase 4 (18 tests)**: Gmail OAuth, LinkedIn integration, multi-source aggregation
-- **Phase 5.1 (23 tests)**: Interview management, follow-up scheduling, timeline tracking
+- **Phase 2.4 (23 tests)**: Interview management, follow-up scheduling, timeline tracking
 
 ### Frontend E2E Testing (94.1% Coverage)
-- **241/256 tests** - Comprehensive coverage including performance limits and Phase 5.1
+- **241/256 tests** - Comprehensive coverage including performance limits and Phase 2.4
 - **256 Playwright tests** in real Chrome browser
 - **14 test suites** covering all major features:
   - ✅ Setup & Load (12/12) - Page load, network, performance
@@ -3371,9 +3371,9 @@ JobHunter maintains high standards through comprehensive automated testing cover
   - ✅ Error Handling (20/20) - API failure scenarios
   - ✅ Performance (15/16) - Load times, memory, FPS monitoring
   - ✅ Accessibility (19/20) - ARIA, keyboard navigation
-  - ✅ Calendar Management (22/22) - Phase 5.1: Interview scheduling and tracking
-  - ✅ Follow-ups Management (24/24) - Phase 5.1: Automated follow-up workflow
-  - ✅ Timeline View (21/21) - Phase 5.1: Application lifecycle visualization
+  - ✅ Calendar Management (22/22) - Phase 2.4: Interview scheduling and tracking
+  - ✅ Follow-ups Management (24/24) - Phase 2.4: Automated follow-up workflow
+  - ✅ Timeline View (21/21) - Phase 2.4: Application lifecycle visualization
 
 ![Test Suite Detail](docs/screenshots/test-suites-detail.svg)
 

@@ -25,7 +25,7 @@
       - [LinkedIn Jobs Integration ✅](#linkedin-jobs-integration-)
       - [Multi-source Job Aggregation ✅](#multi-source-job-aggregation-)
       - [Advanced Job Processing ✅](#advanced-job-processing-)
-    - [Phase 5.1 - Calendar Integration & Follow-ups Testing ✅ COMPLETE](#phase-51---calendar-integration--follow-ups-testing--complete)
+    - [Phase 2.4 - Calendar Integration & Follow-ups Testing ✅ COMPLETE](#phase-24---calendar-integration--follow-ups-testing--complete)
       - [Backend Testing (23 tests) ✅](#backend-testing-23-tests-)
         - [Interview Management ✅ (9 tests)](#interview-management--9-tests)
         - [Follow-up Management ✅ (8 tests)](#follow-up-management--8-tests)
@@ -316,7 +316,7 @@ JobHuntAI/
 - ✅ **Audit Trail**: Complete logging of discovery, processing, and error states
 - ✅ **Performance Monitoring**: Detailed statistics on discovery rates
 
-### Phase 5.1 - Calendar Integration & Follow-ups Testing ✅ COMPLETE
+### Phase 2.4 - Calendar Integration & Follow-ups Testing ✅ COMPLETE
 **Target Coverage: 95%+ | Status: ✅ COMPLETE - 90/90 Tests Passing (100%)**
 **Date Completed**: October 1, 2025
 
@@ -398,9 +398,9 @@ Comprehensive Playwright tests covering calendar, follow-ups, and timeline featu
   - `frontend/e2e/tests/14-timeline-view.spec.ts` (21 tests, 380 lines)
 
 #### Test Coverage Summary
-- **Total Phase 5.1 Tests**: 90 (23 backend + 67 frontend E2E)
+- **Total Phase 2.4 Tests**: 90 (23 backend + 67 frontend E2E)
 - **Pass Rate**: 100% (all tests passing)
-- **Code Coverage**: 95%+ across Phase 5.1 features
+- **Code Coverage**: 95%+ across Phase 2.4 features
 - **Test Execution Time**: ~3 seconds (backend), ~8 minutes (E2E)
 
 #### Database Schema Additions

@@ -342,9 +342,9 @@ git mv docs/PHASE_5.2_IMPLEMENTATION.md docs/PHASE_2.5_email-composition.md
 git mv docs/PHASE_5.3_robust-email-extraction-plan.md docs/PHASE_2.6_llm-job-extraction.md
 ```
 
-**Cross-References Updated:**
-- README.md (2 references updated)
-- README_auto-test.md (1 reference updated)
+**Cross-References Updated (File Path Links):**
+- README.md (2 file path references updated)
+- README_auto-test.md (1 file path reference updated)
 - docs/PHASE_3.1_claude-haiku-integration-plan.md (2 references updated)
 - docs/PHASE_2.5_email-composition.md (2 self-references updated)
 - docs/PHASE_2.7_samkirk-email-source-plan.md (1 reference updated)
@@ -353,10 +353,33 @@ git mv docs/PHASE_5.3_robust-email-extraction-plan.md docs/PHASE_2.6_llm-job-ext
 - Ran `python3 scripts/generate-bug-index.py`
 - Updated bugs/README.md
 
-**Commit:**
+**Initial Commit:**
 - Commit: 65d13c9
 - Message: "refactor: Rename Phase 5.x files to Phase 2.x sub-phases"
 - All changes committed with comprehensive migration notes
+
+**Additional Work - Content References Updated:**
+
+After initial completion, user requested update of all internal content references (section headers, TOC entries, inline text) from Phase 5.x to Phase 2.x numbering.
+
+**Files Updated (236 total content references):**
+- README.md (~40 references: section headers, TOC, content)
+- docs/PHASE_2.6_llm-job-extraction.md (~90 references: all "Phase 5.3" → "Phase 2.6")
+- docs/PHASE_2.5_email-composition.md (~15 references: "Phase 5.1/5.2/5.3" → "Phase 2.4/2.5/2.6")
+- docs/PHASE_2.4_calendar-follow-ups.md (3 references)
+- docs/PHASE_2.7_samkirk-email-source-plan.md (~20 references)
+- README_auto-test.md (~30 references)
+- README_auto-test-plan.md (~20 references)
+- README_auto-test-results.md (~10 references)
+- README_ui-tab-button-plan.md (1 reference)
+
+**Files Intentionally Skipped (Historical Documents):**
+- README_work-summary-10-23-2025-am.md (historical work summary)
+- bugs/fixed/ISSUE-007-phase-documentation-naming-conflict.md (this bug report)
+
+**Verification:**
+- All Phase 5.x references eliminated from active documentation
+- Only historical/archive documents retain old references for context
 
 ## Testing
 
@@ -397,12 +420,18 @@ git status
 - 2025-10-23: Bug discovered and documented
 - 2025-10-23: Five solution options proposed
 - 2025-10-23: User selected Option 1 (Rename to Phase 2.x)
-- 2025-10-23: Implementation completed
+- 2025-10-23: Initial implementation completed
   - Files renamed using git mv
-  - All cross-references updated (5 files)
+  - File path cross-references updated (5 files)
   - Bug index regenerated
   - Changes committed (65d13c9)
-- 2025-10-23: Issue resolved and moved to bugs/fixed/
+- 2025-10-23: Issue moved to bugs/fixed/ (initial completion)
+- 2025-10-23: **Additional work requested by user**
+  - Update all internal content references (section headers, TOC, inline text)
+  - 236 Phase 5.x content references updated across 9 files
+  - Used sed for systematic find-replace operations
+  - Historical documents intentionally preserved with old references
+- 2025-10-23: **Issue fully resolved** - All Phase 5.x references migrated to Phase 2.x
 
 ## Notes
 

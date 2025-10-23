@@ -160,7 +160,7 @@ JobHunter has 5 core workflows (defined in README.md). While workflows 2-5 are f
 | 2 | **Filter** | ✅ Automatic | ✅ Transparent (filter reasons shown) | Complete |
 | 3 | **Review** | ✅ Complete | ✅ Complete (Approve/Reject buttons) | Complete |
 | 4 | **Apply** | ✅ Complete (Phase 3) | ✅ Complete (Generate Content button) | Complete |
-| 5 | **Track** | ✅ Complete (Phase 5.1) | ✅ Complete (Calendar + Follow-ups tabs) | Complete |
+| 5 | **Track** | ✅ Complete (Phase 2.4) | ✅ Complete (Calendar + Follow-ups tabs) | Complete |
 
 ### ~~Missing UI Components~~ → **RESOLVED** ✅
 

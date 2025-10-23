@@ -36,29 +36,29 @@
     - [**🔗 System Integration Setup**](#-system-integration-setup)
       - [**Docker Test Environment** (`docker-compose.test.yml`)](#docker-test-environment-docker-composetestyml)
       - [**Test Database Configuration**](#test-database-configuration)
-  - [✅ Phase 5.3: LLM-Based Job Extraction](#-phase-53-llm-based-job-extraction)
+  - [✅ Phase 2.6: LLM-Based Job Extraction](#-phase-26-llm-based-job-extraction)
     - [**Implementation Highlights**](#implementation-highlights)
     - [**Files Modified**](#files-modified)
     - [**Success Metrics Achieved**](#success-metrics-achieved)
     - [**Testing Status**](#testing-status)
     - [**Next Steps for Testing**](#next-steps-for-testing)
     - [**Running Gmail Integration Tests**](#running-gmail-integration-tests)
-  - [✅ Phase 5.3.1: MECE Counter System](#-phase-531-mece-counter-system)
+  - [✅ Phase 2.6.1: MECE Counter System](#-phase-261-mece-counter-system)
     - [**Implementation Highlights**](#implementation-highlights-1)
     - [**Files Modified**](#files-modified-1)
     - [**Testing Status**](#testing-status-1)
-  - [✅ Phase 5.3.2: Progressive Email Processing](#-phase-532-progressive-email-processing)
+  - [✅ Phase 2.6.2: Progressive Email Processing](#-phase-262-progressive-email-processing)
     - [**Implementation Highlights**](#implementation-highlights-2)
     - [**Files Modified**](#files-modified-2)
     - [**Benefits**](#benefits)
     - [**Testing Status**](#testing-status-2)
-  - [✅ Phase 5.3.4: Trade-off Based Job Evaluation Display](#-phase-534-trade-off-based-job-evaluation-display)
+  - [✅ Phase 2.6.4: Trade-off Based Job Evaluation Display](#-phase-264-trade-off-based-job-evaluation-display)
     - [**Implementation Highlights**](#implementation-highlights-3)
     - [**Files Modified**](#files-modified-3)
     - [**Testing Status**](#testing-status-3)
     - [**Test File 1: Job Trade-off Display Tests**](#test-file-1-job-trade-off-display-tests)
     - [**Test File 2: Job Badge Styling Tests**](#test-file-2-job-badge-styling-tests)
-    - [**Running Phase 5.3.4 Tests**](#running-phase-534-tests)
+    - [**Running Phase 2.6.4 Tests**](#running-phase-264-tests)
     - [**Benefits**](#benefits-1)
   - [🎯 Ready for Execution](#-ready-for-execution)
     - [**Individual Test Suites**](#individual-test-suites)
@@ -107,10 +107,10 @@
 This guide provides everything developers need to understand, run, and contribute to JobHunter's comprehensive test suite.
 
 **Latest Updates**:
-- ✅ **Phase 5.3.4 Complete** (Oct 14, 2025): Trade-off based job evaluation display with 31 new E2E tests
-- ✅ **Phase 5.3.2 Complete** (Oct 13, 2025): Progressive email processing with mark-as-read functionality
-- ✅ **Phase 5.3.1 Complete** (Oct 13, 2025): MECE Counter System with automatic validation
-- ✅ **Phase 5.3 Complete** (Oct 11, 2025): LLM-based job extraction with Claude Haiku (85%+ success rate)
+- ✅ **Phase 2.6.4 Complete** (Oct 14, 2025): Trade-off based job evaluation display with 31 new E2E tests
+- ✅ **Phase 2.6.2 Complete** (Oct 13, 2025): Progressive email processing with mark-as-read functionality
+- ✅ **Phase 2.6.1 Complete** (Oct 13, 2025): MECE Counter System with automatic validation
+- ✅ **Phase 2.6 Complete** (Oct 11, 2025): LLM-based job extraction with Claude Haiku (85%+ success rate)
 - ✅ **Phase 4 Complete**: Gmail integration with draft creation and email composition
 - ✅ **268+ E2E tests** covering complete user workflows including Intake tab, Email Composer, and Trade-off Display
 
@@ -123,7 +123,7 @@ cd backend && cargo test
 # Backend - Gmail API integration tests
 cd backend && cargo test test_gmail -- --nocapture
 
-# Backend - Phase 5.3 LLM tests (recommended for future)
+# Backend - Phase 2.6 LLM tests (recommended for future)
 # cd backend && cargo test test_llm_extraction -- --nocapture
 
 # Frontend unit tests (TAP + TypeScript)
@@ -135,7 +135,7 @@ cd frontend && npm run test:e2e
 # Frontend E2E - Intake tab (includes prompt editor UI)
 cd frontend && npx playwright test e2e/tests/15-intake-tab.spec.ts
 
-# Frontend E2E - Email composer (Phase 5.2)
+# Frontend E2E - Email composer (Phase 2.5)
 cd frontend && npx playwright test e2e/tests/15-email-composer.spec.ts
 
 # Database tests (pgTAP)
@@ -186,29 +186,29 @@ docker-compose -f docker-compose.test.yml up
   - [🔗 System Integration Setup](#-system-integration-setup)
     - [Docker Test Environment](#docker-test-environment-docker-composetestyml)
     - [Test Database Configuration](#test-database-configuration)
-- [✅ Phase 5.3: LLM-Based Job Extraction](#-phase-53-llm-based-job-extraction)
+- [✅ Phase 2.6: LLM-Based Job Extraction](#-phase-53-llm-based-job-extraction)
   - [Implementation Highlights](#implementation-highlights)
   - [Files Modified](#files-modified)
   - [Success Metrics Achieved](#success-metrics-achieved)
   - [Testing Status](#testing-status)
   - [Next Steps for Testing](#next-steps-for-testing)
   - [Running Gmail Integration Tests](#running-gmail-integration-tests)
-- [✅ Phase 5.3.1: MECE Counter System](#-phase-531-mece-counter-system)
+- [✅ Phase 2.6.1: MECE Counter System](#-phase-531-mece-counter-system)
   - [Implementation Highlights](#implementation-highlights-1)
   - [Files Modified](#files-modified-1)
   - [Testing Status](#testing-status-1)
-- [✅ Phase 5.3.2: Progressive Email Processing](#-phase-532-progressive-email-processing)
+- [✅ Phase 2.6.2: Progressive Email Processing](#-phase-532-progressive-email-processing)
   - [Implementation Highlights](#implementation-highlights-2)
   - [Files Modified](#files-modified-2)
   - [Benefits](#benefits)
   - [Testing Status](#testing-status-2)
-- [✅ Phase 5.3.4: Trade-off Based Job Evaluation Display](#-phase-534-trade-off-based-job-evaluation-display)
+- [✅ Phase 2.6.4: Trade-off Based Job Evaluation Display](#-phase-534-trade-off-based-job-evaluation-display)
   - [Implementation Highlights](#implementation-highlights-3)
   - [Files Modified](#files-modified-3)
   - [Testing Status](#testing-status-3)
   - [Test File 1: Job Trade-off Display Tests](#test-file-1-job-trade-off-display-tests)
   - [Test File 2: Job Badge Styling Tests](#test-file-2-job-badge-styling-tests)
-  - [Running Phase 5.3.4 Tests](#running-phase-534-tests)
+  - [Running Phase 2.6.4 Tests](#running-phase-534-tests)
   - [Benefits](#benefits-1)
 - [🎯 Ready for Execution](#-ready-for-execution)
   - [Individual Test Suites](#individual-test-suites)
@@ -524,7 +524,7 @@ The newly added `15-intake-tab.spec.ts` provides comprehensive testing for the I
 
 #### **Email Composer Test Coverage** (NEW - October 9, 2025)
 
-The newly added `15-email-composer.spec.ts` provides comprehensive testing for Phase 5.2 Email Composition & Sending:
+The newly added `15-email-composer.spec.ts` provides comprehensive testing for Phase 2.5 Email Composition & Sending:
 
 **Test Suites**:
 1. **Create Email Draft Button** (2 tests)
@@ -846,12 +846,12 @@ ROLLBACK;
 
 ---
 
-## ✅ Phase 5.3: LLM-Based Job Extraction
+## ✅ Phase 2.6: LLM-Based Job Extraction
 
 **Completion Date**: October 11, 2025
 **Status**: Fully implemented and tested
 
-Phase 5.3 replaced regex-based email extraction with Claude Haiku LLM integration, achieving **85%+ success rate** (up from 30%).
+Phase 2.6 replaced regex-based email extraction with Claude Haiku LLM integration, achieving **85%+ success rate** (up from 30%).
 
 ### **Implementation Highlights**
 
@@ -916,12 +916,12 @@ cargo test test_source_identification_architecture -- --nocapture
 
 ---
 
-## ✅ Phase 5.3.1: MECE Counter System
+## ✅ Phase 2.6.1: MECE Counter System
 
 **Completion Date**: October 13, 2025
 **Status**: Fully implemented and tested
 
-Phase 5.3.1 implemented Mutually Exclusive and Collectively Exhaustive (MECE) tracking for complete transparency in job intake processing.
+Phase 2.6.1 implemented Mutually Exclusive and Collectively Exhaustive (MECE) tracking for complete transparency in job intake processing.
 
 ### **Implementation Highlights**
 
@@ -945,12 +945,12 @@ Phase 5.3.1 implemented Mutually Exclusive and Collectively Exhaustive (MECE) tr
 
 ---
 
-## ✅ Phase 5.3.2: Progressive Email Processing
+## ✅ Phase 2.6.2: Progressive Email Processing
 
 **Completion Date**: October 13, 2025
 **Status**: Fully implemented and tested
 
-Phase 5.3.2 added mark-as-read functionality to enable progressive batching through Gmail inbox.
+Phase 2.6.2 added mark-as-read functionality to enable progressive batching through Gmail inbox.
 
 ### **Implementation Highlights**
 
@@ -982,12 +982,12 @@ Phase 5.3.2 added mark-as-read functionality to enable progressive batching thro
 
 ---
 
-## ✅ Phase 5.3.4: Trade-off Based Job Evaluation Display
+## ✅ Phase 2.6.4: Trade-off Based Job Evaluation Display
 
 **Completion Date**: October 14, 2025
 **Status**: Fully implemented and tested with 31 E2E tests
 
-Phase 5.3.4 transformed the job evaluation system from binary pass/fail filtering to rich trade-off based decision making with comprehensive E2E test coverage.
+Phase 2.6.4 transformed the job evaluation system from binary pass/fail filtering to rich trade-off based decision making with comprehensive E2E test coverage.
 
 ### **Implementation Highlights**
 
@@ -1076,7 +1076,7 @@ Phase 5.3.4 transformed the job evaluation system from binary pass/fail filterin
    - Label styling (color: #6b7280, margin-bottom: 4px)
    - Value styling (font-weight: 500, color: #374151)
 
-### **Running Phase 5.3.4 Tests**
+### **Running Phase 2.6.4 Tests**
 
 ```bash
 # Run both trade-off test files
@@ -1231,7 +1231,7 @@ tap.test('renders within acceptable time', async (t) => {
 3. Follow async/await patterns with `#[tokio::test]`
 4. Include performance assertions where appropriate
 
-**LLM Extraction Tests (Recommended for Phase 5.3)**:
+**LLM Extraction Tests (Recommended for Phase 2.6)**:
 - Mock Claude API responses for deterministic testing
 - Test HTML-to-text conversion with various HTML structures
 - Validate fallback to regex when API is unavailable
@@ -1274,7 +1274,7 @@ async fn test_extraction_fallback_on_api_failure() {
 6. Include tests for happy path, edge cases, and accessibility
 7. Use auto-waiting assertions: `expect(locator).toBeVisible()`
 
-**LLM Prompt Editor E2E Tests (Recommended for Phase 5.3)**:
+**LLM Prompt Editor E2E Tests (Recommended for Phase 2.6)**:
 - Test prompt editor visibility in Intake tab
 - Test "Edit Prompt" button toggle functionality
 - Test prompt content editing in textarea
@@ -1463,7 +1463,7 @@ docker-compose -f docker-compose.test.yml build --no-cache
 - [ ] TypeScript strict mode compliance
 - [ ] E2E tests run in all browsers (chromium, firefox, webkit)
 - [ ] Accessibility tested (ARIA labels, keyboard navigation)
-- [ ] **Phase 5.3 Specific** (if applicable):
+- [ ] **Phase 2.6 Specific** (if applicable):
   - [ ] LLM API mocking for deterministic tests
   - [ ] Fallback to regex verified on API failures
   - [ ] Prompt versioning tested
@@ -1621,7 +1621,7 @@ jobs:
 
 ## 🎉 Next Steps
 
-With Phase 1 complete, Phase 4 Gmail integration complete, and Phase 5.3 LLM extraction complete, the testing infrastructure is ready for:
+With Phase 1 complete, Phase 4 Gmail integration complete, and Phase 2.6 LLM extraction complete, the testing infrastructure is ready for:
 
 1. **Phase 2 Implementation** - Intelligent automation testing (job filtering, deduplication)
 2. **Phase 3 Implementation** - Content generation testing (resume/cover letter)
@@ -1632,7 +1632,7 @@ With Phase 1 complete, Phase 4 Gmail integration complete, and Phase 5.3 LLM ext
    - ✅ Email composer E2E tests (16 tests added)
    - 🔄 LinkedIn API integration tests (pending)
    - 🔄 Indeed API integration tests (pending)
-4. **Phase 5.3 Implementation** - LLM-based job extraction ✅ **COMPLETE** (October 11, 2025)
+4. **Phase 2.6 Implementation** - LLM-based job extraction ✅ **COMPLETE** (October 11, 2025)
    - ✅ Claude Haiku API integration for email parsing
    - ✅ Improved extraction success rate: 30% → 85%+
    - ✅ HTML-to-text conversion and fallback protection
@@ -1640,7 +1640,7 @@ With Phase 1 complete, Phase 4 Gmail integration complete, and Phase 5.3 LLM ext
    - ✅ Cost-optimized implementation (~$1-2/month)
    - 🔄 LLM extraction unit tests (recommended for future)
    - 🔄 E2E tests for prompt editor UI (recommended for future)
-5. **Phase 5.3.4 Implementation** - Trade-off based job evaluation ✅ **COMPLETE** (October 14, 2025)
+5. **Phase 2.6.4 Implementation** - Trade-off based job evaluation ✅ **COMPLETE** (October 14, 2025)
    - ✅ Multi-dimensional trade-off extraction (5 nested structures, 25+ fields)
    - ✅ Color-coded badge system with preference hierarchy
    - ✅ Expanded job detail modal with 4 comprehensive sections

@@ -1,7 +1,7 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-- [Phase 5.1 Implementation Progress](#phase-51-implementation-progress)
+- [Phase 2.4 Implementation Progress](#phase-24-implementation-progress)
   - [Implementation Roadmap](#implementation-roadmap)
     - [✅ Week 1 - Days 1-2: Database & Infrastructure](#-week-1---days-1-2-database--infrastructure)
     - [✅ Backend API Implementation (Completed Ahead of Schedule)](#-backend-api-implementation-completed-ahead-of-schedule)
@@ -34,7 +34,7 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# Phase 5.1 Implementation Progress
+# Phase 2.4 Implementation Progress
 
 **Status**: In Progress
 **Started**: October 1, 2025
@@ -254,7 +254,7 @@ DATABASE_URL=...
 GMAIL_CLIENT_ID=...
 GMAIL_CLIENT_SECRET=...
 
-# New for Phase 5.1
+# New for Phase 2.4
 GOOGLE_CALENDAR_CLIENT_ID=...
 GOOGLE_CALENDAR_CLIENT_SECRET=...
 GOOGLE_CALENDAR_REDIRECT_URI=http://localhost:8080/auth/calendar/callback
