@@ -1,15 +1,16 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-- [Phase 4.1: Job Board Integrations via RapidAPI (Free Tier)](#phase-41-job-board-integrations-via-rapidapi-free-tier)
+- [Phase 4.1: Job Board Integrations via RapidAPI (JSearch Aggregator)](#phase-41-job-board-integrations-via-rapidapi-jsearch-aggregator)
   - [Executive Summary](#executive-summary)
   - [RapidAPI Overview](#rapidapi-overview)
+    - [JSearch API (Job Aggregator)](#jsearch-api-job-aggregator)
     - [Web UI Dashboard](#web-ui-dashboard)
-    - [Free Tier](#free-tier)
+    - [Pricing & Rate Limits](#pricing--rate-limits)
   - [RapidAPI Setup & Testing](#rapidapi-setup--testing)
     - [Step 0: RapidAPI Account Setup (Day 1)](#step-0-rapidapi-account-setup-day-1)
   - [Implementation Plan](#implementation-plan)
-    - [Phase 4.1.1: Indeed Integration Core (Week 1)](#phase-411-indeed-integration-core-week-1)
+    - [Phase 4.1.1: JSearch Integration Core (Week 1)](#phase-411-jsearch-integration-core-week-1)
     - [Phase 4.1.2: Database Configuration (Week 1)](#phase-412-database-configuration-week-1)
     - [Phase 4.1.3: Environment Configuration (Week 1)](#phase-413-environment-configuration-week-1)
     - [Phase 4.1.4: Frontend Integration (Week 2)](#phase-414-frontend-integration-week-2)
@@ -21,8 +22,10 @@
   - [Success Criteria](#success-criteria)
   - [Implementation Timeline](#implementation-timeline)
   - [Risk Mitigation](#risk-mitigation)
-  - [Phase 4.1.1 Implementation Status (2025-10-22)](#phase-411-implementation-status-2025-10-22)
-    - [✅ COMPLETED - Core Implementation](#-completed---core-implementation)
+  - [Phase 4.1.1 Implementation Status](#phase-411-implementation-status)
+    - [🔄 CHANGE ORDER (2025-10-23)](#-change-order-2025-10-23)
+    - [⚠️ PREVIOUS IMPLEMENTATION - Needs Revision](#-previous-implementation---needs-revision)
+    - [✅ COMPLETED (2025-10-22) - Core Implementation (Indeed - Superseded)](#-completed-2025-10-22---core-implementation-indeed---superseded)
     - [✅ COMPLETED - Automated Testing](#-completed---automated-testing)
     - [⏸️ DEFERRED - Live API Testing](#-deferred---live-api-testing)
     - [📊 Implementation Metrics](#-implementation-metrics)
@@ -33,15 +36,31 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# Phase 4.1: Job Board Integrations via RapidAPI (Free Tier)
+# Phase 4.1: Job Board Integrations via RapidAPI (JSearch Aggregator)
 
 ## Executive Summary
 
-**Status**: Phase 4 is marked "COMPLETE" but only Gmail has real integration. This plan implements **Phase 4.1** to add Indeed job board integration via RapidAPI, starting with the **free tier (500 requests/month)**.
+**Status**: Phase 4 is marked "COMPLETE" but only Gmail has real integration. This plan implements **Phase 4.1** to add job board integration via RapidAPI's JSearch API, a job aggregator that consolidates LinkedIn, Indeed, Glassdoor, and many other job boards into a single endpoint.
 
-**Approach**: Use RapidAPI job search APIs following the proven Gmail workflow pattern from Phase 4.
+**Approach**: Use RapidAPI's JSearch job aggregator API following the proven Gmail workflow pattern from Phase 4.
+
+**Sources**: Two intake sources with separate sync buttons:
+1. **Gmail** - Email-based job alerts (existing)
+2. **RapidAPI (JSearch)** - Multi-board job aggregator (new)
 
 ## RapidAPI Overview
+
+### JSearch API (Job Aggregator)
+**Provider**: letscrape-6bRBa3QguO5
+**API**: jsearch.p.rapidapi.com
+**Documentation**: https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch
+
+**Features**:
+- Aggregates jobs from 30+ major job boards (LinkedIn, Indeed, Glassdoor, etc.)
+- Returns 30+ data points per job
+- Real-time job postings from Google for Jobs
+- Extensive search, filtering, and location capabilities
+- Response limit: Configurable (we'll use 10 jobs per sync)
 
 ### Web UI Dashboard
 **Yes, RapidAPI has an excellent web UI** where you can:
@@ -51,66 +70,80 @@
 - Monitor your usage and quota limits
 - Get alerts when you hit 85% of your quota
 
-### Free Tier
-- **500 requests/month** on BASIC (free) plan
-- Each API provider sets their own limits
-- Email alert at 85% usage (425 requests)
+### Pricing & Rate Limits
+- **Free plan**: 200 requests/month, no credit card required, rate limit: 1000/hour
+- **Pro plan**: $25/month, 10,000 requests/month, rate limit: 5 requests/second
+- Email alert at 85% usage (170 requests for free tier)
 - Hard limit blocks requests after quota exhausted
 
 ## RapidAPI Setup & Testing
 
 ### Step 0: RapidAPI Account Setup (Day 1)
 1. **Create account** at rapidapi.com (free)
-2. **Browse APIs** in web UI dashboard:
-   - Search for "JobScanner" or "Indeed jobs"
-   - Test endpoints directly in browser
-   - View sample responses and documentation
+2. **Subscribe to JSearch API**:
+   - Navigate to: https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch
+   - Click "Subscribe to Test" button
+   - Select Basic (free) plan - 200 requests/month
 3. **Get API key** from dashboard (single key for all APIs)
 4. **Test in web UI** before coding:
-   - Try Indeed job search with "Software Test Engineer" query
-   - Test location filters (Fremont, CA, 45 mile radius)
+   - Use the JSearch playground/endpoint tester
+   - Try job search with "Software Test Engineer" query
+   - Test location filters (Fremont, CA or remote)
+   - Set num_pages=1 to limit results to 10 jobs
    - Verify response structure and data quality
-5. **Monitor quota**: Dashboard shows usage (500 requests/month free tier)
+5. **Monitor quota**: Dashboard shows usage (200 requests/month free tier)
 
-**Key APIs to Evaluate**:
-- **Job Search API** (jaypat87) - JobScanner with 150K+ sources
-- **Indeed Job Info Scraper** - Indeed-specific
-- **Jobs API** (Pat92) - LinkedIn, Bing Jobs
+**JSearch Endpoint**:
+- **Base URL**: https://jsearch.p.rapidapi.com/search
+- **Method**: GET
+- **Key Parameters**:
+  - `query` - Job search query (e.g., "Software Test Engineer in Fremont, CA")
+  - `num_pages` - Number of pages (1 page = ~10 jobs, we'll use 1)
+  - `date_posted` - Filter by date (e.g., "week", "month")
+  - `remote_jobs_only` - Boolean for remote-only jobs
 
 ## Implementation Plan
 
-### Phase 4.1.1: Indeed Integration Core (Week 1)
+### Phase 4.1.1: JSearch Integration Core (Week 1)
 
-**Backend: RapidAPI Client Module**
+**Backend: RapidAPI JSearch Client Module**
 
 Add to `backend/src/main.rs`:
 
 ```rust
-// RapidAPI job listing structure
+// JSearch API job listing structure (based on jsearch.p.rapidapi.com response)
 #[derive(Debug, Deserialize)]
-struct RapidApiJobListing {
+struct JSearchJobListing {
     job_id: Option<String>,
     job_title: Option<String>,
-    company_name: Option<String>,
-    job_location: Option<String>,
+    employer_name: Option<String>,
+    employer_logo: Option<String>,
+    job_city: Option<String>,
+    job_state: Option<String>,
+    job_country: Option<String>,
     job_description: Option<String>,
     job_posted_at_datetime_utc: Option<String>,
-    job_salary: Option<String>,
+    job_min_salary: Option<f64>,
+    job_max_salary: Option<f64>,
+    job_salary_currency: Option<String>,
     job_apply_link: Option<String>,
-    // Additional fields vary by API
+    job_is_remote: Option<bool>,
+    job_employment_type: Option<String>,
+    // 30+ additional fields available from JSearch
 }
 
-// Fetch jobs from RapidAPI Indeed endpoint
-async fn fetch_indeed_jobs_rapidapi(
+// Fetch jobs from RapidAPI JSearch endpoint (aggregates all job boards)
+async fn fetch_jsearch_jobs_rapidapi(
     api_key: &str,
     api_host: &str,
     search_params: &serde_json::Value,
-) -> Result<Vec<RapidApiJobListing>, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<Vec<JSearchJobListing>, Box<dyn std::error::Error + Send + Sync>> {
     let client = reqwest::Client::new();
 
-    // Build query parameters from search_params
-    let query = search_params["query"].as_str().unwrap_or("Software Test Engineer");
-    let location = search_params["location"].as_str().unwrap_or("Fremont, CA");
+    // Build query from search_params
+    let query = search_params["query"].as_str().unwrap_or("Software Test Engineer in Fremont, CA");
+    let date_posted = search_params["date_posted"].as_str().unwrap_or("week");
+    let remote_jobs_only = search_params["remote_jobs_only"].as_bool().unwrap_or(false);
 
     let response = client
         .get(&format!("https://{}/search", api_host))
@@ -118,18 +151,19 @@ async fn fetch_indeed_jobs_rapidapi(
         .header("X-RapidAPI-Host", api_host)
         .query(&[
             ("query", query),
-            ("location", location),
-            ("radius", "45"),
-            ("datePosted", "week"),
+            ("num_pages", "1"),  // Limit to 1 page (~10 jobs)
+            ("date_posted", date_posted),
+            ("remote_jobs_only", &remote_jobs_only.to_string()),
         ])
         .send()
         .await?;
 
     if !response.status().is_success() {
-        return Err(format!("RapidAPI error: {}", response.status()).into());
+        return Err(format!("RapidAPI JSearch error: {}", response.status()).into());
     }
 
-    let jobs: Vec<RapidApiJobListing> = response.json().await?;
+    let response_json: serde_json::Value = response.json().await?;
+    let jobs: Vec<JSearchJobListing> = serde_json::from_value(response_json["data"].clone())?;
     Ok(jobs)
 }
 ```
@@ -137,8 +171,8 @@ async fn fetch_indeed_jobs_rapidapi(
 **Backend: Processing Pipeline** (mirrors Gmail workflow)
 
 ```rust
-// Process Indeed jobs from RapidAPI
-async fn process_indeed_jobs(
+// Process JSearch jobs from RapidAPI (aggregates LinkedIn, Indeed, Glassdoor, etc.)
+async fn process_jsearch_jobs(
     source: &JobSource,
     pool: &PgPool,
     log_id: Uuid,
@@ -153,10 +187,10 @@ async fn process_indeed_jobs(
 
     // Get RapidAPI credentials from environment
     let api_key = std::env::var("RAPIDAPI_KEY")?;
-    let api_host = std::env::var("RAPIDAPI_HOST_INDEED")?;
+    let api_host = std::env::var("RAPIDAPI_HOST_JSEARCH")?;
 
-    // Fetch jobs from RapidAPI
-    let listings = fetch_indeed_jobs_rapidapi(&api_key, &api_host, &source.configuration).await?;
+    // Fetch jobs from RapidAPI JSearch (limited to 10 via num_pages=1)
+    let listings = fetch_jsearch_jobs_rapidapi(&api_key, &api_host, &source.configuration).await?;
 
     for listing in listings {
         metrics.discovered += 1;
@@ -196,21 +230,27 @@ async fn process_indeed_jobs(
         .await?;
 
         // Extract job data using LLM (reuse existing async extraction)
+        let location_str = format!(
+            "{}, {}, {}",
+            listing.job_city.as_deref().unwrap_or(""),
+            listing.job_state.as_deref().unwrap_or(""),
+            listing.job_country.as_deref().unwrap_or("")
+        );
         let job_text = format!(
             "Title: {}\nCompany: {}\nLocation: {}\nDescription: {}",
             listing.job_title.as_deref().unwrap_or(""),
-            listing.company_name.as_deref().unwrap_or(""),
-            listing.job_location.as_deref().unwrap_or(""),
+            listing.employer_name.as_deref().unwrap_or(""),
+            location_str,
             listing.job_description.as_deref().unwrap_or("")
         );
 
         if let Some(job_data) = extract_job_from_text_async(&job_text, pool).await {
-            // Use listing fields as fallbacks for extraction
+            // Use JSearch fields as fallbacks for extraction
             let mut enhanced_data = job_data;
-            enhanced_data.title = enhanced_data.title.or(listing.job_title);
-            enhanced_data.company = enhanced_data.company.or(listing.company_name);
-            enhanced_data.location = enhanced_data.location.or(listing.job_location);
-            enhanced_data.url = enhanced_data.url.or(listing.job_apply_link);
+            enhanced_data.title = enhanced_data.title.or(listing.job_title.clone());
+            enhanced_data.company = enhanced_data.company.or(listing.employer_name.clone());
+            enhanced_data.location = enhanced_data.location.or(Some(location_str));
+            enhanced_data.url = enhanced_data.url.or(listing.job_apply_link.clone());
             enhanced_data.description = Some(listing.job_description.unwrap_or_default());
 
             // Create job (with filtering and deduplication)
@@ -240,16 +280,16 @@ async fn process_indeed_jobs(
 }
 
 // Sync endpoint (mirrors sync_gmail_jobs)
-async fn sync_indeed_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn sync_jsearch_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     let log_id = Uuid::new_v4();
 
-    // Get Indeed source
+    // Get RapidAPI (JSearch) source
     let source = sqlx::query_as::<_, JobSource>(
-        "SELECT * FROM job_sources WHERE source_name = 'indeed' AND is_active = true LIMIT 1"
+        "SELECT * FROM job_sources WHERE source_name = 'rapidapi' AND is_active = true LIMIT 1"
     )
     .fetch_one(pool.get_ref())
     .await
-    .map_err(|_| actix_web::error::ErrorNotFound("Indeed source not found or inactive"))?;
+    .map_err(|_| actix_web::error::ErrorNotFound("RapidAPI source not found or inactive"))?;
 
     // Create intake log
     sqlx::query!(
@@ -260,7 +300,7 @@ async fn sync_indeed_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     .await?;
 
     // Process jobs
-    match process_indeed_jobs(&source, pool.get_ref(), log_id).await {
+    match process_jsearch_jobs(&source, pool.get_ref(), log_id).await {
         Ok(metrics) => {
             // Validate and update log (same as Gmail)
             sqlx::query!(
@@ -286,7 +326,7 @@ async fn sync_indeed_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
             .await?;
 
             Ok(HttpResponse::Ok().json(serde_json::json!({
-                "message": "Indeed sync completed successfully",
+                "message": "RapidAPI JSearch sync completed successfully",
                 "metrics": metrics
             })))
         }
@@ -299,7 +339,7 @@ async fn sync_indeed_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
             .execute(pool.get_ref())
             .await?;
 
-            Err(actix_web::error::ErrorInternalServerError(format!("Indeed sync failed: {}", e)))
+            Err(actix_web::error::ErrorInternalServerError(format!("RapidAPI JSearch sync failed: {}", e)))
         }
     }
 }
@@ -307,7 +347,7 @@ async fn sync_indeed_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
 
 **Register endpoint** in `main()`:
 ```rust
-.route("/api/intake/indeed/sync", web::post().to(sync_indeed_jobs))
+.route("/api/intake/rapidapi/sync", web::post().to(sync_jsearch_jobs))
 ```
 
 ### Phase 4.1.2: Database Configuration (Week 1)
@@ -317,19 +357,19 @@ Update `job_sources` table (via SQL or admin endpoint):
 ```sql
 UPDATE job_sources
 SET
-    base_url = 'https://job-search15.p.rapidapi.com',  -- Update after testing in RapidAPI UI
+    base_url = 'https://jsearch.p.rapidapi.com',
     is_active = true,
     configuration = '{
-        "api_host": "job-search15.p.rapidapi.com",
-        "search_params": {
-            "query": "Software Test Engineer OR QA Engineer OR Test Automation",
-            "location": "Fremont, CA",
-            "radius": "45",
-            "datePosted": "week"
-        }
+        "api_host": "jsearch.p.rapidapi.com",
+        "query": "Software Test Engineer OR QA Engineer OR Test Automation in Fremont, CA",
+        "date_posted": "week",
+        "remote_jobs_only": false,
+        "num_pages": 1
     }'::JSONB
-WHERE source_name = 'indeed';
+WHERE source_name = 'rapidapi';
 ```
+
+**Note**: The `num_pages: 1` setting limits results to ~10 jobs per sync, as requested.
 
 ### Phase 4.1.3: Environment Configuration (Week 1)
 
@@ -337,78 +377,108 @@ Add to `backend/.env`:
 ```bash
 # RapidAPI configuration
 RAPIDAPI_KEY=your-api-key-from-rapidapi-dashboard
-RAPIDAPI_HOST_INDEED=job-search15.p.rapidapi.com  # Or whatever API you choose
+RAPIDAPI_HOST_JSEARCH=jsearch.p.rapidapi.com
 
 # Job search defaults (can override in database config)
-JOB_SEARCH_LOCATION=Fremont, CA
-JOB_SEARCH_RADIUS=45
-JOB_SEARCH_KEYWORDS=Software Test Engineer OR QA Engineer OR Test Automation
+JOB_SEARCH_QUERY=Software Test Engineer OR QA Engineer OR Test Automation in Fremont, CA
+JOB_SEARCH_DATE_POSTED=week
+JOB_SEARCH_REMOTE_ONLY=false
 ```
 
 Add to `backend/.env.example`:
 ```bash
 # RapidAPI configuration (get from https://rapidapi.com)
 RAPIDAPI_KEY=your-rapidapi-key-here
-RAPIDAPI_HOST_INDEED=job-search15.p.rapidapi.com
+RAPIDAPI_HOST_JSEARCH=jsearch.p.rapidapi.com
+
+# Job search defaults
+JOB_SEARCH_QUERY=Software Test Engineer OR QA Engineer OR Test Automation in Fremont, CA
+JOB_SEARCH_DATE_POSTED=week
+JOB_SEARCH_REMOTE_ONLY=false
 ```
 
 ### Phase 4.1.4: Frontend Integration (Week 2)
 
-Update `frontend/src/IntakeTab.tsx` - add Indeed card (mirror Gmail card):
+Update `frontend/src/IntakeTab.tsx` - add separate sync buttons for each source:
+
+**Key Requirement**: Each source must have its own dedicated sync button.
 
 ```typescript
-// Add Indeed sync function
-const syncIndeed = async () => {
-  setIndeedSyncing(true);
+// Add RapidAPI (JSearch) sync function
+const syncRapidAPI = async () => {
+  setRapidAPISyncing(true);
   try {
-    const response = await fetch('http://localhost:8080/api/intake/indeed/sync', {
+    const response = await fetch('http://localhost:8080/api/intake/rapidapi/sync', {
       method: 'POST',
     });
     const data = await response.json();
 
     // Show success message with metrics
-    alert(`Indeed sync completed!\n
-      Jobs discovered: ${data.metrics.jobs_discovered}
-      Jobs created: ${data.metrics.jobs_created}
-      Duplicates: ${data.metrics.jobs_duplicated}
-      Filtered: ${data.metrics.jobs_filtered_out}`);
+    alert(`RapidAPI JSearch sync completed!\n
+      Jobs discovered: ${data.metrics.discovered} (max 10)
+      Jobs created: ${data.metrics.created}
+      Duplicates: ${data.metrics.duplicated}
+      Filtered: ${data.metrics.filtered_out}`);
 
     // Refresh intake summary
     fetchIntakeSummary();
   } catch (error) {
-    console.error('Indeed sync failed:', error);
-    alert('Failed to sync Indeed jobs');
+    console.error('RapidAPI sync failed:', error);
+    alert('Failed to sync RapidAPI jobs');
   } finally {
-    setIndeedSyncing(false);
+    setRapidAPISyncing(false);
   }
 };
 
-// Add Indeed card to UI (in JSX)
-<div className="source-card">
-  <h3>Indeed Jobs</h3>
-  <p>Last sync: {indeedLastSync || 'Never'}</p>
-  <p>Total discovered: {indeedStats?.total || 0}</p>
-  <button onClick={syncIndeed} disabled={indeedSyncing}>
-    {indeedSyncing ? 'Syncing...' : 'Sync Indeed Jobs'}
-  </button>
+// Two separate source cards with independent sync buttons
+<div className="sources-container">
+  {/* Gmail Source Card */}
+  <div className="source-card">
+    <h3>Gmail Job Alerts</h3>
+    <p>Last sync: {gmailLastSync || 'Never'}</p>
+    <p>Total discovered: {gmailStats?.total || 0}</p>
+    <button onClick={syncGmail} disabled={gmailSyncing}>
+      {gmailSyncing ? 'Syncing Gmail...' : 'Sync Gmail'}
+    </button>
+  </div>
+
+  {/* RapidAPI (JSearch) Source Card */}
+  <div className="source-card">
+    <h3>RapidAPI JSearch</h3>
+    <p className="source-description">Aggregates LinkedIn, Indeed, Glassdoor, and 30+ job boards</p>
+    <p>Last sync: {rapidAPILastSync || 'Never'}</p>
+    <p>Total discovered: {rapidAPIStats?.total || 0}</p>
+    <p>Limit: 10 jobs per sync</p>
+    <button onClick={syncRapidAPI} disabled={rapidAPISyncing}>
+      {rapidAPISyncing ? 'Syncing RapidAPI...' : 'Sync RapidAPI'}
+    </button>
+  </div>
 </div>
 ```
 
+**Design Notes**:
+- Two separate cards side-by-side
+- Each card has its own sync button
+- Each button is independently clickable and has its own loading state
+- Clear labeling: "Gmail" vs "RapidAPI JSearch"
+- RapidAPI card shows that it aggregates multiple job boards
+- Displays "Limit: 10 jobs per sync" to set expectations
+
 ### Phase 4.1.5: Rate Limiting & Quota Management (Week 2)
 
-**Track API usage** to stay within free tier (500 requests/month):
+**Track API usage** to stay within free tier (200 requests/month):
 
 ```rust
 // Add usage tracking
 async fn check_rapidapi_quota(pool: &PgPool) -> Result<bool, sqlx::Error> {
-    // Count API calls this month
+    // Count API calls this month for RapidAPI source only
     let usage = sqlx::query!(
         r#"
         SELECT COUNT(*) as count
         FROM job_intake_logs
         WHERE source_id IN (
             SELECT source_id FROM job_sources
-            WHERE source_name IN ('indeed', 'linkedin')
+            WHERE source_name = 'rapidapi'
         )
         AND sync_started_at >= date_trunc('month', NOW())
         "#
@@ -418,20 +488,22 @@ async fn check_rapidapi_quota(pool: &PgPool) -> Result<bool, sqlx::Error> {
 
     let calls_this_month = usage.count.unwrap_or(0);
 
-    // Warn if approaching limit
-    if calls_this_month >= 450 {
-        log_debug(&format!("⚠️  WARNING: RapidAPI usage at {}/500 this month", calls_this_month));
+    // Warn if approaching limit (85% of 200 = 170)
+    if calls_this_month >= 170 {
+        log_debug(&format!("⚠️  WARNING: RapidAPI usage at {}/200 this month", calls_this_month));
     }
 
-    Ok(calls_this_month < 500)
+    Ok(calls_this_month < 200)
 }
 ```
 
 **Free tier optimization strategies**:
-- Limit syncs to 2-3 times per week (vs Gmail which is on-demand)
-- Search returns ~20-50 jobs per call, so 500 calls = 10,000-25,000 jobs/month
-- Cache results locally, don't refetch same jobs
-- Monitor via RapidAPI dashboard (alerts at 85%)
+- **Limit: 10 jobs per sync** (num_pages=1) instead of 50
+- Free tier: 200 requests/month = 200 syncs × 10 jobs = 2,000 jobs/month max
+- Suggested sync frequency: 2-3 times per week = 8-12 syncs/month = 80-120 jobs/month
+- Still have plenty of headroom for testing and ad-hoc syncs
+- Gmail syncs are unlimited (not counted against RapidAPI quota)
+- Monitor via RapidAPI dashboard (alerts at 85% = 170 requests)
 
 ### Phase 4.1.6: Testing & Validation (Week 3)
 
@@ -439,98 +511,162 @@ async fn check_rapidapi_quota(pool: &PgPool) -> Result<bool, sqlx::Error> {
 
 ```rust
 #[tokio::test]
-async fn test_indeed_rapidapi_sync() {
-    // Mock RapidAPI response
+async fn test_jsearch_rapidapi_sync() {
+    // Mock JSearch API response (30+ data points)
     // Test extraction from API data
-    // Test deduplication
-    // Test filtering
+    // Test deduplication by job_id
+    // Test filtering (salary, location, remote)
+    // Verify max 10 jobs returned (num_pages=1)
 }
 
 #[tokio::test]
 async fn test_rapidapi_quota_check() {
-    // Test quota tracking
-    // Test warning at 450 calls
+    // Test quota tracking (200 requests/month)
+    // Test warning at 170 calls (85%)
+    // Verify only RapidAPI source counted
+}
+
+#[tokio::test]
+async fn test_separate_source_syncs() {
+    // Verify Gmail sync independent of RapidAPI
+    // Test both sources can sync simultaneously
+    // Confirm separate intake logs
 }
 ```
 
 **Manual testing checklist**:
-1. ✅ Test search in RapidAPI web UI first
+1. ✅ Test JSearch search in RapidAPI web UI first
 2. ✅ Verify API key works from Rust code
-3. ✅ Sync Indeed jobs via `/api/intake/indeed/sync`
-4. ✅ Check jobs appear in Jobs tab
+3. ✅ Sync RapidAPI jobs via `/api/intake/rapidapi/sync`
+4. ✅ Check jobs appear in Jobs tab (max 10 per sync)
 5. ✅ Verify deduplication (sync twice, no duplicates)
 6. ✅ Verify filtering (low salary jobs filtered out)
-7. ✅ Check `api_job_sources` table has raw data
-8. ✅ Check `job_intake_logs` has metrics
+7. ✅ Check `api_job_sources` table has raw JSearch data
+8. ✅ Check `job_intake_logs` has metrics for both Gmail and RapidAPI
 9. ✅ Monitor quota in RapidAPI dashboard
+10. ✅ Test both sync buttons work independently in UI
 
 ### Phase 4.1.7: Documentation (Week 3)
 
 Update `README.md`:
-- Add Indeed integration section
-- Document RapidAPI setup steps
-- Note free tier limits and upgrade path
+- Add RapidAPI JSearch integration section
+- Document JSearch API setup steps
+- Note that JSearch aggregates 30+ job boards (LinkedIn, Indeed, Glassdoor, etc.)
+- Document free tier limits (200 requests/month, 10 jobs per sync)
+- Document upgrade path to Pro tier ($25/month)
+- Emphasize separate sync buttons for Gmail and RapidAPI
 
 ## Future Extensions (Phase 4.2+)
 
-Once Indeed is working on free tier:
+**Current State**: Two sources (Gmail + RapidAPI JSearch aggregator)
 
-**Phase 4.2**: Add LinkedIn via RapidAPI (same pattern, different endpoint)
-**Phase 4.3**: Evaluate JobScanner multi-board API (1 call for all sources)
-**Phase 4.4**: Upgrade to RapidAPI Pro tier ($10-30/month) if hitting limits
-**Phase 4.5**: Add Dice, ZipRecruiter, Glassdoor
+**Phase 4.2**: Enhanced Filtering & Search Queries
+- Add more sophisticated search queries to JSearch
+- Filter by salary ranges, employment type, remote vs onsite
+- Add ability to configure multiple search queries per source
+
+**Phase 4.3**: Increase Sync Limits (if needed)
+- Upgrade to RapidAPI Pro tier ($25/month) for 10K requests/month
+- Increase num_pages to 2-3 (20-30 jobs per sync)
+- Add daily automated syncs
+
+**Phase 4.4**: Additional Specialized APIs
+- Add niche job boards for testing/QA roles (if needed)
+- Evaluate specialized APIs beyond JSearch aggregator
+
+**Phase 4.5**: Analytics & Insights
+- Track which job boards (within JSearch) produce best matches
+- Analyze job market trends from aggregated data
+- Dashboard for source performance comparison
 
 ## Cost & Usage Projections
 
-**Free tier (500 requests/month)**:
-- 2 syncs/week = 8 syncs/month
-- ~50 jobs per sync = 400 jobs/month
-- Well under 500 request limit
+**Free tier (200 requests/month)**:
+- 2-3 syncs/week = 8-12 syncs/month
+- 10 jobs per sync (num_pages=1)
+- Total: 80-120 jobs/month
+- Well under 200 request limit (40-60% usage)
 - **Cost: $0**
 
-**When to upgrade**:
-- Hitting 450+ requests/month (dashboard alert at 85%)
-- Want daily syncs instead of weekly
-- Want multiple job boards (LinkedIn + Indeed + Dice)
-- **Cost: $10-30/month for Basic plan** (~5,000-10,000 requests/month)
+**Conservative Usage**:
+- Gmail syncs: Unlimited (not counted)
+- RapidAPI syncs: 2-3× per week
+- Total capacity: 200 syncs × 10 jobs = 2,000 jobs/month if needed
+- Plenty of headroom for testing and experimentation
+
+**When to upgrade to Pro ($25/month)**:
+- Hitting 170+ requests/month (dashboard alert at 85%)
+- Want daily syncs (30/month) or multiple syncs per day
+- Want more jobs per sync (increase num_pages to 2-5)
+- **Pro tier**: 10,000 requests/month, 5 requests/second rate limit
+- **Example**: Daily syncs with 30 jobs each = 900 jobs/month (90 requests)
 
 ## Success Criteria
 
-✅ RapidAPI account created and tested via web UI
-✅ API key configured in environment
-✅ Indeed jobs fetched and displayed in UI
-✅ Jobs properly filtered using Phase 2 criteria
-✅ Jobs deduplicated across all sources (Gmail + Indeed)
-✅ Quota tracking prevents overages
-✅ Frontend shows Indeed sync button and metrics
-✅ Documentation complete with setup guide
+✅ RapidAPI account created and JSearch API subscribed (free tier)
+✅ API key configured in environment (RAPIDAPI_HOST_JSEARCH)
+✅ JSearch jobs fetched from aggregator (LinkedIn, Indeed, Glassdoor, etc.)
+✅ Results limited to 10 jobs per sync (num_pages=1)
+✅ Jobs properly filtered using Phase 2 criteria (salary, location)
+✅ Jobs deduplicated across all sources (Gmail + RapidAPI)
+✅ Quota tracking prevents overages (200/month limit)
+✅ Frontend shows two separate sync buttons (Gmail + RapidAPI)
+✅ Each source has independent sync state and metrics
+✅ Documentation complete with JSearch setup guide
 ✅ Tests passing for API integration
+✅ Clear UI labeling that RapidAPI aggregates 30+ job boards
 
 ## Implementation Timeline
 
-- **Day 1**: RapidAPI signup, test APIs in web UI, choose best one
-- **Days 2-5**: Backend implementation (fetch, process, extract)
-- **Days 6-8**: Database and environment config
-- **Days 9-10**: Frontend integration
-- **Days 11-13**: Rate limiting and quota tracking
-- **Days 14-15**: Testing and validation
-- **Days 16-17**: Documentation
+- **Day 1**: RapidAPI signup, subscribe to JSearch API (free), test in web UI
+- **Days 2-5**: Backend implementation (fetch, process, extract with num_pages=1 limit)
+- **Days 6-8**: Database and environment config (update source_name='rapidapi')
+- **Days 9-10**: Frontend integration (add separate RapidAPI sync button)
+- **Days 11-13**: Rate limiting and quota tracking (200/month limit)
+- **Days 14-15**: Testing and validation (verify 10-job limit, test both sources)
+- **Days 16-17**: Documentation (emphasize aggregator nature of JSearch)
 
 **Total: ~3 weeks part-time** (20-25 hours)
 
+**Key Differences from Original Plan**:
+- Using JSearch aggregator instead of Indeed-specific API
+- Limit of 10 jobs per sync (not 50)
+- Free tier is 200/month (not 500)
+- Two sources total: Gmail + RapidAPI (not adding separate LinkedIn, Indeed, etc.)
+
 ## Risk Mitigation
 
-✅ **Test in RapidAPI web UI first** - Verify API works before coding
-✅ **Start with free tier** - No financial risk, upgrade later if needed
+✅ **Test in RapidAPI web UI first** - Verify JSearch API works before coding
+✅ **Start with free tier** - No financial risk (no credit card), upgrade later if needed
 ✅ **Reuse Gmail patterns** - Low risk, proven workflow
-✅ **Monitor quota closely** - Dashboard shows usage, alerts at 85%
-✅ **Abstract API client** - Easy to swap APIs if needed
+✅ **Monitor quota closely** - Dashboard shows usage, alerts at 85% (170/200)
+✅ **Limit results to 10 jobs** - Reduces processing time and conserves quota
+✅ **Separate sync buttons** - Each source operates independently, no interference
+✅ **Use job aggregator** - One API for 30+ job boards vs managing multiple APIs
 
 ---
 
-## Phase 4.1.1 Implementation Status (2025-10-22)
+## Phase 4.1.1 Implementation Status
 
-### ✅ COMPLETED - Core Implementation
+### 🔄 CHANGE ORDER (2025-10-23)
+
+**Previous Implementation (2025-10-22)**: Indeed-specific API integration
+**Revised Plan**: JSearch job aggregator (consolidates LinkedIn, Indeed, Glassdoor, 30+ boards)
+
+**Key Changes**:
+1. API changed from Indeed-specific to JSearch aggregator (jsearch.p.rapidapi.com)
+2. Results limit changed from 50 to 10 jobs per sync (num_pages=1)
+3. Free tier changed from 500 to 200 requests/month
+4. Source count: Two sources only (Gmail + RapidAPI)
+5. Each source requires separate sync button in UI
+
+**Status**: Previous Indeed implementation needs revision to match JSearch API.
+
+### ⚠️ PREVIOUS IMPLEMENTATION - Needs Revision
+
+**Note**: The implementation below was completed for Indeed API. It needs to be updated for JSearch API per the change order above.
+
+### ✅ COMPLETED (2025-10-22) - Core Implementation (Indeed - Superseded)
 
 **Backend Implementation** (`backend/src/main.rs`):
 - ✅ **RapidAPI Client Module** (lines 3332-3635)
