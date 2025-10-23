@@ -1,12 +1,13 @@
 ---
 id: ISSUE-009
 title: Session Management and Documentation Best Practices
-status: open
+status: mitigated
 priority: low
 severity: low
 component: docs
 created: 2025-10-23
 updated: 2025-10-23
+mitigated: 2025-10-23
 affects: [claude-code-workflow, documentation-quality, token-efficiency]
 related: [ISSUE-008]
 ---
@@ -183,11 +184,51 @@ Establish systematic reminders for two key Claude Code workflow best practices: 
 
 ## Decision
 
-**Awaiting user decision** - Recommending Option 1 for maximum visibility and automation.
+**Option 1 Selected** (2025-10-23) - Add to CLAUDE.md for maximum visibility and automation.
+
+### How This Works: Automatic Claude Behavior vs User Prompts
+
+**IMPORTANT CLARIFICATION**: These instructions guide **Claude Code's automatic behavior**, not user prompts.
+
+**What This Means**:
+- **Claude Code will act proactively** - These reminders cause me (Claude) to automatically take actions without the user needing to remember
+- **NOT user-facing prompts** - The user will not see reminders like "Hey user, remember to check X"
+- **Automatic execution** - When conditions are met, Claude will automatically perform the specified actions
+
+**Session Management Example**:
+- **What Claude will do**: Monitor token usage throughout the conversation and proactively suggest session restarts when approaching 100K-150K tokens
+- **What user will see**: "We're at 120K tokens (~60% of budget). I recommend restarting the session with `claude --continue` for better performance."
+- **What user won't need to do**: Remember to check `/cost` or manually monitor token budgets
+
+**Documentation Updates Example**:
+- **What Claude will do**: Automatically run `git log` commands before updating PHASE plans, README files, etc., and use commit messages to identify what changed
+- **What user will see**: "Before I update the PHASE plan, let me review recent commits..." [Claude runs git log automatically]
+- **What user won't need to do**: Remind Claude to check git history or manually gather recent changes
+
+**Benefits**:
+- **Less cognitive load for user** - Claude handles best practices automatically
+- **Consistent workflow** - These practices are applied systematically, not ad-hoc
+- **Proactive assistance** - Claude suggests optimizations before problems arise
+
+**User Consent**: User Sam agreed to trial this approach with backup (CLAUDE.md.backup-2025-10-23) for safety.
 
 ## Implementation
 
-Not yet implemented.
+**Implemented** (2025-10-23):
+
+1. **Backup created**: `CLAUDE.md.backup-2025-10-23` for safety
+2. **CLAUDE.md updated**: Added new section "Session Management & Documentation Workflow" with:
+   - Token efficiency & session restart guidelines
+   - Automatic git log review before documentation updates
+   - Clear explanation of automatic behavior (not user prompts)
+   - Examples of what user will see when Claude acts proactively
+3. **Location**: CLAUDE.md:102-152 (51 lines added)
+4. **Token cost**: ~150 tokens added to CLAUDE.md (minimal overhead)
+
+**Files modified**:
+- `CLAUDE.md` - Added section with workflow guidelines
+- `CLAUDE.md.backup-2025-10-23` - Safety backup of original
+- `bugs/open/ISSUE-009-session-reminders.md` - This file (updated with decision and implementation)
 
 ## Testing
 
@@ -206,6 +247,9 @@ Not yet implemented.
 ## Status History
 
 - 2025-10-23: Issue filed based on user request for systematic reminders about session management and documentation workflows
+- 2025-10-23: Option 1 selected by user (add to CLAUDE.md)
+- 2025-10-23: Implementation completed - Section added to CLAUDE.md with backup created
+- 2025-10-23: Status changed to 'mitigated' - Requires validation over time to ensure reminders are helpful and not intrusive
 
 ## Notes
 

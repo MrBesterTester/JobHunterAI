@@ -6,9 +6,6 @@
   - [Developer Preferences](#developer-preferences)
     - [Database Configuration](#database-configuration)
     - [Notifications](#notifications)
-  - [Session Management & Documentation Workflow](#session-management--documentation-workflow)
-    - [Token Efficiency & Session Restarts](#token-efficiency--session-restarts)
-    - [Documentation Updates from Git History](#documentation-updates-from-git-history)
   - [Development Commands](#development-commands)
     - [Database Setup](#database-setup)
     - [Backend (Rust)](#backend-rust)
@@ -101,58 +98,6 @@ afplay /System/Library/Sounds/Glass.aiff && osascript -e "display dialog \"Build
 # Ready for input
 afplay /System/Library/Sounds/Glass.aiff && osascript -e "display dialog \"Task completed - ready for your input\" with title \"Claude Code\" buttons {\"OK\"} default button \"OK\" with icon note"
 ```
-
-## Session Management & Documentation Workflow
-
-**✅ IMPLEMENTED**: Automatic workflow best practices for token efficiency and documentation quality (2025-10-23)
-
-### Token Efficiency & Session Restarts
-
-**Proactive Monitoring**: Claude Code will automatically monitor token usage and conversation context to suggest session restarts at optimal times.
-
-**When Claude will suggest a session restart**:
-- Token usage reaches 100,000-150,000 tokens (50-75% of 200K budget)
-- Conversation context becomes scattered across multiple unrelated topics
-- Starting a new major task after completing previous work
-- Performance noticeably degrades (slower responses)
-
-**How Claude will suggest restarts**:
-Claude will proactively say something like:
-> "We're at 120K tokens (~60% of budget). I recommend restarting the session for better performance. You can resume with `claude --continue` to maintain context."
-
-**User benefit**: No need to remember to check `/cost` or manually monitor token budgets - Claude handles this automatically.
-
-**Session Resume Commands**:
-```bash
-claude --continue              # Resume most recent session with full context
-claude --resume                # Interactive picker for past sessions
-```
-
-### Documentation Updates from Git History
-
-**Automatic Git Review**: When updating project documentation (PHASE plans, README files, etc.), Claude will automatically review recent git commits first to ensure comprehensive coverage.
-
-**Claude's automatic workflow when asked to update docs**:
-1. First run: `git log -n 20 --oneline` to review recent work
-2. Optionally run: `git log -n 10 --format=fuller` for detailed commit messages
-3. Identify all changes since last documentation update
-4. Ensure all significant work is reflected in the documentation
-5. Reference specific commits when relevant
-
-**Example of what you'll see**:
-> "Before I update the PHASE 2.4 plan, let me review recent commits to ensure we capture all the work..."
->
-> [Claude runs git log and analyzes commits]
->
-> "I can see we completed X, Y, and Z based on commits abc123, def456, and ghi789. I'll make sure all of these are documented."
-
-**Why this matters**:
-- Git commit messages capture exact details that might be forgotten
-- Commit messages provide specific file paths and line numbers
-- Systematic review prevents incomplete documentation
-- Leverages user's well-crafted commit messages as a detailed "work log"
-
-**User benefit**: No need to remind Claude to check git history or manually recall all recent changes - Claude does this automatically before every documentation update.
 
 ## Development Commands
 
