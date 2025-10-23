@@ -2307,7 +2307,6 @@ From `CLAUDE.md:159-163`:
 ## Further Work & Loose Ends
 
 **Last Reviewed**: 2025-10-22
-**Analysis Document**: [`docs/PHASE_3.1_LOOSE_ENDS_ANALYSIS.md`](PHASE_3.1_LOOSE_ENDS_ANALYSIS.md)
 
 This section summarizes all deferred items, open bugs, and incomplete work from Phase 3.1 implementation. While Phase 3.1 is **production-ready**, several items were identified during implementation that should be addressed in future work.
 
