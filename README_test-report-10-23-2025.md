@@ -437,59 +437,64 @@ Based on test results:
 
 ### Immediate Actions
 
-2. **Investigate Job Trade-off Display Feature** (High Priority)
-   - 17 failing E2E tests suggest feature is incomplete or broken
-   - Verify API is returning trade-off data correctly
-   - Check frontend components are rendering with correct selectors
-   - Consider creating bug report: `BUG-00XX-job-tradeoff-display-not-rendering`
+1. **Investigate Job Trade-off Display Feature** (High Priority) - ✅ **COMPLETED (2025-10-23)**
+   - **Status**: Investigation complete - bug report filed as **BUG-0004**
+   - **Root Cause Identified**: E2E tests fail because "All" tab doesn't render job cards in Playwright test environment
+   - **Key Findings**:
+     - ✅ Backend API returns raw_data correctly with all trade-off structures
+     - ✅ Frontend components fully implemented (badges, detail sections)
+     - ✅ Database has 60 jobs with populated trade-off data
+     - ❌ Tab switching not working in E2E tests (React state not updating after click)
+   - **Bug Report**: `bugs/open/BUG-0004-all-tab-not-rendering-job-cards-in-e2e-tests.md`
+   - **Next Steps**: Choose solution from BUG-0004 (recommended: Option 2 - add test-specific tab indicators, 2-3 hours)
 
-3. **Fix Content Generation Modal Persistence** (Medium Priority)
+2. **Fix Content Generation Modal Persistence** (Medium Priority)
    - Modal loses content when closed and reopened
    - Implement state management to persist generated content
    - Add session storage fallback to prevent data loss
 
-4. **Improve Error Handling** (Medium Priority)
+3. **Improve Error Handling** (Medium Priority)
    - Add graceful degradation for API errors
    - Handle malformed responses with user-friendly messages
    - Implement retry logic with exponential backoff
 
 ### Short-term Improvements
 
-5. **Address New Badge System Failures** (Medium Priority)
+4. **Address New Badge System Failures** (Medium Priority)
    - Employment type badges not rendering correctly
    - Review badge component implementation
    - Verify test selectors match actual implementation
 
-6. **Add Frontend Unit Tests** (Medium Priority)
+5. **Add Frontend Unit Tests** (Medium Priority)
    - Create unit tests for React components
    - Test hooks and custom utilities
    - Target: 70%+ code coverage for frontend
 
-7. **Optimize Content Length** (Low Priority)
+6. **Optimize Content Length** (Low Priority)
    - Tune LLM prompts to generate more concise content
    - Target: Resume ~2,500 chars, Cover letter ~1,500 chars
    - Maintain quality while reducing verbosity
 
 ### Long-term Enhancements
 
-8. **Expand Test Coverage**
+7. **Expand Test Coverage**
    - Add integration tests for database operations
    - Create performance benchmarks
    - Implement visual regression testing for UI components
 
-9. **Continuous Integration**
+8. **Continuous Integration**
    - Set up CI/CD pipeline to run tests automatically
    - Add pre-commit hooks for backend tests
    - Configure test result reporting and notifications
 
-10. **Test Data Management**
+9. **Test Data Management**
    - Create consistent test fixtures
    - Implement database seeding for E2E tests
    - Add test data cleanup procedures
 
 ### Process Improvements
 
-11. **Documentation**
+10. **Documentation**
     - Document test writing guidelines
     - Create troubleshooting guide for common test failures
     - Maintain test coverage reports
