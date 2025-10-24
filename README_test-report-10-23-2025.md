@@ -425,15 +425,16 @@ Based on test results:
 
 ### Critical Issues
 
-1. **Fix E2E Test Suite Timeout** (Critical Priority)
+1. **Fix E2E Test Suite Timeout** (Critical Priority) - **[ISSUE-015](bugs/open/ISSUE-015-e2e-llm-generation-test-inefficiency.md)**
    - Test suite took 53+ minutes and hit 20-minute global timeout
    - 248 tests (45.6%) were skipped due to timeout
-   - **Root Cause**: Likely too many LLM generation tests running sequentially (28-30s each)
+   - **Root Cause**: Too many LLM generation tests running sequentially (35-38 tests × 30s = 17.5 min for one test file)
+   - **Issue Report**: See [ISSUE-015](bugs/open/ISSUE-015-e2e-llm-generation-test-inefficiency.md) for detailed analysis and proposed solutions
    - **Recommended Actions**:
-     - Mock LLM responses for most tests; only test real API integration in dedicated tests
+     - Mock LLM responses for most tests; only test real API integration in dedicated tests (Option 3: Hybrid Approach)
      - Increase parallelization or reduce test scope
-     - Consider splitting test suite into "fast" and "slow" suites
-     - Current configuration allows only 40% of tests to complete
+     - Consider splitting test suite into "fast" (mocked) and "slow" (integration) suites
+     - Target: Reduce test time from 53 minutes to <5 minutes (>90% improvement)
 
 ### Immediate Actions
 
