@@ -10,7 +10,7 @@ component: frontend
 created: 2025-10-24
 updated: 2025-10-24
 affects: [frontend-testing, test-infrastructure]
-related: []](#id-issue-013%0Atitle-tap-testing-infrastructure-planned-but-unused---e2e-only-strategy%0Astatus-mitigated%0Apriority-low%0Aseverity-low%0Acomponent-frontend%0Acreated-2025-10-24%0Aupdated-2025-10-24%0Aaffects-frontend-testing-test-infrastructure%0Arelated-)
+related: [ISSUE-018]](#id-issue-013%0Atitle-tap-testing-infrastructure-planned-but-unused---e2e-only-strategy%0Astatus-mitigated%0Apriority-low%0Aseverity-low%0Acomponent-frontend%0Acreated-2025-10-24%0Aupdated-2025-10-24%0Aaffects-frontend-testing-test-infrastructure%0Arelated-issue-018)
 - [ISSUE-013: TAP Testing Infrastructure Planned But Unused - E2E-Only Strategy](#issue-013-tap-testing-infrastructure-planned-but-unused---e2e-only-strategy)
   - [Summary](#summary)
   - [Impact](#impact)
@@ -42,7 +42,7 @@ component: frontend
 created: 2025-10-24
 updated: 2025-10-24
 affects: [frontend-testing, test-infrastructure]
-related: []
+related: [ISSUE-018]
 ---
 
 # ISSUE-013: TAP Testing Infrastructure Planned But Unused - E2E-Only Strategy
@@ -244,6 +244,39 @@ Web research confirms this approach is valid:
 - The current approach is intentional and research-backed
 - No immediate action required
 
+---
+
+**UPDATE (2025-10-24): Decision Reversed - See [ISSUE-018](../open/ISSUE-018-frontend-unit-test-implementation.md)**
+
+The October 2025 test report recommended adding frontend unit tests with 70%+ coverage target. After comprehensive analysis in ISSUE-018, the E2E-only strategy has been reversed in favor of implementing Jest + React Testing Library unit tests.
+
+**Why the reversal?**
+1. **Codebase maturity**: 8,429 LOC across 13 components - significantly larger than when this decision was made
+2. **E2E test duration**: Even optimized, E2E tests take 20+ minutes (ISSUE-015) - too slow for rapid development iteration
+3. **Developer experience**: Fast unit tests (<10s) enable TDD workflows and faster feedback loops
+4. **Better coverage**: Unit tests can test edge cases and error states difficult to reproduce in E2E
+5. **CI/CD efficiency**: Lower resource costs and faster execution
+6. **User feedback**: "The advantages of this testing are really appealing" - benefits align with project needs
+
+**What was correct about the original decision?**
+- E2E-only was appropriate during initial rapid development phase
+- E2E tests provide high confidence for complete user workflows
+- Modern Playwright is fast and reliable enough for comprehensive E2E testing
+- E2E tests will continue to serve as integration validation layer
+
+**What changed?**
+- **Scale**: Codebase grew from early development to 8,429 LOC production application
+- **Complexity**: Large components (App.tsx: 2,782 LOC) benefit from isolated unit testing
+- **Development phase**: Shifting from rapid prototyping to mature development with stability requirements
+- **Test pyramid balance**: Pure E2E approach has reached practical limits for development velocity
+
+**The new approach**: Balanced testing portfolio
+- **Unit tests** (Jest): Fast feedback, component isolation, edge cases (70%+ coverage target)
+- **E2E tests** (Playwright): User workflows, integration validation, critical paths
+- **Backend tests** (Rust): Business logic, API endpoints (already at 98.7% pass rate)
+
+See [ISSUE-018](../open/ISSUE-018-frontend-unit-test-implementation.md) for full analysis and implementation plan (40-60 hours, phased over 5-7 weeks).
+
 ## Implementation
 
 No implementation required. This issue documents the current state and decision to maintain the status quo.
@@ -272,8 +305,11 @@ cd frontend && npm test  # Would fail - no test files exist
 - 2025-10-24: Issue discovered and documented via user inquiry
 - 2025-10-24: Root cause analyzed (pragmatic pivot to E2E-only testing)
 - 2025-10-24: Modern testing research conducted (2024 best practices)
-- 2025-10-24: Decision made to maintain status quo
+- 2025-10-24: Decision made to maintain status quo (E2E-only approach)
 - 2025-10-24: Marked as mitigated (no action required, E2E approach is valid)
+- **2025-10-24: ⚠️ Decision reversed** - Test report recommends unit tests (ISSUE-018 created)
+- **2025-10-24: ISSUE-018 approved** - Jest + React Testing Library implementation to proceed
+- **2025-10-24: Reconciliation documented** - Original decision was correct for rapid development phase; reversal appropriate for mature codebase (8,429 LOC)
 
 ## Notes
 

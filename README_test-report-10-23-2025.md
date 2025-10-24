@@ -482,10 +482,15 @@ Based on test results:
      - Blocked by separate infrastructure issue (BUG-0004) affecting 60+ tests
    - **See**: [ISSUE-017](bugs/mitigated/ISSUE-017-new-badge-system-e2e-test-failures.md) for implementation details
 
-5. **Add Frontend Unit Tests** (Medium Priority)
-   - Create unit tests for React components
-   - Test hooks and custom utilities
-   - Target: 70%+ code coverage for frontend
+5. **Add Frontend Unit Tests** (Medium Priority) - ✅ **APPROVED (2025-10-24)** - **[ISSUE-018](bugs/open/ISSUE-018-frontend-unit-test-implementation.md)**
+   - **Status**: Implementation approved - Jest + React Testing Library approach
+   - **Decision**: Reverses E2E-only strategy from ISSUE-013; codebase maturity (8,429 LOC) now justifies unit tests
+   - **Benefits**: Fast feedback (<10s vs 20min), better edge case coverage, TDD workflows, lower CI/CD costs
+   - **Implementation**: Phased approach over 5-7 weeks (40-60 hours total)
+     - Phase 1 (40% coverage): App.tsx + IntakeTab.tsx critical paths
+     - Phase 2 (60% coverage): Calendar, Ranked, Followups, Resume, Email components
+     - Phase 3 (70%+ coverage): Remaining components + edge cases
+   - **See**: [ISSUE-018](bugs/open/ISSUE-018-frontend-unit-test-implementation.md) for detailed analysis and implementation plan
 
 6. **Optimize Content Length** (Low Priority)
    - Tune LLM prompts to generate more concise content

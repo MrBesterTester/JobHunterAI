@@ -543,34 +543,40 @@ describe('App', () => {
 
 ## Decision
 
-**Status**: ⏸️ PENDING - Awaiting user decision
+**Status**: ✅ APPROVED - User approved Jest + React Testing Library approach (2025-10-24)
 
-**Recommendation**: **Option 2 (Jest + React Testing Library)** - Industry standard, best tooling
+**Chosen Solution**: **Option 2 (Jest + React Testing Library)** - Industry standard, best tooling
 
-**Rationale for Recommendation**:
+**Rationale for Selection**:
 1. **Industry Standard**: Jest is the de facto standard for React testing (most examples, best documentation)
 2. **Mature Ecosystem**: Extensive tooling, plugins, IDE integration
 3. **Team Knowledge**: Most React developers familiar with Jest
 4. **React Testing Library**: Already installed, designed for Jest
 5. **Coverage Tooling**: Built-in coverage reporting with thresholds
 6. **Future-Proof**: Long-term support and active development
+7. **User Feedback**: "The advantages of this testing are really appealing" - benefits of fast feedback, better coverage, and TDD workflows align with project needs
 
-**Alternative Recommendation**: **Option 1 (TAP)** if minimizing setup time is critical
-- Infrastructure already installed
-- Faster to start (no setup needed)
-- Simple and lightweight
-- Good enough for 70% coverage goal
+**Reversal of ISSUE-013 Decision**: This decision reverses the "E2E-only testing strategy" documented in [ISSUE-013](../mitigated/ISSUE-013-tap-infrastructure-unused-e2e-only.md). While the E2E approach was appropriate during initial rapid development, the codebase has matured (8,429 LOC) to the point where unit tests provide significant value:
+- Fast feedback loops (<10s vs 20+ min)
+- Better edge case coverage
+- TDD workflow enablement
+- Lower CI/CD costs
 
-**Not Recommended**:
+See ISSUE-013 for updated reconciliation notes.
+
+**Alternative Considered**: **Option 1 (TAP)** - Infrastructure already installed
+- Rejected in favor of Jest due to better ecosystem and documentation
+
+**Not Selected**:
 - ❌ **Option 3**: Playwright component testing still experimental
 - ❌ **Option 4**: Vitest requires risky CRA migration
-- ⚠️ **Option 5**: Does not address test report recommendation
+- ❌ **Option 5**: Does not address test report recommendation
 
 ## Implementation
 
-**Status**: ⏸️ PENDING - No implementation started
+**Status**: 🔄 IN PROGRESS - Jest + React Testing Library approach approved
 
-**Proposed Phased Approach** (assuming Jest chosen):
+**Implementation Approach**: Phased implementation over 5-7 weeks
 
 **Phase 1 - Setup & Critical Coverage (Week 1-2, 20-26 hours)**:
 - [ ] Remove TAP infrastructure (2 hours)
@@ -649,6 +655,9 @@ describe('App', () => {
 - 2025-10-24: ISSUE-018 created for planning and research
 - 2025-10-24: Analysis completed, 5 implementation options proposed
 - 2025-10-24: Status set to OPEN, awaiting user decision
+- 2025-10-24: ✅ User approved Option 2 (Jest + React Testing Library)
+- 2025-10-24: Decision documented, cross-references added to test report and ISSUE-013
+- 2025-10-24: Status changed to IN PROGRESS, ready for implementation
 
 ## Notes
 
