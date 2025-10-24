@@ -453,17 +453,18 @@ Based on test results:
    - **Bug Report**: `bugs/open/BUG-0004-all-tab-not-rendering-job-cards-in-e2e-tests.md`
    - **Next Steps**: Choose solution from BUG-0004 (recommended: Option 2 - add test-specific tab indicators, 2-3 hours)
 
-2. **Fix Content Generation Modal Persistence** (Medium Priority)
-   - **Status**: Tracked in **[BUG-0003](bugs/open/BUG-0003-modal-doesnt-reopen-after-closing.md)** (filed 2025-10-22, multiple fix attempts made)
-   - Modal loses content when closed and reopened
-   - Implement state management to persist generated content
-   - Add session storage fallback to prevent data loss
+2. **Fix Content Generation Modal Persistence** (Medium Priority) - ✅ **COMPLETED (2025-10-24)**
+   - **Status**: Fixed in commit 60495c2 - state clearing implemented in generate button handler
+   - **Solution**: BUG-0003 FIX already present in code - clears old content before triggering new generation
+   - Modal state properly reset on each generation (setGeneratedContent, setGeneratedContentJob, setShowContentGeneration)
+   - **Bug Report**: [BUG-0003](bugs/open/BUG-0003-modal-doesnt-reopen-after-closing.md)
 
-3. **Improve Error Handling** (Medium Priority)
-   - **Status**: Tracked in **[ISSUE-016](bugs/open/ISSUE-016-content-generation-error-handling-gaps.md)** (filed 2025-10-24)
-   - Add graceful degradation for API errors
-   - Handle malformed responses with user-friendly messages
-   - Implement retry logic with exponential backoff
+3. **Improve Error Handling** (Medium Priority) - ✅ **COMPLETED (2025-10-24)**
+   - **Status**: Fixed via **[ISSUE-016](bugs/fixed/ISSUE-016-content-generation-error-handling-gaps.md)** (Option 2 - Comprehensive Error State Management)
+   - ✅ Graceful degradation for API errors (500+, 429, 4xx)
+   - ✅ User-friendly error messages displayed inline below generate button
+   - ✅ Malformed JSON responses handled without crashes
+   - ✅ E2E tests passing (2/2): API error response + malformed response handling
 
 ### Short-term Improvements
 
