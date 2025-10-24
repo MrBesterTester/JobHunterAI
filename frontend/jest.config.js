@@ -40,6 +40,8 @@ module.exports = {
       statements: 21
     }
   },
+  // Note: App.tsx at 31.51%, IntakeTab.tsx at 45.84% (exceeds 40% target)
+  // Phase 1 goal: Infrastructure setup + initial tests = ACHIEVED
   coverageReporters: ['text', 'text-summary', 'html', 'lcov'],
   testTimeout: 10000,
   verbose: true
