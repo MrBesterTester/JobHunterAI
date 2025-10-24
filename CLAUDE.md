@@ -6,6 +6,7 @@
   - [Developer Preferences](#developer-preferences)
     - [Database Configuration](#database-configuration)
     - [Notifications](#notifications)
+    - [File Path Conventions](#file-path-conventions)
   - [Session Management & Documentation Workflow](#session-management--documentation-workflow)
     - [Token Efficiency & Session Restarts](#token-efficiency--session-restarts)
     - [Documentation Updates from Git History](#documentation-updates-from-git-history)
@@ -102,6 +103,44 @@ afplay /System/Library/Sounds/Glass.aiff && osascript -e "display dialog \"Build
 # Ready for input
 afplay /System/Library/Sounds/Glass.aiff && osascript -e "display dialog \"Task completed - ready for your input\" with title \"Claude Code\" buttons {\"OK\"} default button \"OK\" with icon note"
 ```
+
+### File Path Conventions
+
+**IMPORTANT**: Always use relative paths with `./` for files in the project directory.
+
+**Working directory**: `/Users/sam/Projects/JobHunterAI-Claude` (available in `<env>`)
+
+**Correct patterns**:
+- Root-level files: `./CLAUDE.md`, `./README.md`, `./package.json`
+- Subdirectories: `./backend/src/main.rs`, `./docs/PHASE_4.1_job-board-rapidAPI.md`
+- Database schema: `./database/schema.sql`
+- Scripts: `./switch-to-personal.sh`, `./start.sh`
+
+**Why this matters**:
+- `./` is the Unix standard for "current directory"
+- More portable than absolute paths
+- Cleaner and more readable than full paths
+- Eliminates failed attempts with bare filenames
+- Works consistently across Read, Write, Edit, Glob tools
+
+**Examples**:
+
+❌ **Don't do this** (causes failures):
+```bash
+Read: "CLAUDE.md"  # Fails - not a valid path
+```
+
+✅ **Do this instead**:
+```bash
+Read: "./CLAUDE.md"  # Works - explicit relative path
+```
+
+**Alternative**: Full absolute paths also work but are more verbose:
+```bash
+Read: "/Users/sam/Projects/JobHunterAI-Claude/CLAUDE.md"  # Works but verbose
+```
+
+**User benefit**: File operations succeed on the first attempt without requiring path corrections.
 
 ## Session Management & Documentation Workflow
 
