@@ -7,6 +7,7 @@
     - [Database Configuration](#database-configuration)
     - [Notifications](#notifications)
     - [File Path Conventions](#file-path-conventions)
+    - [Work Session Tagging](#work-session-tagging)
   - [Session Management & Documentation Workflow](#session-management--documentation-workflow)
     - [Token Efficiency & Session Restarts](#token-efficiency--session-restarts)
     - [Documentation Updates from Git History](#documentation-updates-from-git-history)
@@ -118,6 +119,69 @@ afplay /System/Library/Sounds/Glass.aiff && osascript -e "display dialog \"Task 
 **Why**: Clearer, more portable, eliminates path resolution ambiguity. See [ISSUE-011](bugs/fixed/ISSUE-011-file-path-prefix-conventions.md) for detailed research on when `./` is required vs optional.
 
 **Alternative**: Full absolute paths also work but are more verbose.
+
+### Work Session Tagging
+
+**✅ IMPLEMENTED**: Date-based git tagging convention for daily work sessions (2025-10-24)
+
+**Convention**: Use date-based tags to mark daily milestones without tag name conflicts.
+
+**Tag Format**: `{session-type}-{YYYY-MM-DD}`
+
+**Common Session Types**:
+- `end-of-am` - Morning work session complete
+- `end-of-pm` - Afternoon/evening work session complete
+- `end-of-day` - Full day's work complete
+- `end-of-evening` - Late evening session complete
+
+**Quick Commands**:
+```bash
+# Tag current session (defaults to end-of-pm)
+./tag-session.sh end-of-pm
+./tag-session.sh end-of-pm "Completed Phase 2.4 pagination"
+
+# Tag morning session
+./tag-session.sh end-of-am
+
+# List all session tags
+./list-sessions.sh
+./list-sessions.sh --today      # Today's sessions only
+./list-sessions.sh --week       # This week's sessions
+./list-sessions.sh --detailed   # With commit details
+
+# View specific session
+git show end-of-pm-2025-10-24
+
+# Checkout a previous session
+git checkout end-of-pm-2025-10-23
+```
+
+**Why This Convention Works**:
+- **No conflicts**: Each date gets unique tags (git requires unique tag names)
+- **Chronological**: Natural sorting by date
+- **Clear intent**: Immediately know which day and which part of day
+- **Easy discovery**: Pattern-based searching (`git tag -l "end-of-pm-*"`)
+- **No branching complexity**: Simple tags, not moving references
+
+**Example Usage**:
+```bash
+# End of afternoon work session
+./tag-session.sh end-of-pm "Fixed pagination bugs and updated docs"
+# Creates tag: end-of-pm-2025-10-24
+
+# Next morning
+./tag-session.sh end-of-am "Implemented Gmail OAuth flow"
+# Creates tag: end-of-am-2025-10-25
+
+# View this week's progress
+./list-sessions.sh --week
+```
+
+**Benefits**:
+- Marks clear checkpoint states in your work history
+- Easy to reference in documentation ("as of end-of-pm-2025-10-23")
+- Can checkout exact state when troubleshooting ("it worked at end-of-am-2025-10-24")
+- Provides daily snapshot points for rollback if needed
 
 ## Session Management & Documentation Workflow
 
