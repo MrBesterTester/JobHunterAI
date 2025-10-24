@@ -454,6 +454,7 @@ Based on test results:
    - **Next Steps**: Choose solution from BUG-0004 (recommended: Option 2 - add test-specific tab indicators, 2-3 hours)
 
 2. **Fix Content Generation Modal Persistence** (Medium Priority)
+   - **Status**: Tracked in **[BUG-0003](bugs/open/BUG-0003-modal-doesnt-reopen-after-closing.md)** (filed 2025-10-22, multiple fix attempts made)
    - Modal loses content when closed and reopened
    - Implement state management to persist generated content
    - Add session storage fallback to prevent data loss
