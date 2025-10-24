@@ -460,6 +460,7 @@ Based on test results:
    - Add session storage fallback to prevent data loss
 
 3. **Improve Error Handling** (Medium Priority)
+   - **Status**: Tracked in **[ISSUE-016](bugs/open/ISSUE-016-content-generation-error-handling-gaps.md)** (filed 2025-10-24)
    - Add graceful degradation for API errors
    - Handle malformed responses with user-friendly messages
    - Implement retry logic with exponential backoff
