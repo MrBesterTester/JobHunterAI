@@ -9,6 +9,7 @@
   - [Session Management & Documentation Workflow](#session-management--documentation-workflow)
     - [Token Efficiency & Session Restarts](#token-efficiency--session-restarts)
     - [Documentation Updates from Git History](#documentation-updates-from-git-history)
+    - [Documentation Status Accuracy](#documentation-status-accuracy)
   - [Development Commands](#development-commands)
     - [Database Setup](#database-setup)
     - [Backend (Rust)](#backend-rust)
@@ -153,6 +154,51 @@ claude --resume                # Interactive picker for past sessions
 - Leverages user's well-crafted commit messages as a detailed "work log"
 
 **User benefit**: No need to remind Claude to check git history or manually recall all recent changes - Claude does this automatically before every documentation update.
+
+### Documentation Status Accuracy
+
+**CRITICAL RULE**: Never mark work as "✅ COMPLETED" in documentation until testing verifies it actually works.
+
+**Correct Implementation Order**:
+1. **Code First**: Implement backend/frontend changes
+2. **Test Second**: Run tests and verify functionality works as expected
+3. **Document Last**: Update documentation and mark as "✅ COMPLETED (date)" ONLY after successful testing
+4. **Commit Together**: Include code + tests + documentation in a single atomic commit
+
+**Status Markers to Use**:
+- `🔄 IN PROGRESS` - Code written, testing not yet started
+- `⏸️ PENDING TESTING` - Code complete, awaiting verification
+- `✅ COMPLETED (date)` - **Tested and verified working** ← Only use after testing passes!
+- `⏸️ PARTIALLY COMPLETE` - Some parts done, others pending (be specific about what's complete vs pending)
+
+**Why This Matters**:
+- Documentation accuracy - claims should reflect actual verified state
+- If testing reveals bugs, premature "completed" markers become incorrect
+- Future readers trust completion markers to mean "tested and working"
+- Maintains professional documentation standards
+
+**Example - Correct Workflow**:
+```
+User: "Implement pagination for RapidAPI"
+
+Claude:
+1. Writes code changes (backend/src/main.rs)
+2. Adds docs with status: "⏸️ PENDING TESTING"
+3. Runs tests to verify pagination works
+4. Updates docs to: "✅ COMPLETED (2025-10-23)"
+5. Commits everything together with accurate status
+```
+
+**Example - INCORRECT Workflow** (don't do this):
+```
+Claude:
+1. Writes code changes
+2. Adds docs with status: "✅ COMPLETED" ← WRONG! Not tested yet!
+3. Tests afterwards (lucky it worked, but status was wrong before testing)
+4. Commits
+```
+
+**User benefit**: Documentation completion markers are trustworthy and reflect actual verified implementation status, not aspirational goals.
 
 ## Development Commands
 
