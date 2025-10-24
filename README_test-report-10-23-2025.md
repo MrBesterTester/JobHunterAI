@@ -468,7 +468,7 @@ Based on test results:
 
 ### Short-term Improvements
 
-4. **Address New Badge System Failures** (~~Medium~~ **Low Priority** - Mitigated ✅ **COMPLETED (2025-10-24)** - **[ISSUE-017](bugs/mitigated/ISSUE-017-new-badge-system-e2e-test-failures.md)**)
+4. **Address New Badge System Failures** (~~Medium~~ **Low Priority** - ⚠️ **MITIGATED (2025-10-24)** - **[ISSUE-017](bugs/mitigated/ISSUE-017-new-badge-system-e2e-test-failures.md)**)
    - **Status**: Badge system code is production-ready, E2E tests blocked by **[BUG-0004](bugs/open/BUG-0004-all-tab-not-rendering-job-cards-in-e2e-tests.md)**
    - ✅ Fixed test ID naming mismatches (employment-type-badge, industry-badge)
    - ✅ Fixed styling inconsistencies (padding, border-radius, font-size)
