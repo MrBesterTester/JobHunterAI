@@ -155,6 +155,22 @@ export class DashboardPage {
   }
 
   /**
+   * Check if a specific tab is visible
+   */
+  async isTabVisible(tabName: 'all' | 'inbox' | 'approved' | 'applied' | 'filtered'): Promise<boolean> {
+    const tabs = {
+      all: this.allTab,
+      inbox: this.inboxTab,
+      approved: this.approvedTab,
+      applied: this.appliedTab,
+      filtered: this.filteredTab,
+    };
+
+    const tab = tabs[tabName];
+    return await tab.isVisible().catch(() => false);
+  }
+
+  /**
    * Wait for job cards to update after an action
    */
   async waitForJobsUpdate() {

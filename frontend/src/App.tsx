@@ -898,6 +898,7 @@ const JobHunterDashboard: React.FC = () => {
   const [generatedContentJob, setGeneratedContentJob] = useState<Job | null>(null);
   const [showContentGeneration, setShowContentGeneration] = useState<boolean>(false);
   const [generatingContent, setGeneratingContent] = useState<boolean>(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
   const [showResumeManagement, setShowResumeManagement] = useState<boolean>(false);
   const [resumes, setResumes] = useState<ResumeVersion[]>([]);
   const [isUploadingResume, setIsUploadingResume] = useState<boolean>(false);
@@ -1108,38 +1109,55 @@ const JobHunterDashboard: React.FC = () => {
 
   const generateContent = useCallback(async (jobId: string): Promise<void> => {
     console.log('[generateContent] Called for job:', jobId);
+    setGeneratedContent(null);
+    setGenerationError(null);
     setGeneratingContent(true);
 
     try {
       console.log('[generateContent] Fetching content from API');
       const response = await fetch(`${API_URL}/jobs/${jobId}/generate-content`);
-      if (response.ok) {
-        const content: GeneratedContent = await response.json();
-        console.log('[generateContent] Content received, updating state');
 
-        // Use functional setState to get the current job
-        setJobs(prevJobs => {
-          const job = prevJobs.find(j => j.job_id === jobId);
-          console.log('[generateContent] Found job:', job ? job.title : 'not found');
-          setGeneratedContentJob(job || null);
-          return prevJobs; // Return unchanged
-        });
-
-        // Set generated content
-        setGeneratedContent(content);
-
-        // Open the modal
-        setShowContentGeneration(true);
-
-        console.log('[generateContent] Modal state updated, should be visible now');
-
-        // Fetch applications to ensure we have the latest application_id
-        await fetchApplications();
-      } else {
-        console.error('[generateContent] Failed to generate content:', response.status);
+      if (!response.ok) {
+        if (response.status >= 500) {
+          throw new Error('Server error. Please try again in a moment.');
+        } else if (response.status === 429) {
+          throw new Error('Too many requests. Please wait a moment.');
+        } else {
+          throw new Error('Failed to generate content. Please try again.');
+        }
       }
+
+      let content: GeneratedContent;
+      try {
+        content = await response.json();
+      } catch (parseError) {
+        throw new Error('Invalid response from server. Please try again.');
+      }
+
+      console.log('[generateContent] Content received, updating state');
+
+      // Use functional setState to get the current job
+      setJobs(prevJobs => {
+        const job = prevJobs.find(j => j.job_id === jobId);
+        console.log('[generateContent] Found job:', job ? job.title : 'not found');
+        setGeneratedContentJob(job || null);
+        return prevJobs; // Return unchanged
+      });
+
+      // Set generated content
+      setGeneratedContent(content);
+
+      // Open the modal
+      setShowContentGeneration(true);
+
+      console.log('[generateContent] Modal state updated, should be visible now');
+
+      // Fetch applications to ensure we have the latest application_id
+      await fetchApplications();
     } catch (error) {
       console.error('[generateContent] Error generating content:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setGenerationError(errorMessage);
     } finally {
       setGeneratingContent(false);
       console.log('[generateContent] Generation complete');
@@ -2111,6 +2129,7 @@ const JobHunterDashboard: React.FC = () => {
               setGeneratedContent(null);
               setGeneratedContentJob(null);
               setShowContentGeneration(false);
+              setGenerationError(null);
               generateContent(job.job_id);
             }}
             disabled={generatingContent}
@@ -2133,6 +2152,19 @@ const JobHunterDashboard: React.FC = () => {
             <FileText style={{ width: '16px', height: '16px' }} />
             {generatingContent ? 'Generating...' : 'Generate Resume & Cover Letter'}
           </button>
+          {generationError && (
+            <div style={{
+              color: '#ef4444',
+              fontSize: '0.9em',
+              marginTop: '8px',
+              padding: '8px',
+              backgroundColor: '#fee2e2',
+              borderRadius: '4px',
+              border: '1px solid #fecaca'
+            }}>
+              {generationError}
+            </div>
+          )}
         </div>
       )}
     </div>
