@@ -17,6 +17,9 @@
     - [Phase 4.1.5: Rate Limiting & Quota Management ✅ COMPLETED (2025-10-23)](#phase-415-rate-limiting--quota-management--completed-2025-10-23)
     - [Phase 4.1.6: Pagination Support (Manual Page Selection) ✅ COMPLETED (2025-10-23)](#phase-416-pagination-support-manual-page-selection--completed-2025-10-23)
     - [Phase 4.1.7: Testing & Validation ✅ COMPLETED (2025-10-23)](#phase-417-testing--validation--completed-2025-10-23)
+      - [E2E Test Locator Issue Analysis](#e2e-test-locator-issue-analysis)
+      - [E2E Test Fix Options](#e2e-test-fix-options)
+      - [Recommendation: Option 1 (`data-testid`)](#recommendation-option-1-data-testid)
     - [Phase 4.1.8: Documentation ✅ COMPLETED (2025-10-23)](#phase-418-documentation--completed-2025-10-23)
   - [Future Extensions (Phase 4.2+)](#future-extensions-phase-42)
   - [Cost & Usage Projections](#cost--usage-projections)
@@ -664,6 +667,205 @@ POST http://localhost:8080/api/intake/rapidapi/sync
 - Backend testing comprehensively validates all JSearch/RapidAPI functionality
 - Manual testing confirms end-to-end workflows work correctly
 - E2E tests exist but need selector refinement (non-blocking)
+
+---
+
+#### E2E Test Locator Issue Analysis
+
+**Problem**: 4 E2E tests fail due to DOM traversal issues in the test selectors, not application functionality problems.
+
+**Root Cause** (frontend/e2e/tests/28-rapidapi-sync-integration.spec.ts:81-92):
+
+The tests use `.locator('..')` to traverse up the DOM tree from the heading to find the sync button:
+```typescript
+const rapidapiHeading = page.getByRole('heading', { name: /^RapidAPI JSearch$/i });
+const rapidapiCard = rapidapiHeading.locator('..').locator('..');  // Go up 2 levels
+const rapidapiSyncButton = rapidapiCard.getByRole('button', { name: /Sync Now/i });
+```
+
+**Actual DOM Structure** (frontend/src/IntakeTab.tsx:861-948):
+```html
+<div class="card-container">              ← Need to reach here
+  <div class="header-section">            ← .locator('..').locator('..') stops here
+    <Search icon/>
+    <div>
+      <h3>RapidAPI JSearch</h3>            ← Test starts here
+      <p>Aggregates...</p>
+    </div>
+  </div>
+
+  <div class="status-section">...</div>
+
+  <div class="button-section">            ← Button is SIBLING, not child!
+    <button>Sync Now</button>             ← Can't find this
+  </div>
+</div>
+```
+
+**Why It Fails**:
+- `.locator('..')` twice goes: h3 → inner div → header-section div
+- The button is in a sibling `<div>` at the card level, not a child of header-section
+- DOM traversal stops one level too early
+
+**Impact**:
+- ✅ Application functionality works perfectly (RapidAPI sync tested manually)
+- ✅ Backend integration fully validated (11/11 tests passing)
+- ⚠️  Only affects E2E test reliability, not user experience
+
+---
+
+#### E2E Test Fix Options
+
+**Option 1: Add `data-testid` Attributes** ⭐ **RECOMMENDED**
+
+**Pros:**
+- Most reliable and maintainable approach
+- Industry standard for E2E testing
+- Immune to DOM structure changes
+- Clear test intent
+- No performance impact
+
+**Cons:**
+- Requires modifying React components
+- Adds test-specific attributes to production code
+
+**Implementation** (frontend/src/IntakeTab.tsx):
+```tsx
+{/* RapidAPI JSearch Integration Card */}
+<div data-testid="rapidapi-card" style={{...}}>
+  <div style={{...}}>
+    <Search style={{...}} />
+    <div>
+      <h3 data-testid="rapidapi-heading">RapidAPI JSearch</h3>
+      <p>Aggregates LinkedIn, Indeed, Glassdoor + 30 more</p>
+    </div>
+  </div>
+
+  <div style={{...}}>
+    {/* Status info */}
+  </div>
+
+  <div style={{...}}>
+    <button
+      data-testid="rapidapi-sync-button"
+      onClick={handleRapidAPISync}
+      disabled={...}
+      style={{...}}
+    >
+      {isRapidAPISyncing ? 'Syncing...' : 'Sync Now'}
+    </button>
+  </div>
+</div>
+```
+
+**Test Update**:
+```typescript
+test('should sync RapidAPI and display jobs', async () => {
+  const rapidapiCard = page.getByTestId('rapidapi-card');
+  const rapidapiSyncButton = page.getByTestId('rapidapi-sync-button');
+
+  const isDisabled = await rapidapiSyncButton.isDisabled();
+  if (isDisabled) {
+    test.skip();
+    return;
+  }
+
+  await rapidapiSyncButton.click();
+  // ... rest of test
+});
+```
+
+**Effort**: 1-2 hours (add testids + update 4 tests)
+
+---
+
+**Option 2: Use Filter-Based Selectors**
+
+**Pros:**
+- No component changes needed
+- Tests remain independent of DOM structure
+- More resilient to layout changes
+
+**Cons:**
+- More complex selector syntax
+- Slightly slower than testid lookups
+- Harder to debug when selectors fail
+
+**Implementation**:
+```typescript
+test('should sync RapidAPI and display jobs', async () => {
+  // Find card that contains both heading and button
+  const rapidapiCard = page.locator('div').filter({
+    has: page.getByRole('heading', { name: /RapidAPI JSearch/i })
+  }).filter({
+    has: page.getByRole('button', { name: /Sync Now/i })
+  });
+
+  const rapidapiSyncButton = rapidapiCard.getByRole('button', { name: /Sync Now/i });
+
+  const isDisabled = await rapidapiSyncButton.isDisabled();
+  // ... rest of test
+});
+```
+
+**Effort**: 30 minutes (update 4 test selectors only)
+
+---
+
+**Option 3: Direct Button Selection with Context**
+
+**Pros:**
+- Simplest to implement
+- No component changes
+- Fast execution
+
+**Cons:**
+- Fragile if button order changes
+- Less semantic/readable
+- Assumes button text is unique enough
+
+**Implementation**:
+```typescript
+test('should sync RapidAPI and display jobs', async () => {
+  // Navigate to Intake tab
+  await page.getByRole('button', { name: /^intake$/i }).click();
+
+  // Verify heading exists first
+  await expect(page.getByRole('heading', { name: /RapidAPI JSearch/i })).toBeVisible();
+
+  // Find sync buttons and get the RapidAPI one (3rd button on page)
+  const syncButtons = page.getByRole('button', { name: /Sync Now/i });
+  const rapidapiSyncButton = syncButtons.nth(2); // 0=Gmail, 1=LinkedIn, 2=RapidAPI
+
+  const isDisabled = await rapidapiSyncButton.isDisabled();
+  // ... rest of test
+});
+```
+
+**Effort**: 15 minutes (update 4 test selectors only)
+
+---
+
+#### Recommendation: Option 1 (`data-testid`)
+
+**Rationale:**
+1. **Best Practice**: Industry standard for component-based testing (React Testing Library, Playwright docs recommend this)
+2. **Long-term Maintainability**: Explicit test IDs survive refactoring, CSS changes, and DOM restructuring
+3. **Clear Intent**: `data-testid="rapidapi-sync-button"` is self-documenting
+4. **Future-Proof**: As you add more sources or UI features, testids prevent selector conflicts
+5. **Debugging**: Failed tests immediately show which component couldn't be found
+6. **Minimal Cost**: 5-10 testid attributes across IntakeTab.tsx, zero performance impact
+
+**Implementation Priority**: Low (non-blocking)
+- Application functionality fully validated
+- Manual testing covers all workflows
+- Can be addressed during next UI iteration or when test suite becomes critical
+
+**Next Steps** (when ready):
+1. Add `data-testid` attributes to RapidAPI card, button, and status elements
+2. Update 4 failing tests to use `getByTestId()` selectors
+3. Run E2E suite: `npm run test:e2e:chromium -- e2e/tests/28-rapidapi-sync-integration.spec.ts`
+4. Expected outcome: 5/5 tests passing
 
 ### Phase 4.1.8: Documentation ✅ COMPLETED (2025-10-23)
 
