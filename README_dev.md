@@ -76,6 +76,8 @@
       - [`restore-personal-db.sh`](#restore-personal-dbsh)
       - [`sync-extraction-prompt-to-db.sh`](#sync-extraction-prompt-to-dbsh)
       - [`bulk-re-extraction.sh`](#bulk-re-extractionsh)
+      - [`tag-session.sh`](#tag-sessionsh)
+      - [`list-sessions.sh`](#list-sessionssh)
     - [Security Notes](#security-notes)
   - [API Endpoints](#api-endpoints)
     - [Jobs](#jobs)
@@ -1972,6 +1974,92 @@ This script will:
 
 💡 Refresh your browser to see the updated job cards!
 ```
+
+#### [`tag-session.sh`](tag-session.sh)
+Creates dated session tags to mark daily work milestones in git.
+
+**Usage:**
+```bash
+# Tag current session (defaults to end-of-pm)
+./tag-session.sh end-of-pm
+./tag-session.sh end-of-pm "Completed Phase 2.4 pagination"
+
+# Tag morning session
+./tag-session.sh end-of-am
+
+# Tag evening session
+./tag-session.sh end-of-evening "Fixed bugs and updated docs"
+```
+
+This script will:
+- Automatically append today's date in YYYY-MM-DD format
+- Create tag in format: `{session-type}-{YYYY-MM-DD}` (e.g., `end-of-pm-2025-10-24`)
+- Prevent duplicate tags with helpful error messages
+- Create annotated git tag with your custom message
+- Show helpful commands for viewing and managing tags
+
+**Common session types:**
+- `end-of-am` - Morning work session complete
+- `end-of-pm` - Afternoon/evening work session complete
+- `end-of-day` - Full day's work complete
+- `end-of-evening` - Late evening session complete
+
+**When to use:**
+- At the end of each work session to mark a checkpoint
+- Before switching tasks or taking a break
+- When reaching a milestone you might want to reference later
+- To create rollback points for debugging
+
+**See also:** [ISSUE-014](bugs/fixed/ISSUE-014-work-session-tagging-convention.md) for detailed rationale and design decisions
+
+#### [`list-sessions.sh`](list-sessions.sh)
+Lists and filters work session tags with multiple view options.
+
+**Usage:**
+```bash
+# List all session tags
+./list-sessions.sh
+
+# Today's sessions only
+./list-sessions.sh --today
+
+# This week's sessions
+./list-sessions.sh --week
+
+# Show detailed commit info
+./list-sessions.sh --detailed
+```
+
+This script will:
+- Display all session tags in chronological order
+- Filter by date range (today, week)
+- Show commit details, messages, and timestamps
+- Provide count statistics
+- Suggest helpful git commands for viewing/checking out sessions
+
+**Output example:**
+```
+📅 All work session tags:
+
+  end-of-am-2025-10-23
+  end-of-pm-2025-10-23
+  end-of-pm-2025-10-24
+
+Count: 3
+
+Options:
+  --today      Show only today's sessions
+  --week       Show this week's sessions
+  --detailed   Show with commit details
+```
+
+**Use cases:**
+- Review your work history
+- Find specific session checkpoints
+- Verify tags were created correctly
+- Reference specific dates in documentation
+
+**See also:** [ISSUE-014](bugs/fixed/ISSUE-014-work-session-tagging-convention.md) for detailed rationale and design decisions
 
 ### Security Notes
 

@@ -124,64 +124,17 @@ afplay /System/Library/Sounds/Glass.aiff && osascript -e "display dialog \"Task 
 
 **✅ IMPLEMENTED**: Date-based git tagging convention for daily work sessions (2025-10-24)
 
-**Convention**: Use date-based tags to mark daily milestones without tag name conflicts.
-
-**Tag Format**: `{session-type}-{YYYY-MM-DD}`
-
-**Common Session Types**:
-- `end-of-am` - Morning work session complete
-- `end-of-pm` - Afternoon/evening work session complete
-- `end-of-day` - Full day's work complete
-- `end-of-evening` - Late evening session complete
-
-**Quick Commands**:
+**Quick Reference**:
 ```bash
-# Tag current session (defaults to end-of-pm)
-./tag-session.sh end-of-pm
-./tag-session.sh end-of-pm "Completed Phase 2.4 pagination"
-
-# Tag morning session
-./tag-session.sh end-of-am
-
-# List all session tags
-./list-sessions.sh
-./list-sessions.sh --today      # Today's sessions only
-./list-sessions.sh --week       # This week's sessions
-./list-sessions.sh --detailed   # With commit details
-
-# View specific session
-git show end-of-pm-2025-10-24
-
-# Checkout a previous session
-git checkout end-of-pm-2025-10-23
-```
-
-**Why This Convention Works**:
-- **No conflicts**: Each date gets unique tags (git requires unique tag names)
-- **Chronological**: Natural sorting by date
-- **Clear intent**: Immediately know which day and which part of day
-- **Easy discovery**: Pattern-based searching (`git tag -l "end-of-pm-*"`)
-- **No branching complexity**: Simple tags, not moving references
-
-**Example Usage**:
-```bash
-# End of afternoon work session
-./tag-session.sh end-of-pm "Fixed pagination bugs and updated docs"
-# Creates tag: end-of-pm-2025-10-24
-
-# Next morning
-./tag-session.sh end-of-am "Implemented Gmail OAuth flow"
-# Creates tag: end-of-am-2025-10-25
-
-# View this week's progress
+./tag-session.sh end-of-pm "Description of today's work"
 ./list-sessions.sh --week
 ```
 
-**Benefits**:
-- Marks clear checkpoint states in your work history
-- Easy to reference in documentation ("as of end-of-pm-2025-10-23")
-- Can checkout exact state when troubleshooting ("it worked at end-of-am-2025-10-24")
-- Provides daily snapshot points for rollback if needed
+**Tag Format**: `{session-type}-{YYYY-MM-DD}` (e.g., `end-of-pm-2025-10-24`)
+
+**Common session types**: `end-of-am`, `end-of-pm`, `end-of-day`, `end-of-evening`
+
+**Full documentation**: See [README_dev.md - Helper Scripts](README_dev.md#tag-sessionsh) for detailed usage instructions and [ISSUE-014](bugs/fixed/ISSUE-014-work-session-tagging-convention.md) for rationale and design decisions.
 
 ## Session Management & Documentation Workflow
 
