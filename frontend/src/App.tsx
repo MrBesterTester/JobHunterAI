@@ -1455,13 +1455,13 @@ const JobHunterDashboard: React.FC = () => {
             {/* Company Industry */}
             {job.raw_data?.company_industry && (
               <span
-                data-testid="header-industry"
+                data-testid="industry-badge"
                 style={{
-                  padding: '2px 6px',
-                  borderRadius: '3px',
+                  padding: '4px 8px',
+                  borderRadius: '4px',
                   backgroundColor: '#eef2ff',
                   color: '#4f46e5',
-                  fontSize: '11px',
+                  fontSize: '12px',
                   fontWeight: '500'
                 }}>
                 🏢 {job.raw_data.company_industry}
@@ -1472,11 +1472,11 @@ const JobHunterDashboard: React.FC = () => {
             {/* Employment Type */}
             {job.raw_data?.employment?.employment_type && (
               <span
-                data-testid="header-employment-type"
+                data-testid="employment-type-badge"
                 style={{
-                  padding: '2px 6px',
-                  borderRadius: '3px',
-                  fontSize: '11px',
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                  fontSize: '12px',
                   fontWeight: '500',
                   backgroundColor:
                     job.raw_data.employment.employment_type === 'full-time' ? '#d1fae5' :
@@ -2446,7 +2446,7 @@ const JobHunterDashboard: React.FC = () => {
         ) : activeTab === 'duplicates' ? (
           <DuplicatesTab />
         ) : (
-          <>
+          <div data-testid={`${activeTab}-tab-content`}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))', gap: '16px', width: '100%' }}>
               {(activeTab === 'new' ? filterJobs('new') :
                 activeTab === 'approved' ? filterJobs('approved') :
@@ -2469,7 +2469,7 @@ const JobHunterDashboard: React.FC = () => {
                 <p style={{ color: '#6b7280' }}>No jobs in this category yet</p>
               </div>
             )}
-          </>
+          </div>
         )}
       </main>
 

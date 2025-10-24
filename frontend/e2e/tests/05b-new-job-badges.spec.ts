@@ -21,8 +21,18 @@ import { test, expect } from '@playwright/test';
 test.describe('New Job Card Badges - Display Logic', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:3000');
+    // Wait for initial page load
+    await page.waitForLoadState('networkidle');
     // Click on "All" tab to display job cards
-    await page.click('button:has-text("All")');
+    const allButton = page.locator('button:has-text("All")');
+    await allButton.click();
+    // Wait for Intake tab content to disappear (indicates tab switch)
+    await page.waitForFunction(() => {
+      const heading = document.querySelector('h2');
+      return heading?.textContent !== 'Job Intake Sources';
+    }, { timeout: 10000 });
+    // Wait for tab content to appear
+    await page.waitForSelector('[data-testid="all-tab-content"]', { timeout: 10000 });
     // Wait for job cards to load
     await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
   });
@@ -339,6 +349,7 @@ test.describe('New Job Card Badges - Styling Consistency', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:3000');
     await page.click('button:has-text("All")');
+    await page.waitForSelector('[data-testid="all-tab-content"]', { timeout: 10000 });
     await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
   });
 
@@ -467,6 +478,7 @@ test.describe('New Job Card Badges - Edge Cases', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:3000');
     await page.click('button:has-text("All")');
+    await page.waitForSelector('[data-testid="all-tab-content"]', { timeout: 10000 });
     await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
   });
 
@@ -592,6 +604,7 @@ test.describe('New Job Card Badges - Responsive Layout', () => {
     await page.setViewportSize({ width: 768, height: 1024 });
     await page.goto('http://localhost:3000');
     await page.click('button:has-text("All")');
+    await page.waitForSelector('[data-testid="all-tab-content"]', { timeout: 10000 });
     await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
@@ -610,6 +623,7 @@ test.describe('New Job Card Badges - Responsive Layout', () => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('http://localhost:3000');
     await page.click('button:has-text("All")');
+    await page.waitForSelector('[data-testid="all-tab-content"]', { timeout: 10000 });
     await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
@@ -637,6 +651,7 @@ test.describe('New Job Card Badges - Responsive Layout', () => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('http://localhost:3000');
     await page.click('button:has-text("All")');
+    await page.waitForSelector('[data-testid="all-tab-content"]', { timeout: 10000 });
     await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
 
     const techStackBadge = page.locator('[data-testid="tech-stack-badge"]').first();
