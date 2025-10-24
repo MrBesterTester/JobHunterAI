@@ -859,7 +859,7 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
         </div>
 
         {/* RapidAPI JSearch Integration Card */}
-        <div style={{
+        <div data-testid="rapidapi-card" style={{
           backgroundColor: 'white',
           border: '1px solid #e5e7eb',
           borderRadius: '8px',
@@ -869,7 +869,7 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
             <Search style={{ width: '32px', height: '32px', color: '#8b5cf6' }} />
             <div>
-              <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>RapidAPI JSearch</h3>
+              <h3 data-testid="rapidapi-heading" style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>RapidAPI JSearch</h3>
               <p style={{ fontSize: '12px', color: '#6b7280', margin: '2px 0 0 0' }}>
                 Aggregates LinkedIn, Indeed, Glassdoor + 30 more
               </p>
@@ -884,7 +884,7 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
                 borderRadius: '50%',
                 backgroundColor: isRapidAPIConnected ? '#10b981' : '#9ca3af'
               }} />
-              <span style={{ fontSize: '14px', color: '#6b7280' }}>
+              <span data-testid="rapidapi-status" style={{ fontSize: '14px', color: '#6b7280' }}>
                 Status: {isRapidAPIConnected ? 'Active' : 'Inactive'}
               </span>
             </div>
@@ -909,6 +909,7 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
 
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
+              data-testid="rapidapi-sync-button"
               onClick={handleRapidAPISync}
               disabled={isRapidAPISyncing || syncingAll || !isRapidAPIConnected}
               style={{

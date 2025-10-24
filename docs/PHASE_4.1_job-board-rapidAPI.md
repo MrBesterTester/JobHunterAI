@@ -19,7 +19,7 @@
     - [Phase 4.1.7: Testing & Validation ✅ COMPLETED (2025-10-23)](#phase-417-testing--validation--completed-2025-10-23)
       - [E2E Test Locator Issue Analysis](#e2e-test-locator-issue-analysis)
       - [E2E Test Fix Options](#e2e-test-fix-options)
-      - [Recommendation: Option 1 (`data-testid`)](#recommendation-option-1-data-testid)
+      - [Recommendation: Option 1 (`data-testid`) ✅ **SELECTED FOR IMPLEMENTATION**](#recommendation-option-1-data-testid--selected-for-implementation)
     - [Phase 4.1.8: Documentation ✅ COMPLETED (2025-10-23)](#phase-418-documentation--completed-2025-10-23)
   - [Future Extensions (Phase 4.2+)](#future-extensions-phase-42)
   - [Cost & Usage Projections](#cost--usage-projections)
@@ -649,24 +649,25 @@ POST http://localhost:8080/api/intake/rapidapi/sync
 
 **E2E Tests** (`frontend/e2e/tests/28-rapidapi-sync-integration.spec.ts`):
 
-✅ **5 Tests Created** (1 passing, 4 with locator refinement needed):
-1. ✅ `should display RapidAPI JSearch card with correct information` - **PASSING**
-2. ⚠️  `should sync RapidAPI and display jobs in Inbox tab` - Locator issue (functionality works)
-3. ⚠️  `should verify RapidAPI respects 10-job limit per sync` - Locator issue (functionality works)
-4. ⚠️  `should show correct status for RapidAPI source` - Status text format mismatch
-5. ⚠️  `should disable sync button while syncing` - Locator issue (functionality works)
+✅ **5/5 Tests Passing** (2025-10-23):
+1. ✅ `should display RapidAPI JSearch card with correct information` - **PASSING** (2.4s)
+2. ✅ `should sync RapidAPI and display jobs in Inbox tab` - **PASSING** (8.7s)
+3. ✅ `should verify RapidAPI respects 10-job limit per sync` - **PASSING** (17.5s)
+4. ✅ `should show correct status for RapidAPI source` - **PASSING** (2.4s)
+5. ✅ `should disable sync button while syncing` - **PASSING** (2.2s)
 
-**E2E Test Status**: Tests exist and cover the full workflow. 4 tests have UI selector issues (`.locator('..')` strategy not matching DOM structure). Functionality verified through backend tests and manual testing. Locator refinement can be addressed as follow-up work.
+**E2E Test Status**: ✅ All tests passing. Implemented data-testid strategy (Option 1) with smart polling for sync completion.
 
 **Test Results**:
 - **Backend**: 11/11 tests passing (100%)
-- **E2E**: 1/5 tests passing (20% - locator issues, not functionality issues)
+- **E2E**: 5/5 tests passing (100%)
 - **Manual**: 10/10 checklist items verified
 
-**Testing Conclusion**: ✅ Complete
+**Testing Conclusion**: ✅ Complete (2025-10-23)
 - Backend testing comprehensively validates all JSearch/RapidAPI functionality
+- E2E testing validates complete user workflow with reliable data-testid selectors
 - Manual testing confirms end-to-end workflows work correctly
-- E2E tests exist but need selector refinement (non-blocking)
+- All automated tests passing and production-ready
 
 ---
 
@@ -846,7 +847,7 @@ test('should sync RapidAPI and display jobs', async () => {
 
 ---
 
-#### Recommendation: Option 1 (`data-testid`)
+#### Recommendation: Option 1 (`data-testid`) ✅ **SELECTED FOR IMPLEMENTATION**
 
 **Rationale:**
 1. **Best Practice**: Industry standard for component-based testing (React Testing Library, Playwright docs recommend this)
@@ -856,16 +857,45 @@ test('should sync RapidAPI and display jobs', async () => {
 5. **Debugging**: Failed tests immediately show which component couldn't be found
 6. **Minimal Cost**: 5-10 testid attributes across IntakeTab.tsx, zero performance impact
 
-**Implementation Priority**: Low (non-blocking)
-- Application functionality fully validated
-- Manual testing covers all workflows
-- Can be addressed during next UI iteration or when test suite becomes critical
+**User Decision** (2025-10-23): Implement Option 1 (data-testid)
+- User values testing as "one of the crown jewels of good software development"
+- Prioritizes reliable, maintainable automated testing over short-term workarounds
+- Will iterate until all E2E tests pass
 
-**Next Steps** (when ready):
-1. Add `data-testid` attributes to RapidAPI card, button, and status elements
-2. Update 4 failing tests to use `getByTestId()` selectors
-3. Run E2E suite: `npm run test:e2e:chromium -- e2e/tests/28-rapidapi-sync-integration.spec.ts`
-4. Expected outcome: 5/5 tests passing
+**Implementation Status**: ✅ **COMPLETED** (2025-10-23)
+
+**Implementation Steps**:
+1. ✅ Added `data-testid` attributes to RapidAPI card, button, and status elements (IntakeTab.tsx)
+2. ✅ Updated 4 failing tests to use `getByTestId()` selectors (28-rapidapi-sync-integration.spec.ts)
+3. ✅ Increased test timeout to 90s for long-running sync tests
+4. ✅ Implemented smart polling strategy (poll button state every 1s instead of fixed 30s wait)
+5. ✅ All 5/5 tests passing in 30 seconds
+
+**Test Results** (2025-10-23):
+- ✅ Test 1: Display RapidAPI card - 2.4s
+- ✅ Test 2: Sync RapidAPI and display jobs - 8.7s
+- ✅ Test 3: Verify 10-job limit - 17.5s
+- ✅ Test 4: Show correct status - 2.4s
+- ✅ Test 5: Disable sync button while syncing - 2.2s
+
+**Changes Made**:
+1. **IntakeTab.tsx**:
+   - Added `data-testid="rapidapi-card"` to card container
+   - Added `data-testid="rapidapi-heading"` to h3 heading
+   - Added `data-testid="rapidapi-status"` to status span
+   - Added `data-testid="rapidapi-sync-button"` to sync button
+
+2. **28-rapidapi-sync-integration.spec.ts**:
+   - Replaced `.locator('..').locator('..')` DOM traversal with `getByTestId()` selectors
+   - Increased test timeout from 30s to 90s for long-running tests
+   - Replaced fixed 30s waits with smart polling (checks button text every 1s)
+   - Optimized test 5 to only verify button disabled state (no need to wait for completion)
+
+**Key Benefits**:
+- **Reliability**: Tests immune to DOM structure changes
+- **Speed**: Smart polling completes as soon as sync finishes (8-17s vs fixed 30s)
+- **Maintainability**: Clear test intent with semantic data-testid attributes
+- **Debugging**: Easy to identify which elements failed in test output
 
 ### Phase 4.1.8: Documentation ✅ COMPLETED (2025-10-23)
 

@@ -58,6 +58,7 @@ test.describe('RapidAPI JSearch Sync Integration', () => {
   });
 
   test('should sync RapidAPI and display jobs in Inbox tab', async () => {
+    test.setTimeout(90000); // Increase timeout to 90s for long-running sync
     // Step 1: Get initial stats
     await page.waitForTimeout(1000);
     const initialNewJobsText = await page.getByTestId('stat-new').textContent();
@@ -77,19 +78,18 @@ test.describe('RapidAPI JSearch Sync Integration', () => {
     const heading = page.getByRole('heading', { name: /Job Intake Sources/i });
     await expect(heading).toBeVisible();
 
-    // Step 3: Find RapidAPI Sync button by finding the heading first
-    const rapidapiHeading = page.getByRole('heading', { name: /^RapidAPI JSearch$/i });
-    const headingVisible = await rapidapiHeading.isVisible().catch(() => false);
+    // Step 3: Find RapidAPI card and sync button using data-testid
+    const rapidapiCard = page.getByTestId('rapidapi-card');
+    const cardVisible = await rapidapiCard.isVisible().catch(() => false);
 
-    if (!headingVisible) {
+    if (!cardVisible) {
       console.log('RapidAPI card not found - may not be configured');
       test.skip();
       return;
     }
 
-    // Get the parent card container and find the sync button within it
-    const rapidapiCard = rapidapiHeading.locator('..').locator('..');
-    const rapidapiSyncButton = rapidapiCard.getByRole('button', { name: /Sync Now/i });
+    // Get the sync button within the card
+    const rapidapiSyncButton = page.getByTestId('rapidapi-sync-button');
 
     const isDisabled = await rapidapiSyncButton.isDisabled();
     if (isDisabled) {
@@ -105,20 +105,31 @@ test.describe('RapidAPI JSearch Sync Integration', () => {
     // Wait for sync to start
     await page.waitForTimeout(500);
 
-    // Step 5: Wait for sync to complete (RapidAPI sync may take 15-30 seconds for 10 jobs)
-    console.log('Waiting for sync to complete (up to 30s for 10 jobs)...');
-    await page.waitForTimeout(30000); // Give it time to sync all 10 jobs
+    // Step 5: Wait for button to change back from "Syncing..." to "Sync Now"
+    console.log('Waiting for sync to complete (polling button state)...');
 
-    // Check for success message
-    const successMessage = page.getByText(/RapidAPI JSearch sync completed successfully|sync completed successfully|new jobs added/i);
-    const hasSuccess = await successMessage.isVisible().catch(() => false);
+    // Poll button text until it's no longer "Syncing..."
+    let syncComplete = false;
+    let attempts = 0;
+    const maxAttempts = 60; // 60 seconds max
 
-    if (hasSuccess) {
-      const messageText = await successMessage.textContent();
-      console.log(`Sync result: ${messageText}`);
+    while (!syncComplete && attempts < maxAttempts) {
+      const buttonText = await rapidapiSyncButton.textContent();
+      if (buttonText && !buttonText.includes('Syncing')) {
+        syncComplete = true;
+        console.log('Sync complete - button state changed');
+      } else {
+        await page.waitForTimeout(1000); // Wait 1 second between polls
+        attempts++;
+      }
+    }
+
+    if (!syncComplete) {
+      console.log('Warning: Sync did not complete within timeout, continuing anyway...');
     }
 
     // Step 6: Verify activity log shows RapidAPI sync
+    await page.waitForTimeout(1000); // Brief wait for UI to update
     const activityLog = page.locator('div').filter({ hasText: /rapidapi.*discovered/i }).first();
     const logVisible = await activityLog.isVisible().catch(() => false);
 
@@ -189,15 +200,14 @@ test.describe('RapidAPI JSearch Sync Integration', () => {
   });
 
   test('should verify RapidAPI respects 10-job limit per sync', async () => {
+    test.setTimeout(90000); // Increase timeout to 90s for long-running sync
     // Navigate to Intake tab
     const intakeTab = page.getByRole('button', { name: /^intake$/i });
     await intakeTab.click();
     await page.waitForTimeout(1000);
 
-    // Find RapidAPI Sync button
-    const rapidapiHeading = page.getByRole('heading', { name: /^RapidAPI JSearch$/i });
-    const rapidapiCard = rapidapiHeading.locator('..').locator('..');
-    const rapidapiSyncButton = rapidapiCard.getByRole('button', { name: /Sync Now/i });
+    // Find RapidAPI Sync button using data-testid
+    const rapidapiSyncButton = page.getByTestId('rapidapi-sync-button');
 
     const isDisabled = await rapidapiSyncButton.isDisabled();
     if (isDisabled) {
@@ -208,7 +218,25 @@ test.describe('RapidAPI JSearch Sync Integration', () => {
 
     // Sync RapidAPI
     await rapidapiSyncButton.click();
-    await page.waitForTimeout(30000); // Wait for sync
+
+    // Wait for sync to complete by polling button state
+    console.log('Waiting for sync to complete (polling button state)...');
+    let syncComplete = false;
+    let attempts = 0;
+    const maxAttempts = 60;
+
+    while (!syncComplete && attempts < maxAttempts) {
+      const buttonText = await rapidapiSyncButton.textContent();
+      if (buttonText && !buttonText.includes('Syncing')) {
+        syncComplete = true;
+        console.log('Sync complete');
+      } else {
+        await page.waitForTimeout(1000);
+        attempts++;
+      }
+    }
+
+    await page.waitForTimeout(1000); // Brief wait for UI update
 
     // Check activity log
     const activityLog = page.locator('div').filter({ hasText: /rapidapi.*Total/i }).first();
@@ -239,25 +267,26 @@ test.describe('RapidAPI JSearch Sync Integration', () => {
     await intakeTab.click();
     await page.waitForTimeout(1000);
 
-    // Find RapidAPI card more precisely - look for the specific heading
-    const rapidapiHeading = page.getByRole('heading', { name: /^RapidAPI JSearch$/i });
-    await expect(rapidapiHeading).toBeVisible();
-
-    // Get the parent card container
-    const rapidapiCard = rapidapiHeading.locator('..').locator('..');
+    // Find RapidAPI card and status using data-testid
+    const rapidapiCard = page.getByTestId('rapidapi-card');
     await expect(rapidapiCard).toBeVisible();
 
-    // Check for status text within this specific card
+    // Check for status text using data-testid
+    const statusElement = page.getByTestId('rapidapi-status');
+    await expect(statusElement).toBeVisible();
+
+    const statusText = await statusElement.textContent();
+    console.log(`RapidAPI status text: ${statusText}`);
+
+    // Verify status shows Active or Inactive
     const statusPattern = /Status:\s+(Active|Inactive)/i;
+    expect(statusText).toMatch(statusPattern);
+
+    // Get card text to check for configuration message
     const cardText = await rapidapiCard.textContent();
 
-    console.log(`RapidAPI card text: ${cardText}`);
-
-    // Verify status is mentioned
-    expect(cardText).toMatch(statusPattern);
-
     // If inactive, should show configuration message
-    if (cardText?.includes('Inactive')) {
+    if (statusText?.includes('Inactive')) {
       expect(cardText).toContain('Configure RAPIDAPI_KEY');
       console.log('✓ Inactive status shows configuration message');
     } else {
@@ -266,15 +295,14 @@ test.describe('RapidAPI JSearch Sync Integration', () => {
   });
 
   test('should disable sync button while syncing', async () => {
+    test.setTimeout(90000); // Increase timeout to 90s for long-running sync
     // Navigate to Intake tab
     const intakeTab = page.getByRole('button', { name: /^intake$/i });
     await intakeTab.click();
     await page.waitForTimeout(1000);
 
-    // Find RapidAPI Sync button
-    const rapidapiHeading = page.getByRole('heading', { name: /^RapidAPI JSearch$/i });
-    const rapidapiCard = rapidapiHeading.locator('..').locator('..');
-    const rapidapiSyncButton = rapidapiCard.getByRole('button', { name: /Sync Now/i });
+    // Find RapidAPI Sync button using data-testid
+    const rapidapiSyncButton = page.getByTestId('rapidapi-sync-button');
 
     const isDisabled = await rapidapiSyncButton.isDisabled();
     if (isDisabled) {
@@ -298,7 +326,7 @@ test.describe('RapidAPI JSearch Sync Integration', () => {
 
     console.log('✓ Sync button is disabled during sync');
 
-    // Wait for sync to complete
-    await page.waitForTimeout(30000);
+    // We've verified the button is disabled, which is the point of this test
+    // No need to wait for full sync completion - test is complete
   });
 });
