@@ -15,8 +15,9 @@
     - [Phase 4.1.3: Environment Configuration ✅ COMPLETED (2025-10-23)](#phase-413-environment-configuration--completed-2025-10-23)
     - [Phase 4.1.4: Frontend Integration ✅ COMPLETED (2025-10-23)](#phase-414-frontend-integration--completed-2025-10-23)
     - [Phase 4.1.5: Rate Limiting & Quota Management ✅ COMPLETED (2025-10-23)](#phase-415-rate-limiting--quota-management--completed-2025-10-23)
-    - [Phase 4.1.6: Testing & Validation ⏸️ PARTIALLY COMPLETE (Backend ✅, E2E pending)](#phase-416-testing--validation--partially-complete-backend--e2e-pending)
-    - [Phase 4.1.7: Documentation ✅ COMPLETED (2025-10-23)](#phase-417-documentation--completed-2025-10-23)
+    - [Phase 4.1.6: Pagination Support (Manual Page Selection) ✅ COMPLETED (2025-10-23)](#phase-416-pagination-support-manual-page-selection--completed-2025-10-23)
+    - [Phase 4.1.7: Testing & Validation ⏸️ PARTIALLY COMPLETE (Backend ✅, E2E pending)](#phase-417-testing--validation--partially-complete-backend--e2e-pending)
+    - [Phase 4.1.8: Documentation ✅ COMPLETED (2025-10-23)](#phase-418-documentation--completed-2025-10-23)
   - [Future Extensions (Phase 4.2+)](#future-extensions-phase-42)
   - [Cost & Usage Projections](#cost--usage-projections)
   - [Success Criteria](#success-criteria)
@@ -537,7 +538,75 @@ async fn check_rapidapi_quota(pool: &PgPool) -> Result<bool, sqlx::Error> {
 - Gmail syncs are unlimited (not counted against RapidAPI quota)
 - Monitor via RapidAPI dashboard (alerts at 85% = 170 requests)
 
-### Phase 4.1.6: Testing & Validation ⏸️ PARTIALLY COMPLETE (Backend ✅, E2E pending)
+### Phase 4.1.6: Pagination Support (Manual Page Selection) ✅ COMPLETED (2025-10-23)
+
+**Objective**: Enable fetching different sets of jobs from RapidAPI by supporting manual page selection.
+
+**Problem**: Without pagination support, every sync fetches the same first 10 jobs (page 1). To access jobs 11-20, 21-30, etc., we need to be able to specify which page to fetch.
+
+**Solution**: Add `page` parameter support to the JSearch API integration, configurable via the `job_sources.configuration` JSONB field.
+
+**Backend Implementation** (`backend/src/main.rs:3368-3390`):
+
+```rust
+// Read page parameter from configuration (defaults to page 1)
+let page = search_params["page"].as_str().unwrap_or("1");
+
+// Add page parameter to API request
+.query(&[
+    ("query", query),
+    ("num_pages", num_pages),
+    ("page", page),  // ← New parameter
+    ("date_posted", date_posted),
+    ("remote_jobs_only", &remote_jobs_only.to_string()),
+])
+```
+
+**Usage - Fetching Different Job Sets**:
+
+To fetch a different page of results, update the `page` field in the database configuration:
+
+```sql
+-- Fetch jobs 11-20 (page 2)
+UPDATE job_sources
+SET configuration = jsonb_set(
+    configuration,
+    '{page}',
+    '"2"'
+)
+WHERE source_name = 'rapidapi';
+```
+
+Then run the sync:
+```bash
+POST http://localhost:8080/api/intake/rapidapi/sync
+```
+
+**Page Examples**:
+- `page=1`: Jobs 1-10 (default)
+- `page=2`: Jobs 11-20
+- `page=3`: Jobs 21-30
+- `page=10`: Jobs 91-100
+
+**Key Features**:
+- ✅ Defaults to page 1 if not specified
+- ✅ Deduplication system prevents duplicate jobs if same page synced twice
+- ✅ Logged in debug output: `Fetching jobs from RapidAPI JSearch: query=..., num_pages=1, page=2, ...`
+- ✅ No frontend changes required (manual database update)
+- ✅ Compatible with existing quota tracking (1 API call per sync regardless of page)
+
+**Limitations**:
+- Manual database update required to change page number
+- No automatic page increment after each sync
+- User must remember which page was last fetched
+- See Phase 4.2 for automatic page tracking
+
+**Status**: ✅ COMPLETED (2025-10-23)
+- Backend implementation: ✅ Done (backend/src/main.rs:3373, 3375, 3385)
+- Build verification: ✅ Passes (cargo build)
+- Documentation: ✅ Complete
+
+### Phase 4.1.7: Testing & Validation ⏸️ PARTIALLY COMPLETE (Backend ✅, E2E pending)
 
 **Backend tests** (`backend/tests/job_intake_tests.rs`):
 
@@ -578,7 +647,7 @@ async fn test_separate_source_syncs() {
 9. ✅ Monitor quota in RapidAPI dashboard
 10. ✅ Test both sync buttons work independently in UI
 
-### Phase 4.1.7: Documentation ✅ COMPLETED (2025-10-23)
+### Phase 4.1.8: Documentation ✅ COMPLETED (2025-10-23)
 
 Update `README.md`:
 - Add RapidAPI JSearch integration section
@@ -592,21 +661,99 @@ Update `README.md`:
 
 **Current State**: Two sources (Gmail + RapidAPI JSearch aggregator)
 
-**Phase 4.2**: Enhanced Filtering & Search Queries
+**Phase 4.2**: Automatic Page Tracking & Auto-Increment
+**Objective**: Automatically track which page was last fetched and increment to the next page on each sync.
+
+**Problem**: Phase 4.1.6 requires manual database updates to change the page number. Users must remember which page was last synced and manually update the configuration.
+
+**Solution**: Add automatic page tracking and increment logic to the RapidAPI sync process.
+
+**Proposed Implementation**:
+
+1. **Database Schema Changes**:
+   ```sql
+   -- Option A: Add column to job_sources table
+   ALTER TABLE job_sources
+   ADD COLUMN last_page_fetched INTEGER DEFAULT 1;
+
+   -- Option B: Store in configuration JSONB (no schema change)
+   -- Use existing configuration field
+   ```
+
+2. **Backend Logic** (backend/src/main.rs):
+   ```rust
+   async fn sync_jsearch_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+       // Read current page from database
+       let current_page = source.last_page_fetched.unwrap_or(1);
+
+       // Override configuration with current page
+       let mut config = source.configuration.clone();
+       config["page"] = json!(current_page.to_string());
+
+       // Fetch jobs using current page
+       let listings = fetch_jsearch_jobs_rapidapi(&api_key, &api_host, &config).await?;
+
+       // After successful sync, increment page
+       sqlx::query!(
+           "UPDATE job_sources SET last_page_fetched = $1 WHERE source_id = $2",
+           current_page + 1,
+           source.source_id
+       )
+       .execute(pool.get_ref())
+       .await?;
+
+       // Return success
+   }
+   ```
+
+3. **Reset Mechanism**:
+   ```sql
+   -- Reset to page 1 (e.g., when starting a new search query)
+   UPDATE job_sources
+   SET last_page_fetched = 1
+   WHERE source_name = 'rapidapi';
+   ```
+
+4. **Frontend Enhancement** (optional):
+   - Display current page in RapidAPI card: "Last page fetched: 5"
+   - Add "Reset to Page 1" button
+   - Show progress: "Pages synced: 5 (50 jobs total)"
+
+**Benefits**:
+- ✅ No manual database updates required
+- ✅ Automatic progression through result pages
+- ✅ Can sync multiple times to build up job inventory
+- ✅ Clear visibility of how many pages have been synced
+
+**Considerations**:
+- When to reset to page 1? (new search query, after reaching end, manual reset)
+- Handle end-of-results gracefully (JSearch returns fewer than 10 jobs)
+- Coordinate with quota tracking (don't auto-fetch if approaching limit)
+- Consider adding "max_page" configuration to prevent runaway syncing
+
+**Effort Estimate**: 4-6 hours
+- Database migration (or JSONB approach): 1 hour
+- Backend logic: 2-3 hours
+- Frontend display (optional): 1-2 hours
+- Testing: 1 hour
+
+**Priority**: Medium (nice-to-have, but Phase 4.1.6 manual approach works)
+
+**Phase 4.3**: Enhanced Filtering & Search Queries
 - Add more sophisticated search queries to JSearch
 - Filter by salary ranges, employment type, remote vs onsite
 - Add ability to configure multiple search queries per source
 
-**Phase 4.3**: Increase Sync Limits (if needed)
+**Phase 4.4**: Increase Sync Limits (if needed)
 - Upgrade to RapidAPI Pro tier ($25/month) for 10K requests/month
 - Increase num_pages to 2-3 (20-30 jobs per sync)
 - Add daily automated syncs
 
-**Phase 4.4**: Additional Specialized APIs
+**Phase 4.5**: Additional Specialized APIs
 - Add niche job boards for testing/QA roles (if needed)
 - Evaluate specialized APIs beyond JSearch aggregator
 
-**Phase 4.5**: Analytics & Insights
+**Phase 4.6**: Analytics & Insights
 - Track which job boards (within JSearch) produce best matches
 - Analyze job market trends from aggregated data
 - Dashboard for source performance comparison

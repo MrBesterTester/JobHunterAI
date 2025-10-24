@@ -3370,9 +3370,10 @@ async fn fetch_jsearch_jobs_rapidapi(
     let date_posted = search_params["date_posted"].as_str().unwrap_or("week");
     let remote_jobs_only = search_params["remote_jobs_only"].as_bool().unwrap_or(false);
     let num_pages = search_params["num_pages"].as_str().unwrap_or("1"); // 1 page = ~10 jobs
+    let page = search_params["page"].as_str().unwrap_or("1"); // Which page to start from (default: 1)
 
-    log_debug(&format!("Fetching jobs from RapidAPI JSearch: query={}, num_pages={}, date_posted={}, remote_jobs_only={}",
-        query, num_pages, date_posted, remote_jobs_only));
+    log_debug(&format!("Fetching jobs from RapidAPI JSearch: query={}, num_pages={}, page={}, date_posted={}, remote_jobs_only={}",
+        query, num_pages, page, date_posted, remote_jobs_only));
 
     let response = client
         .get(&format!("https://{}/search", api_host))
@@ -3381,6 +3382,7 @@ async fn fetch_jsearch_jobs_rapidapi(
         .query(&[
             ("query", query),
             ("num_pages", num_pages),
+            ("page", page),
             ("date_posted", date_posted),
             ("remote_jobs_only", &remote_jobs_only.to_string()),
         ])
