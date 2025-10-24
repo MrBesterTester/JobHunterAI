@@ -50,12 +50,12 @@ related: ["BUG-0003"]  # BUG-0003 was impervious to debugging, may have been cau
 
 ## Summary
 
-Should we implement a zero-warning build policy with strict linting (Clippy for Rust, ESLint for TypeScript) to improve code quality and catch subtle bugs? BUG-0003's debugging difficulty raises the question of whether stricter tooling would help prevent similar issues.
+Should we implement a zero-warning build policy with strict linting (Clippy for Rust, ESLint for TypeScript) to improve code quality and catch subtle bugs? [BUG-0003](BUG-0003-modal-doesnt-reopen-after-closing.md)'s debugging difficulty raises the question of whether stricter tooling would help prevent similar issues.
 
 ## Impact
 
 **Potential Benefits:**
-- Catch subtle bugs earlier (might have prevented BUG-0003)
+- Catch subtle bugs earlier (might have prevented [BUG-0003](BUG-0003-modal-doesnt-reopen-after-closing.md))
 - Improve code quality and maintainability
 - Enforce best practices
 - Reduce technical debt
@@ -72,7 +72,7 @@ Should we implement a zero-warning build policy with strict linting (Clippy for 
 > "OK, continuing on with this morning's brain-bash/brain-storming, I'd like to raise the issue of completely clean builds, i.e., no error and no warnings and possibly even linting for the TypeScript and Rust code in this app. BUG-0003 was impervious to a very good attempt on your part to debug it. So, even though we're in the middle of fixing tests as planned in README_test-report-10-23-2025.md, I am wondering if this would indeed be a good idea. Please research this on the web and make your recommendation with options."
 
 **Key Motivations:**
-1. BUG-0003 (modal-doesnt-reopen-after-closing) was difficult to debug
+1. [BUG-0003](BUG-0003-modal-doesnt-reopen-after-closing.md) (modal-doesnt-reopen-after-closing) was difficult to debug
 2. Current builds have warnings in both Rust and TypeScript
 3. Stricter tooling might catch issues earlier in development
 4. Balance between code quality and development velocity
@@ -138,7 +138,7 @@ warning: field `model` is never read
 
 **Pros of Zero-Warning Policy:**
 - Forces discipline and best practices
-- Catches bugs early (prevents issues like BUG-0003)
+- Catches bugs early (prevents issues like [BUG-0003](BUG-0003-modal-doesnt-reopen-after-closing.md))
 - Improves long-term maintainability
 - Investment in future stability
 
@@ -164,7 +164,7 @@ warning: field `model` is never read
 
 **Pros:**
 - Highest code quality immediately
-- Catches subtle bugs (might prevent future BUG-0003s)
+- Catches subtle bugs (might prevent future [BUG-0003](BUG-0003-modal-doesnt-reopen-after-closing.md)s)
 - Forces best practices from start
 - Clean slate for all future development
 
@@ -230,7 +230,7 @@ warning: field `model` is never read
 **Description**: Apply strict linting only to high-activity files being actively developed.
 
 **Implementation:**
-1. Identify high-activity files (e.g., files touched by BUG-0003)
+1. Identify high-activity files (e.g., files touched by [BUG-0003](BUG-0003-modal-doesnt-reopen-after-closing.md))
 2. Enable strict linting for those files only
 3. Use `#[allow(dead_code)]` and similar annotations for stable areas
 4. Leave low-activity code with existing warnings
@@ -269,7 +269,7 @@ warning: field `model` is never read
 
 **Cons:**
 - Warnings accumulate over time
-- Doesn't address BUG-0003 debugging concerns
+- Doesn't address [BUG-0003](BUG-0003-modal-doesnt-reopen-after-closing.md) debugging concerns
 - Technical debt grows
 - May miss subtle bugs
 - Risk of warning fatigue
@@ -286,7 +286,7 @@ warning: field `model` is never read
 1. Doesn't interrupt current test-fixing work
 2. Provides opportunity to evaluate Clippy/ESLint benefits
 3. Sustainable phased approach
-4. Addresses BUG-0003 concerns without rushing
+4. Addresses [BUG-0003](BUG-0003-modal-doesnt-reopen-after-closing.md) concerns without rushing
 5. Can adjust course based on experience
 
 ## Implementation
@@ -318,8 +318,8 @@ cd frontend && npm run lint
 
 ## Notes
 
-**Connection to BUG-0003:**
-- BUG-0003 (modal-doesnt-reopen-after-closing) was difficult to debug
+**Connection to [BUG-0003](BUG-0003-modal-doesnt-reopen-after-closing.md):**
+- [BUG-0003](BUG-0003-modal-doesnt-reopen-after-closing.md) (modal-doesnt-reopen-after-closing) was difficult to debug
 - Strict linting might catch:
   - Type confusion
   - Incorrect async patterns
@@ -333,7 +333,7 @@ cd frontend && npm run lint
 **Developer Perspective:**
 - Currently mid-stream in test-fixing work (README_test-report-10-23-2025.md)
 - Balance needed between quality improvements and completing in-progress work
-- BUG-0003 experience suggests value in better tooling
+- [BUG-0003](BUG-0003-modal-doesnt-reopen-after-closing.md) experience suggests value in better tooling
 
 ## Related Research
 

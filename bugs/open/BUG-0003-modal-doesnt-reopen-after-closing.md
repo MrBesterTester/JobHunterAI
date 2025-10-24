@@ -8,9 +8,9 @@ priority: medium
 severity: medium
 component: frontend
 created: 2025-10-22
-updated: 2025-10-22
+updated: 2025-10-24
 affects: ['content-generation-modal', 'regeneration-workflow']
-related: []](#id-bug-0003%0Atitle-content-generation-modal-doesnt-reopen-after-closing%0Astatus-open%0Apriority-medium%0Aseverity-medium%0Acomponent-frontend%0Acreated-2025-10-22%0Aupdated-2025-10-22%0Aaffects-content-generation-modal-regeneration-workflow%0Arelated-)
+related: ['ISSUE-012']](#id-bug-0003%0Atitle-content-generation-modal-doesnt-reopen-after-closing%0Astatus-open%0Apriority-medium%0Aseverity-medium%0Acomponent-frontend%0Acreated-2025-10-22%0Aupdated-2025-10-24%0Aaffects-content-generation-modal-regeneration-workflow%0Arelated-issue-012)
 - [BUG-0003: Content Generation Modal Doesn't Reopen After Closing](#bug-0003-content-generation-modal-doesnt-reopen-after-closing)
   - [Summary](#summary)
   - [Impact](#impact)
@@ -39,9 +39,9 @@ priority: medium
 severity: medium
 component: frontend
 created: 2025-10-22
-updated: 2025-10-22
+updated: 2025-10-24
 affects: ['content-generation-modal', 'regeneration-workflow']
-related: []
+related: ['ISSUE-012']
 ---
 
 # BUG-0003: Content Generation Modal Doesn't Reopen After Closing
@@ -319,6 +319,7 @@ npx playwright test e2e/tests/04-content-generation.spec.ts \
 - 2025-10-22: Multiple fix attempts made, all unsuccessful - tests still failing
 - 2025-10-22: Investigation documented with detailed findings and next steps
 - 2025-10-22: Status: IN PROGRESS - requires manual browser debugging
+- 2025-10-24: Debugging difficulty led to creation of [ISSUE-012](ISSUE-012-zero-warning-clean-build-policy.md) to investigate zero-warning build policy
 
 ## Notes
 
@@ -346,3 +347,6 @@ Users can refresh the page to regenerate content after closing the modal. Not id
 - Test 1: Line 330-355 ("should allow re-opening modal after closing")
 - Test 2: Line 357-386 ("should maintain content when re-opened")
 - Test results documented in Phase 3.1.3 section of implementation plan
+
+**Related Issues**:
+- [ISSUE-012](ISSUE-012-zero-warning-clean-build-policy.md): Zero-Warning Clean Build Policy - created in response to this bug's debugging difficulty, exploring whether stricter linting (Clippy for Rust, ESLint for TypeScript) would help catch similar issues earlier in development
