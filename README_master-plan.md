@@ -6,18 +6,6 @@
   - [Implementation Status](#implementation-status)
     - [Phase 1 - Core System ✅ **COMPLETE**](#phase-1---core-system--complete)
     - [Phase 2 - Intelligent Automation ✅ **COMPLETE**](#phase-2---intelligent-automation--complete)
-    - [Phase 3 - Content Generation ✅ **COMPLETE**](#phase-3---content-generation--complete)
-      - [Phase 3.1 - Claude Haiku LLM Integration ✅ **COMPLETE** (Oct 2025)](#phase-31---claude-haiku-llm-integration--complete-oct-2025)
-        - [Sub-Phase 3.1.1: Anthropic API Integration ✅](#sub-phase-311-anthropic-api-integration-)
-        - [Sub-Phase 3.1.2: Prompt Engineering ✅](#sub-phase-312-prompt-engineering-)
-        - [Sub-Phase 3.1.3: Backend Integration ✅](#sub-phase-313-backend-integration-)
-        - [Sub-Phase 3.1.4: Frontend UI Enhancements ✅](#sub-phase-314-frontend-ui-enhancements-)
-        - [Sub-Phase 3.1.5: Testing & Refinement ✅](#sub-phase-315-testing--refinement-)
-        - [Technical Architecture](#technical-architecture)
-        - [Success Criteria & Validation Results](#success-criteria--validation-results)
-        - [Implementation Details](#implementation-details)
-        - [Known Issues & Production Status](#known-issues--production-status)
-    - [Phase 4 - Automated Job Intake ✅ **COMPLETE**](#phase-4---automated-job-intake--complete)
     - [Phase 2.4 - Calendar Integration & Follow-ups ✅ **COMPLETE**](#phase-24---calendar-integration--follow-ups--complete)
       - [Implemented Features](#implemented-features)
       - [Technical Implementation ✅](#technical-implementation-)
@@ -38,6 +26,18 @@
       - [Phase 2.6.3 - LLM-Based Email Filtering with Gmail Labels ✅ **COMPLETE**](#phase-263---llm-based-email-filtering-with-gmail-labels--complete)
       - [Phase 2.6.4 - Trade-off Based Job Evaluation Display ✅ **COMPLETE**](#phase-264---trade-off-based-job-evaluation-display--complete)
       - [Phase 2.6.5 - Enhanced Extraction: Industry & Employment Type Tracking ✅ **COMPLETE**](#phase-265---enhanced-extraction-industry--employment-type-tracking--complete)
+    - [Phase 3 - Content Generation ✅ **COMPLETE**](#phase-3---content-generation--complete)
+      - [Phase 3.1 - Claude Haiku LLM Integration ✅ **COMPLETE** (Oct 2025)](#phase-31---claude-haiku-llm-integration--complete-oct-2025)
+        - [Sub-Phase 3.1.1: Anthropic API Integration ✅](#sub-phase-311-anthropic-api-integration-)
+        - [Sub-Phase 3.1.2: Prompt Engineering ✅](#sub-phase-312-prompt-engineering-)
+        - [Sub-Phase 3.1.3: Backend Integration ✅](#sub-phase-313-backend-integration-)
+        - [Sub-Phase 3.1.4: Frontend UI Enhancements ✅](#sub-phase-314-frontend-ui-enhancements-)
+        - [Sub-Phase 3.1.5: Testing & Refinement ✅](#sub-phase-315-testing--refinement-)
+        - [Technical Architecture](#technical-architecture)
+        - [Success Criteria & Validation Results](#success-criteria--validation-results)
+        - [Implementation Details](#implementation-details)
+        - [Known Issues & Production Status](#known-issues--production-status)
+    - [Phase 4 - Automated Job Intake ✅ **COMPLETE**](#phase-4---automated-job-intake--complete)
     - [What NOT to Build (For Now)](#what-not-to-build-for-now)
       - [❌ Apple Mail Integration](#-apple-mail-integration)
       - [❌ Apple Messages/iMessage Integration](#-apple-messagesimessage-integration)
@@ -122,278 +122,6 @@ JobHunter is a comprehensive job application management system built to automate
 - Job statistics API with live counts by status
 - Filtered jobs display with detailed rejection reasons
 - Dashboard shows real-time filtering effectiveness
-
-### Phase 3 - Content Generation ✅ **COMPLETE**
-
-**Resume Management System**
-- **File-based Storage**: Master resume stored in `data/resumes/master_resume.md` for easy editing
-- **Database Integration**: Resume versions stored in PostgreSQL with full CRUD operations
-- **UI Management**: Complete modal interface for uploading, viewing, and managing resumes
-- **Three Upload Methods**: Paste text, upload file, or load from filesystem
-- **Version Control**: Support for multiple resume versions with master designation
-- **Master Resume Enforcement**: Single master resume with database-level validation
-- **Deletion Protection**: Cannot delete master resume without setting another as master first
-
-#### Phase 3.1 - Claude Haiku LLM Integration ✅ **COMPLETE** (Oct 2025)
-
-**Status**: ✅ Production-Ready (All Sub-Phases Complete)
-**Completion Date**: 2025-10-22
-**Total Effort**: ~13 hours (3.1.1: 2.5h | 3.1.2: 2.5h | 3.1.3: 3.5h | 3.1.4: 2h | 3.1.5: 2.5h)
-**Overall Quality Score**: 90% (4.5/5)
-
-**Overview**
-
-Complete replacement of template-based content generation with intelligent Claude 3.5 Haiku LLM integration for personalized resume customization and cover letter generation. The system achieved production-ready status with excellent quality scores (4.5/5), superior cost efficiency ($0.003 per generation, 94% under budget), and comprehensive automated testing validation.
-
-##### Sub-Phase 3.1.1: Anthropic API Integration ✅
-
-**Deliverables**:
-- ✅ Complete API client wrapper (`backend/src/llm.rs`, 460+ lines)
-- ✅ Exponential backoff retry logic for reliability
-- ✅ 8 unit tests with mocked HTTP responses (100% passing)
-- ✅ 6 integration tests with real Anthropic API (100% passing)
-
-**Key Features**:
-- **Error Handling**: Rate limit detection (429), authentication errors (401/403), network resilience
-- **Performance**: ~3.3s average response time, ~33 tokens/second throughput
-- **Cost Tracking**: Token counting with accurate cost estimation ($0.25/MTok input, $1.25/MTok output)
-- **Model**: Claude 3.5 Haiku (`claude-3-5-haiku-20241022`)
-
-**Code Locations**: `backend/src/llm.rs`, `backend/tests/llm_integration_tests.rs`
-
-##### Sub-Phase 3.1.2: Prompt Engineering ✅
-
-**Deliverables**:
-- ✅ Resume customization prompt (`prompts/resume_customization.md`, 1,400+ lines)
-- ✅ Cover letter generation prompt (`prompts/cover_letter_generation.md`, 1,400+ lines)
-- ✅ Prompt loading utility with fallback path resolution
-- ✅ Domain extraction functions (testing, AI, firmware)
-- ✅ Technology extraction and seniority level detection
-
-**Prompt Features**:
-- **Domain-Aware Intelligence**: Analyzes job description for relevant experience emphasis
-  - Testing roles: "Test Automation", "Quality Engineering", "CI/CD"
-  - AI roles: "AI-powered", "LLM", "Prompt Engineering", "Generative AI"
-  - Firmware roles: "firmware", "hardware validation", "embedded systems"
-- **Truth Preservation**: Strict rules against fabrication, only emphasizes existing content
-- **Structured Output**: Markdown resume with bold keyword emphasis, 250-400 word cover letters
-
-**Code Locations**: `prompts/`, `backend/src/llm.rs` (helper functions)
-
-##### Sub-Phase 3.1.3: Backend Integration ✅
-
-**Deliverables**:
-- ✅ Content generation orchestrator (`backend/src/main.rs`)
-- ✅ Sequential LLM calls (resume first, then cover letter using resume)
-- ✅ Token counting and cost tracking per generation
-- ✅ 3 comprehensive E2E tests (100% passing)
-
-**Technical Implementation**:
-- **Generation Flow**: Fetch master resume → Generate customized resume → Generate cover letter
-- **Metadata Tracking**: Stores model version, tokens (input/output), cost, generation time
-- **API Endpoint**: `GET /api/jobs/{id}/generate-content` returns `GeneratedContent` JSON
-- **Performance**: ~30s generation time, $0.003 average cost per generation
-
-**Code Locations**: `backend/src/main.rs:1367-1588`, `frontend/e2e/tests/04-content-generation.spec.ts`
-
-##### Sub-Phase 3.1.4: Frontend UI Enhancements ✅
-
-**Deliverables**:
-- ✅ LLM metadata display in content generation modal
-- ✅ In-modal "Regenerate" button functionality
-- ✅ Enhanced loading states and error handling
-- ✅ 7 comprehensive E2E tests (100% passing)
-
-**UI Features**:
-- **Metadata Transparency**: Displays generation method, model version, time, tokens, cost
-- **Regenerate Capability**: In-modal regeneration without closing (amber/orange button)
-- **Professional Layout**: Side-by-side resume and cover letter display
-- **Button Actions**: Close | Regenerate | Download | Create Email Draft
-- **Real-time Updates**: Loading states during generation, metadata updates after completion
-
-**Code Locations**: `frontend/src/App.tsx` (GeneratedContent interface & modal)
-
-##### Sub-Phase 3.1.5: Testing & Refinement ✅
-
-**Deliverables**:
-- ✅ Comprehensive test suite (`frontend/e2e/tests/05-phase-3.1.5-testing-refinement.spec.ts`, 600+ lines)
-- ✅ 11 automated quality assessment tests
-- ✅ Performance benchmarking (5 consecutive generations)
-- ✅ Cost tracking and consistency validation
-
-**Test Coverage**:
-1. **Quality Assessment Tests** (8 tests):
-   - Relevance scoring (resume matches job requirements)
-   - Personalization scoring (company/role specificity)
-   - Accuracy scoring (claims traceable to master resume)
-   - Tone appropriateness (professional quality)
-   - Technology matching (job-specific keywords)
-
-2. **Performance Tests** (2 tests):
-   - Generation time consistency (avg 29.6s ±3s)
-   - Token usage tracking (avg 7,280 tokens)
-
-3. **Cost Tests** (1 test):
-   - Cost consistency (avg $0.0031, 1.1% variance)
-
-**Code Locations**: `frontend/e2e/tests/05-phase-3.1.5-testing-refinement.spec.ts`
-
-##### Technical Architecture
-
-```
-┌─────────────────────────────────────────────────────┐
-│                   Frontend (React)                  │
-│  - JobCard (trigger generation button)              │
-│  - GeneratedContentModal (preview/edit/regenerate)  │
-│  - Metadata display (cost, tokens, time)            │
-└────────────────┬────────────────────────────────────┘
-                 │ GET /api/jobs/{id}/generate-content
-                 ▼
-┌─────────────────────────────────────────────────────┐
-│              Backend (Rust/Actix-web)               │
-│  ┌───────────────────────────────────────────────┐  │
-│  │  Content Generation Orchestrator              │  │
-│  │  - Fetch job details & master resume from DB  │  │
-│  │  - Call LLM services sequentially             │  │
-│  │  - Track tokens, cost, generation time        │  │
-│  └───────┬────────────────────────────┬──────────┘  │
-│          │                            │              │
-│          ▼                            ▼              │
-│  ┌──────────────────┐      ┌──────────────────┐    │
-│  │ Resume Service   │      │ Cover Letter Svc │    │
-│  │ - Load prompt    │      │ - Load prompt    │    │
-│  │ - Build context  │      │ - Build context  │    │
-│  │ - Call LLM       │      │ - Call LLM       │    │
-│  │ - Parse response │      │ - Parse response │    │
-│  └────────┬─────────┘      └────────┬─────────┘    │
-│           │                         │               │
-│           └────────┬────────────────┘               │
-│                    ▼                                │
-│          ┌─────────────────┐                        │
-│          │ AnthropicClient │                        │
-│          │ - Retry logic   │                        │
-│          │ - Error handling│                        │
-│          │ - Token counting│                        │
-│          └─────────┬───────┘                        │
-└────────────────────┼────────────────────────────────┘
-                     │ HTTPS (Claude 3.5 Haiku)
-                     ▼
-          ┌──────────────────────┐
-          │  Anthropic API       │
-          │  api.anthropic.com   │
-          └──────────────────────┘
-```
-
-##### Success Criteria & Validation Results
-
-**Launch Metrics** ✅
-- ✅ Generation success rate: **100%** (8/8 quality tests passing)
-- ✅ Average generation time: **29.6s** (target: < 45s)
-- ✅ Average cost per generation: **$0.0031** (38% under $0.005 target)
-- ✅ Critical bugs: **0**
-
-**Quality Metrics** ✅
-- ✅ Overall quality score: **4.5/5 (90%)**
-  - Relevance: 4/5 (80%)
-  - Personalization: 5/5 (100%)
-  - Accuracy: 4/5 (80%)
-  - Tone: 5/5 (100%)
-- ✅ Technology matching: **83%** average
-- ✅ Resume customization: Highlights relevant experience for job domain
-- ✅ Cover letter quality: Includes specific examples with natural language
-
-**Cost Metrics** ✅
-- ✅ Monthly cost: **$0.12** (40 applications, 88% under $1.00 budget)
-- ✅ Cost consistency: **1.1% variance** (highly predictable)
-- ✅ Token efficiency: **7,280 tokens avg** (31% under 10,000 limit)
-- ✅ Runaway cost incidents: **0**
-
-**Performance Consistency** ✅
-- ✅ Generation time variance: **±3s** (highly consistent)
-- ✅ Throughput: **~33 tokens/second**
-- ✅ Success rate across 5 consecutive generations: **100%**
-
-##### Implementation Details
-
-**Intelligent Resume Customization**
-- **Smart Content Reordering**: Prioritizes most relevant experience sections for each job
-- **Keyword Emphasis**: Automatically bolds domain-specific keywords matching job requirements
-- **Professional Summary Rewriting**: Tailors intro paragraph specifically for target role
-- **Truthful Enhancement**: Emphasizes existing skills without fabrication
-
-**Advanced Cover Letter Generation**
-- **Specific Examples**: Includes concrete achievements from resume with metrics
-- **Natural Language**: Human-quality writing without template artifacts
-- **Job-specific Personalization**: References company name and connects experience to job needs
-- **Professional Tone**: 250-400 words, personable but business-appropriate
-
-**Frontend Integration**
-- **Content Generation Button**: Appears on approved jobs with real-time loading states
-- **Side-by-side Modal**: Resume and cover letter displayed in professional layout
-- **Metadata Transparency**: Users see exact cost and performance metrics in real-time
-- **Download Ready**: One-click file downloads for resume and cover letter
-- **Email Integration**: "Create Email Draft" button for instant Gmail draft creation
-
-##### Known Issues & Production Status
-
-**Known Issues**:
-- ⚠️ **Regeneration Workflow** ([BUG-0003](bugs/open/BUG-0003-modal-doesnt-reopen-after-closing.md)): After closing the content generation modal, clicking "Generate" again does not reopen the modal
-  - **Workaround**: Refresh the page to regenerate content
-  - **Impact**: Medium - Degrades user experience but functionality remains intact
-  - **Priority**: Low (minor UX issue, does not affect core functionality)
-
-**Production Status**: ✅ **PRODUCTION-READY**
-
-Despite the minor UX issue noted above, Phase 3.1 achieved **production-ready status** with:
-- Excellent quality scores (90% overall, 100% personalization & tone)
-- Superior cost efficiency (94% under budget)
-- Perfect success rate (100% across all tests)
-- Comprehensive automated testing (26 E2E tests)
-- Robust error handling and retry logic
-
-The system is fully operational and ready for real-world usage. The identified bug is tracked and has a proposed fix that can be implemented in ~15 minutes if needed.
-
-### Phase 4 - Automated Job Intake ✅ **COMPLETE**
-
-**Full Implementation**: Complete automated job discovery and processing platform with multi-source integration.
-
-**Gmail API Integration** ✅
-- **OAuth 2.0 Flow**: Complete authentication with automatic token refresh
-- **Progressive Email Processing**: Queries only unread emails (`is:unread` filter) and marks processed emails as read
-- **Batch Processing**: Processes up to 50 unread emails per sync, automatically advancing to next batch on subsequent syncs
-- **Manual Reprocessing**: Users can mark emails as unread in Gmail to reprocess them in the next sync
-- **Email Parsing**: Intelligent job extraction from recruiter emails using LLM and regex patterns
-- **Job Discovery**: Automatic monitoring of Gmail inbox for job-related emails
-- **Base64 Decoding**: Full email body parsing including attachments
-- **Confidence Scoring**: Quality assessment of extracted job information (0.0-1.0)
-
-**LinkedIn Jobs Integration** ✅
-- **Mock API Implementation**: Ready-to-use LinkedIn job processing system
-- **Structured Data Extraction**: High-confidence job parsing from API responses
-- **Search Integration**: Configurable search parameters (salary, location, keywords)
-- **Rate Limiting**: Built-in request throttling and respectful API usage
-- **Deduplication**: Prevention of duplicate job processing across sources
-
-**Multi-source Job Aggregation** ✅
-- **Unified Sync System**: Single endpoint to process all active job sources
-- **Individual Source Control**: Granular sync capabilities per source type
-- **Indeed Integration Ready**: Placeholder implementation prepared for API integration
-- **Comprehensive Error Handling**: Detailed logging and failure recovery
-- **Real-time Status Tracking**: Live monitoring of sync operations
-
-**Advanced Job Processing** ✅
-- **Intelligent Extraction**: Multi-pattern regex for company, title, salary, location, URLs
-- **Automated Filtering**: All discovered jobs go through existing Phase 2 filtering
-- **SHA256 Deduplication**: Cross-source duplicate prevention using content hashing
-- **Database Integration**: 5 new tables supporting complete intake workflow
-- **Audit Trail**: Full logging of discovery, processing, and error states
-
-**Scheduling & Automation** ✅
-- **Interval-based Syncing**: Configurable sync frequencies per source (default 60min)
-- **Background Processing**: Non-blocking job discovery and processing
-- **Automatic Recovery**: Built-in retry logic for failed operations
-- **Performance Monitoring**: Detailed statistics on discovery and processing rates
-- **Source Management**: Active/inactive source control with last sync tracking
 
 ### Phase 2.4 - Calendar Integration & Follow-ups ✅ **COMPLETE**
 **Completion Date**: October 1, 2025
@@ -1104,6 +832,278 @@ LLM Analysis (Claude 3.5 Haiku on subject + body)
 
 ---
 
+### Phase 3 - Content Generation ✅ **COMPLETE**
+
+**Resume Management System**
+- **File-based Storage**: Master resume stored in `data/resumes/master_resume.md` for easy editing
+- **Database Integration**: Resume versions stored in PostgreSQL with full CRUD operations
+- **UI Management**: Complete modal interface for uploading, viewing, and managing resumes
+- **Three Upload Methods**: Paste text, upload file, or load from filesystem
+- **Version Control**: Support for multiple resume versions with master designation
+- **Master Resume Enforcement**: Single master resume with database-level validation
+- **Deletion Protection**: Cannot delete master resume without setting another as master first
+
+#### Phase 3.1 - Claude Haiku LLM Integration ✅ **COMPLETE** (Oct 2025)
+
+**Status**: ✅ Production-Ready (All Sub-Phases Complete)
+**Completion Date**: 2025-10-22
+**Total Effort**: ~13 hours (3.1.1: 2.5h | 3.1.2: 2.5h | 3.1.3: 3.5h | 3.1.4: 2h | 3.1.5: 2.5h)
+**Overall Quality Score**: 90% (4.5/5)
+
+**Overview**
+
+Complete replacement of template-based content generation with intelligent Claude 3.5 Haiku LLM integration for personalized resume customization and cover letter generation. The system achieved production-ready status with excellent quality scores (4.5/5), superior cost efficiency ($0.003 per generation, 94% under budget), and comprehensive automated testing validation.
+
+##### Sub-Phase 3.1.1: Anthropic API Integration ✅
+
+**Deliverables**:
+- ✅ Complete API client wrapper (`backend/src/llm.rs`, 460+ lines)
+- ✅ Exponential backoff retry logic for reliability
+- ✅ 8 unit tests with mocked HTTP responses (100% passing)
+- ✅ 6 integration tests with real Anthropic API (100% passing)
+
+**Key Features**:
+- **Error Handling**: Rate limit detection (429), authentication errors (401/403), network resilience
+- **Performance**: ~3.3s average response time, ~33 tokens/second throughput
+- **Cost Tracking**: Token counting with accurate cost estimation ($0.25/MTok input, $1.25/MTok output)
+- **Model**: Claude 3.5 Haiku (`claude-3-5-haiku-20241022`)
+
+**Code Locations**: `backend/src/llm.rs`, `backend/tests/llm_integration_tests.rs`
+
+##### Sub-Phase 3.1.2: Prompt Engineering ✅
+
+**Deliverables**:
+- ✅ Resume customization prompt (`prompts/resume_customization.md`, 1,400+ lines)
+- ✅ Cover letter generation prompt (`prompts/cover_letter_generation.md`, 1,400+ lines)
+- ✅ Prompt loading utility with fallback path resolution
+- ✅ Domain extraction functions (testing, AI, firmware)
+- ✅ Technology extraction and seniority level detection
+
+**Prompt Features**:
+- **Domain-Aware Intelligence**: Analyzes job description for relevant experience emphasis
+  - Testing roles: "Test Automation", "Quality Engineering", "CI/CD"
+  - AI roles: "AI-powered", "LLM", "Prompt Engineering", "Generative AI"
+  - Firmware roles: "firmware", "hardware validation", "embedded systems"
+- **Truth Preservation**: Strict rules against fabrication, only emphasizes existing content
+- **Structured Output**: Markdown resume with bold keyword emphasis, 250-400 word cover letters
+
+**Code Locations**: `prompts/`, `backend/src/llm.rs` (helper functions)
+
+##### Sub-Phase 3.1.3: Backend Integration ✅
+
+**Deliverables**:
+- ✅ Content generation orchestrator (`backend/src/main.rs`)
+- ✅ Sequential LLM calls (resume first, then cover letter using resume)
+- ✅ Token counting and cost tracking per generation
+- ✅ 3 comprehensive E2E tests (100% passing)
+
+**Technical Implementation**:
+- **Generation Flow**: Fetch master resume → Generate customized resume → Generate cover letter
+- **Metadata Tracking**: Stores model version, tokens (input/output), cost, generation time
+- **API Endpoint**: `GET /api/jobs/{id}/generate-content` returns `GeneratedContent` JSON
+- **Performance**: ~30s generation time, $0.003 average cost per generation
+
+**Code Locations**: `backend/src/main.rs:1367-1588`, `frontend/e2e/tests/04-content-generation.spec.ts`
+
+##### Sub-Phase 3.1.4: Frontend UI Enhancements ✅
+
+**Deliverables**:
+- ✅ LLM metadata display in content generation modal
+- ✅ In-modal "Regenerate" button functionality
+- ✅ Enhanced loading states and error handling
+- ✅ 7 comprehensive E2E tests (100% passing)
+
+**UI Features**:
+- **Metadata Transparency**: Displays generation method, model version, time, tokens, cost
+- **Regenerate Capability**: In-modal regeneration without closing (amber/orange button)
+- **Professional Layout**: Side-by-side resume and cover letter display
+- **Button Actions**: Close | Regenerate | Download | Create Email Draft
+- **Real-time Updates**: Loading states during generation, metadata updates after completion
+
+**Code Locations**: `frontend/src/App.tsx` (GeneratedContent interface & modal)
+
+##### Sub-Phase 3.1.5: Testing & Refinement ✅
+
+**Deliverables**:
+- ✅ Comprehensive test suite (`frontend/e2e/tests/05-phase-3.1.5-testing-refinement.spec.ts`, 600+ lines)
+- ✅ 11 automated quality assessment tests
+- ✅ Performance benchmarking (5 consecutive generations)
+- ✅ Cost tracking and consistency validation
+
+**Test Coverage**:
+1. **Quality Assessment Tests** (8 tests):
+   - Relevance scoring (resume matches job requirements)
+   - Personalization scoring (company/role specificity)
+   - Accuracy scoring (claims traceable to master resume)
+   - Tone appropriateness (professional quality)
+   - Technology matching (job-specific keywords)
+
+2. **Performance Tests** (2 tests):
+   - Generation time consistency (avg 29.6s ±3s)
+   - Token usage tracking (avg 7,280 tokens)
+
+3. **Cost Tests** (1 test):
+   - Cost consistency (avg $0.0031, 1.1% variance)
+
+**Code Locations**: `frontend/e2e/tests/05-phase-3.1.5-testing-refinement.spec.ts`
+
+##### Technical Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│                   Frontend (React)                  │
+│  - JobCard (trigger generation button)              │
+│  - GeneratedContentModal (preview/edit/regenerate)  │
+│  - Metadata display (cost, tokens, time)            │
+└────────────────┬────────────────────────────────────┘
+                 │ GET /api/jobs/{id}/generate-content
+                 ▼
+┌─────────────────────────────────────────────────────┐
+│              Backend (Rust/Actix-web)               │
+│  ┌───────────────────────────────────────────────┐  │
+│  │  Content Generation Orchestrator              │  │
+│  │  - Fetch job details & master resume from DB  │  │
+│  │  - Call LLM services sequentially             │  │
+│  │  - Track tokens, cost, generation time        │  │
+│  └───────┬────────────────────────────┬──────────┘  │
+│          │                            │              │
+│          ▼                            ▼              │
+│  ┌──────────────────┐      ┌──────────────────┐    │
+│  │ Resume Service   │      │ Cover Letter Svc │    │
+│  │ - Load prompt    │      │ - Load prompt    │    │
+│  │ - Build context  │      │ - Build context  │    │
+│  │ - Call LLM       │      │ - Call LLM       │    │
+│  │ - Parse response │      │ - Parse response │    │
+│  └────────┬─────────┘      └────────┬─────────┘    │
+│           │                         │               │
+│           └────────┬────────────────┘               │
+│                    ▼                                │
+│          ┌─────────────────┐                        │
+│          │ AnthropicClient │                        │
+│          │ - Retry logic   │                        │
+│          │ - Error handling│                        │
+│          │ - Token counting│                        │
+│          └─────────┬───────┘                        │
+└────────────────────┼────────────────────────────────┘
+                     │ HTTPS (Claude 3.5 Haiku)
+                     ▼
+          ┌──────────────────────┐
+          │  Anthropic API       │
+          │  api.anthropic.com   │
+          └──────────────────────┘
+```
+
+##### Success Criteria & Validation Results
+
+**Launch Metrics** ✅
+- ✅ Generation success rate: **100%** (8/8 quality tests passing)
+- ✅ Average generation time: **29.6s** (target: < 45s)
+- ✅ Average cost per generation: **$0.0031** (38% under $0.005 target)
+- ✅ Critical bugs: **0**
+
+**Quality Metrics** ✅
+- ✅ Overall quality score: **4.5/5 (90%)**
+  - Relevance: 4/5 (80%)
+  - Personalization: 5/5 (100%)
+  - Accuracy: 4/5 (80%)
+  - Tone: 5/5 (100%)
+- ✅ Technology matching: **83%** average
+- ✅ Resume customization: Highlights relevant experience for job domain
+- ✅ Cover letter quality: Includes specific examples with natural language
+
+**Cost Metrics** ✅
+- ✅ Monthly cost: **$0.12** (40 applications, 88% under $1.00 budget)
+- ✅ Cost consistency: **1.1% variance** (highly predictable)
+- ✅ Token efficiency: **7,280 tokens avg** (31% under 10,000 limit)
+- ✅ Runaway cost incidents: **0**
+
+**Performance Consistency** ✅
+- ✅ Generation time variance: **±3s** (highly consistent)
+- ✅ Throughput: **~33 tokens/second**
+- ✅ Success rate across 5 consecutive generations: **100%**
+
+##### Implementation Details
+
+**Intelligent Resume Customization**
+- **Smart Content Reordering**: Prioritizes most relevant experience sections for each job
+- **Keyword Emphasis**: Automatically bolds domain-specific keywords matching job requirements
+- **Professional Summary Rewriting**: Tailors intro paragraph specifically for target role
+- **Truthful Enhancement**: Emphasizes existing skills without fabrication
+
+**Advanced Cover Letter Generation**
+- **Specific Examples**: Includes concrete achievements from resume with metrics
+- **Natural Language**: Human-quality writing without template artifacts
+- **Job-specific Personalization**: References company name and connects experience to job needs
+- **Professional Tone**: 250-400 words, personable but business-appropriate
+
+**Frontend Integration**
+- **Content Generation Button**: Appears on approved jobs with real-time loading states
+- **Side-by-side Modal**: Resume and cover letter displayed in professional layout
+- **Metadata Transparency**: Users see exact cost and performance metrics in real-time
+- **Download Ready**: One-click file downloads for resume and cover letter
+- **Email Integration**: "Create Email Draft" button for instant Gmail draft creation
+
+##### Known Issues & Production Status
+
+**Known Issues**:
+- ⚠️ **Regeneration Workflow** ([BUG-0003](bugs/open/BUG-0003-modal-doesnt-reopen-after-closing.md)): After closing the content generation modal, clicking "Generate" again does not reopen the modal
+  - **Workaround**: Refresh the page to regenerate content
+  - **Impact**: Medium - Degrades user experience but functionality remains intact
+  - **Priority**: Low (minor UX issue, does not affect core functionality)
+
+**Production Status**: ✅ **PRODUCTION-READY**
+
+Despite the minor UX issue noted above, Phase 3.1 achieved **production-ready status** with:
+- Excellent quality scores (90% overall, 100% personalization & tone)
+- Superior cost efficiency (94% under budget)
+- Perfect success rate (100% across all tests)
+- Comprehensive automated testing (26 E2E tests)
+- Robust error handling and retry logic
+
+The system is fully operational and ready for real-world usage. The identified bug is tracked and has a proposed fix that can be implemented in ~15 minutes if needed.
+
+### Phase 4 - Automated Job Intake ✅ **COMPLETE**
+
+**Full Implementation**: Complete automated job discovery and processing platform with multi-source integration.
+
+**Gmail API Integration** ✅
+- **OAuth 2.0 Flow**: Complete authentication with automatic token refresh
+- **Progressive Email Processing**: Queries only unread emails (`is:unread` filter) and marks processed emails as read
+- **Batch Processing**: Processes up to 50 unread emails per sync, automatically advancing to next batch on subsequent syncs
+- **Manual Reprocessing**: Users can mark emails as unread in Gmail to reprocess them in the next sync
+- **Email Parsing**: Intelligent job extraction from recruiter emails using LLM and regex patterns
+- **Job Discovery**: Automatic monitoring of Gmail inbox for job-related emails
+- **Base64 Decoding**: Full email body parsing including attachments
+- **Confidence Scoring**: Quality assessment of extracted job information (0.0-1.0)
+
+**LinkedIn Jobs Integration** ✅
+- **Mock API Implementation**: Ready-to-use LinkedIn job processing system
+- **Structured Data Extraction**: High-confidence job parsing from API responses
+- **Search Integration**: Configurable search parameters (salary, location, keywords)
+- **Rate Limiting**: Built-in request throttling and respectful API usage
+- **Deduplication**: Prevention of duplicate job processing across sources
+
+**Multi-source Job Aggregation** ✅
+- **Unified Sync System**: Single endpoint to process all active job sources
+- **Individual Source Control**: Granular sync capabilities per source type
+- **Indeed Integration Ready**: Placeholder implementation prepared for API integration
+- **Comprehensive Error Handling**: Detailed logging and failure recovery
+- **Real-time Status Tracking**: Live monitoring of sync operations
+
+**Advanced Job Processing** ✅
+- **Intelligent Extraction**: Multi-pattern regex for company, title, salary, location, URLs
+- **Automated Filtering**: All discovered jobs go through existing Phase 2 filtering
+- **SHA256 Deduplication**: Cross-source duplicate prevention using content hashing
+- **Database Integration**: 5 new tables supporting complete intake workflow
+- **Audit Trail**: Full logging of discovery, processing, and error states
+
+**Scheduling & Automation** ✅
+- **Interval-based Syncing**: Configurable sync frequencies per source (default 60min)
+- **Background Processing**: Non-blocking job discovery and processing
+- **Automatic Recovery**: Built-in retry logic for failed operations
+- **Performance Monitoring**: Detailed statistics on discovery and processing rates
+- **Source Management**: Active/inactive source control with last sync tracking
+
 ### What NOT to Build (For Now)
 
 #### ❌ Apple Mail Integration
@@ -1220,10 +1220,6 @@ This master plan provides high-level implementation status. For detailed technic
 
 **Phase 1** (Core System): Completed early 2025
 **Phase 2** (Intelligent Automation): Completed Q2 2025
-**Phase 3** (Content Generation): Completed October 2025
-- Phase 3.1 (Claude Haiku): October 22, 2025 (13 hours)
-
-**Phase 4** (Automated Job Intake): Completed October 2025
 **Phase 2.4** (Calendar): Completed October 1, 2025
 **Phase 2.5** (Email Composition): Completed October 2025
 **Phase 2.6** (LLM Job Extraction): Completed October 2025
@@ -1232,6 +1228,11 @@ This master plan provides high-level implementation status. For detailed technic
 - Phase 2.6.3 (Email Filtering): Completed
 - Phase 2.6.4 (Trade-off Display): Completed
 - Phase 2.6.5 (Industry & Employment Type): Completed
+
+**Phase 3** (Content Generation): Completed October 2025
+- Phase 3.1 (Claude Haiku): October 22, 2025 (13 hours)
+
+**Phase 4** (Automated Job Intake): Completed October 2025
 
 **Phase 2.7** (Microsoft Email): 📋 Planned for future implementation
 
@@ -1255,4 +1256,4 @@ This master plan provides high-level implementation status. For detailed technic
 
 ---
 
-**Last Updated**: October 23, 2025
+**Last Updated**: October 24, 2025
