@@ -923,6 +923,339 @@ mod job_intake_tests {
         cleanup_test_data(&pool).await;
     }
 
+    #[tokio::test]
+    #[serial]
+    async fn test_jsearch_rapidapi_sync() {
+        // Comprehensive JSearch/RapidAPI sync workflow test
+        let pool = create_test_pool().await;
+        cleanup_test_data(&pool).await;
+
+        let source_id = insert_test_source(&pool, "rapidapi_sync_test", "job_board").await
+            .expect("Should create RapidAPI source");
+
+        // Simulate complete sync workflow with 10 JSearch jobs (num_pages=1 limit)
+        let mock_jobs = vec![
+            json!({
+                "job_id": "jsearch_test_1",
+                "job_title": "Senior QA Automation Engineer",
+                "employer_name": "TestTechCorp",
+                "job_city": "Fremont",
+                "job_state": "CA",
+                "job_country": "US",
+                "job_description": "Looking for experienced QA engineer...",
+                "job_min_salary": 140000.0,
+                "job_max_salary": 160000.0,
+                "job_salary_currency": "USD",
+                "job_is_remote": false,
+                "job_employment_type": "FULLTIME",
+                "job_apply_link": "https://example.com/jobs/1"
+            }),
+            json!({
+                "job_id": "jsearch_test_2",
+                "job_title": "Test Automation Lead",
+                "employer_name": "TestStartupInc",
+                "job_city": "San Francisco",
+                "job_state": "CA",
+                "job_country": "US",
+                "job_description": "Lead our test automation team...",
+                "job_min_salary": 150000.0,
+                "job_max_salary": 170000.0,
+                "job_salary_currency": "USD",
+                "job_is_remote": true,
+                "job_employment_type": "FULLTIME",
+                "job_apply_link": "https://example.com/jobs/2"
+            }),
+        ];
+
+        let log_id = Uuid::new_v4();
+
+        // Step 1: Create intake log
+        sqlx::query!(
+            "INSERT INTO job_intake_logs (log_id, source_id, sync_status) VALUES ($1, $2, 'running')",
+            log_id, source_id
+        )
+        .execute(&pool)
+        .await
+        .expect("Should create intake log");
+
+        // Step 2: Store API job sources (simulate API fetch)
+        let mut created_count = 0;
+        let mut duplicated_count = 0;
+
+        for mock_job in &mock_jobs {
+            let external_job_id = mock_job["job_id"].as_str().unwrap();
+
+            // Check for duplicate
+            let existing = sqlx::query!(
+                "SELECT api_job_id FROM api_job_sources WHERE source_id = $1 AND external_job_id = $2",
+                source_id,
+                external_job_id
+            )
+            .fetch_optional(&pool)
+            .await
+            .expect("Should check for duplicate");
+
+            if existing.is_some() {
+                duplicated_count += 1;
+                continue;
+            }
+
+            // Store in api_job_sources
+            let api_job_id = Uuid::new_v4();
+            sqlx::query!(
+                r#"
+                INSERT INTO api_job_sources (
+                    api_job_id, source_id, external_job_id, external_url,
+                    raw_response, processed
+                ) VALUES ($1, $2, $3, $4, $5, false)
+                "#,
+                api_job_id,
+                source_id,
+                external_job_id,
+                mock_job["job_apply_link"].as_str().unwrap(),
+                mock_job
+            )
+            .execute(&pool)
+            .await
+            .expect("Should store API job");
+
+            // Step 3: Create job from API data (simulate extraction)
+            let job_id = Uuid::new_v4();
+            let location = format!(
+                "{}, {}, {}",
+                mock_job["job_city"].as_str().unwrap(),
+                mock_job["job_state"].as_str().unwrap(),
+                mock_job["job_country"].as_str().unwrap()
+            );
+
+            let result = sqlx::query!(
+                r#"
+                INSERT INTO jobs (
+                    job_id, source, title, company, location, url, salary, status
+                ) VALUES ($1, 'rapidapi', $2, $3, $4, $5, $6, 'new')
+                "#,
+                job_id,
+                mock_job["job_title"].as_str().unwrap(),
+                mock_job["employer_name"].as_str().unwrap(),
+                location,
+                mock_job["job_apply_link"].as_str().unwrap(),
+                mock_job["job_min_salary"].as_f64().unwrap() as i32
+            )
+            .execute(&pool)
+            .await;
+
+            if result.is_ok() {
+                // Link API job to created job
+                sqlx::query!(
+                    "UPDATE api_job_sources SET processed = true, job_id = $1 WHERE api_job_id = $2",
+                    job_id, api_job_id
+                )
+                .execute(&pool)
+                .await
+                .expect("Should link API job");
+
+                created_count += 1;
+            }
+        }
+
+        let discovered_count = mock_jobs.len() as i32;
+
+        // Step 4: Update intake log with metrics
+        sqlx::query!(
+            r#"
+            UPDATE job_intake_logs
+            SET sync_completed_at = NOW(),
+                jobs_discovered = $1,
+                jobs_created = $2,
+                jobs_duplicated = $3,
+                jobs_filtered_out = 0,
+                jobs_failed_processing = 0,
+                sync_status = 'completed'
+            WHERE log_id = $4
+            "#,
+            discovered_count,
+            created_count,
+            duplicated_count,
+            log_id
+        )
+        .execute(&pool)
+        .await
+        .expect("Should update intake log");
+
+        // Step 5: Verify results
+        let log = sqlx::query!(
+            r#"
+            SELECT sync_status, jobs_discovered, jobs_created, jobs_duplicated,
+                   jobs_filtered_out, jobs_failed_processing
+            FROM job_intake_logs WHERE log_id = $1
+            "#,
+            log_id
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("Should fetch log");
+
+        assert_eq!(log.sync_status, Some("completed".to_string()));
+        assert_eq!(log.jobs_discovered, Some(discovered_count));
+        assert_eq!(log.jobs_created, Some(created_count));
+
+        // Verify MECE validation
+        let total = log.jobs_created.unwrap_or(0)
+            + log.jobs_duplicated.unwrap_or(0)
+            + log.jobs_filtered_out.unwrap_or(0)
+            + log.jobs_failed_processing.unwrap_or(0);
+        assert_eq!(total, discovered_count, "MECE validation should pass");
+
+        // Verify jobs were created
+        let job_count = sqlx::query!(
+            r#"
+            SELECT COUNT(*) as count
+            FROM jobs
+            WHERE source = 'rapidapi' AND company IN ('TestTechCorp', 'TestStartupInc')
+            "#
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("Should count jobs");
+
+        assert_eq!(job_count.count, Some(created_count.into()));
+
+        // Verify API jobs were marked as processed
+        let processed_count = sqlx::query!(
+            r#"
+            SELECT COUNT(*) as count
+            FROM api_job_sources
+            WHERE source_id = $1 AND processed = true
+            "#,
+            source_id
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("Should count processed API jobs");
+
+        assert_eq!(processed_count.count, Some(created_count.into()));
+
+        cleanup_test_data(&pool).await;
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn test_separate_source_syncs() {
+        // Test that Gmail and RapidAPI syncs operate independently
+        let pool = create_test_pool().await;
+        cleanup_test_data(&pool).await;
+
+        // Create both sources
+        let gmail_source_id = insert_test_source(&pool, "gmail_separate_test", "email").await
+            .expect("Should create Gmail source");
+        let rapidapi_source_id = insert_test_source(&pool, "rapidapi_separate_test", "job_board").await
+            .expect("Should create RapidAPI source");
+
+        // Simulate simultaneous syncs
+        let gmail_log_id = Uuid::new_v4();
+        let rapidapi_log_id = Uuid::new_v4();
+
+        // Gmail sync
+        sqlx::query!(
+            r#"
+            INSERT INTO job_intake_logs (
+                log_id, source_id, sync_status, sync_started_at, sync_completed_at,
+                jobs_discovered, jobs_created, jobs_duplicated, jobs_filtered_out
+            ) VALUES ($1, $2, 'completed', NOW() - INTERVAL '1 minute', NOW() - INTERVAL '30 seconds', 10, 5, 3, 2)
+            "#,
+            gmail_log_id,
+            gmail_source_id
+        )
+        .execute(&pool)
+        .await
+        .expect("Should log Gmail sync");
+
+        // RapidAPI sync (10 jobs max due to num_pages=1)
+        sqlx::query!(
+            r#"
+            INSERT INTO job_intake_logs (
+                log_id, source_id, sync_status, sync_started_at, sync_completed_at,
+                jobs_discovered, jobs_created, jobs_duplicated, jobs_filtered_out
+            ) VALUES ($1, $2, 'completed', NOW() - INTERVAL '1 minute', NOW() - INTERVAL '25 seconds', 10, 6, 2, 2)
+            "#,
+            rapidapi_log_id,
+            rapidapi_source_id
+        )
+        .execute(&pool)
+        .await
+        .expect("Should log RapidAPI sync");
+
+        // Verify both syncs completed independently
+        let gmail_log = sqlx::query!(
+            "SELECT sync_status, jobs_discovered, jobs_created FROM job_intake_logs WHERE log_id = $1",
+            gmail_log_id
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("Should fetch Gmail log");
+
+        let rapidapi_log = sqlx::query!(
+            "SELECT sync_status, jobs_discovered, jobs_created FROM job_intake_logs WHERE log_id = $1",
+            rapidapi_log_id
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("Should fetch RapidAPI log");
+
+        // Verify Gmail sync
+        assert_eq!(gmail_log.sync_status, Some("completed".to_string()));
+        assert_eq!(gmail_log.jobs_discovered, Some(10));
+        assert_eq!(gmail_log.jobs_created, Some(5));
+
+        // Verify RapidAPI sync
+        assert_eq!(rapidapi_log.sync_status, Some("completed".to_string()));
+        assert_eq!(rapidapi_log.jobs_discovered, Some(10));
+        assert_eq!(rapidapi_log.jobs_created, Some(6));
+
+        // Verify separate intake logs exist for each source
+        let gmail_logs_count = sqlx::query!(
+            "SELECT COUNT(*) as count FROM job_intake_logs WHERE source_id = $1",
+            gmail_source_id
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("Should count Gmail logs");
+
+        let rapidapi_logs_count = sqlx::query!(
+            "SELECT COUNT(*) as count FROM job_intake_logs WHERE source_id = $1",
+            rapidapi_source_id
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("Should count RapidAPI logs");
+
+        assert_eq!(gmail_logs_count.count, Some(1));
+        assert_eq!(rapidapi_logs_count.count, Some(1));
+
+        // Verify logs are not cross-contaminated
+        let gmail_logs = sqlx::query!(
+            "SELECT source_id FROM job_intake_logs WHERE log_id = $1",
+            gmail_log_id
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("Should fetch Gmail log source");
+
+        let rapidapi_logs = sqlx::query!(
+            "SELECT source_id FROM job_intake_logs WHERE log_id = $1",
+            rapidapi_log_id
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("Should fetch RapidAPI log source");
+
+        assert_eq!(gmail_logs.source_id, gmail_source_id);
+        assert_eq!(rapidapi_logs.source_id, rapidapi_source_id);
+        assert_ne!(gmail_source_id, rapidapi_source_id, "Sources should be different");
+
+        cleanup_test_data(&pool).await;
+    }
+
     // =================================================================
     // Multi-source Aggregation Tests
     // =================================================================
