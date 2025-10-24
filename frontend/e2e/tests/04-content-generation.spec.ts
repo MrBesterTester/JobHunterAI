@@ -2,6 +2,8 @@ import { test, expect } from '@playwright/test';
 import { DashboardPage } from '../pages/DashboardPage';
 import { getJobCard } from '../pages/JobCardComponent';
 import { ContentGenerationModal } from '../pages/ModalComponent';
+import mockLLMResponse from '../fixtures/llm-response.json';
+import mockLLMResponseVariant from '../fixtures/llm-response-variant.json';
 
 /**
  * Test Suite 4: Content Generation
@@ -9,7 +11,18 @@ import { ContentGenerationModal } from '../pages/ModalComponent';
  * Covers:
  * - Generate resume & cover letter test (Section 7)
  * - Content generation modal test (Section 8)
+ *
+ * Mock Strategy:
+ * - By default, all tests use mocked LLM responses for speed (<2 min suite)
+ * - Set RUN_LLM_INTEGRATION_TESTS=true to run with real API calls (~17 min)
+ * - Mock responses provide realistic data matching actual API structure
  */
+
+// Check if we should use real LLM API or mocks
+const USE_REAL_LLM = process.env.RUN_LLM_INTEGRATION_TESTS === 'true';
+
+// Track which variant to use for uniqueness tests
+let mockCallCount = 0;
 
 test.describe('Content Generation', () => {
   let dashboardPage: DashboardPage;
@@ -18,6 +31,25 @@ test.describe('Content Generation', () => {
   test.beforeEach(async ({ page }) => {
     dashboardPage = new DashboardPage(page);
     contentModal = new ContentGenerationModal(page);
+
+    // Set up LLM API mocking (unless integration tests are enabled)
+    if (!USE_REAL_LLM) {
+      await page.route('**/api/jobs/*/generate-content', (route) => {
+        // Alternate between two mock responses for uniqueness tests
+        const mockData = mockCallCount % 2 === 0 ? mockLLMResponse : mockLLMResponseVariant;
+        mockCallCount++;
+
+        // Simulate realistic API delay (much faster than real: 200ms vs 28s)
+        setTimeout(() => {
+          route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify(mockData)
+          });
+        }, 200);
+      });
+    }
+
     await dashboardPage.goto();
   });
 
@@ -173,10 +205,19 @@ test.describe('Content Generation', () => {
       expect(coverLetterContent.length).toBeGreaterThan(100);
 
       // Verify personalization - should contain company name and/or job title
-      const hasPersonalization =
-        coverLetterContent.includes(company) || coverLetterContent.includes(jobTitle);
-
-      expect(hasPersonalization).toBe(true);
+      // When using mocks, just verify it has professional content
+      if (USE_REAL_LLM) {
+        const hasPersonalization =
+          coverLetterContent.includes(company) || coverLetterContent.includes(jobTitle);
+        expect(hasPersonalization).toBe(true);
+      } else {
+        // For mocks, verify it looks like a professional cover letter
+        const hasCoverLetterStructure =
+          coverLetterContent.toLowerCase().includes('dear') ||
+          coverLetterContent.toLowerCase().includes('position') ||
+          coverLetterContent.toLowerCase().includes('experience');
+        expect(hasCoverLetterStructure).toBe(true);
+      }
     });
 
     test('should include domain-specific keywords in resume', async ({ page }) => {
@@ -446,6 +487,11 @@ test.describe('Content Generation', () => {
     });
 
     test('should include job-specific information in cover letter', async ({ page }) => {
+      // Skip personalization tests when using mocks (mocks have generic content)
+      if (!USE_REAL_LLM) {
+        test.skip('Skipping personalization test with mocks');
+      }
+
       await dashboardPage.clickTab('approved');
       await dashboardPage.waitForJobsUpdate();
 
@@ -628,21 +674,32 @@ test.describe('Content Generation', () => {
       if (summaryMatch) {
         const summary = summaryMatch[1].toLowerCase();
 
-        // Summary should be relevant to the job
-        // If title contains "test", summary should mention testing
-        if (lowerTitle.includes('test') || lowerTitle.includes('qa')) {
-          const hasTestingTerms = summary.includes('test') ||
-                                 summary.includes('quality') ||
-                                 summary.includes('automation');
-          expect(hasTestingTerms).toBe(true);
-        }
+        // When using real LLM, verify domain-specific tailoring
+        if (USE_REAL_LLM) {
+          // Summary should be relevant to the job
+          // If title contains "test", summary should mention testing
+          if (lowerTitle.includes('test') || lowerTitle.includes('qa')) {
+            const hasTestingTerms = summary.includes('test') ||
+                                   summary.includes('quality') ||
+                                   summary.includes('automation');
+            expect(hasTestingTerms).toBe(true);
+          }
 
-        // If title contains "data" or "algorithm", summary should reflect that
-        if (lowerTitle.includes('data') || lowerTitle.includes('algorithm')) {
-          const hasDataTerms = summary.includes('data') ||
-                              summary.includes('algorithm') ||
-                              summary.includes('analysis');
-          expect(hasDataTerms).toBe(true);
+          // If title contains "data" or "algorithm", summary should reflect that
+          if (lowerTitle.includes('data') || lowerTitle.includes('algorithm')) {
+            const hasDataTerms = summary.includes('data') ||
+                                summary.includes('algorithm') ||
+                                summary.includes('analysis');
+            expect(hasDataTerms).toBe(true);
+          }
+        } else {
+          // For mocks, just verify it has professional content
+          const hasProfessionalContent =
+            summary.includes('experience') ||
+            summary.includes('engineer') ||
+            summary.includes('software') ||
+            summary.includes('skills');
+          expect(hasProfessionalContent).toBe(true);
         }
 
         // Summary should be substantial (not just a single sentence)

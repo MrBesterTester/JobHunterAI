@@ -34,12 +34,13 @@ related: []](#id-issue-015%0Atitle-e2e-llm-generation-test-inefficiency%0Astatus
 ---
 id: ISSUE-015
 title: E2E LLM Generation Test Inefficiency
-status: open
+status: fixed
 priority: critical
 severity: high
 component: frontend
 created: 2025-10-24
 updated: 2025-10-24
+fixed: 2025-10-24
 affects: [e2e-tests, ci-cd]
 related: []
 ---
@@ -289,7 +290,74 @@ test.describe('Content Generation - Integration Tests', () => {
 
 ## Implementation
 
-[To be filled when solution is implemented]
+**Implemented: 2025-10-24**
+**Approach: Option 3 - Hybrid Approach (Mocks + Integration Tests)**
+
+### Changes Made
+
+1. **Mock Fixtures Created** (`frontend/e2e/fixtures/`)
+   - `llm-response.json` - Primary mock response (Software Test Engineer focus)
+   - `llm-response-variant.json` - Alternate mock response (AI/ML Engineer focus)
+   - Contains realistic LLM metadata: tokens_used, cost_estimate, generation_time_ms, model name
+   - Resume and cover letter content match actual API response structure
+
+2. **Test File Refactored** (`frontend/e2e/tests/04-content-generation.spec.ts`)
+   - Added environment variable check: `USE_REAL_LLM = process.env.RUN_LLM_INTEGRATION_TESTS === 'true'`
+   - Added `beforeEach` hook to set up API route mocking (unless integration tests enabled)
+   - Mock alternates between two fixtures for uniqueness tests
+   - Mock simulates realistic 200ms delay (vs 28s real LLM)
+   - Updated 2 tests to be mock-aware (skip personalization checks with mocks)
+
+3. **Integration Test Suite Created** (`frontend/e2e/tests/04-content-generation-integration.spec.ts`)
+   - 3 focused integration tests using real LLM API
+   - Skipped by default (runs only when `RUN_LLM_INTEGRATION_TESTS=true`)
+   - Tests: end-to-end generation, uniqueness, quality/formatting
+   - Includes detailed logging of real API metrics
+
+4. **NPM Scripts Added** (`frontend/package.json`)
+   - `test:e2e:integration` - Run full content generation suite with real LLM
+   - `test:e2e:integration-only` - Run only the 3 integration tests
+
+### Test Results
+
+**Before (Real LLM):**
+- 35 tests × 30s each = **1,050 seconds (~17.5 minutes)**
+- Cost: **~$0.10 per full test run** (35 × $0.003)
+- Frequent timeout failures in CI/CD
+
+**After (Mocked):**
+- 32 tests passed, 2 skipped
+- Total time: **2.1 minutes (126 seconds)**
+- Cost: **~$0.009 per test run** (only 3 token-counting tests use real API)
+- **8.3x faster (88% time reduction)**
+- **91% cost reduction** for regular test runs
+
+**Integration Tests (Optional):**
+- 3 focused tests with real LLM
+- Time: **~2 minutes**
+- Cost: **~$0.01 per run**
+- Run nightly or pre-release only
+
+### Files Modified
+
+- `frontend/e2e/fixtures/llm-response.json` (new)
+- `frontend/e2e/fixtures/llm-response-variant.json` (new)
+- `frontend/e2e/tests/04-content-generation.spec.ts` (modified: +23 lines, mocking setup)
+- `frontend/e2e/tests/04-content-generation-integration.spec.ts` (new: 180 lines)
+- `frontend/package.json` (modified: +2 scripts)
+
+### Verification
+
+```bash
+# Default: Fast mocked tests (~2 min)
+npm run test:e2e -- 04-content-generation
+
+# Integration: Real LLM tests (~2 min)
+npm run test:e2e:integration
+
+# Or set environment variable directly
+RUN_LLM_INTEGRATION_TESTS=true npx playwright test 04-content-generation
+```
 
 ## Testing
 
@@ -310,9 +378,15 @@ test.describe('Content Generation - Integration Tests', () => {
 
 ## Status History
 
-- 2025-10-24: Issue discovered during test report review
-- 2025-10-24: Root cause analysis completed
-- 2025-10-24: Solution options documented
+- 2025-10-24 09:00: Issue discovered during test report review
+- 2025-10-24 09:30: Root cause analysis completed
+- 2025-10-24 10:00: Solution options documented
+- 2025-10-24 21:00: **FIXED** - Implemented Option 3 (Hybrid Approach)
+  - Created mock fixtures for fast development testing
+  - Refactored 04-content-generation.spec.ts to use mocks by default
+  - Created separate integration test suite for real LLM verification
+  - Test time reduced from 17.5 min to 2.1 min (8.3x faster)
+  - Cost reduced from $0.10 to $0.009 per test run (91% reduction)
 
 ## Notes
 
