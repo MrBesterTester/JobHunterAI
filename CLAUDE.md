@@ -110,37 +110,14 @@ afplay /System/Library/Sounds/Glass.aiff && osascript -e "display dialog \"Task 
 
 **Working directory**: `/Users/sam/Projects/JobHunterAI-Claude` (available in `<env>`)
 
-**Correct patterns**:
-- Root-level files: `./CLAUDE.md`, `./README.md`, `./package.json`
-- Subdirectories: `./backend/src/main.rs`, `./docs/PHASE_4.1_job-board-rapidAPI.md`
-- Database schema: `./database/schema.sql`
+**Examples**:
+- Root files: `./CLAUDE.md`, `./README.md`, `./package.json`
+- Subdirectories: `./backend/src/main.rs`, `./docs/file.md`
 - Scripts: `./switch-to-personal.sh`, `./start.sh`
 
-**Why this matters**:
-- `./` is the Unix standard for "current directory"
-- More portable than absolute paths
-- Cleaner and more readable than full paths
-- Eliminates failed attempts with bare filenames
-- Works consistently across Read, Write, Edit, Glob tools
+**Why**: Clearer, more portable, eliminates path resolution ambiguity. See [ISSUE-011](bugs/open/ISSUE-011-file-path-prefix-conventions.md) for detailed research on when `./` is required vs optional.
 
-**Examples**:
-
-❌ **Don't do this** (causes failures):
-```bash
-Read: "CLAUDE.md"  # Fails - not a valid path
-```
-
-✅ **Do this instead**:
-```bash
-Read: "./CLAUDE.md"  # Works - explicit relative path
-```
-
-**Alternative**: Full absolute paths also work but are more verbose:
-```bash
-Read: "/Users/sam/Projects/JobHunterAI-Claude/CLAUDE.md"  # Works but verbose
-```
-
-**User benefit**: File operations succeed on the first attempt without requiring path corrections.
+**Alternative**: Full absolute paths also work but are more verbose.
 
 ## Session Management & Documentation Workflow
 
