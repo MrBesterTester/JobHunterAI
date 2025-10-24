@@ -115,7 +115,7 @@ afplay /System/Library/Sounds/Glass.aiff && osascript -e "display dialog \"Task 
 - Subdirectories: `./backend/src/main.rs`, `./docs/file.md`
 - Scripts: `./switch-to-personal.sh`, `./start.sh`
 
-**Why**: Clearer, more portable, eliminates path resolution ambiguity. See [ISSUE-011](bugs/open/ISSUE-011-file-path-prefix-conventions.md) for detailed research on when `./` is required vs optional.
+**Why**: Clearer, more portable, eliminates path resolution ambiguity. See [ISSUE-011](bugs/fixed/ISSUE-011-file-path-prefix-conventions.md) for detailed research on when `./` is required vs optional.
 
 **Alternative**: Full absolute paths also work but are more verbose.
 

@@ -27,13 +27,14 @@
 ---
 id: ISSUE-011
 title: "File Path Prefix Conventions (./) - When Required vs Optional"
-status: open
+status: fixed
 type: documentation
 priority: low
 severity: low
 component: docs
 created: 2025-10-24
 updated: 2025-10-24
+fixed: 2025-10-24
 affects: CLAUDE.md
 related: []
 ---
@@ -199,6 +200,7 @@ No testing required - this is documentation/guidance only.
 ## Status History
 
 - **2025-10-24**: Issue created with web research findings
+- **2025-10-24**: Fixed - CLAUDE.md updated with reference link, documentation complete
 
 ## Notes
 
