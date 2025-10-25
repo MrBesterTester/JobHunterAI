@@ -1189,12 +1189,27 @@ Test Execution Time:   ~70 seconds
 ## Notes
 
 **⚠️ VITEST MIGRATION (2025-10-24)**:
-After Phase 1 completion with Jest, the test infrastructure was migrated to Vitest for better performance and TypeScript-first alignment (see [ISSUE-019](../fixed/ISSUE-019-migrate-jest-to-vitest-typescript-first.md)). Key changes:
+After Phase 1 completion with Jest, the test infrastructure was migrated to Vitest for better performance and TypeScript-first alignment (see [ISSUE-019](../open/ISSUE-019-macos-nearly-chokes-to-death-during-test-runs.md)). Key changes:
 - **Test runner**: Jest → Vitest (10-20x faster watch mode, 2x faster execution)
 - **API changes**: `jest.fn()` → `vi.fn()`, `jest.Mock` → `Mock`, `jest.spyOn()` → `vi.spyOn()`
 - **All 42 Phase 1 tests**: Successfully migrated and verified (100% pass rate)
 - **Phase 2 & 3**: Will use Vitest, not Jest
 - **Commands**: `npm test` (with type checking), `npm run test:watch` (watch mode), `npm run test:coverage` (coverage)
+
+**✅ RESOURCE MANAGEMENT VALIDATION (2025-10-25)**:
+ISSUE-019 Phase 2 validated that the Vitest resource limits configuration prevents system overload:
+- **Configuration**: `maxWorkers: 4`, `minWorkers: 1`, `pool: 'forks'` (see `frontend/vitest.config.ts:55-64`)
+- **Comprehensive test run**: 320 tests, 12 test files, 6.17s duration ✅
+- **Post-test system health** (verified):
+  - Memory: ~14.3 GB free out of 32 GB (healthy)
+  - CPU load: 3.63 on 12 cores (~30%, normal)
+  - **Vitest processes**: 0 orphaned processes ✅
+  - **Node processes**: 6 total (normal baseline)
+  - **Bash processes**: 2 (normal)
+- **No resource issues detected**: No orphaned workers, no memory leaks, no system slowdown
+- **Conclusion**: Vitest resource limits successfully prevent the system overload that occurred during ISSUE-019 incident (2025-10-24)
+
+See [ISSUE-019 Phase 2](../open/ISSUE-019-macos-nearly-chokes-to-death-during-test-runs.md#phase-2-short-term-this-week--high-priority) for detailed validation results.
 
 **Context from ISSUE-013**:
 > The project planned and installed TAP (Test Anything Protocol) infrastructure for frontend unit testing from day one, but this infrastructure was never used. Instead, the project pivoted to a comprehensive E2E-only testing strategy with 302+ Playwright tests.
