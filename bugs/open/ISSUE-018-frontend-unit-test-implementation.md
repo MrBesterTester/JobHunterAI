@@ -149,20 +149,21 @@ Initial attempt to expand App.tsx coverage revealed a critical issue: the 38 tes
 
 **Two Sub-Options for Option A**:
 
-**Option A1: Focus on what provides most value** ← **SELECTED FOR IMPLEMENTATION**
+**Option A1: Focus on what provides most value** ← **NOT APPROVED - Deferred**
 - Skip expanding App.tsx further (remains at 27%)
 - Focus on CalendarTab and IntakeTab which are smaller and more testable
 - Accept overall coverage in the 50-55% range rather than 70%
 - **Pros**: More achievable target, better ROI on testing effort
 - **Cons**: Leaves largest component (33% of codebase) under-tested
-- **Status**: ⏸️ **PENDING APPROVAL** - Implementation plan ready (see below)
+- **Status**: ⏸️ **DEFERRED** - Plan available for future implementation (see below)
 
-**Option A2: Properly implement App.tsx tests**
+**Option A2: Properly implement App.tsx tests** ← **✅ APPROVED FOR IMPLEMENTATION**
 - Write proper interactive tests with user simulation (not just smoke tests)
-- Would require significant additional time (8-12 hours minimum)
+- Would require significant additional time (26-36 hours, see detailed plan below)
 - Would achieve the 60%+ target for App.tsx
-- **Pros**: Comprehensive testing of critical main component
-- **Cons**: Very time-intensive for diminishing returns, complex test scenarios
+- **Pros**: Comprehensive testing of critical main component (33% of codebase)
+- **Cons**: More time-intensive than A1, but necessary for proper coverage
+- **Status**: ✅ **APPROVED (2025-10-25)** - Implementation starting with Phase 1A
 
 **Option B - Keep 46.9% as baseline** (0 hours):
 - ✅ Already have fast feedback (<10s), good foundation, efficient use of time
@@ -181,9 +182,13 @@ Initial attempt to expand App.tsx coverage revealed a critical issue: the 38 tes
 
 ## Option A1 Implementation Plan
 
-**Status**: ⏸️ **AWAITING USER APPROVAL** (Plan created 2025-10-25)
+**Status**: ⏸️ **DEFERRED - NOT APPROVED** (Plan created 2025-10-25, user selected Option A2 instead)
 
-**User Directive**: "Please do Option A1 in Issue 18. Please create a plan first since this is a large undertaking, keeping that plan well-organized within Issue 18. Then let me review that plan before proceeding."
+**User Directive (Initial)**: "Please do Option A1 in Issue 18. Please create a plan first since this is a large undertaking, keeping that plan well-organized within Issue 18. Then let me review that plan before proceeding."
+
+**User Decision (Final)**: "Sorry, I meant Option A2. But keep the plan for Option A1 because it includes other tabs in the app that could use more coverage. Do you agree?" → User then approved "only Option A2"
+
+**Note**: This plan is preserved for potential future implementation. It covers CalendarTab and IntakeTab expansion, which remain valuable targets for increased test coverage.
 
 ### Executive Summary
 
@@ -564,11 +569,13 @@ open coverage/index.html
 
 ## Option A2 Implementation Plan
 
-**Status**: ⏸️ **AWAITING USER APPROVAL** (Plan created 2025-10-25)
+**Status**: ✅ **APPROVED - READY FOR IMPLEMENTATION** (Plan created 2025-10-25, approved 2025-10-25)
 
 **User Directive**: "Sorry, I meant Option A2. But keep the plan for Option A1 because it includes other tabs in the app that could use more coverage. Do you agree?"
 
-**Agreed!** Both plans are valuable. Option A1 covers CalendarTab and IntakeTab expansion, while Option A2 focuses on properly testing App.tsx with interactive tests.
+**User Approval**: "Please note my approval of only Option A2."
+
+**Agreed!** Both plans are valuable. Option A1 covers CalendarTab and IntakeTab expansion, while Option A2 focuses on properly testing App.tsx with interactive tests. Option A2 has been approved for implementation.
 
 ### Executive Summary
 
