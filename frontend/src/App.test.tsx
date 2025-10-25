@@ -1,10 +1,11 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import { vi, Mock } from 'vitest';
 import App from './App';
 
 // Mock fetch globally
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 // Helper to create mock fetch responses
 const mockFetchSuccess = (data: any) => {
@@ -25,14 +26,14 @@ const mockFetchError = (status: number = 500) => {
 
 describe('App (JobHunterDashboard)', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     // Reset fetch mock
-    (fetch as jest.Mock).mockReset();
+    (fetch as Mock).mockReset();
   });
 
   describe('Initial Rendering', () => {
     it('renders without crashing', async () => {
-      (fetch as jest.Mock).mockImplementation((url: string) => {
+      (fetch as Mock).mockImplementation((url: string) => {
         if (url.includes('/api/jobs')) {
           return mockFetchSuccess([]);
         }
@@ -57,7 +58,7 @@ describe('App (JobHunterDashboard)', () => {
     });
 
     it('displays the application title', async () => {
-      (fetch as jest.Mock).mockImplementation((url: string) => {
+      (fetch as Mock).mockImplementation((url: string) => {
         if (url.includes('/api/jobs')) {
           return mockFetchSuccess([]);
         }
@@ -95,7 +96,7 @@ describe('App (JobHunterDashboard)', () => {
         },
       ];
 
-      (fetch as jest.Mock).mockImplementation((url: string) => {
+      (fetch as Mock).mockImplementation((url: string) => {
         if (url.includes('/api/jobs') && !url.includes('/score')) {
           return mockFetchSuccess(mockJobs);
         }
@@ -127,7 +128,7 @@ describe('App (JobHunterDashboard)', () => {
     });
 
     it('fetches job stats on mount', async () => {
-      (fetch as jest.Mock).mockImplementation((url: string) => {
+      (fetch as Mock).mockImplementation((url: string) => {
         if (url.includes('/api/jobs') && !url.includes('/score') && !url.includes('/stats')) {
           return mockFetchSuccess([]);
         }
@@ -151,9 +152,9 @@ describe('App (JobHunterDashboard)', () => {
     });
 
     it('handles API errors gracefully', async () => {
-      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      (fetch as jest.Mock).mockImplementation((url: string) => {
+      (fetch as Mock).mockImplementation((url: string) => {
         if (url.includes('/api/jobs')) {
           return mockFetchError(500);
         }
@@ -182,7 +183,7 @@ describe('App (JobHunterDashboard)', () => {
 
   describe('Tab Navigation', () => {
     beforeEach(() => {
-      (fetch as jest.Mock).mockImplementation((url: string) => {
+      (fetch as Mock).mockImplementation((url: string) => {
         if (url.includes('/api/jobs')) {
           return mockFetchSuccess([
             {
@@ -259,7 +260,7 @@ describe('App (JobHunterDashboard)', () => {
         },
       ];
 
-      (fetch as jest.Mock).mockImplementation((url: string, options?: RequestInit) => {
+      (fetch as Mock).mockImplementation((url: string, options?: RequestInit) => {
         if (url.includes('/api/jobs') && !url.includes('/status') && !url.includes('/score')) {
           return mockFetchSuccess(mockJobs);
         }
@@ -296,7 +297,7 @@ describe('App (JobHunterDashboard)', () => {
 
   describe('Modal Management', () => {
     beforeEach(() => {
-      (fetch as jest.Mock).mockImplementation((url: string) => {
+      (fetch as Mock).mockImplementation((url: string) => {
         if (url.includes('/api/jobs')) {
           return mockFetchSuccess([]);
         }
@@ -344,7 +345,7 @@ describe('App (JobHunterDashboard)', () => {
         },
       ];
 
-      (fetch as jest.Mock).mockImplementation((url: string, options?: RequestInit) => {
+      (fetch as Mock).mockImplementation((url: string, options?: RequestInit) => {
         if (url.includes('/api/jobs') && !url.includes('/generate-content') && !url.includes('/score')) {
           return mockFetchSuccess(mockJobs);
         }
@@ -411,7 +412,7 @@ describe('App (JobHunterDashboard)', () => {
         calculated_at: new Date().toISOString(),
       };
 
-      (fetch as jest.Mock).mockImplementation((url: string) => {
+      (fetch as Mock).mockImplementation((url: string) => {
         if (url.includes('/api/jobs') && !url.includes('/score') && !url.includes('/stats')) {
           return mockFetchSuccess(mockJobs);
         }
@@ -448,7 +449,7 @@ describe('App (JobHunterDashboard)', () => {
         updated_at: new Date().toISOString(),
       };
 
-      (fetch as jest.Mock).mockImplementation((url: string) => {
+      (fetch as Mock).mockImplementation((url: string) => {
         if (url.includes('/api/jobs') && !url.includes('/stats')) {
           return mockFetchSuccess([]);
         }
@@ -472,7 +473,7 @@ describe('App (JobHunterDashboard)', () => {
       }, { timeout: 3000 });
 
       // Verify criteria was fetched (may be called indirectly)
-      const calls = (fetch as jest.Mock).mock.calls;
+      const calls = (fetch as Mock).mock.calls;
       const criteriaCall = calls.some((call: any[]) => call[0].includes('/api/criteria'));
       expect(criteriaCall || calls.length > 0).toBe(true);
     });
@@ -489,7 +490,7 @@ describe('App (JobHunterDashboard)', () => {
         },
       ];
 
-      (fetch as jest.Mock).mockImplementation((url: string) => {
+      (fetch as Mock).mockImplementation((url: string) => {
         if (url.includes('/api/jobs')) {
           return mockFetchSuccess([]);
         }
@@ -535,7 +536,7 @@ describe('App (JobHunterDashboard)', () => {
         },
       ];
 
-      (fetch as jest.Mock).mockImplementation((url: string) => {
+      (fetch as Mock).mockImplementation((url: string) => {
         if (url.includes('/api/jobs') && !url.includes('/score') && !url.includes('/stats')) {
           return mockFetchSuccess(mockJobs);
         }
@@ -579,7 +580,7 @@ describe('App (JobHunterDashboard)', () => {
         },
       ];
 
-      (fetch as jest.Mock).mockImplementation((url: string) => {
+      (fetch as Mock).mockImplementation((url: string) => {
         if (url.includes('/api/jobs') && !url.includes('/score') && !url.includes('/stats')) {
           return mockFetchSuccess(mockJobs);
         }
@@ -624,7 +625,7 @@ describe('App (JobHunterDashboard)', () => {
         },
       ];
 
-      (fetch as jest.Mock).mockImplementation((url: string) => {
+      (fetch as Mock).mockImplementation((url: string) => {
         if (url.includes('/api/jobs') && !url.includes('/score') && !url.includes('/stats')) {
           return mockFetchSuccess(mockJobs);
         }
@@ -666,7 +667,7 @@ describe('App (JobHunterDashboard)', () => {
         created: 8,
       };
 
-      (fetch as jest.Mock).mockImplementation((url: string) => {
+      (fetch as Mock).mockImplementation((url: string) => {
         if (url.includes('/api/jobs') && !url.includes('/stats')) {
           return mockFetchSuccess([]);
         }
@@ -690,7 +691,7 @@ describe('App (JobHunterDashboard)', () => {
     });
 
     it('handles empty statistics', async () => {
-      (fetch as jest.Mock).mockImplementation((url: string) => {
+      (fetch as Mock).mockImplementation((url: string) => {
         if (url.includes('/api/jobs') && !url.includes('/stats')) {
           return mockFetchSuccess([]);
         }
@@ -716,7 +717,7 @@ describe('App (JobHunterDashboard)', () => {
 
   describe('Refresh Functionality', () => {
     it('handles refresh requests', async () => {
-      (fetch as jest.Mock).mockImplementation((url: string) => {
+      (fetch as Mock).mockImplementation((url: string) => {
         if (url.includes('/api/jobs')) {
           return mockFetchSuccess([]);
         }
@@ -740,7 +741,7 @@ describe('App (JobHunterDashboard)', () => {
       });
 
       // Clear mock calls
-      (fetch as jest.Mock).mockClear();
+      (fetch as Mock).mockClear();
 
       // Trigger refresh could be tested here if we had a refresh button
       expect(fetch).toBeDefined();
@@ -768,7 +769,7 @@ describe('App (JobHunterDashboard)', () => {
         },
       ];
 
-      (fetch as jest.Mock).mockImplementation((url: string) => {
+      (fetch as Mock).mockImplementation((url: string) => {
         if (url.includes('/api/jobs') && !url.includes('/score')) {
           return mockFetchSuccess(mockJobs);
         }
@@ -802,7 +803,7 @@ describe('App (JobHunterDashboard)', () => {
     });
 
     it('tracks loading state during data fetching', async () => {
-      (fetch as jest.Mock).mockImplementation((url: string) => {
+      (fetch as Mock).mockImplementation((url: string) => {
         return new Promise(resolve => {
           setTimeout(() => {
             if (url.includes('/api/jobs')) {
@@ -832,9 +833,9 @@ describe('App (JobHunterDashboard)', () => {
 
   describe('Error Handling', () => {
     it('handles network errors during job fetching', async () => {
-      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      (fetch as jest.Mock).mockImplementation((url: string) => {
+      (fetch as Mock).mockImplementation((url: string) => {
         if (url.includes('/api/jobs')) {
           return Promise.reject(new Error('Network error'));
         }
@@ -861,9 +862,9 @@ describe('App (JobHunterDashboard)', () => {
     });
 
     it('handles API unavailability gracefully', async () => {
-      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      (fetch as jest.Mock).mockImplementation((url: string) => {
+      (fetch as Mock).mockImplementation((url: string) => {
         if (url.includes('/api/jobs') && !url.includes('/stats')) {
           return mockFetchError(503);
         }
@@ -908,7 +909,7 @@ describe('App (JobHunterDashboard)', () => {
         },
       ];
 
-      (fetch as jest.Mock).mockImplementation((url: string) => {
+      (fetch as Mock).mockImplementation((url: string) => {
         if (url.includes('/api/jobs') && !url.includes('/score')) {
           return mockFetchSuccess(mockJobs);
         }
