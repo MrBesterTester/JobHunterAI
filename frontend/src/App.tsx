@@ -1492,7 +1492,7 @@ const JobHunterDashboard: React.FC = () => {
           {/* Header metadata: Score (FIRST), Industry, Employment Type, Extraction Method */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px', fontSize: '12px' }}>
             {/* Overall Score Badge (FIRST) */}
-            {score && score.total_score !== null ? (
+            {score && score.total_score != null ? (
               <span
                 data-testid="header-score"
                 style={{

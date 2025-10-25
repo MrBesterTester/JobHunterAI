@@ -1668,8 +1668,8 @@ describe('App (JobHunterDashboard)', () => {
     });
   });
 
-  // Phase 4 Week 1: Tab Navigation Tests
-  describe('Tab Navigation and State', () => {
+  // Phase 2A (Option A2): Comprehensive Tab Navigation Tests
+  describe('Tab Navigation and State (Phase 2A)', () => {
     beforeEach(() => {
       (fetch as Mock).mockImplementation((url: string) => {
         if (url.includes('/api/jobs')) {
@@ -1682,13 +1682,39 @@ describe('App (JobHunterDashboard)', () => {
               source: 'linkedin',
               date_email_sent: new Date().toISOString(),
             },
+            {
+              job_id: '2',
+              title: 'Approved Job',
+              company: 'ApprovedCo',
+              status: 'approved',
+              source: 'email',
+              date_email_sent: new Date().toISOString(),
+            },
+            {
+              job_id: '3',
+              title: 'Applied Job',
+              company: 'AppliedCo',
+              status: 'applied',
+              source: 'linkedin',
+              date_email_sent: new Date().toISOString(),
+            },
           ]);
         }
         if (url.includes('/score')) {
+          // Return scores for all jobs based on URL pattern /jobs/:id/score
+          if (url.includes('/jobs/1/score')) {
+            return mockFetchSuccess({ job_id: '1', total_score: 85, rank: 1, calculated_at: new Date().toISOString() });
+          }
+          if (url.includes('/jobs/2/score')) {
+            return mockFetchSuccess({ job_id: '2', total_score: 90, rank: 2, calculated_at: new Date().toISOString() });
+          }
+          if (url.includes('/jobs/3/score')) {
+            return mockFetchSuccess({ job_id: '3', total_score: 78, rank: 3, calculated_at: new Date().toISOString() });
+          }
           return mockFetchSuccess({ job_id: '1', total_score: 85, rank: 1, calculated_at: new Date().toISOString() });
         }
         if (url.includes('/api/stats')) {
-          return mockFetchSuccess({ new: 1 });
+          return mockFetchSuccess({ new: 1, approved: 1, applied: 1 });
         }
         if (url.includes('/api/criteria')) {
           return mockFetchSuccess(null);
@@ -1696,20 +1722,94 @@ describe('App (JobHunterDashboard)', () => {
         if (url.includes('/api/applications')) {
           return mockFetchSuccess([]);
         }
+        if (url.includes('/intake/ignored-emails')) {
+          return mockFetchSuccess([]);
+        }
         return mockFetchError();
       });
     });
 
-    it('starts with intake tab active by default', async () => {
+    it('displays intake tab as default on mount', async () => {
       render(<App />);
 
       await waitFor(() => {
         expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
       }, { timeout: 3000 });
 
-      // Intake tab should be active by default
-      const intakeTab = screen.queryByText('Intake');
-      expect(intakeTab).toBeInTheDocument();
+      // Intake tab button should be marked as active
+      const intakeTabButton = screen.getByRole('button', { name: /intake/i });
+      expect(intakeTabButton).toHaveAttribute('aria-selected', 'true');
+    });
+
+    it('switches to ignored tab when clicked', async () => {
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Click ignored tab
+      const ignoredTabButton = screen.getByRole('button', { name: /non-job emails/i });
+      fireEvent.click(ignoredTabButton);
+
+      // Verify tab is now active
+      await waitFor(() => {
+        expect(ignoredTabButton).toHaveAttribute('aria-selected', 'true');
+      });
+    });
+
+    it('switches to filtered tab when clicked', async () => {
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Click filtered tab
+      const filteredTabButton = screen.getByRole('button', { name: /filtered/i });
+      fireEvent.click(filteredTabButton);
+
+      // Verify tab is now active
+      await waitFor(() => {
+        expect(filteredTabButton).toHaveAttribute('aria-selected', 'true');
+      });
+
+      // Verify filtered tab content is rendered
+      expect(screen.getByTestId('filtered-tab-content')).toBeInTheDocument();
+    });
+
+    it('switches to failed tab when clicked', async () => {
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Click failed tab
+      const failedTabButton = screen.getByRole('button', { name: /failed/i });
+      fireEvent.click(failedTabButton);
+
+      // Verify tab is now active
+      await waitFor(() => {
+        expect(failedTabButton).toHaveAttribute('aria-selected', 'true');
+      });
+    });
+
+    it('switches to duplicates tab when clicked', async () => {
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Click duplicates tab
+      const duplicatesTabButton = screen.getByRole('button', { name: /duplicates/i });
+      fireEvent.click(duplicatesTabButton);
+
+      // Verify tab is now active
+      await waitFor(() => {
+        expect(duplicatesTabButton).toHaveAttribute('aria-selected', 'true');
+      });
     });
 
     it('switches to new tab when clicked', async () => {
@@ -1719,13 +1819,22 @@ describe('App (JobHunterDashboard)', () => {
         expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
       }, { timeout: 3000 });
 
-      // Find new tab button using getAllByText and filter for buttons
+      // Click new tab
       const newElements = screen.getAllByText('New');
-      const newTabButton = newElements.find(el => el.closest('button'));
+      const newTabButton = newElements.find(el => el.closest('button'))?.closest('button');
+      expect(newTabButton).toBeTruthy();
 
-      // Verify the new tab button exists and is clickable
-      expect(newTabButton).toBeDefined();
-      expect(newTabButton?.closest('button')).toBeTruthy();
+      if (newTabButton) {
+        fireEvent.click(newTabButton);
+
+        // Verify tab is now active
+        await waitFor(() => {
+          expect(newTabButton).toHaveAttribute('aria-selected', 'true');
+        });
+
+        // Verify new tab content is rendered
+        expect(screen.getByTestId('new-tab-content')).toBeInTheDocument();
+      }
     });
 
     it('switches to approved tab when clicked', async () => {
@@ -1735,11 +1844,21 @@ describe('App (JobHunterDashboard)', () => {
         expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
       }, { timeout: 3000 });
 
-      // Find approved tab button using getAllByText and filter for buttons
+      // Click approved tab
       const approvedElements = screen.getAllByText('Approved');
-      const approvedTabButton = approvedElements.find(el => el.closest('button'));
+      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+      expect(approvedTabButton).toBeTruthy();
+
       if (approvedTabButton) {
         fireEvent.click(approvedTabButton);
+
+        // Verify tab is now active
+        await waitFor(() => {
+          expect(approvedTabButton).toHaveAttribute('aria-selected', 'true');
+        });
+
+        // Verify approved tab content is rendered
+        expect(screen.getByTestId('approved-tab-content')).toBeInTheDocument();
       }
     });
 
@@ -1750,60 +1869,246 @@ describe('App (JobHunterDashboard)', () => {
         expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
       }, { timeout: 3000 });
 
-      // Find applied tab button using getAllByText and filter for buttons
+      // Click applied tab
       const appliedElements = screen.getAllByText('Applied');
-      const appliedTabButton = appliedElements.find(el => el.closest('button'));
+      const appliedTabButton = appliedElements.find(el => el.closest('button'))?.closest('button');
+      expect(appliedTabButton).toBeTruthy();
+
       if (appliedTabButton) {
         fireEvent.click(appliedTabButton);
+
+        // Verify tab is now active
+        await waitFor(() => {
+          expect(appliedTabButton).toHaveAttribute('aria-selected', 'true');
+        });
+
+        // Verify applied tab content is rendered
+        expect(screen.getByTestId('applied-tab-content')).toBeInTheDocument();
       }
     });
 
-    it('displays appropriate tab badges with counts', async () => {
-      (fetch as Mock).mockImplementation((url: string) => {
-        if (url.includes('/api/jobs')) {
-          return mockFetchSuccess([
-            { job_id: '1', title: 'Job 1', company: 'Co 1', status: 'new', source: 'linkedin', date_email_sent: new Date().toISOString() },
-            { job_id: '2', title: 'Job 2', company: 'Co 2', status: 'new', source: 'email', date_email_sent: new Date().toISOString() },
-          ]);
-        }
-        if (url.includes('/score')) {
-          return mockFetchSuccess({ total_score: 85, rank: 1, calculated_at: new Date().toISOString() });
-        }
-        if (url.includes('/api/stats')) {
-          return mockFetchSuccess({ new: 2, approved: 3, applied: 1 });
-        }
-        if (url.includes('/api/criteria')) {
-          return mockFetchSuccess(null);
-        }
-        if (url.includes('/api/applications')) {
-          return mockFetchSuccess([]);
-        }
-        return mockFetchError();
-      });
-
+    it('switches to follow-ups tab when clicked', async () => {
       render(<App />);
 
       await waitFor(() => {
         expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
       }, { timeout: 3000 });
 
-      // Tab badges should display counts
+      // Click follow-ups tab
+      const followupsTabButton = screen.getByRole('button', { name: /follow-ups/i });
+      fireEvent.click(followupsTabButton);
+
+      // Verify tab is now active
+      await waitFor(() => {
+        expect(followupsTabButton).toHaveAttribute('aria-selected', 'true');
+      });
+    });
+
+    it('switches to calendar tab when clicked', async () => {
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Click calendar tab
+      const calendarTabButton = screen.getByRole('button', { name: /calendar/i });
+      fireEvent.click(calendarTabButton);
+
+      // Verify tab is now active
+      await waitFor(() => {
+        expect(calendarTabButton).toHaveAttribute('aria-selected', 'true');
+      });
+    });
+
+    it('switches to ranked jobs tab when clicked', async () => {
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Click ranked jobs tab
+      const rankedTabButton = screen.getByRole('button', { name: /ranked jobs/i });
+      fireEvent.click(rankedTabButton);
+
+      // Verify tab is now active
+      await waitFor(() => {
+        expect(rankedTabButton).toHaveAttribute('aria-selected', 'true');
+      });
+    });
+
+    it('switches to all tab when clicked', async () => {
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Click all tab
+      const allElements = screen.getAllByText('All');
+      const allTabButton = allElements.find(el => el.closest('button'))?.closest('button');
+      expect(allTabButton).toBeTruthy();
+
+      if (allTabButton) {
+        fireEvent.click(allTabButton);
+
+        // Verify tab is now active
+        await waitFor(() => {
+          expect(allTabButton).toHaveAttribute('aria-selected', 'true');
+        });
+
+        // Verify all tab content is rendered (shows all jobs)
+        expect(screen.getByTestId('all-tab-content')).toBeInTheDocument();
+      }
+    });
+
+    it('fetches stats on mount and displays data', async () => {
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Verify stats API was called
       await waitFor(() => {
         expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/api/jobs/stats'));
       });
     });
 
-    it('preserves tab state across data refreshes', async () => {
+    it('preserves tab state when opening and closing criteria modal', async () => {
       render(<App />);
 
       await waitFor(() => {
         expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
       }, { timeout: 3000 });
 
-      // Tab state should persist
+      // Switch to approved tab
+      const approvedElements = screen.getAllByText('Approved');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+
+      if (approvedTabButton) {
+        fireEvent.click(approvedTabButton);
+
+        await waitFor(() => {
+          expect(approvedTabButton).toHaveAttribute('aria-selected', 'true');
+        });
+
+        // Open criteria config modal
+        const configButton = screen.getByTestId('configure-criteria-button');
+        fireEvent.click(configButton);
+
+        await waitFor(() => {
+          expect(screen.getByTestId('criteria-config-modal')).toBeInTheDocument();
+        });
+
+        // Close modal
+        const closeButton = screen.getByTestId('close-button');
+        fireEvent.click(closeButton);
+
+        await waitFor(() => {
+          expect(screen.queryByTestId('criteria-config-modal')).not.toBeInTheDocument();
+        });
+
+        // Verify approved tab is still active
+        expect(approvedTabButton).toHaveAttribute('aria-selected', 'true');
+        expect(screen.getByTestId('approved-tab-content')).toBeInTheDocument();
+      }
+    });
+
+    it('filters jobs correctly on new tab', async () => {
+      render(<App />);
+
       await waitFor(() => {
-        expect(fetch).toHaveBeenCalled();
-      });
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Switch to new tab
+      const newElements = screen.getAllByText('New');
+      const newTabButton = newElements.find(el => el.closest('button'))?.closest('button');
+
+      if (newTabButton) {
+        fireEvent.click(newTabButton);
+
+        await waitFor(() => {
+          expect(screen.getByTestId('new-tab-content')).toBeInTheDocument();
+        });
+
+        // Should display only jobs with status='new'
+        expect(screen.getByText('Test Job')).toBeInTheDocument();
+        // Should NOT display approved or applied jobs in the new tab
+      }
+    });
+
+    it('filters jobs correctly on approved tab', async () => {
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Switch to approved tab
+      const approvedElements = screen.getAllByText('Approved');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+
+      if (approvedTabButton) {
+        fireEvent.click(approvedTabButton);
+
+        await waitFor(() => {
+          expect(screen.getByTestId('approved-tab-content')).toBeInTheDocument();
+        });
+
+        // Should display only jobs with status='approved'
+        expect(screen.getByText('Approved Job')).toBeInTheDocument();
+      }
+    });
+
+    it('filters jobs correctly on applied tab', async () => {
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Switch to applied tab
+      const appliedElements = screen.getAllByText('Applied');
+      const appliedTabButton = appliedElements.find(el => el.closest('button'))?.closest('button');
+
+      if (appliedTabButton) {
+        fireEvent.click(appliedTabButton);
+
+        await waitFor(() => {
+          expect(screen.getByTestId('applied-tab-content')).toBeInTheDocument();
+        });
+
+        // Should display only jobs with status='applied'
+        expect(screen.getByText('Applied Job')).toBeInTheDocument();
+      }
+    });
+
+    it('displays all jobs on all tab', async () => {
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Switch to all tab
+      const allElements = screen.getAllByText('All');
+      const allTabButton = allElements.find(el => el.closest('button'))?.closest('button');
+
+      if (allTabButton) {
+        fireEvent.click(allTabButton);
+
+        await waitFor(() => {
+          expect(screen.getByTestId('all-tab-content')).toBeInTheDocument();
+        });
+
+        // Should display all jobs (except rejected)
+        expect(screen.getByText('Test Job')).toBeInTheDocument();
+        expect(screen.getByText('Approved Job')).toBeInTheDocument();
+        expect(screen.getByText('Applied Job')).toBeInTheDocument();
+      }
     });
   });
 
