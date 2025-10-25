@@ -29,7 +29,7 @@ related: [ISSUE-013]](#id-issue-018%0Atitle-frontend-unit-test-implementation%0A
     - [App.tsx Component Analysis](#apptsx-component-analysis)
     - [Goals and Success Criteria](#goals-and-success-criteria-1)
     - [Phase 1: Modal Workflow Testing (13-17 hours)](#phase-1-modal-workflow-testing-13-17-hours)
-      - [1A. Criteria Configuration Modal (3-4 hours, ~8-12 tests)](#1a-criteria-configuration-modal-3-4-hours-8-12-tests)
+      - [1A. Criteria Configuration Modal ✅ **COMPLETED (2025-10-25)**](#1a-criteria-configuration-modal--completed-2025-10-25)
       - [1B. Content Generation Modal (4-5 hours, ~12-16 tests)](#1b-content-generation-modal-4-5-hours-12-16-tests)
       - [1C. Resume Management Modal (3-4 hours, ~10-14 tests)](#1c-resume-management-modal-3-4-hours-10-14-tests)
       - [1D. Email Composer Modal (3-4 hours, ~8-12 tests)](#1d-email-composer-modal-3-4-hours-8-12-tests)
@@ -44,7 +44,7 @@ related: [ISSUE-013]](#id-issue-018%0Atitle-frontend-unit-test-implementation%0A
       - [4A. Job Card Interactions (1-2 hours, ~8-10 tests)](#4a-job-card-interactions-1-2-hours-8-10-tests)
       - [4B. Job Details Modal (1-2 hours, ~8-10 tests)](#4b-job-details-modal-1-2-hours-8-10-tests)
     - [Timeline and Effort Estimates](#timeline-and-effort-estimates-1)
-    - [Expected Coverage Outcomes](#expected-coverage-outcomes)
+    - [Coverage Outcomes](#coverage-outcomes)
     - [Combining Option A1 and Option A2](#combining-option-a1-and-option-a2)
     - [Approval Required](#approval-required-1)
   - [Quick Reference: Current Test Coverage](#quick-reference-current-test-coverage)
@@ -662,41 +662,44 @@ open coverage/index.html
 
 **Target**: Test all 4 modals with complete open → interact → close workflows
 
-#### 1A. Criteria Configuration Modal (3-4 hours, ~8-12 tests)
+#### 1A. Criteria Configuration Modal ✅ **COMPLETED (2025-10-25)**
 
-**Current Coverage Gap**: Modal open, form interactions, save workflow not tested
+**Status**: 12 tests added, all passing, modal UI fully implemented
 
-**Tests to Add**:
-- [ ] Opens criteria config modal when "Configure Criteria" button clicked
-- [ ] Displays current criteria values when modal opens
-- [ ] Updates min_salary field when user types new value
-- [ ] Updates max_commute_time field when user types
-- [ ] Updates max_commute_days_per_week field
-- [ ] Updates preferred_domains checkboxes when user clicks
-- [ ] Updates remote_preference radio buttons
-- [ ] Saves criteria when "Save" button clicked
-- [ ] Calls API with correct payload on save
-- [ ] Closes modal after successful save
-- [ ] Displays error message if save fails
-- [ ] Preserves unsaved changes when modal closed without saving
+**Completion Summary**:
+- **Tests Added**: 12 (all passing)
+- **Coverage Improvement**: App.tsx 27.13% → 32.51% (+5.38 percentage points)
+- **Implementation**: 243 lines (modal UI + handlers)
+- **Commit**: `3d875cb` - feat: Implement Criteria Configuration Modal
 
-**Implementation Pattern**:
-```typescript
-describe('Criteria Configuration Modal', () => {
-  it('opens modal when configure button clicked', async () => {
-    (fetch as Mock).mockImplementation(createStandardMocks());
-    render(<App />);
-    await waitFor(() => expect(fetch).toHaveBeenCalled());
+**Tests Implemented**:
+- [x] Opens criteria config modal when "Configure Criteria" button clicked
+- [x] Displays current criteria values when modal opens
+- [x] Updates min_salary field when user types new value
+- [x] Updates max_commute_time field when user types
+- [x] Updates max_commute_days_per_week field
+- [x] Updates preferred_domains checkboxes when user clicks
+- [x] Updates remote_preference radio buttons
+- [x] Saves criteria when "Save" button clicked
+- [x] Calls API with correct payload on save
+- [x] Closes modal after successful save
+- [x] Displays error message if save fails
+- [x] Preserves unsaved changes when modal closed without saving
 
-    const configButton = screen.getByText(/configure criteria/i);
-    fireEvent.click(configButton);
+**Implementation Details**:
+- Added Settings icon to lucide-react imports
+- Created criteriaForm, savingCriteria, criteriaError state variables
+- Implemented handleOpenCriteriaConfig() - loads criteria from API
+- Implemented handleSaveCriteria() - saves criteria via PUT /api/criteria
+- Implemented handleCriteriaFormChange() - updates form fields
+- Added "Configure Criteria" button in header with purple styling
+- Created full modal UI with all form fields and validation
+- Added error handling and display
+- All test-ids added for comprehensive testability
 
-    await waitFor(() => {
-      expect(screen.getByText(/job criteria/i)).toBeInTheDocument();
-    });
-  });
-});
-```
+**Files Changed**:
+- `frontend/src/App.tsx`: +243 lines
+- `frontend/src/App.test.tsx`: +480 lines
 
 #### 1B. Content Generation Modal (4-5 hours, ~12-16 tests)
 
@@ -854,33 +857,37 @@ describe('Criteria Configuration Modal', () => {
 
 **Total Estimated Effort**: 26-36 hours (3.25-4.5 developer days)
 
-| Phase | Focus Area | Effort | New Tests |
-|-------|-----------|--------|-----------|
-| Phase 1A | Criteria Config Modal | 3-4 hours | 8-12 |
-| Phase 1B | Content Generation Modal | 4-5 hours | 12-16 |
-| Phase 1C | Resume Management Modal | 3-4 hours | 10-14 |
-| Phase 1D | Email Composer Modal | 3-4 hours | 8-12 |
-| Phase 2A | Tab Navigation | 2-3 hours | 12-15 |
-| Phase 2B | Job List Filtering | 4-5 hours | 15-20 |
-| Phase 3A | Approval Workflow | 1.5-2 hours | 6-8 |
-| Phase 3B | Rejection Workflow | 1.5-2 hours | 6-8 |
-| Phase 3C | Application Workflow | 2-3 hours | 8-12 |
-| Phase 4A | Job Card Interactions | 1-2 hours | 8-10 |
-| Phase 4B | Job Details Modal | 1-2 hours | 8-10 |
-| **Total** | | **26-36 hours** | **101-137 tests** |
+**Progress**: Phase 1A completed (2025-10-25)
 
-### Expected Coverage Outcomes
+| Phase | Focus Area | Effort | New Tests | Status |
+|-------|-----------|--------|-----------|--------|
+| Phase 1A | Criteria Config Modal | 3-4 hours | 8-12 | ✅ **DONE** (12 tests) |
+| Phase 1B | Content Generation Modal | 4-5 hours | 12-16 | ⏸️ Next |
+| Phase 1C | Resume Management Modal | 3-4 hours | 10-14 | Pending |
+| Phase 1D | Email Composer Modal | 3-4 hours | 8-12 | Pending |
+| Phase 2A | Tab Navigation | 2-3 hours | 12-15 | Pending |
+| Phase 2B | Job List Filtering | 4-5 hours | 15-20 | Pending |
+| Phase 3A | Approval Workflow | 1.5-2 hours | 6-8 | Pending |
+| Phase 3B | Rejection Workflow | 1.5-2 hours | 6-8 | Pending |
+| Phase 3C | Application Workflow | 2-3 hours | 8-12 | Pending |
+| Phase 4A | Job Card Interactions | 1-2 hours | 8-10 | Pending |
+| Phase 4B | Job Details Modal | 1-2 hours | 8-10 | Pending |
+| **Total** | | **26-36 hours** | **101-137 tests** | **12/101+ done** |
 
-**App.tsx Coverage Projection**:
-- **Current**: 27.13% statements (755 lines covered out of 2,782)
-- **After Option A2**: 60%+ statements (1,670+ lines covered)
-- **Coverage Gain**: +33 percentage points, +915 lines
-- **New Tests**: +50-70 interactive tests (104 → 154-174 total)
+### Coverage Outcomes
 
-**Overall Frontend Coverage Projection**:
-- **Current**: 46.9% overall (320 tests)
-- **After Option A2 Only**: 54-58% overall (370-390 tests)
-- **After A1 + A2 Combined**: 58-63% overall (410-465 tests)
+**App.tsx Coverage Progress**:
+- **Baseline**: 27.13% statements (755 lines covered out of 2,782)
+- **After Phase 1A**: 32.51% statements (+5.38 percentage points)
+- **Target After Full Option A2**: 60%+ statements (1,670+ lines covered)
+- **Remaining to Target**: +27.49 percentage points
+- **New Tests So Far**: +12 interactive tests (104 → 116 total)
+
+**Overall Frontend Coverage Progress**:
+- **Baseline**: 46.9% overall (320 tests)
+- **Current**: ~47.5% overall (320 tests + 12 new App.tsx tests = 332 tests)
+- **Target After Option A2 Only**: 54-58% overall (370-390 tests)
+- **Target After A1 + A2 Combined**: 58-63% overall (410-465 tests)
 
 ### Combining Option A1 and Option A2
 
