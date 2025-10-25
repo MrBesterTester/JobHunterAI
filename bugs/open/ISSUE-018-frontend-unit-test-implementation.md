@@ -741,7 +741,7 @@ open coverage/index.html
 - **Tests Added**: 12 (all passing)
 - **Test IDs Added**: 13 (modal, buttons, form inputs, resume list items)
 - **Coverage Focus**: Resume upload, master resume management, deletion with confirmation
-- **Commit**: [to be added after commit]
+- **Commit**: `6312bcb` - feat: Implement Phase 1C tests for Resume Management Modal
 
 **Tests Implemented**:
 - [x] Opens resume management modal when button clicked
