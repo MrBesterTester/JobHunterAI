@@ -31,7 +31,7 @@ related: [ISSUE-013]](#id-issue-018%0Atitle-frontend-unit-test-implementation%0A
     - [Phase 1: Modal Workflow Testing (13-17 hours)](#phase-1-modal-workflow-testing-13-17-hours)
       - [1A. Criteria Configuration Modal ✅ **COMPLETED (2025-10-25)**](#1a-criteria-configuration-modal--completed-2025-10-25)
       - [1B. Content Generation Modal (4-5 hours, ~12-16 tests) ✅ **IMPLEMENTED** (2025-10-25)](#1b-content-generation-modal-4-5-hours-12-16-tests--implemented-2025-10-25)
-      - [1C. Resume Management Modal (3-4 hours, ~10-14 tests)](#1c-resume-management-modal-3-4-hours-10-14-tests)
+      - [1C. Resume Management Modal ✅ **COMPLETED (2025-10-25)**](#1c-resume-management-modal--completed-2025-10-25)
       - [1D. Email Composer Modal (3-4 hours, ~8-12 tests)](#1d-email-composer-modal-3-4-hours-8-12-tests)
     - [Phase 2: Tab Navigation and Filtering (6-8 hours)](#phase-2-tab-navigation-and-filtering-6-8-hours)
       - [2A. Tab Navigation Tests (2-3 hours, ~12-15 tests)](#2a-tab-navigation-tests-2-3-hours-12-15-tests)
@@ -733,21 +733,59 @@ open coverage/index.html
 
 **Commit**: eefd152
 
-#### 1C. Resume Management Modal (3-4 hours, ~10-14 tests)
+#### 1C. Resume Management Modal ✅ **COMPLETED (2025-10-25)**
 
-**Tests to Add**:
-- [ ] Opens resume management modal when button clicked
-- [ ] Displays list of existing resume versions
-- [ ] Shows master resume indicator
-- [ ] Uploads new resume when form submitted
-- [ ] Validates resume content before upload
-- [ ] Sets first resume as master automatically
-- [ ] Changes master resume when "Set as Master" clicked
-- [ ] Deletes resume with confirmation
-- [ ] Cancels deletion when user clicks cancel
-- [ ] Loads resume from file
-- [ ] Displays success/error messages
-- [ ] Closes modal and refreshes list
+**Status**: 12 tests added, all passing
+
+**Completion Summary**:
+- **Tests Added**: 12 (all passing)
+- **Test IDs Added**: 13 (modal, buttons, form inputs, resume list items)
+- **Coverage Focus**: Resume upload, master resume management, deletion with confirmation
+- **Commit**: [to be added after commit]
+
+**Tests Implemented**:
+- [x] Opens resume management modal when button clicked
+- [x] Displays list of existing resume versions
+- [x] Shows master resume indicator
+- [x] Uploads new resume when form submitted
+- [x] Validates resume content before upload
+- [x] Sets first resume as master automatically
+- [x] Changes master resume when "Set as Master" clicked
+- [x] Deletes resume with confirmation
+- [x] Cancels deletion when user clicks cancel
+- [x] Loads resume from file
+- [x] Displays success/error messages
+- [x] Closes modal and refreshes list
+
+**Test IDs Added to App.tsx**:
+- `manage-resume-button` - Main button to open Resume Management modal
+
+**Test IDs Added to ResumeManagement.tsx**:
+- `resume-management-modal` - Modal container
+- `close-modal-button` - Close button (X)
+- `resume-name-input` - Resume version name input field
+- `resume-content-input` - Resume content textarea
+- `file-upload-input` - File upload input (when in file mode)
+- `upload-resume-button` - Upload/submit button
+- `load-from-file-button` - Load from master_resume.md button
+- `resume-list` - Container for resume items
+- `no-resumes-message` - Empty state message
+- `resume-item-{id}` - Individual resume card
+- `master-badge-{id}` - Master resume badge
+- `set-master-button-{id}` - Set as master button
+- `delete-resume-button-{id}` - Delete resume button
+- `resume-success-message` - Success message banner
+- `resume-error-message` - Error message banner
+- `master-resume-info` - Master resume info box
+
+**Implementation Details**:
+- All test-ids added to ResumeManagement component for testability
+- Comprehensive mock implementation handles stateful operations (upload, set master, delete)
+- Tests cover complete workflows: empty state → upload → set master → delete
+- Form validation tests ensure disabled state when required fields empty
+- Confirmation dialog tests verify user can cancel destructive actions
+- Load from file feature tested with API call verification
+- Error/success message display tested for all operations
 
 #### 1D. Email Composer Modal (3-4 hours, ~8-12 tests)
 
@@ -867,13 +905,13 @@ open coverage/index.html
 
 **Total Estimated Effort**: 26-36 hours (3.25-4.5 developer days)
 
-**Progress**: Phase 1A completed, Phase 1B implemented (2025-10-25)
+**Progress**: Phase 1A, 1C completed; Phase 1B implemented (2025-10-25)
 
 | Phase | Focus Area | Effort | New Tests | Status |
 |-------|-----------|--------|-----------|--------|
 | Phase 1A | Criteria Config Modal | 3-4 hours | 8-12 | ✅ **DONE** (12 tests) |
 | Phase 1B | Content Generation Modal | 4-5 hours | 12-16 | 🔄 **IMPLEMENTED** (17 tests, needs debugging) |
-| Phase 1C | Resume Management Modal | 3-4 hours | 10-14 | Pending |
+| Phase 1C | Resume Management Modal | 3-4 hours | 10-14 | ✅ **DONE** (12 tests) |
 | Phase 1D | Email Composer Modal | 3-4 hours | 8-12 | Pending |
 | Phase 2A | Tab Navigation | 2-3 hours | 12-15 | Pending |
 | Phase 2B | Job List Filtering | 4-5 hours | 15-20 | Pending |
@@ -882,7 +920,7 @@ open coverage/index.html
 | Phase 3C | Application Workflow | 2-3 hours | 8-12 | Pending |
 | Phase 4A | Job Card Interactions | 1-2 hours | 8-10 | Pending |
 | Phase 4B | Job Details Modal | 1-2 hours | 8-10 | Pending |
-| **Total** | | **26-36 hours** | **101-137 tests** | **29/101+ implemented** |
+| **Total** | | **26-36 hours** | **101-137 tests** | **41/101+ implemented** |
 
 ### Coverage Outcomes
 

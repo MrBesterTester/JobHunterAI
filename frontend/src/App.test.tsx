@@ -4103,4 +4103,519 @@ describe('App (JobHunterDashboard)', () => {
       }, { timeout: 5000 });
     });
   });
+
+  describe('Resume Management Modal (Phase 1C)', () => {
+    const mockResumes = [
+      {
+        version_id: 'resume-1',
+        version_name: 'Master Resume 2024',
+        content: 'This is my master resume content...',
+        format: 'markdown',
+        is_master: true,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      },
+      {
+        version_id: 'resume-2',
+        version_name: 'Tech Focus Resume',
+        content: 'This is my tech-focused resume...',
+        format: 'markdown',
+        is_master: false,
+        created_at: '2024-01-02T00:00:00Z',
+        updated_at: '2024-01-02T00:00:00Z',
+      },
+    ];
+
+    const createMocksForResumeManagement = (resumes: any[] = mockResumes, updatedResumes: any[] | null = null) => {
+      let currentResumes = [...resumes];
+
+      return (url: string, options?: RequestInit) => {
+        if (url.includes('/api/jobs') && !url.includes('/score') && !url.includes('/stats')) {
+          return mockFetchSuccess([]);
+        }
+        if (url.includes('/api/stats')) {
+          return mockFetchSuccess({});
+        }
+        if (url.includes('/api/criteria')) {
+          return mockFetchSuccess(null);
+        }
+        if (url.includes('/api/applications')) {
+          return mockFetchSuccess([]);
+        }
+        if (url.includes('/load-from-file') && options?.method === 'POST') {
+          // Add a new resume after load
+          const loadedResume = {
+            version_id: 'resume-loaded',
+            version_name: 'Loaded Resume',
+            content: 'Loaded content from file',
+            format: 'markdown',
+            is_master: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          currentResumes.push(loadedResume);
+          return mockFetchSuccess({ success: true });
+        }
+        if (url.includes('/set-master') && options?.method === 'PUT') {
+          // Update master status
+          const versionId = url.match(/\/resumes\/([^/]+)\/set-master/)?.[1];
+          currentResumes = currentResumes.map(r => ({
+            ...r,
+            is_master: r.version_id === versionId,
+          }));
+          return mockFetchSuccess({ success: true });
+        }
+        if (url.includes('/api/resumes/') && options?.method === 'DELETE') {
+          // Remove deleted resume
+          const versionId = url.match(/\/resumes\/([^/]+)$/)?.[1];
+          currentResumes = currentResumes.filter(r => r.version_id !== versionId);
+          return mockFetchSuccess({ success: true });
+        }
+        if (url.includes('/api/resumes') && options?.method === 'POST') {
+          const body = JSON.parse(options.body as string);
+          const newResume = {
+            version_id: 'resume-new',
+            version_name: body.version_name,
+            content: body.content,
+            format: body.format,
+            is_master: body.is_master,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          currentResumes.push(newResume);
+          return mockFetchSuccess(newResume);
+        }
+        if (url.includes('/api/resumes') && !options?.method) {
+          return mockFetchSuccess(updatedResumes || currentResumes);
+        }
+        return mockFetchError();
+      };
+    };
+
+    it('opens resume management modal when button clicked', async () => {
+      (fetch as Mock).mockImplementation(createMocksForResumeManagement());
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Click Manage Resume button
+      const manageButton = screen.getByTestId('manage-resume-button');
+      fireEvent.click(manageButton);
+
+      // Modal should open
+      await waitFor(() => {
+        expect(screen.getByTestId('resume-management-modal')).toBeInTheDocument();
+      });
+
+      // Should show modal title
+      expect(screen.getByText('Resume Management')).toBeInTheDocument();
+    });
+
+    it('displays list of existing resume versions', async () => {
+      (fetch as Mock).mockImplementation(createMocksForResumeManagement());
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Open modal
+      const manageButton = screen.getByTestId('manage-resume-button');
+      fireEvent.click(manageButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('resume-management-modal')).toBeInTheDocument();
+      });
+
+      // Should show resume list
+      await waitFor(() => {
+        expect(screen.getByTestId('resume-list')).toBeInTheDocument();
+      });
+
+      // Should show both resumes
+      expect(screen.getAllByText('Master Resume 2024').length).toBeGreaterThan(0);
+      expect(screen.getByText('Tech Focus Resume')).toBeInTheDocument();
+      expect(screen.getByText('Existing Resumes (2)')).toBeInTheDocument();
+    });
+
+    it('shows master resume indicator', async () => {
+      (fetch as Mock).mockImplementation(createMocksForResumeManagement());
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Open modal
+      const manageButton = screen.getByTestId('manage-resume-button');
+      fireEvent.click(manageButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('resume-list')).toBeInTheDocument();
+      });
+
+      // Should show master badge
+      await waitFor(() => {
+        expect(screen.getByTestId('master-badge-resume-1')).toBeInTheDocument();
+      });
+
+      // Should show master resume info
+      const masterInfo = screen.getByTestId('master-resume-info');
+      expect(masterInfo).toBeInTheDocument();
+      expect(masterInfo).toHaveTextContent('Current Master Resume:');
+      expect(masterInfo).toHaveTextContent('Master Resume 2024');
+    });
+
+    it('uploads new resume when form submitted', async () => {
+      (fetch as Mock).mockImplementation(createMocksForResumeManagement());
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Open modal
+      const manageButton = screen.getByTestId('manage-resume-button');
+      fireEvent.click(manageButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('resume-management-modal')).toBeInTheDocument();
+      });
+
+      // Fill in resume name
+      const nameInput = screen.getByTestId('resume-name-input') as HTMLInputElement;
+      fireEvent.change(nameInput, { target: { value: 'New Resume 2024' } });
+
+      // Fill in resume content
+      const contentInput = screen.getByTestId('resume-content-input') as HTMLTextAreaElement;
+      fireEvent.change(contentInput, { target: { value: 'My new resume content here...' } });
+
+      // Submit form
+      const uploadButton = screen.getByTestId('upload-resume-button');
+      fireEvent.click(uploadButton);
+
+      // Should show success message
+      await waitFor(() => {
+        expect(screen.getByTestId('resume-success-message')).toBeInTheDocument();
+      });
+
+      // Should call API with correct data
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/resumes'),
+        expect.objectContaining({
+          method: 'POST',
+          body: expect.stringContaining('New Resume 2024'),
+        })
+      );
+    });
+
+    it('validates resume content before upload', async () => {
+      (fetch as Mock).mockImplementation(createMocksForResumeManagement());
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Open modal
+      const manageButton = screen.getByTestId('manage-resume-button');
+      fireEvent.click(manageButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('resume-management-modal')).toBeInTheDocument();
+      });
+
+      // Try to submit without content
+      const uploadButton = screen.getByTestId('upload-resume-button') as HTMLButtonElement;
+
+      // Button should be disabled
+      expect(uploadButton.disabled).toBe(true);
+
+      // Fill in name only
+      const nameInput = screen.getByTestId('resume-name-input');
+      fireEvent.change(nameInput, { target: { value: 'Test Resume' } });
+
+      // Button should still be disabled
+      expect(uploadButton.disabled).toBe(true);
+
+      // Fill in content
+      const contentInput = screen.getByTestId('resume-content-input');
+      fireEvent.change(contentInput, { target: { value: 'Test content' } });
+
+      // Now button should be enabled
+      expect(uploadButton.disabled).toBe(false);
+    });
+
+    it('sets first resume as master automatically', async () => {
+      (fetch as Mock).mockImplementation(createMocksForResumeManagement([]));
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Open modal
+      const manageButton = screen.getByTestId('manage-resume-button');
+      fireEvent.click(manageButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('resume-management-modal')).toBeInTheDocument();
+      });
+
+      // Should show empty state
+      await waitFor(() => {
+        expect(screen.getByTestId('no-resumes-message')).toBeInTheDocument();
+      });
+
+      // Fill in form
+      const nameInput = screen.getByTestId('resume-name-input');
+      fireEvent.change(nameInput, { target: { value: 'First Resume' } });
+
+      const contentInput = screen.getByTestId('resume-content-input');
+      fireEvent.change(contentInput, { target: { value: 'First resume content' } });
+
+      // Submit
+      const uploadButton = screen.getByTestId('upload-resume-button');
+      fireEvent.click(uploadButton);
+
+      // Should call API with is_master: true
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/resumes'),
+          expect.objectContaining({
+            method: 'POST',
+            body: expect.stringContaining('"is_master":true'),
+          })
+        );
+      });
+    });
+
+    it('changes master resume when Set as Master clicked', async () => {
+      (fetch as Mock).mockImplementation(createMocksForResumeManagement());
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Open modal
+      const manageButton = screen.getByTestId('manage-resume-button');
+      fireEvent.click(manageButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('resume-list')).toBeInTheDocument();
+      });
+
+      // Click "Set as Master" on the second resume
+      const setMasterButton = screen.getByTestId('set-master-button-resume-2');
+      fireEvent.click(setMasterButton);
+
+      // Should call API
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/resumes/resume-2/set-master'),
+          expect.objectContaining({ method: 'PUT' })
+        );
+      });
+
+      // Should show success message
+      await waitFor(() => {
+        expect(screen.getByTestId('resume-success-message')).toBeInTheDocument();
+      });
+    });
+
+    it('deletes resume with confirmation', async () => {
+      // Mock window.confirm to return true
+      const originalConfirm = window.confirm;
+      window.confirm = vi.fn(() => true);
+
+      (fetch as Mock).mockImplementation(createMocksForResumeManagement());
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Open modal
+      const manageButton = screen.getByTestId('manage-resume-button');
+      fireEvent.click(manageButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('resume-list')).toBeInTheDocument();
+      });
+
+      // Click delete button
+      const deleteButton = screen.getByTestId('delete-resume-button-resume-2');
+      fireEvent.click(deleteButton);
+
+      // Should show confirmation
+      expect(window.confirm).toHaveBeenCalledWith('Are you sure you want to delete this resume version?');
+
+      // Should call API
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/resumes/resume-2'),
+          expect.objectContaining({ method: 'DELETE' })
+        );
+      });
+
+      // Restore original confirm
+      window.confirm = originalConfirm;
+    });
+
+    it('cancels deletion when user clicks cancel', async () => {
+      // Mock window.confirm to return false
+      const originalConfirm = window.confirm;
+      window.confirm = vi.fn(() => false);
+
+      (fetch as Mock).mockImplementation(createMocksForResumeManagement());
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Open modal
+      const manageButton = screen.getByTestId('manage-resume-button');
+      fireEvent.click(manageButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('resume-list')).toBeInTheDocument();
+      });
+
+      // Track fetch calls before clicking delete
+      const fetchCallsBefore = (fetch as Mock).mock.calls.length;
+
+      // Click delete button
+      const deleteButton = screen.getByTestId('delete-resume-button-resume-2');
+      fireEvent.click(deleteButton);
+
+      // Should show confirmation
+      expect(window.confirm).toHaveBeenCalledWith('Are you sure you want to delete this resume version?');
+
+      // Should NOT call API
+      await waitFor(() => {
+        const fetchCallsAfter = (fetch as Mock).mock.calls.length;
+        // Might have some calls for refreshing, but no DELETE call
+        const deleteCalls = (fetch as Mock).mock.calls.filter((call: any) =>
+          call[1]?.method === 'DELETE' && call[0].includes('/resumes/resume-2')
+        );
+        expect(deleteCalls.length).toBe(0);
+      });
+
+      // Restore original confirm
+      window.confirm = originalConfirm;
+    });
+
+    it('loads resume from file', async () => {
+      (fetch as Mock).mockImplementation(createMocksForResumeManagement());
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Open modal
+      const manageButton = screen.getByTestId('manage-resume-button');
+      fireEvent.click(manageButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('resume-management-modal')).toBeInTheDocument();
+      });
+
+      // Click "Load from File" button
+      const loadButton = screen.getByTestId('load-from-file-button');
+      fireEvent.click(loadButton);
+
+      // Should call API
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/resumes/load-from-file'),
+          expect.objectContaining({ method: 'POST' })
+        );
+      });
+
+      // Should show success message
+      await waitFor(() => {
+        expect(screen.getByTestId('resume-success-message')).toBeInTheDocument();
+      });
+    });
+
+    it('displays success/error messages', async () => {
+      (fetch as Mock).mockImplementation((url: string, options?: RequestInit) => {
+        if (url.includes('/api/resumes') && options?.method === 'POST') {
+          return mockFetchError(400);
+        }
+        return createMocksForResumeManagement()(url, options);
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Open modal
+      const manageButton = screen.getByTestId('manage-resume-button');
+      fireEvent.click(manageButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('resume-management-modal')).toBeInTheDocument();
+      });
+
+      // Fill form and try to submit
+      const nameInput = screen.getByTestId('resume-name-input');
+      fireEvent.change(nameInput, { target: { value: 'Test Resume' } });
+
+      const contentInput = screen.getByTestId('resume-content-input');
+      fireEvent.change(contentInput, { target: { value: 'Test content' } });
+
+      const uploadButton = screen.getByTestId('upload-resume-button');
+      fireEvent.click(uploadButton);
+
+      // Should show error message
+      await waitFor(() => {
+        expect(screen.getByTestId('resume-error-message')).toBeInTheDocument();
+      });
+    });
+
+    it('closes modal and refreshes list', async () => {
+      (fetch as Mock).mockImplementation(createMocksForResumeManagement());
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Open modal
+      const manageButton = screen.getByTestId('manage-resume-button');
+      fireEvent.click(manageButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('resume-management-modal')).toBeInTheDocument();
+      });
+
+      // Close modal
+      const closeButton = screen.getByTestId('close-modal-button');
+      fireEvent.click(closeButton);
+
+      // Modal should close
+      await waitFor(() => {
+        expect(screen.queryByTestId('resume-management-modal')).not.toBeInTheDocument();
+      });
+    });
+  });
 });

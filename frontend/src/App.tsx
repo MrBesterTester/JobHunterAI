@@ -2405,6 +2405,7 @@ const JobHunterDashboard: React.FC = () => {
               Refresh Descriptions
             </button>
             <button
+              data-testid="manage-resume-button"
               onClick={() => setShowResumeManagement(true)}
               style={{
                 padding: '10px 20px',

@@ -187,6 +187,7 @@ const ResumeManagement: React.FC<ResumeManagementProps> = ({ onClose }) => {
     >
       <div
         role="dialog"
+        data-testid="resume-management-modal"
         style={{
           backgroundColor: 'white',
           borderRadius: '8px',
@@ -213,6 +214,7 @@ const ResumeManagement: React.FC<ResumeManagementProps> = ({ onClose }) => {
             Resume Management
           </h2>
           <button
+            data-testid="close-modal-button"
             onClick={onClose}
             style={{
               background: 'none',
@@ -230,6 +232,7 @@ const ResumeManagement: React.FC<ResumeManagementProps> = ({ onClose }) => {
         <div style={{ flex: 1, overflow: 'auto', padding: '20px' }}>
           {error && (
             <div
+              data-testid="resume-error-message"
               style={{
                 backgroundColor: '#fee2e2',
                 border: '1px solid #fca5a5',
@@ -259,6 +262,7 @@ const ResumeManagement: React.FC<ResumeManagementProps> = ({ onClose }) => {
 
           {successMessage && (
             <div
+              data-testid="resume-success-message"
               style={{
                 backgroundColor: '#d1fae5',
                 border: '1px solid #6ee7b7',
@@ -325,6 +329,7 @@ const ResumeManagement: React.FC<ResumeManagementProps> = ({ onClose }) => {
                   Upload File
                 </button>
                 <button
+                  data-testid="load-from-file-button"
                   onClick={handleLoadFromFile}
                   disabled={isUploading}
                   style={{
@@ -343,6 +348,7 @@ const ResumeManagement: React.FC<ResumeManagementProps> = ({ onClose }) => {
               </div>
 
               <input
+                data-testid="resume-name-input"
                 type="text"
                 placeholder="Resume Version Name (e.g., Sam_Kirk_2024)"
                 value={resumeName}
@@ -359,6 +365,7 @@ const ResumeManagement: React.FC<ResumeManagementProps> = ({ onClose }) => {
 
               {uploadMode === 'file' && (
                 <input
+                  data-testid="file-upload-input"
                   type="file"
                   accept=".md,.txt"
                   onChange={handleFileUpload}
@@ -372,6 +379,7 @@ const ResumeManagement: React.FC<ResumeManagementProps> = ({ onClose }) => {
               )}
 
               <textarea
+                data-testid="resume-content-input"
                 placeholder="Paste or type your resume here (Markdown format)..."
                 value={resumeContent}
                 onChange={(e) => setResumeContent(e.target.value)}
@@ -388,6 +396,7 @@ const ResumeManagement: React.FC<ResumeManagementProps> = ({ onClose }) => {
               />
 
               <button
+                data-testid="upload-resume-button"
                 onClick={handleUploadResume}
                 disabled={isUploading || !resumeName.trim() || !resumeContent.trim()}
                 style={{
@@ -428,15 +437,19 @@ const ResumeManagement: React.FC<ResumeManagementProps> = ({ onClose }) => {
                 />
               </div>
             ) : resumes.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+              <div
+                data-testid="no-resumes-message"
+                style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}
+              >
                 <FileText style={{ width: '48px', height: '48px', margin: '0 auto 12px' }} />
                 <p>No resumes uploaded yet. Upload your first resume above!</p>
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div data-testid="resume-list" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {resumes.map((resume) => (
                   <div
                     key={resume.version_id}
+                    data-testid={`resume-item-${resume.version_id}`}
                     style={{
                       border: `2px solid ${resume.is_master ? '#3b82f6' : '#e5e7eb'}`,
                       borderRadius: '8px',
@@ -452,6 +465,7 @@ const ResumeManagement: React.FC<ResumeManagementProps> = ({ onClose }) => {
                           </h4>
                           {resume.is_master && (
                             <span
+                              data-testid={`master-badge-${resume.version_id}`}
                               style={{
                                 backgroundColor: '#3b82f6',
                                 color: 'white',
@@ -475,6 +489,7 @@ const ResumeManagement: React.FC<ResumeManagementProps> = ({ onClose }) => {
                       <div style={{ display: 'flex', gap: '8px' }}>
                         {!resume.is_master && (
                           <button
+                            data-testid={`set-master-button-${resume.version_id}`}
                             onClick={() => handleSetMaster(resume.version_id)}
                             style={{
                               padding: '6px 12px',
@@ -492,6 +507,7 @@ const ResumeManagement: React.FC<ResumeManagementProps> = ({ onClose }) => {
                         )}
                         {!resume.is_master && (
                           <button
+                            data-testid={`delete-resume-button-${resume.version_id}`}
                             onClick={() => handleDelete(resume.version_id)}
                             style={{
                               padding: '6px 12px',
@@ -516,6 +532,7 @@ const ResumeManagement: React.FC<ResumeManagementProps> = ({ onClose }) => {
 
           {masterResume && (
             <div
+              data-testid="master-resume-info"
               style={{
                 marginTop: '24px',
                 padding: '16px',
