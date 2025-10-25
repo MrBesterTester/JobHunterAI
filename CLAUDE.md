@@ -363,6 +363,24 @@ bugs/
 
 ### Moving Bugs Between States
 
+**✅ IMPLEMENTED**: Helper script automates all required steps!
+
+**Recommended method (uses helper script):**
+```bash
+./move-bug.sh BUG-001 fixed      # Move to fixed status
+./move-bug.sh ISSUE-019 mitigated # Move to mitigated status
+git commit -m "docs: Move BUG-001 to fixed status"
+```
+
+The `move-bug.sh` script automatically:
+1. ✅ Finds the bug file in current location
+2. ✅ Moves file to new status directory
+3. ✅ Updates YAML frontmatter (`status`, `updated`, `fixed`/`mitigated` date)
+4. ✅ Regenerates bug index (`python3 scripts/generate-bug-index.py`)
+5. ✅ Stages both files for commit
+6. ✅ Provides helpful output and suggested commit message
+
+**Manual method (if needed):**
 When bug status changes:
 1. Move file: `mv bugs/open/BUG-XXXX.md bugs/fixed/`
 2. Update YAML frontmatter: `status: fixed`, add `fixed: YYYY-MM-DD`
