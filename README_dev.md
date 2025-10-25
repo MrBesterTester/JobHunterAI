@@ -2248,6 +2248,11 @@ Monitors system resources and detects issues during Claude Code sessions to prev
 ./system-health-check.sh --monitor
 ```
 
+**Division of Responsibility:**
+- **Claude runs automatically:** Quick mode (read-only checks: memory, CPU, processes)
+- **You approve/run:** Full mode (needs sudo) and Cleanup mode (kills processes)
+- **Workflow:** Claude monitors → detects issues → suggests you run cleanup if needed
+
 **What it checks:**
 
 Quick mode (default):
