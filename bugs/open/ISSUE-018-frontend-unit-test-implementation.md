@@ -13,6 +13,17 @@ affects: [frontend-testing, test-coverage, developer-experience]
 related: [ISSUE-013]](#id-issue-018%0Atitle-frontend-unit-test-implementation%0Astatus-open%0Apriority-medium%0Aseverity-medium%0Acomponent-frontend%0Acreated-2025-10-24%0Aupdated-2025-10-24%0Aaffects-frontend-testing-test-coverage-developer-experience%0Arelated-issue-013)
 - [ISSUE-018: Frontend Unit Test Implementation](#issue-018-frontend-unit-test-implementation)
   - [Executive Summary](#executive-summary)
+  - [Option A1 Implementation Plan](#option-a1-implementation-plan)
+    - [Executive Summary](#executive-summary-1)
+    - [Goals and Success Criteria](#goals-and-success-criteria)
+    - [Phase 1: CalendarTab Coverage Expansion (36.76% → 60%+)](#phase-1-calendartab-coverage-expansion-3676%25-%E2%86%92-60%25)
+    - [Phase 2: IntakeTab Coverage Expansion (36.84% → 60%+)](#phase-2-intaketab-coverage-expansion-3684%25-%E2%86%92-60%25)
+    - [Phase 3: Validation and Documentation (1-2 hours)](#phase-3-validation-and-documentation-1-2-hours)
+    - [Timeline and Effort Estimates](#timeline-and-effort-estimates)
+    - [Expected Final Coverage Outcomes](#expected-final-coverage-outcomes)
+    - [Risk Assessment and Mitigation](#risk-assessment-and-mitigation)
+    - [Implementation Notes](#implementation-notes)
+    - [Approval Required](#approval-required)
   - [Quick Reference: Current Test Coverage](#quick-reference-current-test-coverage)
   - [Summary](#summary)
   - [Remaining Work to Reach 70% Coverage](#remaining-work-to-reach-70%25-coverage)
@@ -115,12 +126,13 @@ Initial attempt to expand App.tsx coverage revealed a critical issue: the 38 tes
 
 **Two Sub-Options for Option A**:
 
-**Option A1: Focus on what provides most value**
+**Option A1: Focus on what provides most value** ← **SELECTED FOR IMPLEMENTATION**
 - Skip expanding App.tsx further (remains at 27%)
 - Focus on CalendarTab and IntakeTab which are smaller and more testable
 - Accept overall coverage in the 50-55% range rather than 70%
 - **Pros**: More achievable target, better ROI on testing effort
 - **Cons**: Leaves largest component (33% of codebase) under-tested
+- **Status**: ⏸️ **PENDING APPROVAL** - Implementation plan ready (see below)
 
 **Option A2: Properly implement App.tsx tests**
 - Write proper interactive tests with user simulation (not just smoke tests)
@@ -141,6 +153,389 @@ Initial attempt to expand App.tsx coverage revealed a critical issue: the 38 tes
 - **Test pass rate**: 320/320 (100%)
 - **Test execution**: ~8.75s (vs 20+ min for E2E)
 - **Codebase size**: 8,429 LOC across 13 components
+
+---
+
+## Option A1 Implementation Plan
+
+**Status**: ⏸️ **AWAITING USER APPROVAL** (Plan created 2025-10-25)
+
+**User Directive**: "Please do Option A1 in Issue 18. Please create a plan first since this is a large undertaking, keeping that plan well-organized within Issue 18. Then let me review that plan before proceeding."
+
+### Executive Summary
+
+**Objective**: Expand test coverage for CalendarTab and IntakeTab from 37% → 60%+ while leaving App.tsx at 27% coverage.
+
+**Rationale**: After discovering that App.tsx (2,782 LOC) is extremely difficult to test effectively (smoke tests don't increase coverage), we pivot to two smaller, more testable components that will deliver better ROI on testing effort.
+
+**Expected Outcomes**:
+- **CalendarTab**: 36.76% → 60%+ coverage (+23 percentage points, ~15-20 new tests)
+- **IntakeTab**: 36.84% → 60%+ coverage (+23 percentage points, ~25-35 new tests)
+- **Overall coverage**: 46.9% → 50-55% (+3-8 percentage points)
+- **Total new tests**: ~40-55 tests (current: 320 tests → target: 360-375 tests)
+- **Estimated effort**: 16-25 hours (2-3 developer days)
+
+**Why This Approach**:
+- ✅ **Better ROI**: Smaller components easier to test comprehensively
+- ✅ **Achievable goals**: 60% target realistic for medium-sized components
+- ✅ **Pragmatic**: Accepts that App.tsx requires disproportionate effort
+- ✅ **Value-focused**: Tests meaningful code paths, not just smoke tests
+
+### Goals and Success Criteria
+
+**Primary Goals**:
+1. Expand CalendarTab.test.tsx from 19 → 34-39 tests (75-105% increase)
+2. Expand IntakeTab.test.tsx from 18 → 43-53 tests (139-194% increase)
+3. Achieve 60%+ statement coverage for both components
+4. Maintain 100% test pass rate
+5. Keep test execution time under 15 seconds total
+
+**Success Criteria**:
+- [ ] CalendarTab coverage ≥60% (currently 36.76%)
+- [ ] IntakeTab coverage ≥60% (currently 36.84%)
+- [ ] All tests passing (320 existing + ~40-55 new = 360-375 total)
+- [ ] Test execution time <15 seconds
+- [ ] Overall frontend coverage 50-55% (currently 46.9%)
+- [ ] Coverage report clean and comprehensive
+
+**Out of Scope**:
+- ❌ Expanding App.tsx further (remains at 27.13% with 66 tests)
+- ❌ Expanding other components beyond 60% target
+- ❌ Reaching 70% overall coverage (accepting 50-55% as pragmatic target)
+
+### Phase 1: CalendarTab Coverage Expansion (36.76% → 60%+)
+
+**Current State**:
+- **Lines of Code**: 658 LOC
+- **Current Coverage**: 36.76% statements
+- **Current Tests**: 19 tests
+- **Coverage Gap**: Need ~153 more lines covered (242 currently covered → 395 target)
+- **Estimated New Tests**: 15-20 tests
+
+**Test Categories to Expand**:
+
+**1. Calendar View Rendering (5-7 new tests)**
+- [ ] Test calendar grid rendering for current month
+- [ ] Test navigation between months (next/previous)
+- [ ] Test calendar displays correct days for month boundaries
+- [ ] Test handling of leap years and month variations
+- [ ] Test week view toggling (if implemented)
+- [ ] Test day view detail expansion
+- [ ] Test date highlighting (today, selected date, interview dates)
+
+**2. Interview Form Validation (4-6 new tests)**
+- [ ] Test required field validation (application_id, interview_type, scheduled_date)
+- [ ] Test date/time validation (past dates rejected, future dates accepted)
+- [ ] Test duration validation (positive integers, reasonable ranges)
+- [ ] Test email validation for interviewer_email field
+- [ ] Test phone number format validation
+- [ ] Test form reset after successful submission
+- [ ] Test form persistence during modal close/reopen
+
+**3. Interview CRUD Workflows (3-5 new tests)**
+- [ ] Test editing existing interview (open edit modal, modify fields, save)
+- [ ] Test interview status updates (scheduled → completed, scheduled → cancelled)
+- [ ] Test interview rescheduling (change date/time)
+- [ ] Test bulk operations (delete multiple interviews)
+- [ ] Test interview conflict detection (overlapping times)
+
+**4. Advanced Date/Time Handling (3-5 new tests)**
+- [ ] Test timezone conversions and display
+- [ ] Test recurring interview patterns (if implemented)
+- [ ] Test interview reminder scheduling logic
+- [ ] Test calendar invite generation logic
+- [ ] Test date range filtering (show interviews for specific date range)
+
+**Implementation Strategy**:
+```typescript
+// CalendarTab.test.tsx expansion pattern
+describe('Calendar View Rendering', () => {
+  it('displays calendar grid for current month', async () => {
+    // Mock current date, render component
+    // Assert calendar grid shows correct number of days
+    // Assert month/year header displays correctly
+  });
+
+  it('navigates to next month when next button clicked', async () => {
+    // Render component, find next button
+    // Click next button
+    // Assert month changed, calendar updated
+  });
+});
+
+describe('Interview Form Validation', () => {
+  it('shows error when required fields missing', async () => {
+    // Open schedule modal
+    // Try to submit without filling required fields
+    // Assert validation error messages displayed
+  });
+
+  it('validates scheduled date is in the future', async () => {
+    // Open schedule modal
+    // Enter past date
+    // Assert error message shown
+  });
+});
+```
+
+**Estimated Effort**: 6-10 hours
+- Test implementation: 4-7 hours
+- Debugging and refinement: 2-3 hours
+
+### Phase 2: IntakeTab Coverage Expansion (36.84% → 60%+)
+
+**Current State**:
+- **Lines of Code**: 1,240 LOC
+- **Current Coverage**: 36.84% statements
+- **Current Tests**: 18 tests
+- **Coverage Gap**: Need ~287 more lines covered (457 currently covered → 744 target)
+- **Estimated New Tests**: 25-35 tests
+
+**Test Categories to Expand**:
+
+**1. Job Source Integration Testing (8-12 new tests)**
+- [ ] Test Gmail OAuth flow (start auth, handle callback, store credentials)
+- [ ] Test Gmail sync with pagination (multiple pages of emails)
+- [ ] Test RapidAPI integration with API key validation
+- [ ] Test LinkedIn source configuration and sync
+- [ ] Test source activation/deactivation
+- [ ] Test source credential updates
+- [ ] Test source sync interval configuration
+- [ ] Test source error handling (invalid credentials, rate limiting)
+- [ ] Test source statistics tracking (jobs discovered, created, filtered)
+- [ ] Test multi-source synchronization (sync all sources)
+
+**2. Advanced Filtering Logic (6-8 new tests)**
+- [ ] Test salary filtering (minimum salary threshold)
+- [ ] Test location filtering (remote, hybrid, onsite, distance calculations)
+- [ ] Test keyword matching (title, description, requirements)
+- [ ] Test company filtering (blacklist, whitelist)
+- [ ] Test job age filtering (exclude old postings)
+- [ ] Test combined filter criteria (salary + location + keywords)
+- [ ] Test filter rule updates and reapplication
+- [ ] Test filter statistics and metrics
+
+**3. Job Preview and Approval Workflows (4-6 new tests)**
+- [ ] Test job preview modal (displays job details correctly)
+- [ ] Test job approval action (approve → status = 'new')
+- [ ] Test job rejection action (reject → status = 'filtered')
+- [ ] Test bulk approval (select multiple jobs, approve all)
+- [ ] Test job editing during preview (modify details before approval)
+- [ ] Test job preview navigation (next/previous job)
+
+**4. Extraction Prompt Management (3-5 new tests)**
+- [ ] Test loading active extraction prompt
+- [ ] Test editing extraction prompt content
+- [ ] Test saving prompt updates
+- [ ] Test prompt versioning (save new version)
+- [ ] Test prompt testing/validation (test prompt on sample email)
+
+**5. Sync Operations and Error Handling (4-6 new tests)**
+- [ ] Test manual sync trigger for specific source
+- [ ] Test sync status tracking (in-progress, completed, failed)
+- [ ] Test sync progress updates (real-time progress bar)
+- [ ] Test sync error recovery (retry failed syncs)
+- [ ] Test sync conflict resolution (duplicate emails, duplicate jobs)
+- [ ] Test sync throttling (prevent multiple simultaneous syncs)
+
+**Implementation Strategy**:
+```typescript
+// IntakeTab.test.tsx expansion pattern
+describe('Job Source Integration', () => {
+  it('starts Gmail OAuth flow when authenticate clicked', async () => {
+    // Mock Gmail source with has_credentials=false
+    // Render component, find Gmail auth button
+    // Click auth button
+    // Assert redirect to OAuth URL or modal shown
+  });
+
+  it('syncs Gmail with pagination handling', async () => {
+    // Mock fetch to return paginated email responses
+    // Trigger Gmail sync
+    // Assert multiple API calls made with pagination tokens
+    // Assert all pages processed
+  });
+});
+
+describe('Advanced Filtering Logic', () => {
+  it('filters jobs by minimum salary threshold', async () => {
+    // Mock jobs with various salaries
+    // Set salary filter to $130k
+    // Assert only jobs ≥$130k shown
+  });
+
+  it('combines salary and location filters', async () => {
+    // Mock jobs with salary and location data
+    // Set salary filter ($130k) and location filter (remote)
+    // Assert only matching jobs shown
+  });
+});
+```
+
+**Estimated Effort**: 10-15 hours
+- Test implementation: 7-11 hours
+- Debugging and refinement: 3-4 hours
+
+### Phase 3: Validation and Documentation (1-2 hours)
+
+**Tasks**:
+1. **Run full test suite**: `npm test` (verify all 360-375 tests pass)
+2. **Generate coverage report**: `npm run test:coverage`
+3. **Verify coverage targets**:
+   - CalendarTab ≥60%
+   - IntakeTab ≥60%
+   - Overall 50-55%
+4. **Document results**:
+   - Update ISSUE-018 with final coverage numbers
+   - Update "Quick Reference" table
+   - Mark Option A1 as complete
+5. **Commit changes**: Single atomic commit with all test additions
+6. **Create git tag**: Tag session with completion summary
+
+### Timeline and Effort Estimates
+
+**Total Estimated Effort**: 17-27 hours (2.1-3.4 developer days)
+
+| Phase | Component | Effort | Duration |
+|-------|-----------|--------|----------|
+| Phase 1 | CalendarTab Expansion | 6-10 hours | 1-1.5 days |
+| Phase 2 | IntakeTab Expansion | 10-15 hours | 1.25-2 days |
+| Phase 3 | Validation & Documentation | 1-2 hours | 0.25 days |
+| **Total** | | **17-27 hours** | **2.5-3.75 days** |
+
+**Working Session Breakdown** (assuming 4-6 hour sessions):
+- **Session 1**: CalendarTab Phase 1 (6-10 hours, 1-2 sessions)
+- **Session 2**: IntakeTab Phase 2 (10-15 hours, 2-3 sessions)
+- **Session 3**: Validation & Documentation (1-2 hours, 0.5 session)
+
+### Expected Final Coverage Outcomes
+
+**Component-Level Coverage** (after Option A1):
+
+| Component | Current | Target | New Tests | Status |
+|-----------|---------|--------|-----------|--------|
+| **CalendarTab** | 36.76% | 60%+ | +15-20 | 🎯 Target |
+| **IntakeTab** | 36.84% | 60%+ | +25-35 | 🎯 Target |
+| App.tsx | 27.13% | 27% (no change) | 0 | ✅ Accepted |
+| RankedJobsTab | 54.71% | 54% (no change) | 0 | ✅ Accepted |
+| FollowupsTab | 34.21% | 34% (no change) | 0 | ✅ Accepted |
+| ResumeManagement | 32.32% | 32% (no change) | 0 | ✅ Accepted |
+| EmailComposer | 90.9% | 90%+ | 0 | ✅ Excellent |
+| IgnoredTab | 95.55% | 95%+ | 0 | ✅ Excellent |
+| FailedTab | 94.11% | 94%+ | 0 | ✅ Excellent |
+| DuplicatesTab | 95.34% | 95%+ | 0 | ✅ Excellent |
+| TimelineView | 95.55% | 95%+ | 0 | ✅ Excellent |
+| WeightAdjustmentPanel | 91.56% | 91%+ | 0 | ✅ Excellent |
+
+**Overall Coverage Projection**:
+- **Current**: 46.9% overall (320 tests)
+- **After Option A1**: 50-55% overall (360-375 tests)
+- **Improvement**: +3-8 percentage points, +40-55 tests (+12-17% test count increase)
+
+**Coverage Distribution After Option A1**:
+- 6 components at **90%+** coverage (excellent) ✅
+- 2 components at **60%+** coverage (good) ✅ ← CalendarTab, IntakeTab
+- 1 component at **54%** coverage (acceptable) - RankedJobsTab
+- 3 components at **27-34%** coverage (baseline) - App.tsx, FollowupsTab, ResumeManagement
+
+### Risk Assessment and Mitigation
+
+**Risks**:
+
+1. **Risk**: Tests may not achieve 60% coverage target despite effort
+   - **Likelihood**: Medium
+   - **Impact**: Medium (would need additional tests)
+   - **Mitigation**: Focus on high-value code paths first, measure coverage incrementally
+
+2. **Risk**: Test complexity may exceed estimates (especially for OAuth flows)
+   - **Likelihood**: Medium
+   - **Impact**: Low (extends timeline by 2-4 hours)
+   - **Mitigation**: Use existing test patterns from Phase 1-4, simplify mocks
+
+3. **Risk**: Existing tests may break during refactoring
+   - **Likelihood**: Low
+   - **Impact**: Low (fixable in 1-2 hours)
+   - **Mitigation**: Run tests frequently during development
+
+4. **Risk**: System overload during intensive test runs (ISSUE-019)
+   - **Likelihood**: Low (mitigated by Vitest resource limits)
+   - **Impact**: Medium (could slow development)
+   - **Mitigation**: Monitor system health, use `./system-health-check.sh`
+
+**Quality Assurance**:
+- All tests must pass before marking phase complete
+- Coverage targets must be met (not estimated)
+- Test patterns must be consistent with Phases 1-4
+- Documentation must be updated before final commit
+
+### Implementation Notes
+
+**Testing Patterns to Follow** (from Phases 1-4):
+```typescript
+// 1. Use createStandardMocks() helper for fetch mocking
+const createStandardMocks = (overrides: any = {}) => {
+  return (url: string, options?: RequestInit) => {
+    if (url.includes('/api/endpoint')) {
+      return mockFetchSuccess(overrides.data || []);
+    }
+    return mockFetchError();
+  };
+};
+
+// 2. Use beforeEach to reset mocks
+beforeEach(() => {
+  vi.clearAllMocks();
+  (fetch as Mock).mockReset();
+});
+
+// 3. Use waitFor for async assertions
+await waitFor(() => {
+  expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/api/endpoint'));
+});
+
+// 4. Use fireEvent for user interactions
+fireEvent.click(screen.getByText('Button Text'));
+fireEvent.change(screen.getByLabelText('Field'), { target: { value: 'value' } });
+
+// 5. Use data-testid for reliable element selection
+expect(screen.getByTestId('element-id')).toBeInTheDocument();
+```
+
+**Coverage Measurement**:
+```bash
+# Run coverage after each phase
+npm run test:coverage
+
+# Check specific component coverage
+npm run test:coverage -- CalendarTab.test.tsx
+
+# Generate HTML coverage report
+npm run test:coverage -- --reporter=html
+open coverage/index.html
+```
+
+**System Health Monitoring** (per ISSUE-019):
+```bash
+# Before starting intensive test development
+./system-health-check.sh
+
+# After completing each phase
+./system-health-check.sh
+
+# If system feels slow
+./system-health-check.sh --full
+```
+
+### Approval Required
+
+**Please review this plan and confirm**:
+- [ ] Scope is acceptable (CalendarTab + IntakeTab to 60%, skip App.tsx)
+- [ ] Effort estimate is reasonable (17-27 hours over 2.5-3.75 days)
+- [ ] Timeline works with your schedule
+- [ ] Final coverage target of 50-55% is acceptable
+- [ ] Any adjustments or clarifications needed
+
+**Once approved, implementation will begin with Phase 1 (CalendarTab expansion).**
 
 ---
 
