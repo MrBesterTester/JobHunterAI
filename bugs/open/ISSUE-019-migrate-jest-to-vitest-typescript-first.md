@@ -1,42 +1,3 @@
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-
-  - [id: ISSUE-019
-title: Migrate Jest to Vitest with TypeScript-First Testing
-status: open  # open | mitigated | fixed
-priority: medium  # low | medium | high | critical
-severity: low  # low | medium | high | critical
-component: frontend  # frontend | backend | database | infrastructure | docs
-created: 2025-10-24
-updated: 2025-10-24
-affects: [frontend-testing, ci-pipeline, build-scripts]
-related: [ISSUE-018]  # Frontend unit test implementation](#id-issue-019%0Atitle-migrate-jest-to-vitest-with-typescript-first-testing%0Astatus-open---open--mitigated--fixed%0Apriority-medium---low--medium--high--critical%0Aseverity-low---low--medium--high--critical%0Acomponent-frontend---frontend--backend--database--infrastructure--docs%0Acreated-2025-10-24%0Aupdated-2025-10-24%0Aaffects-frontend-testing-ci-pipeline-build-scripts%0Arelated-issue-018---frontend-unit-test-implementation)
-- [ISSUE-019: Migrate Jest to Vitest with TypeScript-First Testing](#issue-019-migrate-jest-to-vitest-with-typescript-first-testing)
-  - [Summary](#summary)
-  - [Impact](#impact)
-  - [Motivation](#motivation)
-  - [Current State](#current-state)
-  - [Desired State](#desired-state)
-  - [Research Findings](#research-findings)
-    - [Vitest Core Properties](#vitest-core-properties)
-    - [TypeScript Type Checking](#typescript-type-checking)
-    - [Migration Complexity](#migration-complexity)
-  - [Proposed Solutions](#proposed-solutions)
-    - [Option 1: Full Migration to Vitest with Enforced Type Checking (RECOMMENDED)](#option-1-full-migration-to-vitest-with-enforced-type-checking-recommended)
-    - [Option 2: Stay with Jest + ts-jest](#option-2-stay-with-jest--ts-jest)
-  - [Decision](#decision)
-  - [Implementation Plan](#implementation-plan)
-    - [Phase 1: Setup and Configuration](#phase-1-setup-and-configuration)
-    - [Phase 2: Test File Migration](#phase-2-test-file-migration)
-    - [Phase 3: Verification and Cleanup](#phase-3-verification-and-cleanup)
-  - [Testing Strategy](#testing-strategy)
-  - [Rollback Plan](#rollback-plan)
-  - [Status History](#status-history)
-  - [Notes](#notes)
-  - [Related Files](#related-files)
-
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
 ---
 id: ISSUE-019
 title: Migrate Jest to Vitest with TypeScript-First Testing
@@ -51,6 +12,34 @@ related: [ISSUE-018]  # Frontend unit test implementation
 ---
 
 # ISSUE-019: Migrate Jest to Vitest with TypeScript-First Testing
+
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+- [Summary](#summary)
+- [Impact](#impact)
+- [Motivation](#motivation)
+- [Current State](#current-state)
+- [Desired State](#desired-state)
+- [Research Findings](#research-findings)
+  - [Vitest Core Properties](#vitest-core-properties)
+  - [TypeScript Type Checking](#typescript-type-checking)
+  - [Migration Complexity](#migration-complexity)
+- [Proposed Solutions](#proposed-solutions)
+  - [Option 1: Full Migration to Vitest with Enforced Type Checking (RECOMMENDED)](#option-1-full-migration-to-vitest-with-enforced-type-checking-recommended)
+  - [Option 2: Stay with Jest + ts-jest](#option-2-stay-with-jest--ts-jest)
+- [Decision](#decision)
+- [Implementation Plan](#implementation-plan)
+  - [Phase 1: Setup and Configuration](#phase-1-setup-and-configuration)
+  - [Phase 2: Test File Migration](#phase-2-test-file-migration)
+  - [Phase 3: Verification and Cleanup](#phase-3-verification-and-cleanup)
+- [Testing Strategy](#testing-strategy)
+- [Rollback Plan](#rollback-plan)
+- [Status History](#status-history)
+- [Notes](#notes)
+- [Related Files](#related-files)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## Summary
 
