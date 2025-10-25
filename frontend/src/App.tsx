@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { AlertCircle, CheckCircle, XCircle, Clock, Briefcase, DollarSign, MapPin, Filter, FileText, Mail, Calendar as CalendarIcon, Download, Send, ExternalLink, AlertTriangle, Copy, RefreshCw, TrendingUp } from 'lucide-react';
+import { AlertCircle, CheckCircle, XCircle, Clock, Briefcase, DollarSign, MapPin, Filter, FileText, Mail, Calendar as CalendarIcon, Download, Send, ExternalLink, AlertTriangle, Copy, RefreshCw, TrendingUp, Settings } from 'lucide-react';
 import ResumeManagement from './ResumeManagement';
 import CalendarTab from './CalendarTab';
 import FollowupsTab from './FollowupsTab';
@@ -894,6 +894,9 @@ const JobHunterDashboard: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [showCriteriaConfig, setShowCriteriaConfig] = useState<boolean>(false);
+  const [criteriaForm, setCriteriaForm] = useState<Partial<JobCriteria>>({});
+  const [savingCriteria, setSavingCriteria] = useState<boolean>(false);
+  const [criteriaError, setCriteriaError] = useState<string | null>(null);
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
   const [generatedContentJob, setGeneratedContentJob] = useState<Job | null>(null);
   const [showContentGeneration, setShowContentGeneration] = useState<boolean>(false);
@@ -1080,6 +1083,72 @@ const JobHunterDashboard: React.FC = () => {
     } finally {
       setRefreshing(false);
     }
+  };
+
+  const handleOpenCriteriaConfig = async (): Promise<void> => {
+    try {
+      // Load current criteria and get the result directly
+      const response = await fetch(`${API_URL}/criteria`);
+      let loadedCriteria: JobCriteria | null = null;
+
+      if (response.ok) {
+        loadedCriteria = await response.json();
+        setCriteria(loadedCriteria);
+      }
+
+      // Initialize form with loaded criteria or defaults
+      setCriteriaForm({
+        min_salary: loadedCriteria?.min_salary ?? 130000,
+        max_commute_time: loadedCriteria?.max_commute_time ?? 45,
+        max_commute_days_per_week: loadedCriteria?.max_commute_days_per_week ?? 3,
+        preferred_domains: loadedCriteria?.preferred_domains ?? ['Software Testing', 'Test Automation', 'Firmware Engineering', 'Generative AI', 'Prompt Engineering'],
+        remote_preference: loadedCriteria?.remote_preference ?? 'preferred'
+      });
+      setCriteriaError(null);
+      setShowCriteriaConfig(true);
+    } catch (error) {
+      console.error('Error loading criteria:', error);
+      setCriteriaError('Failed to load criteria');
+    }
+  };
+
+  const handleSaveCriteria = async (): Promise<void> => {
+    setSavingCriteria(true);
+    setCriteriaError(null);
+
+    try {
+      const response = await fetch(`${API_URL}/criteria`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          min_salary: criteriaForm.min_salary,
+          max_commute_time: criteriaForm.max_commute_time,
+          max_commute_days_per_week: criteriaForm.max_commute_days_per_week,
+          preferred_domains: criteriaForm.preferred_domains,
+          remote_preference: criteriaForm.remote_preference
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to save criteria: ${response.status}`);
+      }
+
+      const savedCriteria: JobCriteria = await response.json();
+      setCriteria(savedCriteria);
+      setShowCriteriaConfig(false);
+
+      // Optionally refresh jobs to apply new filtering
+      await fetchJobs();
+    } catch (error) {
+      console.error('Error saving criteria:', error);
+      setCriteriaError('Failed to save criteria. Please try again.');
+    } finally {
+      setSavingCriteria(false);
+    }
+  };
+
+  const handleCriteriaFormChange = (field: keyof JobCriteria, value: any): void => {
+    setCriteriaForm(prev => ({ ...prev, [field]: value }));
   };
 
   const updateJobStatus = useCallback(async (jobId: string, newStatus: string): Promise<void> => {
@@ -2239,6 +2308,36 @@ const JobHunterDashboard: React.FC = () => {
               {refreshing ? 'Refreshing...' : 'Refresh Data'}
             </button>
             <button
+              onClick={handleOpenCriteriaConfig}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '6px',
+                border: '1px solid #8b5cf6',
+                backgroundColor: 'white',
+                color: '#8b5cf6',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '14px',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#8b5cf6';
+                e.currentTarget.style.color = 'white';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'white';
+                e.currentTarget.style.color = '#8b5cf6';
+              }}
+              title="Configure job search criteria and filters"
+              data-testid="configure-criteria-button"
+            >
+              <Settings style={{ width: '18px', height: '18px' }} />
+              Configure Criteria
+            </button>
+            <button
               onClick={handleRescoreAll}
               disabled={refreshing}
               style={{
@@ -2745,6 +2844,250 @@ const JobHunterDashboard: React.FC = () => {
                   </button>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCriteriaConfig && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 50,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px'
+          }}
+          data-testid="criteria-modal-overlay"
+          onClick={() => setShowCriteriaConfig(false)}
+        >
+          <div
+            role="dialog"
+            aria-labelledby="criteria-modal-title"
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '8px',
+              maxWidth: '600px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{
+              padding: '20px',
+              borderBottom: '1px solid #e5e7eb',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <h2 id="criteria-modal-title" style={{ fontSize: '24px', fontWeight: 'bold', margin: 0 }}>
+                Job Search Criteria
+              </h2>
+              <button
+                data-testid="criteria-modal-close-x"
+                onClick={() => setShowCriteriaConfig(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#6b7280'
+                }}
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+
+            <div style={{ flex: 1, overflow: 'auto', padding: '20px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {/* Min Salary */}
+                <div>
+                  <label htmlFor="min-salary" style={{ display: 'block', fontWeight: '600', marginBottom: '8px', color: '#374151' }}>
+                    Minimum Salary ($)
+                  </label>
+                  <input
+                    id="min-salary"
+                    type="number"
+                    value={criteriaForm.min_salary ?? ''}
+                    onChange={(e) => handleCriteriaFormChange('min_salary', parseInt(e.target.value) || 0)}
+                    data-testid="min-salary-input"
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '4px',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
+
+                {/* Max Commute Time */}
+                <div>
+                  <label htmlFor="max-commute-time" style={{ display: 'block', fontWeight: '600', marginBottom: '8px', color: '#374151' }}>
+                    Max Commute Time (minutes)
+                  </label>
+                  <input
+                    id="max-commute-time"
+                    type="number"
+                    value={criteriaForm.max_commute_time ?? ''}
+                    onChange={(e) => handleCriteriaFormChange('max_commute_time', parseInt(e.target.value) || 0)}
+                    data-testid="max-commute-time-input"
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '4px',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
+
+                {/* Max Commute Days Per Week */}
+                <div>
+                  <label htmlFor="max-commute-days" style={{ display: 'block', fontWeight: '600', marginBottom: '8px', color: '#374151' }}>
+                    Max Commute Days Per Week
+                  </label>
+                  <input
+                    id="max-commute-days"
+                    type="number"
+                    min="0"
+                    max="5"
+                    value={criteriaForm.max_commute_days_per_week ?? ''}
+                    onChange={(e) => handleCriteriaFormChange('max_commute_days_per_week', parseInt(e.target.value) || 0)}
+                    data-testid="max-commute-days-input"
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '4px',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
+
+                {/* Preferred Domains */}
+                <div>
+                  <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px', color: '#374151' }}>
+                    Preferred Domains
+                  </label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {['Software Testing', 'Test Automation', 'Firmware Engineering', 'Generative AI', 'Prompt Engineering'].map(domain => (
+                      <label key={domain} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={criteriaForm.preferred_domains?.includes(domain) ?? false}
+                          onChange={(e) => {
+                            const currentDomains = criteriaForm.preferred_domains ?? [];
+                            const newDomains = e.target.checked
+                              ? [...currentDomains, domain]
+                              : currentDomains.filter(d => d !== domain);
+                            handleCriteriaFormChange('preferred_domains', newDomains);
+                          }}
+                          data-testid={`domain-checkbox-${domain.toLowerCase().replace(/\s+/g, '-')}`}
+                          style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                        />
+                        <span style={{ fontSize: '14px', color: '#374151' }}>{domain}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Remote Preference */}
+                <div>
+                  <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px', color: '#374151' }}>
+                    Remote Preference
+                  </label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {[
+                      { value: 'required', label: 'Required - Remote only' },
+                      { value: 'preferred', label: 'Preferred - Remote strongly preferred' },
+                      { value: 'acceptable', label: 'Acceptable - Open to office work' },
+                      { value: 'not_required', label: 'Not Required - Prefer office work' }
+                    ].map(option => (
+                      <label key={option.value} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          name="remote-preference"
+                          value={option.value}
+                          checked={criteriaForm.remote_preference === option.value}
+                          onChange={(e) => handleCriteriaFormChange('remote_preference', e.target.value)}
+                          data-testid={`remote-preference-${option.value}`}
+                          style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                        />
+                        <span style={{ fontSize: '14px', color: '#374151' }}>{option.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Error Message */}
+                {criteriaError && (
+                  <div
+                    data-testid="criteria-error-message"
+                    style={{
+                      padding: '12px',
+                      backgroundColor: '#fef2f2',
+                      border: '1px solid #fecaca',
+                      borderRadius: '4px',
+                      color: '#dc2626',
+                      fontSize: '14px'
+                    }}
+                  >
+                    {criteriaError}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div style={{
+              padding: '20px',
+              borderTop: '1px solid #e5e7eb',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '12px'
+            }}>
+              <button
+                onClick={() => setShowCriteriaConfig(false)}
+                data-testid="criteria-modal-cancel-button"
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#6b7280',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveCriteria}
+                disabled={savingCriteria}
+                data-testid="criteria-modal-save-button"
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: savingCriteria ? '#9ca3af' : '#8b5cf6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: savingCriteria ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  opacity: savingCriteria ? 0.6 : 1
+                }}
+              >
+                {savingCriteria ? 'Saving...' : 'Save Criteria'}
+              </button>
             </div>
           </div>
         </div>

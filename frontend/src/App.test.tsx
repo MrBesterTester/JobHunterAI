@@ -3068,4 +3068,485 @@ describe('App (JobHunterDashboard)', () => {
       expect(fetch).toHaveBeenCalled();
     });
   });
+
+  describe('Criteria Configuration Modal (Phase 1A)', () => {
+    const createMocksWithCriteria = (criteria: any = null) => (url: string) => {
+      if (url.includes('/api/jobs') && !url.includes('/score') && !url.includes('/stats')) {
+        return mockFetchSuccess([]);
+      }
+      if (url.includes('/api/stats')) {
+        return mockFetchSuccess({});
+      }
+      if (url.includes('/api/criteria')) {
+        if (criteria) {
+          return mockFetchSuccess(criteria);
+        }
+        return mockFetchSuccess(null);
+      }
+      if (url.includes('/api/applications')) {
+        return mockFetchSuccess([]);
+      }
+      return mockFetchError();
+    };
+
+    it('opens criteria config modal when Configure Criteria button clicked', async () => {
+      (fetch as Mock).mockImplementation(createMocksWithCriteria());
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Find and click the Configure Criteria button
+      const configButton = screen.getByTestId('configure-criteria-button');
+      fireEvent.click(configButton);
+
+      // Modal should be visible
+      await waitFor(() => {
+        expect(screen.getByText('Job Search Criteria')).toBeInTheDocument();
+        expect(screen.getByTestId('criteria-modal-overlay')).toBeInTheDocument();
+      });
+    });
+
+    it('displays current criteria values when modal opens', async () => {
+      const mockCriteria = {
+        criteria_id: 'test-id',
+        min_salary: 150000,
+        max_commute_time: 30,
+        max_commute_days_per_week: 2,
+        preferred_domains: ['Software Testing', 'Generative AI'],
+        remote_preference: 'required',
+        updated_at: new Date().toISOString()
+      };
+
+      (fetch as Mock).mockImplementation(createMocksWithCriteria(mockCriteria));
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Open modal
+      const configButton = screen.getByTestId('configure-criteria-button');
+      fireEvent.click(configButton);
+
+      // Wait for modal to open and criteria to load
+      await waitFor(() => {
+        expect(screen.getByTestId('min-salary-input')).toBeInTheDocument();
+      });
+
+      // Check that form fields display the loaded criteria values
+      const minSalaryInput = screen.getByTestId('min-salary-input') as HTMLInputElement;
+      const maxCommuteTimeInput = screen.getByTestId('max-commute-time-input') as HTMLInputElement;
+      const maxCommuteDaysInput = screen.getByTestId('max-commute-days-input') as HTMLInputElement;
+
+      expect(minSalaryInput.value).toBe('150000');
+      expect(maxCommuteTimeInput.value).toBe('30');
+      expect(maxCommuteDaysInput.value).toBe('2');
+
+      // Check checkboxes
+      const softwareTestingCheckbox = screen.getByTestId('domain-checkbox-software-testing') as HTMLInputElement;
+      const genAICheckbox = screen.getByTestId('domain-checkbox-generative-ai') as HTMLInputElement;
+      const testAutomationCheckbox = screen.getByTestId('domain-checkbox-test-automation') as HTMLInputElement;
+
+      expect(softwareTestingCheckbox.checked).toBe(true);
+      expect(genAICheckbox.checked).toBe(true);
+      expect(testAutomationCheckbox.checked).toBe(false);
+
+      // Check radio button
+      const requiredRadio = screen.getByTestId('remote-preference-required') as HTMLInputElement;
+      expect(requiredRadio.checked).toBe(true);
+    });
+
+    it('updates min_salary field when user types new value', async () => {
+      (fetch as Mock).mockImplementation(createMocksWithCriteria());
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Open modal
+      const configButton = screen.getByTestId('configure-criteria-button');
+      fireEvent.click(configButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('min-salary-input')).toBeInTheDocument();
+      });
+
+      // Type new value
+      const minSalaryInput = screen.getByTestId('min-salary-input') as HTMLInputElement;
+      fireEvent.change(minSalaryInput, { target: { value: '160000' } });
+
+      expect(minSalaryInput.value).toBe('160000');
+    });
+
+    it('updates max_commute_time field when user types', async () => {
+      (fetch as Mock).mockImplementation(createMocksWithCriteria());
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Open modal
+      const configButton = screen.getByTestId('configure-criteria-button');
+      fireEvent.click(configButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('max-commute-time-input')).toBeInTheDocument();
+      });
+
+      // Type new value
+      const maxCommuteTimeInput = screen.getByTestId('max-commute-time-input') as HTMLInputElement;
+      fireEvent.change(maxCommuteTimeInput, { target: { value: '60' } });
+
+      expect(maxCommuteTimeInput.value).toBe('60');
+    });
+
+    it('updates max_commute_days_per_week field', async () => {
+      (fetch as Mock).mockImplementation(createMocksWithCriteria());
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Open modal
+      const configButton = screen.getByTestId('configure-criteria-button');
+      fireEvent.click(configButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('max-commute-days-input')).toBeInTheDocument();
+      });
+
+      // Type new value
+      const maxCommuteDaysInput = screen.getByTestId('max-commute-days-input') as HTMLInputElement;
+      fireEvent.change(maxCommuteDaysInput, { target: { value: '4' } });
+
+      expect(maxCommuteDaysInput.value).toBe('4');
+    });
+
+    it('updates preferred_domains checkboxes when user clicks', async () => {
+      (fetch as Mock).mockImplementation(createMocksWithCriteria());
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Open modal
+      const configButton = screen.getByTestId('configure-criteria-button');
+      fireEvent.click(configButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('domain-checkbox-software-testing')).toBeInTheDocument();
+      });
+
+      // Click checkboxes
+      const softwareTestingCheckbox = screen.getByTestId('domain-checkbox-software-testing') as HTMLInputElement;
+      const genAICheckbox = screen.getByTestId('domain-checkbox-generative-ai') as HTMLInputElement;
+
+      // Initially checked (from defaults)
+      expect(softwareTestingCheckbox.checked).toBe(true);
+      expect(genAICheckbox.checked).toBe(true);
+
+      // Uncheck one
+      fireEvent.click(softwareTestingCheckbox);
+      expect(softwareTestingCheckbox.checked).toBe(false);
+
+      // Check remains checked
+      expect(genAICheckbox.checked).toBe(true);
+    });
+
+    it('updates remote_preference radio buttons', async () => {
+      (fetch as Mock).mockImplementation(createMocksWithCriteria());
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Open modal
+      const configButton = screen.getByTestId('configure-criteria-button');
+      fireEvent.click(configButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('remote-preference-preferred')).toBeInTheDocument();
+      });
+
+      // Check radio buttons
+      const preferredRadio = screen.getByTestId('remote-preference-preferred') as HTMLInputElement;
+      const requiredRadio = screen.getByTestId('remote-preference-required') as HTMLInputElement;
+
+      // Initially preferred (from defaults)
+      expect(preferredRadio.checked).toBe(true);
+
+      // Click required
+      fireEvent.click(requiredRadio);
+      expect(requiredRadio.checked).toBe(true);
+      expect(preferredRadio.checked).toBe(false);
+    });
+
+    it('saves criteria when Save button clicked', async () => {
+      (fetch as Mock).mockImplementation((url: string, options?: any) => {
+        if (url.includes('/api/jobs') && !url.includes('/score') && !url.includes('/stats') && !options?.method) {
+          return mockFetchSuccess([]);
+        }
+        if (url.includes('/api/stats')) {
+          return mockFetchSuccess({});
+        }
+        if (url.includes('/api/criteria')) {
+          if (options?.method === 'PUT') {
+            // Save criteria
+            const body = JSON.parse(options.body);
+            return mockFetchSuccess({
+              criteria_id: 'saved-id',
+              ...body,
+              updated_at: new Date().toISOString()
+            });
+          }
+          return mockFetchSuccess(null);
+        }
+        if (url.includes('/api/applications')) {
+          return mockFetchSuccess([]);
+        }
+        return mockFetchError();
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Open modal
+      const configButton = screen.getByTestId('configure-criteria-button');
+      fireEvent.click(configButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('criteria-modal-save-button')).toBeInTheDocument();
+      });
+
+      // Click Save button
+      const saveButton = screen.getByTestId('criteria-modal-save-button');
+      fireEvent.click(saveButton);
+
+      // Wait for save to complete
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/criteria'),
+          expect.objectContaining({ method: 'PUT' })
+        );
+      });
+    });
+
+    it('calls API with correct payload on save', async () => {
+      let capturedPayload: any = null;
+
+      (fetch as Mock).mockImplementation((url: string, options?: any) => {
+        if (url.includes('/api/jobs') && !url.includes('/score') && !url.includes('/stats') && !options?.method) {
+          return mockFetchSuccess([]);
+        }
+        if (url.includes('/api/stats')) {
+          return mockFetchSuccess({});
+        }
+        if (url.includes('/api/criteria')) {
+          if (options?.method === 'PUT') {
+            capturedPayload = JSON.parse(options.body);
+            return mockFetchSuccess({
+              criteria_id: 'saved-id',
+              ...capturedPayload,
+              updated_at: new Date().toISOString()
+            });
+          }
+          return mockFetchSuccess(null);
+        }
+        if (url.includes('/api/applications')) {
+          return mockFetchSuccess([]);
+        }
+        return mockFetchError();
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Open modal
+      const configButton = screen.getByTestId('configure-criteria-button');
+      fireEvent.click(configButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('min-salary-input')).toBeInTheDocument();
+      });
+
+      // Modify fields
+      const minSalaryInput = screen.getByTestId('min-salary-input');
+      fireEvent.change(minSalaryInput, { target: { value: '175000' } });
+
+      // Click Save
+      const saveButton = screen.getByTestId('criteria-modal-save-button');
+      fireEvent.click(saveButton);
+
+      // Wait for save
+      await waitFor(() => {
+        expect(capturedPayload).not.toBeNull();
+      });
+
+      // Verify payload
+      expect(capturedPayload.min_salary).toBe(175000);
+      expect(capturedPayload).toHaveProperty('max_commute_time');
+      expect(capturedPayload).toHaveProperty('max_commute_days_per_week');
+      expect(capturedPayload).toHaveProperty('preferred_domains');
+      expect(capturedPayload).toHaveProperty('remote_preference');
+    });
+
+    it('closes modal after successful save', async () => {
+      (fetch as Mock).mockImplementation((url: string, options?: any) => {
+        if (url.includes('/api/jobs') && !url.includes('/score') && !url.includes('/stats') && !options?.method) {
+          return mockFetchSuccess([]);
+        }
+        if (url.includes('/api/stats')) {
+          return mockFetchSuccess({});
+        }
+        if (url.includes('/api/criteria')) {
+          if (options?.method === 'PUT') {
+            const body = JSON.parse(options.body);
+            return mockFetchSuccess({
+              criteria_id: 'saved-id',
+              ...body,
+              updated_at: new Date().toISOString()
+            });
+          }
+          return mockFetchSuccess(null);
+        }
+        if (url.includes('/api/applications')) {
+          return mockFetchSuccess([]);
+        }
+        return mockFetchError();
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Open modal
+      const configButton = screen.getByTestId('configure-criteria-button');
+      fireEvent.click(configButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('criteria-modal-save-button')).toBeInTheDocument();
+      });
+
+      // Click Save
+      const saveButton = screen.getByTestId('criteria-modal-save-button');
+      fireEvent.click(saveButton);
+
+      // Modal should close
+      await waitFor(() => {
+        expect(screen.queryByTestId('criteria-modal-overlay')).not.toBeInTheDocument();
+      });
+    });
+
+    it('displays error message if save fails', async () => {
+      (fetch as Mock).mockImplementation((url: string, options?: any) => {
+        if (url.includes('/api/jobs') && !url.includes('/score') && !url.includes('/stats') && !options?.method) {
+          return mockFetchSuccess([]);
+        }
+        if (url.includes('/api/stats')) {
+          return mockFetchSuccess({});
+        }
+        if (url.includes('/api/criteria')) {
+          if (options?.method === 'PUT') {
+            return mockFetchError(500);
+          }
+          return mockFetchSuccess(null);
+        }
+        if (url.includes('/api/applications')) {
+          return mockFetchSuccess([]);
+        }
+        return mockFetchError();
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Open modal
+      const configButton = screen.getByTestId('configure-criteria-button');
+      fireEvent.click(configButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('criteria-modal-save-button')).toBeInTheDocument();
+      });
+
+      // Click Save
+      const saveButton = screen.getByTestId('criteria-modal-save-button');
+      fireEvent.click(saveButton);
+
+      // Error message should appear
+      await waitFor(() => {
+        expect(screen.getByTestId('criteria-error-message')).toBeInTheDocument();
+        expect(screen.getByText(/failed to save criteria/i)).toBeInTheDocument();
+      });
+
+      // Modal should remain open
+      expect(screen.getByTestId('criteria-modal-overlay')).toBeInTheDocument();
+    });
+
+    it('preserves unsaved changes when modal closed without saving', async () => {
+      (fetch as Mock).mockImplementation(createMocksWithCriteria());
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Open modal
+      const configButton = screen.getByTestId('configure-criteria-button');
+      fireEvent.click(configButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('min-salary-input')).toBeInTheDocument();
+      });
+
+      // Modify a field
+      const minSalaryInput = screen.getByTestId('min-salary-input') as HTMLInputElement;
+      fireEvent.change(minSalaryInput, { target: { value: '200000' } });
+      expect(minSalaryInput.value).toBe('200000');
+
+      // Close modal without saving
+      const closeButton = screen.getByTestId('criteria-modal-close-x');
+      fireEvent.click(closeButton);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('criteria-modal-overlay')).not.toBeInTheDocument();
+      });
+
+      // Reopen modal
+      fireEvent.click(configButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('min-salary-input')).toBeInTheDocument();
+      });
+
+      // Value should be reset to original (130000 default)
+      const reopenedInput = screen.getByTestId('min-salary-input') as HTMLInputElement;
+      expect(reopenedInput.value).toBe('130000');
+    });
+  });
 });
