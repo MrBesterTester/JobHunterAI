@@ -3549,4 +3549,558 @@ describe('App (JobHunterDashboard)', () => {
       expect(reopenedInput.value).toBe('130000');
     });
   });
+
+  describe('Content Generation Modal (Phase 1B)', () => {
+    const mockGeneratedContent = {
+      resume: 'Generated resume content for the job',
+      cover_letter: 'Generated cover letter content',
+      resume_format: 'text',
+      generated_at: new Date().toISOString(),
+      generation_method: 'llm',
+      llm_model: 'claude-3-5-haiku-20241022',
+      tokens_used: 1500,
+      cost_estimate: 0.0234,
+      generation_time_ms: 2500,
+    };
+
+    const mockJob = {
+      job_id: 'test-job-1',
+      title: 'Senior Test Engineer',
+      company: 'TestCorp Inc',
+      location: 'Remote',
+      status: 'approved' as const,
+      source: 'linkedin' as const,
+      date_email_sent: new Date().toISOString(),
+      description: 'Test job description',
+    };
+
+    const createMocksForContentGeneration = (includeMetadata = true) => (url: string, options?: RequestInit) => {
+      if (url.includes('/api/jobs') && !url.includes('/generate-content') && !url.includes('/score') && !url.includes('/stats')) {
+        return mockFetchSuccess([mockJob]);
+      }
+      if (url.includes('/generate-content') && options?.method === 'POST') {
+        if (includeMetadata) {
+          return mockFetchSuccess(mockGeneratedContent);
+        } else {
+          // Return content without LLM metadata
+          return mockFetchSuccess({
+            resume: 'Template resume content',
+            cover_letter: 'Template cover letter',
+            resume_format: 'markdown',
+            generated_at: new Date().toISOString(),
+          });
+        }
+      }
+      if (url.includes('/score')) {
+        return mockFetchSuccess({ job_id: mockJob.job_id, total_score: 85, rank: 1, calculated_at: new Date().toISOString() });
+      }
+      if (url.includes('/api/stats')) {
+        return mockFetchSuccess({ approved: 1 });
+      }
+      if (url.includes('/api/criteria')) {
+        return mockFetchSuccess(null);
+      }
+      if (url.includes('/api/applications')) {
+        return mockFetchSuccess([]);
+      }
+      return mockFetchError();
+    };
+
+    afterEach(() => {
+      // Clean up any global mocks
+      vi.restoreAllMocks();
+    });
+
+    // Helper function to setup app with approved jobs
+    const setupApprovedJobsView = async () => {
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Click on Approved tab to show approved jobs
+      await waitFor(() => {
+        const approvedTab = screen.getByRole('tab', { name: /approved/i });
+        fireEvent.click(approvedTab);
+      }, { timeout: 3000 });
+
+      // Wait for the job and generate button to appear in the approved tab
+      await waitFor(() => {
+        expect(screen.getByText('Senior Test Engineer')).toBeInTheDocument();
+        expect(screen.getByTestId('generate-content-button')).toBeInTheDocument();
+      }, { timeout: 5000 });
+    };
+
+    it('opens content generation modal when Generate button clicked', async () => {
+      (fetch as Mock).mockImplementation(createMocksForContentGeneration());
+
+      render(<App />);
+      await setupApprovedJobsView();
+
+      // Find and click the Generate button
+      const generateButton = screen.getByTestId('generate-content-button');
+      fireEvent.click(generateButton);
+
+      // Wait for modal to appear
+      await waitFor(() => {
+        expect(screen.getByTestId('modal-overlay')).toBeInTheDocument();
+        expect(screen.getByText('Generated Content')).toBeInTheDocument();
+      }, { timeout: 5000 });
+    });
+
+    it('displays job title and company in modal header', async () => {
+      (fetch as Mock).mockImplementation(createMocksForContentGeneration());
+
+      render(<App />);
+      await setupApprovedJobsView();
+
+      // Click Generate button
+      const generateButton = screen.getByTestId('generate-content-button');
+      fireEvent.click(generateButton);
+
+      // Wait for modal and check job info
+      await waitFor(() => {
+        expect(screen.getByTestId('content-modal-job-info')).toBeInTheDocument();
+        expect(screen.getByText(/Senior Test Engineer at TestCorp Inc/i)).toBeInTheDocument();
+      }, { timeout: 5000 });
+    });
+
+    it('shows loading state during generation', async () => {
+      (fetch as Mock).mockImplementation(createMocksForContentGeneration());
+
+      render(<App />);
+      await setupApprovedJobsView();
+
+      // Click Generate button
+      const generateButton = screen.getByTestId('generate-content-button');
+      expect(generateButton).toHaveTextContent('Generate Resume & Cover Letter');
+
+      fireEvent.click(generateButton);
+
+      // Should show "Generating..." state
+      await waitFor(() => {
+        expect(generateButton).toHaveTextContent('Generating...');
+        expect(generateButton).toBeDisabled();
+      });
+    });
+
+    it('displays generated resume content after successful generation', async () => {
+      (fetch as Mock).mockImplementation(createMocksForContentGeneration());
+
+      render(<App />);
+      await setupApprovedJobsView();
+
+      // Generate content
+      const generateButton = screen.getByTestId('generate-content-button');
+      fireEvent.click(generateButton);
+
+      // Wait for resume content to appear
+      await waitFor(() => {
+        const resumeContent = screen.getByTestId('resume-content');
+        expect(resumeContent).toBeInTheDocument();
+        expect(resumeContent).toHaveTextContent('Generated resume content for the job');
+      }, { timeout: 5000 });
+    });
+
+    it('displays generated cover letter content', async () => {
+      (fetch as Mock).mockImplementation(createMocksForContentGeneration());
+
+      render(<App />);
+      await setupApprovedJobsView();
+
+      // Generate content
+      const generateButton = screen.getByTestId('generate-content-button');
+      fireEvent.click(generateButton);
+
+      // Wait for cover letter content to appear
+      await waitFor(() => {
+        const coverLetterContent = screen.getByTestId('cover-letter-content');
+        expect(coverLetterContent).toBeInTheDocument();
+        expect(coverLetterContent).toHaveTextContent('Generated cover letter content');
+      }, { timeout: 5000 });
+    });
+
+    it('shows LLM metadata (model, tokens, cost, time) when available', async () => {
+      (fetch as Mock).mockImplementation(createMocksForContentGeneration(true));
+
+      render(<App />);
+      await setupApprovedJobsView();
+
+      // Generate content
+      const generateButton = screen.getByTestId('generate-content-button');
+      fireEvent.click(generateButton);
+
+      // Wait for metadata to appear
+      await waitFor(() => {
+        expect(screen.getByTestId('generation-metadata')).toBeInTheDocument();
+        expect(screen.getByTestId('llm-model')).toHaveTextContent('claude-3-5-haiku-20241022');
+        expect(screen.getByTestId('tokens-used')).toBeInTheDocument();
+        expect(screen.getByTestId('cost-estimate')).toBeInTheDocument();
+        expect(screen.getByTestId('generation-time')).toBeInTheDocument();
+      }, { timeout: 5000 });
+    });
+
+    it('formats LLM metadata correctly (commas, decimals)', async () => {
+      (fetch as Mock).mockImplementation(createMocksForContentGeneration(true));
+
+      render(<App />);
+      await setupApprovedJobsView();
+
+      // Generate content
+      const generateButton = screen.getByTestId('generate-content-button');
+      fireEvent.click(generateButton);
+
+      // Wait for metadata and verify formatting
+      await waitFor(() => {
+        // Tokens should have comma formatting: 1,500 tokens
+        expect(screen.getByTestId('tokens-used')).toHaveTextContent('1,500 tokens');
+
+        // Cost should have 4 decimal places: $0.0234
+        expect(screen.getByTestId('cost-estimate')).toHaveTextContent('$0.0234');
+
+        // Time should be in seconds with 1 decimal: 2.5s
+        expect(screen.getByTestId('generation-time')).toHaveTextContent('2.5s');
+      }, { timeout: 5000 });
+    });
+
+    it('handles generation errors gracefully', async () => {
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      (fetch as Mock).mockImplementation((url: string, options?: RequestInit) => {
+        if (url.includes('/generate-content') && options?.method === 'POST') {
+          return mockFetchError(500);
+        }
+        return createMocksForContentGeneration()(url, options);
+      });
+
+      render(<App />);
+      await setupApprovedJobsView();
+
+      // Try to generate content
+      const generateButton = screen.getByTestId('generate-content-button');
+      fireEvent.click(generateButton);
+
+      // Should show error message
+      await waitFor(() => {
+        expect(screen.getByTestId('generation-error')).toBeInTheDocument();
+      }, { timeout: 5000 });
+
+      consoleError.mockRestore();
+    });
+
+    it('allows retry after generation error', async () => {
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      let attemptCount = 0;
+
+      (fetch as Mock).mockImplementation((url: string, options?: RequestInit) => {
+        if (url.includes('/generate-content') && options?.method === 'POST') {
+          attemptCount++;
+          if (attemptCount === 1) {
+            // First attempt fails
+            return mockFetchError(500);
+          } else {
+            // Second attempt succeeds
+            return mockFetchSuccess(mockGeneratedContent);
+          }
+        }
+        return createMocksForContentGeneration()(url, options);
+      });
+
+      render(<App />);
+      await setupApprovedJobsView();
+
+      // First attempt - should fail
+      const generateButton = screen.getByTestId('generate-content-button');
+      fireEvent.click(generateButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('generation-error')).toBeInTheDocument();
+      }, { timeout: 5000 });
+
+      // Retry - should succeed
+      fireEvent.click(generateButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('modal-overlay')).toBeInTheDocument();
+        expect(screen.getByTestId('resume-content')).toBeInTheDocument();
+      }, { timeout: 5000 });
+
+      consoleError.mockRestore();
+    });
+
+    it('downloads resume when Download button clicked', async () => {
+      // Mock URL.createObjectURL and document.createElement
+      const mockCreateObjectURL = vi.fn(() => 'blob:mock-url');
+      const mockRevokeObjectURL = vi.fn();
+      const originalCreateObjectURL = global.URL.createObjectURL;
+      const originalRevokeObjectURL = global.URL.revokeObjectURL;
+      global.URL.createObjectURL = mockCreateObjectURL;
+      global.URL.revokeObjectURL = mockRevokeObjectURL;
+
+      const mockClick = vi.fn();
+      const mockLink = {
+        href: '',
+        download: '',
+        click: mockClick,
+        style: {},
+      };
+      const createElementSpy = vi.spyOn(document, 'createElement').mockReturnValue(mockLink as any);
+
+      (fetch as Mock).mockImplementation(createMocksForContentGeneration());
+
+      render(<App />);
+      await setupApprovedJobsView();
+
+      // Generate content first
+      const generateButton = screen.getByTestId('generate-content-button');
+      fireEvent.click(generateButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('modal-overlay')).toBeInTheDocument();
+      }, { timeout: 5000 });
+
+      // Click download button
+      const downloadButton = screen.getByTestId('download-button');
+      fireEvent.click(downloadButton);
+
+      // Verify download was triggered (click was called twice - once for resume, once for cover letter)
+      await waitFor(() => {
+        expect(mockClick).toHaveBeenCalled();
+      });
+
+      // Restore mocks
+      createElementSpy.mockRestore();
+      global.URL.createObjectURL = originalCreateObjectURL;
+      global.URL.revokeObjectURL = originalRevokeObjectURL;
+    });
+
+    it('opens email composer when Email button clicked', async () => {
+      (fetch as Mock).mockImplementation(createMocksForContentGeneration());
+
+      render(<App />);
+      await setupApprovedJobsView();
+
+      // Generate content first
+      const generateButton = screen.getByTestId('generate-content-button');
+      fireEvent.click(generateButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('modal-overlay')).toBeInTheDocument();
+      }, { timeout: 5000 });
+
+      // Click create email draft button
+      const emailButton = screen.getByTestId('create-draft-button');
+      fireEvent.click(emailButton);
+
+      // Modal should close and email composer should open (we can check that the content modal is gone)
+      await waitFor(() => {
+        expect(screen.queryByTestId('modal-overlay')).not.toBeInTheDocument();
+      });
+    });
+
+    it('closes modal when close button clicked', async () => {
+      (fetch as Mock).mockImplementation(createMocksForContentGeneration());
+
+      render(<App />);
+      await setupApprovedJobsView();
+
+      // Generate content
+      const generateButton = screen.getByTestId('generate-content-button');
+      fireEvent.click(generateButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('modal-overlay')).toBeInTheDocument();
+      }, { timeout: 5000 });
+
+      // Close modal using X button
+      const closeButton = screen.getByTestId('modal-close-x');
+      fireEvent.click(closeButton);
+
+      // Modal should be closed
+      await waitFor(() => {
+        expect(screen.queryByTestId('modal-overlay')).not.toBeInTheDocument();
+      });
+    });
+
+    it('closes modal when Close button in footer clicked', async () => {
+      (fetch as Mock).mockImplementation(createMocksForContentGeneration());
+
+      render(<App />);
+      await setupApprovedJobsView();
+
+      // Generate content
+      const generateButton = screen.getByTestId('generate-content-button');
+      fireEvent.click(generateButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('modal-overlay')).toBeInTheDocument();
+      }, { timeout: 5000 });
+
+      // Close modal using footer close button
+      const closeButton = screen.getByTestId('modal-close-button');
+      fireEvent.click(closeButton);
+
+      // Modal should be closed
+      await waitFor(() => {
+        expect(screen.queryByTestId('modal-overlay')).not.toBeInTheDocument();
+      });
+    });
+
+    it('preserves generated content when modal reopened', async () => {
+      (fetch as Mock).mockImplementation(createMocksForContentGeneration());
+
+      render(<App />);
+      await setupApprovedJobsView();
+
+      // Generate content
+      const generateButton = screen.getByTestId('generate-content-button');
+      fireEvent.click(generateButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('resume-content')).toHaveTextContent('Generated resume content for the job');
+      }, { timeout: 5000 });
+
+      // Close modal
+      const closeButton = screen.getByTestId('modal-close-x');
+      fireEvent.click(closeButton);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('modal-overlay')).not.toBeInTheDocument();
+      });
+
+      // Reopen modal by clicking generate again (should show existing content without regenerating)
+      fireEvent.click(generateButton);
+
+      // Content should still be there
+      await waitFor(() => {
+        expect(screen.getByTestId('resume-content')).toHaveTextContent('Generated resume content for the job');
+      }, { timeout: 5000 });
+    });
+
+    it('shows different content for different jobs', async () => {
+      const mockJob2 = {
+        ...mockJob,
+        job_id: 'test-job-2',
+        title: 'QA Lead',
+        company: 'QACorp',
+      };
+
+      let callCount = 0;
+
+      (fetch as Mock).mockImplementation((url: string, options?: RequestInit) => {
+        if (url.includes('/api/jobs') && !url.includes('/generate-content') && !url.includes('/score') && !url.includes('/stats')) {
+          return mockFetchSuccess([mockJob, mockJob2]);
+        }
+        if (url.includes('/generate-content') && options?.method === 'POST') {
+          callCount++;
+          return mockFetchSuccess({
+            ...mockGeneratedContent,
+            resume: `Resume for job ${callCount}`,
+            cover_letter: `Cover letter for job ${callCount}`,
+          });
+        }
+        return createMocksForContentGeneration()(url, options);
+      });
+
+      render(<App />);
+      await setupApprovedJobsView();
+
+      // Generate for first job
+      const generateButtons = screen.getAllByTestId('generate-content-button');
+      fireEvent.click(generateButtons[0]);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('resume-content')).toHaveTextContent('Resume for job 1');
+      }, { timeout: 5000 });
+
+      // Close and generate for second job
+      const closeButton = screen.getByTestId('modal-close-x');
+      fireEvent.click(closeButton);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('modal-overlay')).not.toBeInTheDocument();
+      });
+
+      fireEvent.click(generateButtons[1]);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('resume-content')).toHaveTextContent('Resume for job 2');
+      }, { timeout: 5000 });
+    });
+
+    it('handles missing LLM metadata gracefully', async () => {
+      (fetch as Mock).mockImplementation(createMocksForContentGeneration(false));
+
+      render(<App />);
+      await setupApprovedJobsView();
+
+      // Generate content
+      const generateButton = screen.getByTestId('generate-content-button');
+      fireEvent.click(generateButton);
+
+      // Modal should open with content
+      await waitFor(() => {
+        expect(screen.getByTestId('resume-content')).toBeInTheDocument();
+        expect(screen.getByTestId('cover-letter-content')).toBeInTheDocument();
+      }, { timeout: 5000 });
+
+      // LLM metadata should not be present
+      expect(screen.queryByTestId('llm-model')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('tokens-used')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('cost-estimate')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('generation-time')).not.toBeInTheDocument();
+    });
+
+    it('displays resume format indicator', async () => {
+      (fetch as Mock).mockImplementation(createMocksForContentGeneration());
+
+      render(<App />);
+      await setupApprovedJobsView();
+
+      // Generate content
+      const generateButton = screen.getByTestId('generate-content-button');
+      fireEvent.click(generateButton);
+
+      // Wait for metadata and check format is displayed
+      await waitFor(() => {
+        const metadata = screen.getByTestId('generation-metadata');
+        expect(metadata).toHaveTextContent('Format:');
+        expect(metadata).toHaveTextContent('text');
+      }, { timeout: 5000 });
+    });
+
+    it('allows regeneration of content', async () => {
+      let generationCount = 0;
+
+      (fetch as Mock).mockImplementation((url: string, options?: RequestInit) => {
+        if (url.includes('/generate-content') && options?.method === 'POST') {
+          generationCount++;
+          return mockFetchSuccess({
+            ...mockGeneratedContent,
+            resume: `Resume version ${generationCount}`,
+          });
+        }
+        return createMocksForContentGeneration()(url, options);
+      });
+
+      render(<App />);
+      await setupApprovedJobsView();
+
+      // Generate content
+      const generateButton = screen.getByTestId('generate-content-button');
+      fireEvent.click(generateButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('resume-content')).toHaveTextContent('Resume version 1');
+      }, { timeout: 5000 });
+
+      // Click regenerate button
+      const regenerateButton = screen.getByTestId('regenerate-button');
+      fireEvent.click(regenerateButton);
+
+      // Should show new content
+      await waitFor(() => {
+        expect(screen.getByTestId('resume-content')).toHaveTextContent('Resume version 2');
+      }, { timeout: 5000 });
+    });
+  });
 });

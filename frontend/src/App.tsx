@@ -2192,6 +2192,7 @@ const JobHunterDashboard: React.FC = () => {
       {job.status === 'approved' && (
         <div style={{ marginTop: '12px' }}>
           <button
+            data-testid="generate-content-button"
             onClick={(e) => {
               e.stopPropagation();
               // BUG-0003 FIX: Clear old content before triggering new generation
@@ -2222,15 +2223,18 @@ const JobHunterDashboard: React.FC = () => {
             {generatingContent ? 'Generating...' : 'Generate Resume & Cover Letter'}
           </button>
           {generationError && (
-            <div style={{
-              color: '#ef4444',
-              fontSize: '0.9em',
-              marginTop: '8px',
-              padding: '8px',
-              backgroundColor: '#fee2e2',
-              borderRadius: '4px',
-              border: '1px solid #fecaca'
-            }}>
+            <div
+              data-testid="generation-error"
+              style={{
+                color: '#ef4444',
+                fontSize: '0.9em',
+                marginTop: '8px',
+                padding: '8px',
+                backgroundColor: '#fee2e2',
+                borderRadius: '4px',
+                border: '1px solid #fecaca'
+              }}
+            >
               {generationError}
             </div>
           )}
@@ -2629,7 +2633,17 @@ const JobHunterDashboard: React.FC = () => {
               justifyContent: 'space-between',
               alignItems: 'center'
             }}>
-              <h2 style={{ fontSize: '24px', fontWeight: 'bold', margin: 0 }}>Generated Content</h2>
+              <div>
+                <h2 style={{ fontSize: '24px', fontWeight: 'bold', margin: 0 }}>Generated Content</h2>
+                {generatedContentJob && (
+                  <p
+                    data-testid="content-modal-job-info"
+                    style={{ fontSize: '14px', color: '#6b7280', marginTop: '4px', marginBottom: 0 }}
+                  >
+                    {generatedContentJob.title} at {generatedContentJob.company}
+                  </p>
+                )}
+              </div>
               <button
                 data-testid="modal-close-x"
                 onClick={() => setShowContentGeneration(false)}
@@ -2806,6 +2820,7 @@ const JobHunterDashboard: React.FC = () => {
                   </button>
                 )}
                 <button
+                  data-testid="download-button"
                   onClick={downloadGeneratedContent}
                   style={{
                     padding: '8px 16px',
