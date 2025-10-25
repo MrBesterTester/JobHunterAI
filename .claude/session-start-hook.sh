@@ -13,6 +13,10 @@ source=$(echo "$input" | python3 -c "import sys, json; print(json.load(sys.stdin
 
 # Run switch-to-personal.sh script and capture output
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Change to project root to ensure consistent working directory
+cd "${SCRIPT_DIR}"
+
 SWITCH_OUTPUT=$("${SCRIPT_DIR}/switch-to-personal.sh" 2>&1)
 
 # Get current database from .env file
