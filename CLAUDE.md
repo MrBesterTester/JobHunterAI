@@ -330,62 +330,27 @@ bugs/
 
 ### When User Asks to "File a Bug"
 
-**Procedure** (execute automatically without asking for confirmation):
+**Use helper script (recommended):**
+```bash
+./create-bug.sh              # Interactive mode
+./create-bug.sh --type bug   # Direct bug creation
+./create-bug.sh --type issue # Direct issue creation
+```
 
-1. **Determine next bug ID**:
-   - List existing bugs: `ls bugs/open/ bugs/mitigated/ bugs/fixed/`
-   - Check highest number: BUG-XXXX or ISSUE-XXX format
-   - Increment by 1 for new bug
+Automatically determines ID, prompts for fields, creates file, regenerates index, and stages for commit.
 
-2. **Create bug file**:
-   - Use format: `bugs/open/BUG-XXXX-short-kebab-case-description.md`
-   - Copy structure from `bugs/BUG-TEMPLATE.md`
-   - Fill out all sections completely:
-     - **YAML frontmatter**: id, title, status, priority, severity, component, created, updated, affects, related
-     - **Markdown sections**: Summary, Impact, Steps to Reproduce, Expected/Actual Behavior, Root Cause, Proposed Solutions, Testing, Status History, Notes, Related Files
-
-3. **Priority/Severity Guidelines**:
-   - **Critical**: System down, data loss, security vulnerability
-   - **High**: Major feature broken, significant user impact
-   - **Medium**: Feature partially working, workaround available
-   - **Low**: Minor issue, cosmetic, nice-to-have
-
-4. **Component Classification**:
-   - frontend, backend, database, infrastructure, docs
-
-5. **Generate index**:
-   - Run: `python3 scripts/generate-bug-index.py`
-   - This updates `bugs/README.md` with tables and statistics
-
-6. **Commit everything**:
-   - Stage bug file and updated index
-   - Commit with descriptive message
+See [README_dev.md - Helper Scripts](README_dev.md#helper-scripts) for full documentation.
 
 ### Moving Bugs Between States
 
-**✅ IMPLEMENTED**: Helper script automates all required steps!
-
-**Recommended method (uses helper script):**
+**Use helper script (recommended):**
 ```bash
-./move-bug.sh BUG-001 fixed      # Move to fixed status
-./move-bug.sh ISSUE-019 mitigated # Move to mitigated status
-git commit -m "docs: Move BUG-001 to fixed status"
+./move-bug.sh BUG-001 fixed
 ```
 
-The `move-bug.sh` script automatically:
-1. ✅ Finds the bug file in current location
-2. ✅ Moves file to new status directory
-3. ✅ Updates YAML frontmatter (`status`, `updated`, `fixed`/`mitigated` date)
-4. ✅ Regenerates bug index (`python3 scripts/generate-bug-index.py`)
-5. ✅ Stages both files for commit
-6. ✅ Provides helpful output and suggested commit message
+Automatically moves file, updates YAML, regenerates index, and stages for commit.
 
-**Manual method (if needed):**
-When bug status changes:
-1. Move file: `mv bugs/open/BUG-XXXX.md bugs/fixed/`
-2. Update YAML frontmatter: `status: fixed`, add `fixed: YYYY-MM-DD`
-3. Regenerate index: `python3 scripts/generate-bug-index.py`
-4. Commit both changes
+See [README_dev.md - Helper Scripts](README_dev.md#helper-scripts) for full documentation.
 
 ### Key Principles
 
