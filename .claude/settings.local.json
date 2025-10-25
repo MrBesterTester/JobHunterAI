@@ -61,6 +61,8 @@
       "Bash(./switch-to-personal.sh:*)",
       "Bash(./start.sh:*)",
       "Bash(pkill:*)",
+      "Bash(pgrep:*)",
+      "Bash(./system-health-check.sh:*)",
       "Read(//private/var/folders/zz/**)",
       "Bash(cargo clean:*)",
       "Bash(TMPDIR=$HOME/tmp mkdir -p $HOME/tmp)",
@@ -105,6 +107,16 @@
           {
             "type": "command",
             "command": ".claude/session-start-hook.sh"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/session-end-hook.sh"
           }
         ]
       }

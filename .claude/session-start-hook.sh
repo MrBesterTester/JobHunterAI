@@ -31,6 +31,24 @@ USER_MESSAGE="🔒 Database: Using personal development database: ${DB_NAME}"
 echo "" >&2
 echo "=== SessionStart Hook ===" >&2
 echo "$USER_MESSAGE" >&2
+
+# Check for orphaned processes from previous session (non-interactive check)
+orphaned_node=$(pgrep -f "node.*vitest|vitest.*node" 2>/dev/null | wc -l | xargs)
+orphaned_bash=$(pgrep -f "claude.*bash|bash.*claude" 2>/dev/null | wc -l | xargs)
+
+if [ "$orphaned_node" -gt 0 ] || [ "$orphaned_bash" -gt 0 ]; then
+    echo "" >&2
+    echo "Cleaning up orphaned processes from previous session:" >&2
+    echo "  Node/Vitest: $orphaned_node, Claude bash: $orphaned_bash" >&2
+
+    # Kill orphaned processes (non-interactive)
+    pkill -f "node.*vitest|vitest.*node" 2>/dev/null || true
+    pkill -f "claude.*bash|bash.*claude" 2>/dev/null || true
+
+    sleep 1
+    echo "✅ Cleanup complete" >&2
+fi
+
 echo "========================" >&2
 echo "" >&2
 

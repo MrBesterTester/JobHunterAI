@@ -5,11 +5,12 @@
 # Created for ISSUE-019: Prevent system overload during Claude Code sessions
 #
 # Usage:
-#   ./system-health-check.sh           # Quick health check
-#   ./system-health-check.sh --help    # Show help
-#   ./system-health-check.sh --full    # Full diagnostic with hardware checks
-#   ./system-health-check.sh --cleanup # Cleanup orphaned processes (with confirmation)
-#   ./system-health-check.sh --monitor # Monitor during long sessions
+#   ./system-health-check.sh                # Quick health check
+#   ./system-health-check.sh --help         # Show help
+#   ./system-health-check.sh --full         # Full diagnostic with hardware checks
+#   ./system-health-check.sh --cleanup      # Cleanup orphaned processes (no sudo)
+#   ./system-health-check.sh --cleanup-hard # Cleanup + aggressive memory purge (requires sudo)
+#   ./system-health-check.sh --monitor      # Monitor during long sessions
 
 set -e
 
@@ -51,11 +52,12 @@ show_help() {
 System Health Check Script for Claude Code Sessions
 
 Usage:
-  ./system-health-check.sh           Quick health check (default)
-  ./system-health-check.sh --help    Show this help message
-  ./system-health-check.sh --full    Full diagnostic with hardware checks
-  ./system-health-check.sh --cleanup Cleanup orphaned processes (with confirmation)
-  ./system-health-check.sh --monitor Monitor during long sessions (runs continuously)
+  ./system-health-check.sh                Quick health check (default)
+  ./system-health-check.sh --help         Show this help message
+  ./system-health-check.sh --full         Full diagnostic with hardware checks
+  ./system-health-check.sh --cleanup      Cleanup orphaned processes (no sudo required)
+  ./system-health-check.sh --cleanup-hard Aggressive cleanup with memory purge (requires sudo)
+  ./system-health-check.sh --monitor      Monitor during long sessions (runs continuously)
 
 Purpose:
   Monitors system resources to prevent issues like those in ISSUE-019 where
@@ -77,6 +79,9 @@ Examples:
 
   # After completing work
   ./system-health-check.sh --cleanup
+
+  # Aggressive cleanup with memory purge (if system is very slow)
+  ./system-health-check.sh --cleanup-hard
 
 EOF
 }
@@ -210,7 +215,7 @@ full_diagnostic() {
     echo ""
 }
 
-# Cleanup orphaned processes
+# Cleanup orphaned processes (no sudo)
 cleanup_processes() {
     print_header "Process Cleanup"
     echo ""
@@ -248,9 +253,15 @@ cleanup_processes() {
     fi
 
     echo ""
+}
+
+# Aggressive cleanup with memory purge (requires sudo)
+cleanup_hard() {
+    # First run regular cleanup
+    cleanup_processes
 
     # Memory purge warning
-    print_header "Memory Management"
+    print_header "Aggressive Memory Cleanup"
     echo ""
     echo "⚠️  WARNING: Memory purge can be risky!"
     echo ""
@@ -313,6 +324,9 @@ case "$MODE" in
         ;;
     --cleanup|-c)
         cleanup_processes
+        ;;
+    --cleanup-hard)
+        cleanup_hard
         ;;
     --monitor|-m)
         monitor_mode
