@@ -78,6 +78,8 @@
       - [`bulk-re-extraction.sh`](#bulk-re-extractionsh)
       - [`tag-session.sh`](#tag-sessionsh)
       - [`list-sessions.sh`](#list-sessionssh)
+      - [`create-bug.sh`](#create-bugsh)
+      - [`move-bug.sh`](#move-bugsh)
     - [Security Notes](#security-notes)
   - [API Endpoints](#api-endpoints)
     - [Jobs](#jobs)
@@ -2060,6 +2062,130 @@ Options:
 - Reference specific dates in documentation
 
 **See also:** [ISSUE-014](bugs/fixed/ISSUE-014-work-session-tagging-convention.md) for detailed rationale and design decisions
+
+#### [`create-bug.sh`](create-bug.sh)
+Creates a new bug or issue with automated ID assignment and index regeneration.
+
+**Usage:**
+```bash
+# Interactive mode (prompts for type)
+./create-bug.sh
+
+# Create a BUG directly
+./create-bug.sh --type bug
+
+# Create an ISSUE directly
+./create-bug.sh --type issue
+```
+
+This script will:
+- Automatically determine the next available ID (BUG-XXXX or ISSUE-XXX format)
+- Prompt for required fields: title, priority, severity, component, summary
+- Create a new markdown file in `bugs/open/` using the template structure
+- Fill in YAML frontmatter with current date and provided information
+- Regenerate the bug index (`python3 scripts/generate-bug-index.py`)
+- Stage both the new file and updated index for commit
+- Provide helpful next steps and suggested commit message
+
+**When to use:**
+- Filing a new software defect (BUG)
+- Creating a new enhancement or task (ISSUE)
+- Tracking technical debt or improvements
+- Documenting problems that need investigation
+
+**Output example:**
+```
+✅ Done! ISSUE created successfully.
+
+📋 Summary:
+  ID:        ISSUE-020
+  Title:     Add dark mode support
+  Priority:  medium
+  Severity:  low
+  Component: frontend
+  File:      bugs/open/ISSUE-020-add-dark-mode-support.md
+
+Next steps:
+  1. Edit bugs/open/ISSUE-020-add-dark-mode-support.md to fill in remaining details
+  2. Add evidence, root cause analysis, and proposed solutions
+  3. Commit when ready:
+     git commit -m "docs: Create ISSUE-020 - Add dark mode support"
+
+To move to another status later:
+  ./move-bug.sh ISSUE-020 fixed
+  ./move-bug.sh ISSUE-020 mitigated
+```
+
+**See also:** [Bug Tracking Workflow](CLAUDE.md#bug-tracking-workflow) in CLAUDE.md for complete workflow documentation
+
+#### [`move-bug.sh`](move-bug.sh)
+Moves bugs/issues between states (open/mitigated/fixed) with automatic index regeneration.
+
+**Usage:**
+```bash
+# Move to fixed status
+./move-bug.sh BUG-001 fixed
+./move-bug.sh ISSUE-019 fixed
+
+# Move to mitigated status
+./move-bug.sh BUG-002 mitigated
+
+# Move back to open status
+./move-bug.sh ISSUE-015 open
+```
+
+This script will:
+- Find the bug file in its current location (searches all status directories)
+- Move the file to the new status directory
+- Update YAML frontmatter fields:
+  - `status` → new status
+  - `updated` → current date
+  - `fixed` or `mitigated` → current date (when applicable)
+- Regenerate the bug index (`python3 scripts/generate-bug-index.py`)
+- Stage both files for commit
+- Provide helpful output and suggested commit message
+
+**Features:**
+- Automatic bug file discovery (no need to know current location)
+- Validation of status values (open/mitigated/fixed)
+- Warning if bug is already in target status
+- Color-coded output for better visibility
+- Lists available bugs if specified ID not found
+
+**When to use:**
+- Marking a bug as fixed after implementing a solution
+- Moving a bug to mitigated when partially fixed
+- Reopening a bug that wasn't fully resolved
+- Any status change that requires file movement
+
+**Output example:**
+```
+📋 Moving bug: ISSUE-019
+  From: bugs/open/ISSUE-019-migrate-jest-to-vitest-typescript-first.md
+  To:   bugs/fixed/ISSUE-019-migrate-jest-to-vitest-typescript-first.md
+
+✅ File moved
+✅ YAML frontmatter updated
+  - status: fixed
+  - updated: 2025-10-24
+  - fixed: 2025-10-24
+
+🔄 Regenerating bug index...
+✅ Bug index regenerated
+
+✅ Changes staged for commit
+
+Suggested commit command:
+git commit -m "docs: Move ISSUE-019 to fixed status"
+```
+
+**Why this matters:**
+- Prevents forgetting to regenerate bug index (83% token savings benefit)
+- Ensures consistent YAML frontmatter updates
+- Eliminates manual file path management
+- Reduces errors in multi-step process
+
+**See also:** [Bug Tracking Workflow](CLAUDE.md#bug-tracking-workflow) in CLAUDE.md for complete workflow documentation
 
 ### Security Notes
 
