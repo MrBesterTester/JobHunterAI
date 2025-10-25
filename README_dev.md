@@ -80,6 +80,7 @@
       - [`list-sessions.sh`](#list-sessionssh)
       - [`create-bug.sh`](#create-bugsh)
       - [`move-bug.sh`](#move-bugsh)
+      - [`regenerate-bug-index.sh`](#regenerate-bug-indexsh)
     - [Security Notes](#security-notes)
   - [API Endpoints](#api-endpoints)
     - [Jobs](#jobs)
@@ -2186,6 +2187,42 @@ git commit -m "docs: Move ISSUE-019 to fixed status"
 - Reduces errors in multi-step process
 
 **See also:** [Bug Tracking Workflow](CLAUDE.md#bug-tracking-workflow) in CLAUDE.md for complete workflow documentation
+
+#### [`regenerate-bug-index.sh`](regenerate-bug-index.sh)
+Regenerates the bug tracking index from any directory.
+
+**Usage:**
+```bash
+./regenerate-bug-index.sh
+```
+
+This script will:
+- Automatically find the project root (works from any directory)
+- Run `python3 scripts/generate-bug-index.py` with correct working directory
+- Update `bugs/README.md` with current bug statistics and tables
+
+**When to use:**
+- Manually regenerating the bug index after direct file edits
+- Verifying bug index is up-to-date
+- Troubleshooting bug index issues
+
+**Why this exists:**
+The underlying Python script (`scripts/generate-bug-index.py`) is directory-dependent and only works when run from the project root. This wrapper:
+- Handles directory context automatically using `BASH_SOURCE`
+- Changes to project root before running Python script
+- Works reliably from any directory in the project
+
+**Note:** You typically don't need to run this manually - both `create-bug.sh` and `move-bug.sh` call this automatically. This script exists for manual regeneration and as a directory-aware wrapper to prevent "No such file or directory" errors.
+
+**Example:**
+```bash
+# Works from any directory
+cd backend
+../regenerate-bug-index.sh  # ✅ Success
+
+# Also works from project root
+./regenerate-bug-index.sh   # ✅ Success
+```
 
 ### Security Notes
 
