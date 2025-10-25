@@ -9,9 +9,9 @@ global.fetch = vi.fn();
 
 // Mock WeightAdjustmentPanel component
 vi.mock('./WeightAdjustmentPanel', () => ({
-  default: ({ onWeightsUpdate }: any) => (
+  default: ({ onWeightsUpdated }: any) => (
     <div data-testid="weight-adjustment-panel">
-      <button onClick={() => onWeightsUpdate && onWeightsUpdate()}>
+      <button onClick={() => onWeightsUpdated && onWeightsUpdated()}>
         Update Weights
       </button>
     </div>
@@ -450,10 +450,13 @@ describe('RankedJobsTab', () => {
       render(<RankedJobsTab />);
 
       await waitFor(() => {
-        expect(fetch).toHaveBeenCalled();
+        expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/api/jobs/ranked'));
       });
 
-      expect(screen.getByTestId('weight-adjustment-panel')).toBeInTheDocument();
+      // Wait for loading to complete and panel to render
+      await waitFor(() => {
+        expect(screen.getByTestId('weight-adjustment-panel')).toBeInTheDocument();
+      });
     });
 
     it('refreshes jobs when weights are updated', async () => {
@@ -474,6 +477,11 @@ describe('RankedJobsTab', () => {
       });
 
       expect(fetchCallCount).toBe(1);
+
+      // Wait for loading to complete and update weights button to appear
+      await waitFor(() => {
+        expect(screen.getByText('Update Weights')).toBeInTheDocument();
+      });
 
       // Click the update weights button
       const updateButton = screen.getByText('Update Weights');

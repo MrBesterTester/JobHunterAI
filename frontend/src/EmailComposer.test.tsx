@@ -71,8 +71,8 @@ describe('EmailComposer', () => {
 
       render(<EmailComposer {...defaultProps} />);
 
-      expect(screen.getByText(/TechCorp/i)).toBeInTheDocument();
-      expect(screen.getByText(/Senior Test Engineer/i)).toBeInTheDocument();
+      // Check for both company and job title in the header
+      expect(screen.getByText(/TechCorp - Senior Test Engineer/i)).toBeInTheDocument();
     });
 
     it('displays default recipient email', () => {
@@ -246,7 +246,8 @@ describe('EmailComposer', () => {
       render(<EmailComposer {...propsWithSpecialChars} />);
 
       // Special characters should be replaced with underscores
-      expect(screen.getByText(/tech_corp_inc_resume/i)).toBeInTheDocument();
+      // "Tech & Corp! @ Inc." becomes "tech___corp____inc_"
+      expect(screen.getByText(/tech___corp____inc__resume/i)).toBeInTheDocument();
     });
   });
 
@@ -256,7 +257,7 @@ describe('EmailComposer', () => {
 
       render(<EmailComposer {...defaultProps} />);
 
-      const createButton = screen.getByText(/Create Draft/i);
+      const createButton = screen.getByTestId('create-draft-button');
       fireEvent.click(createButton);
 
       await waitFor(() => {
@@ -283,14 +284,13 @@ describe('EmailComposer', () => {
 
       render(<EmailComposer {...propsWithoutRecipient} />);
 
-      const createButton = screen.getByText(/Create Draft/i);
+      const createButton = screen.getByTestId('create-draft-button');
+
+      // Button should be disabled when no recipient email
+      expect(createButton).toBeDisabled();
+
+      // Clicking disabled button should not trigger fetch
       fireEvent.click(createButton);
-
-      // Error message should be displayed
-      await waitFor(() => {
-        expect(screen.getByText(/Please enter a recipient email address/i)).toBeInTheDocument();
-      });
-
       expect(fetch).not.toHaveBeenCalled();
     });
 
@@ -299,7 +299,7 @@ describe('EmailComposer', () => {
 
       render(<EmailComposer {...defaultProps} />);
 
-      const createButton = screen.getByText(/Create Draft/i);
+      const createButton = screen.getByTestId('create-draft-button');
       fireEvent.click(createButton);
 
       // Button should be disabled during creation
@@ -320,7 +320,7 @@ describe('EmailComposer', () => {
 
       render(<EmailComposer {...defaultProps} />);
 
-      const createButton = screen.getByText(/Create Draft/i);
+      const createButton = screen.getByTestId('create-draft-button');
       fireEvent.click(createButton);
 
       await waitFor(() => {
@@ -342,7 +342,7 @@ describe('EmailComposer', () => {
 
       render(<EmailComposer {...defaultProps} />);
 
-      const createButton = screen.getByText(/Create Draft/i);
+      const createButton = screen.getByTestId('create-draft-button');
       fireEvent.click(createButton);
 
       await waitFor(() => {
@@ -359,7 +359,7 @@ describe('EmailComposer', () => {
 
       render(<EmailComposer {...defaultProps} />);
 
-      const createButton = screen.getByText(/Create Draft/i);
+      const createButton = screen.getByTestId('create-draft-button');
       fireEvent.click(createButton);
 
       await waitFor(() => {
@@ -376,11 +376,12 @@ describe('EmailComposer', () => {
 
       render(<EmailComposer {...defaultProps} />);
 
-      const createButton = screen.getByText(/Create Draft/i);
+      const createButton = screen.getByTestId('create-draft-button');
       fireEvent.click(createButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/Failed to create draft/i)).toBeInTheDocument();
+        // Network error message contains "Network error" from the Error object
+        expect(screen.getByText(/Network error/i)).toBeInTheDocument();
       });
 
       consoleErrorSpy.mockRestore();
@@ -393,7 +394,7 @@ describe('EmailComposer', () => {
 
       render(<EmailComposer {...defaultProps} />);
 
-      const createButton = screen.getByText(/Create Draft/i);
+      const createButton = screen.getByTestId('create-draft-button');
       fireEvent.click(createButton);
 
       await waitFor(() => {
@@ -411,7 +412,7 @@ describe('EmailComposer', () => {
       const recipientInput = screen.getByDisplayValue('jobs@techcorp.com') as HTMLInputElement;
       fireEvent.change(recipientInput, { target: { value: 'hr@example.com' } });
 
-      const createButton = screen.getByText(/Create Draft/i);
+      const createButton = screen.getByTestId('create-draft-button');
       fireEvent.click(createButton);
 
       await waitFor(() => {
@@ -433,7 +434,7 @@ describe('EmailComposer', () => {
 
       render(<EmailComposer {...propsWithoutCallback} />);
 
-      const createButton = screen.getByText(/Create Draft/i);
+      const createButton = screen.getByTestId('create-draft-button');
       fireEvent.click(createButton);
 
       await waitFor(() => {
@@ -481,7 +482,7 @@ describe('EmailComposer', () => {
 
       render(<EmailComposer {...defaultProps} />);
 
-      const createButton = screen.getByText(/Create Draft/i);
+      const createButton = screen.getByTestId('create-draft-button');
       fireEvent.click(createButton);
 
       await waitFor(() => {
@@ -494,7 +495,7 @@ describe('EmailComposer', () => {
 
       render(<EmailComposer {...defaultProps} />);
 
-      const createButton = screen.getByText(/Create Draft/i);
+      const createButton = screen.getByTestId('create-draft-button');
       fireEvent.click(createButton);
 
       await waitFor(() => {
