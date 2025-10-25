@@ -102,12 +102,39 @@ Your three **largest components** (3,680 LOC combined = 44% of codebase) have lo
 - ✅ Industry best practice, better edge case coverage, more refactoring confidence
 - ❌ Diminishing returns (hardest code to reach is often least important)
 
+**⚠️ Option A Implementation Findings (2025-10-25)**:
+Initial attempt to expand App.tsx coverage revealed a critical issue: the 38 tests added (from 66→104) all pass, but **App.tsx coverage remains at 27.13%** (unchanged). The tests written were "smoke tests" that verify rendering without crashing, but don't actually interact with the UI to exercise new code paths.
+
+**Why App.tsx is Hard to Test**:
+- **App.tsx is 2,782 lines** of highly interactive UI code with complex modal management, state transitions, and conditional rendering
+- Reaching 60%+ coverage requires sophisticated test scenarios that:
+  - Actually click buttons to open modals and interact with UI
+  - Use `fireEvent` or `userEvent` to simulate real user interactions
+  - Test complete workflows (open modal → interact → close → verify state)
+  - Exercise specific functions and code branches
+
+**Two Sub-Options for Option A**:
+
+**Option A1: Focus on what provides most value**
+- Skip expanding App.tsx further (remains at 27%)
+- Focus on CalendarTab and IntakeTab which are smaller and more testable
+- Accept overall coverage in the 50-55% range rather than 70%
+- **Pros**: More achievable target, better ROI on testing effort
+- **Cons**: Leaves largest component (33% of codebase) under-tested
+
+**Option A2: Properly implement App.tsx tests**
+- Write proper interactive tests with user simulation (not just smoke tests)
+- Would require significant additional time (8-12 hours minimum)
+- Would achieve the 60%+ target for App.tsx
+- **Pros**: Comprehensive testing of critical main component
+- **Cons**: Very time-intensive for diminishing returns, complex test scenarios
+
 **Option B - Keep 46.9% as baseline** (0 hours):
 - ✅ Already have fast feedback (<10s), good foundation, efficient use of time
 - ✅ Add tests opportunistically when fixing bugs or adding features
 - ❌ Below industry "gold standard" of 70%
 
-**Recommendation**: Option B is pragmatic. You have excellent infrastructure and 6 components at 90%+. The remaining gap is concentrated in 3 large, complex components where testing has diminishing returns.
+**Recommendation**: Option B is pragmatic. You have excellent infrastructure and 6 components at 90%+. The remaining gap is concentrated in 3 large, complex components where testing has diminishing returns. The failed attempt to easily boost App.tsx coverage from 27% demonstrates the complexity involved.
 
 **Key Metrics** (verified 2025-10-25):
 - **Overall coverage**: 46.9% statements, 48.38% lines
