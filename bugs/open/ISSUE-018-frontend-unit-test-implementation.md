@@ -24,6 +24,29 @@ related: [ISSUE-013]](#id-issue-018%0Atitle-frontend-unit-test-implementation%0A
     - [Risk Assessment and Mitigation](#risk-assessment-and-mitigation)
     - [Implementation Notes](#implementation-notes)
     - [Approval Required](#approval-required)
+  - [Option A2 Implementation Plan](#option-a2-implementation-plan)
+    - [Executive Summary](#executive-summary-2)
+    - [App.tsx Component Analysis](#apptsx-component-analysis)
+    - [Goals and Success Criteria](#goals-and-success-criteria-1)
+    - [Phase 1: Modal Workflow Testing (13-17 hours)](#phase-1-modal-workflow-testing-13-17-hours)
+      - [1A. Criteria Configuration Modal (3-4 hours, ~8-12 tests)](#1a-criteria-configuration-modal-3-4-hours-8-12-tests)
+      - [1B. Content Generation Modal (4-5 hours, ~12-16 tests)](#1b-content-generation-modal-4-5-hours-12-16-tests)
+      - [1C. Resume Management Modal (3-4 hours, ~10-14 tests)](#1c-resume-management-modal-3-4-hours-10-14-tests)
+      - [1D. Email Composer Modal (3-4 hours, ~8-12 tests)](#1d-email-composer-modal-3-4-hours-8-12-tests)
+    - [Phase 2: Tab Navigation and Filtering (6-8 hours)](#phase-2-tab-navigation-and-filtering-6-8-hours)
+      - [2A. Tab Navigation Tests (2-3 hours, ~12-15 tests)](#2a-tab-navigation-tests-2-3-hours-12-15-tests)
+      - [2B. Job List Filtering Tests (4-5 hours, ~15-20 tests)](#2b-job-list-filtering-tests-4-5-hours-15-20-tests)
+    - [Phase 3: Job Status Workflows (5-7 hours)](#phase-3-job-status-workflows-5-7-hours)
+      - [3A. Job Approval Workflow (1.5-2 hours, ~6-8 tests)](#3a-job-approval-workflow-15-2-hours-6-8-tests)
+      - [3B. Job Rejection Workflow (1.5-2 hours, ~6-8 tests)](#3b-job-rejection-workflow-15-2-hours-6-8-tests)
+      - [3C. Application Workflow (2-3 hours, ~8-12 tests)](#3c-application-workflow-2-3-hours-8-12-tests)
+    - [Phase 4: Job Details and Expansion (2-4 hours)](#phase-4-job-details-and-expansion-2-4-hours)
+      - [4A. Job Card Interactions (1-2 hours, ~8-10 tests)](#4a-job-card-interactions-1-2-hours-8-10-tests)
+      - [4B. Job Details Modal (1-2 hours, ~8-10 tests)](#4b-job-details-modal-1-2-hours-8-10-tests)
+    - [Timeline and Effort Estimates](#timeline-and-effort-estimates-1)
+    - [Expected Coverage Outcomes](#expected-coverage-outcomes)
+    - [Combining Option A1 and Option A2](#combining-option-a1-and-option-a2)
+    - [Approval Required](#approval-required-1)
   - [Quick Reference: Current Test Coverage](#quick-reference-current-test-coverage)
   - [Summary](#summary)
   - [Remaining Work to Reach 70% Coverage](#remaining-work-to-reach-70%25-coverage)
@@ -536,6 +559,351 @@ open coverage/index.html
 - [ ] Any adjustments or clarifications needed
 
 **Once approved, implementation will begin with Phase 1 (CalendarTab expansion).**
+
+---
+
+## Option A2 Implementation Plan
+
+**Status**: ⏸️ **AWAITING USER APPROVAL** (Plan created 2025-10-25)
+
+**User Directive**: "Sorry, I meant Option A2. But keep the plan for Option A1 because it includes other tabs in the app that could use more coverage. Do you agree?"
+
+**Agreed!** Both plans are valuable. Option A1 covers CalendarTab and IntakeTab expansion, while Option A2 focuses on properly testing App.tsx with interactive tests.
+
+### Executive Summary
+
+**Objective**: Properly test App.tsx with interactive user simulations to increase coverage from 27.13% → 60%+.
+
+**The Core Problem**: The current 104 tests for App.tsx are primarily "smoke tests" that verify rendering without crashing but don't interact with the UI. They don't click buttons, open modals, or exercise the complex state management that makes up the majority of the component.
+
+**Why Current Tests Don't Increase Coverage**:
+- Tests call `render(<App />)` and wait for initial load
+- Tests don't click buttons to trigger modal state changes
+- Tests don't simulate user workflows (open modal → interact → close)
+- Tests don't exercise conditional rendering branches
+- Complex modal management (4 modals) remains untested
+
+**Expected Outcomes**:
+- **App.tsx**: 27.13% → 60%+ coverage (+33 percentage points)
+- **Coverage gain**: ~920 more lines covered (755 currently → 1,675 target out of 2,782 LOC)
+- **New tests**: ~50-70 interactive tests (current: 104 → target: 154-174)
+- **Total effort**: 26-36 hours (3.25-4.5 developer days)
+- **Can be combined with Option A1** for comprehensive coverage
+
+**Why This Approach**:
+- ✅ **Proper testing**: Interactive tests that actually exercise code paths
+- ✅ **Modal coverage**: Tests all 4 modals (CriteriaConfig, ContentGeneration, ResumeManagement, EmailComposer)
+- ✅ **Workflow validation**: Tests complete user journeys
+- ✅ **State management**: Tests complex state transitions
+- ✅ **Higher value**: Tests the most critical component (33% of codebase)
+
+### App.tsx Component Analysis
+
+**Component Size**: 2,782 lines of code (33% of entire frontend codebase)
+
+**Current Coverage**: 27.13% statements, 15.7% branches, 15.31% functions
+
+**Current Tests**: 104 tests (but most are smoke tests that don't interact)
+
+**Key Interactive Elements Not Covered**:
+1. **4 Modal States**:
+   - `showCriteriaConfig` - Job criteria configuration modal
+   - `showContentGeneration` - Resume/cover letter generation modal
+   - `showResumeManagement` - Resume version management modal
+   - `showEmailComposer` - Email composition modal
+
+2. **12 Tab States**: 'approved', 'applied', 'filtered', 'failed', 'duplicates', 'new', 'all', 'intake', 'calendar', 'follow-ups', 'ignored', 'ranked'
+
+3. **Complex Workflows**:
+   - Job details expansion → status update → modal open → content generation
+   - Job approval/rejection workflows
+   - Criteria configuration → filter application → job list refresh
+   - Resume generation → email composition → draft creation
+
+4. **Conditional Rendering**:
+   - Job list filtering based on criteria
+   - Status-based UI variations
+   - Modal content variations based on job data
+   - Error state handling and recovery
+
+### Goals and Success Criteria
+
+**Primary Goals**:
+1. Expand App.test.tsx from 104 → 154-174 tests (48-67% increase)
+2. Achieve 60%+ statement coverage for App.tsx (currently 27.13%)
+3. Cover all 4 modal workflows with interactive tests
+4. Test complete user journeys (multi-step workflows)
+5. Maintain 100% test pass rate
+6. Keep total test execution time under 20 seconds
+
+**Success Criteria**:
+- [ ] App.tsx coverage ≥60% (currently 27.13%)
+- [ ] All 4 modals tested with open → interact → close workflows
+- [ ] All 12 tabs tested with navigation and content display
+- [ ] All tests passing (320 existing + ~50-70 new = 370-390 total)
+- [ ] Test execution time <20 seconds
+- [ ] Overall frontend coverage 54-58% (currently 46.9%)
+- [ ] Interactive tests use fireEvent/userEvent for real interactions
+
+**Out of Scope**:
+- ❌ Testing child components beyond their props/callbacks
+- ❌ Testing backend API logic (mocked)
+- ❌ Testing visual styling/CSS
+- ❌ Reaching 80%+ coverage (accepting 60% as pragmatic)
+
+### Phase 1: Modal Workflow Testing (13-17 hours)
+
+**Target**: Test all 4 modals with complete open → interact → close workflows
+
+#### 1A. Criteria Configuration Modal (3-4 hours, ~8-12 tests)
+
+**Current Coverage Gap**: Modal open, form interactions, save workflow not tested
+
+**Tests to Add**:
+- [ ] Opens criteria config modal when "Configure Criteria" button clicked
+- [ ] Displays current criteria values when modal opens
+- [ ] Updates min_salary field when user types new value
+- [ ] Updates max_commute_time field when user types
+- [ ] Updates max_commute_days_per_week field
+- [ ] Updates preferred_domains checkboxes when user clicks
+- [ ] Updates remote_preference radio buttons
+- [ ] Saves criteria when "Save" button clicked
+- [ ] Calls API with correct payload on save
+- [ ] Closes modal after successful save
+- [ ] Displays error message if save fails
+- [ ] Preserves unsaved changes when modal closed without saving
+
+**Implementation Pattern**:
+```typescript
+describe('Criteria Configuration Modal', () => {
+  it('opens modal when configure button clicked', async () => {
+    (fetch as Mock).mockImplementation(createStandardMocks());
+    render(<App />);
+    await waitFor(() => expect(fetch).toHaveBeenCalled());
+
+    const configButton = screen.getByText(/configure criteria/i);
+    fireEvent.click(configButton);
+
+    await waitFor(() => {
+      expect(screen.getByText(/job criteria/i)).toBeInTheDocument();
+    });
+  });
+});
+```
+
+#### 1B. Content Generation Modal (4-5 hours, ~12-16 tests)
+
+**Current Coverage Gap**: Generation workflow, LLM metadata display, error handling not tested
+
+**Tests to Add**:
+- [ ] Opens content generation modal when "Generate" button clicked
+- [ ] Displays job title and company in modal header
+- [ ] Shows loading state during generation
+- [ ] Displays generated resume content after successful generation
+- [ ] Displays generated cover letter content
+- [ ] Shows LLM metadata (model, tokens, cost, time) when available
+- [ ] Formats LLM metadata correctly (commas, decimals)
+- [ ] Handles generation errors gracefully
+- [ ] Allows retry after generation error
+- [ ] Downloads resume when "Download" button clicked
+- [ ] Opens email composer when "Email" button clicked
+- [ ] Closes modal when close button clicked
+- [ ] Preserves generated content when modal reopened
+- [ ] Shows different content for different jobs
+- [ ] Handles missing LLM metadata gracefully
+- [ ] Displays resume format indicator
+
+#### 1C. Resume Management Modal (3-4 hours, ~10-14 tests)
+
+**Tests to Add**:
+- [ ] Opens resume management modal when button clicked
+- [ ] Displays list of existing resume versions
+- [ ] Shows master resume indicator
+- [ ] Uploads new resume when form submitted
+- [ ] Validates resume content before upload
+- [ ] Sets first resume as master automatically
+- [ ] Changes master resume when "Set as Master" clicked
+- [ ] Deletes resume with confirmation
+- [ ] Cancels deletion when user clicks cancel
+- [ ] Loads resume from file
+- [ ] Displays success/error messages
+- [ ] Closes modal and refreshes list
+
+#### 1D. Email Composer Modal (3-4 hours, ~8-12 tests)
+
+**Tests to Add**:
+- [ ] Opens email composer from content generation
+- [ ] Pre-fills recipient, subject, body
+- [ ] Displays cover letter preview
+- [ ] Shows resume attachment info
+- [ ] Allows editing fields
+- [ ] Creates Gmail draft when submitted
+- [ ] Displays success message with Gmail link
+- [ ] Opens Gmail in new tab
+- [ ] Handles errors gracefully
+- [ ] Closes modal
+
+### Phase 2: Tab Navigation and Filtering (6-8 hours)
+
+#### 2A. Tab Navigation Tests (2-3 hours, ~12-15 tests)
+
+**Tests to Add**:
+- [ ] Displays correct default tab on mount
+- [ ] Switches to each tab when clicked (12 tabs)
+- [ ] Displays correct badge counts
+- [ ] Preserves tab state across modal open/close
+- [ ] Refreshes tab content when refresh clicked
+- [ ] Filters jobs correctly per tab
+
+#### 2B. Job List Filtering Tests (4-5 hours, ~15-20 tests)
+
+**Tests to Add**:
+- [ ] Filters jobs by status for each tab
+- [ ] Shows all jobs when All tab selected
+- [ ] Applies salary filter from criteria
+- [ ] Applies commute time filter
+- [ ] Applies remote preference filter
+- [ ] Applies preferred domains filter
+- [ ] Combines multiple filter criteria
+- [ ] Updates list when criteria changed
+- [ ] Shows "No jobs" when filter results empty
+- [ ] Displays filter reason for filtered jobs
+- [ ] Resets filters when cleared
+- [ ] Sorts filtered jobs correctly
+- [ ] Handles missing filter fields
+- [ ] Updates badge counts when filtered
+- [ ] Preserves filter state
+- [ ] Shows loading state while filtering
+
+### Phase 3: Job Status Workflows (5-7 hours)
+
+#### 3A. Job Approval Workflow (1.5-2 hours, ~6-8 tests)
+
+**Tests to Add**:
+- [ ] Approves job when button clicked
+- [ ] Updates status from "new" → "approved"
+- [ ] Moves job to Approved tab
+- [ ] Updates badge counts
+- [ ] Displays success notification
+- [ ] Handles API errors
+- [ ] Reverts optimistic update on error
+- [ ] Refreshes job list
+
+#### 3B. Job Rejection Workflow (1.5-2 hours, ~6-8 tests)
+
+**Tests to Add**:
+- [ ] Rejects job when button clicked
+- [ ] Updates status to "filtered"
+- [ ] Moves job to Filtered tab
+- [ ] Records filter reason
+- [ ] Updates badge counts
+- [ ] Displays notification
+- [ ] Handles errors
+- [ ] Allows undoing rejection
+
+#### 3C. Application Workflow (2-3 hours, ~8-12 tests)
+
+**Tests to Add**:
+- [ ] Marks job as applied when workflow completed
+- [ ] Updates status to "applied"
+- [ ] Records application date
+- [ ] Moves to Applied tab
+- [ ] Creates application record
+- [ ] Links to resume version
+- [ ] Links to draft email
+- [ ] Updates badge counts
+- [ ] Shows application details
+- [ ] Handles partial failures
+- [ ] Allows editing details
+- [ ] Validates required fields
+
+### Phase 4: Job Details and Expansion (2-4 hours)
+
+#### 4A. Job Card Interactions (1-2 hours, ~8-10 tests)
+
+**Tests to Add**:
+- [ ] Expands job card when clicked
+- [ ] Displays full description when expanded
+- [ ] Shows compensation, employment, remote, domain details sections
+- [ ] Collapses card when clicked again
+- [ ] Preserves expansion state for multiple cards
+- [ ] Scrolls to expanded card
+- [ ] Loads email body on demand
+
+#### 4B. Job Details Modal (1-2 hours, ~8-10 tests)
+
+**Tests to Add**:
+- [ ] Opens job details modal
+- [ ] Displays all job fields
+- [ ] Shows status badge with correct color
+- [ ] Renders HTML/text description
+- [ ] Shows action buttons
+- [ ] Hides irrelevant buttons based on status
+- [ ] Loads email body from API
+- [ ] Displays loading spinner
+- [ ] Shows error if fetch fails
+
+### Timeline and Effort Estimates
+
+**Total Estimated Effort**: 26-36 hours (3.25-4.5 developer days)
+
+| Phase | Focus Area | Effort | New Tests |
+|-------|-----------|--------|-----------|
+| Phase 1A | Criteria Config Modal | 3-4 hours | 8-12 |
+| Phase 1B | Content Generation Modal | 4-5 hours | 12-16 |
+| Phase 1C | Resume Management Modal | 3-4 hours | 10-14 |
+| Phase 1D | Email Composer Modal | 3-4 hours | 8-12 |
+| Phase 2A | Tab Navigation | 2-3 hours | 12-15 |
+| Phase 2B | Job List Filtering | 4-5 hours | 15-20 |
+| Phase 3A | Approval Workflow | 1.5-2 hours | 6-8 |
+| Phase 3B | Rejection Workflow | 1.5-2 hours | 6-8 |
+| Phase 3C | Application Workflow | 2-3 hours | 8-12 |
+| Phase 4A | Job Card Interactions | 1-2 hours | 8-10 |
+| Phase 4B | Job Details Modal | 1-2 hours | 8-10 |
+| **Total** | | **26-36 hours** | **101-137 tests** |
+
+### Expected Coverage Outcomes
+
+**App.tsx Coverage Projection**:
+- **Current**: 27.13% statements (755 lines covered out of 2,782)
+- **After Option A2**: 60%+ statements (1,670+ lines covered)
+- **Coverage Gain**: +33 percentage points, +915 lines
+- **New Tests**: +50-70 interactive tests (104 → 154-174 total)
+
+**Overall Frontend Coverage Projection**:
+- **Current**: 46.9% overall (320 tests)
+- **After Option A2 Only**: 54-58% overall (370-390 tests)
+- **After A1 + A2 Combined**: 58-63% overall (410-465 tests)
+
+### Combining Option A1 and Option A2
+
+**Both plans can be executed together** for comprehensive coverage:
+
+**Combined Execution Order**:
+1. **Option A2 First** (26-36 hours): Get App.tsx to 60%+
+2. **Option A1 Second** (17-27 hours): Get CalendarTab and IntakeTab to 60%+
+3. **Total Effort**: 43-63 hours (5.4-7.9 developer days)
+4. **Final Coverage**: 58-63% overall
+
+**Combined Benefits**:
+- ✅ All 3 largest components at 60%+ coverage
+- ✅ Comprehensive interactive test suite
+- ✅ 90-122 new tests added (320 → 410-442 total)
+- ✅ Strong foundation for future testing
+
+**Recommended Approach**: Execute Option A2 first (App.tsx is most critical), then evaluate if Option A1 is still needed based on time/resources.
+
+### Approval Required
+
+**Please review this plan and confirm**:
+- [ ] Scope is acceptable (App.tsx to 60% with interactive tests)
+- [ ] Effort estimate is reasonable (26-36 hours over 3.25-4.5 days)
+- [ ] Timeline works with your schedule
+- [ ] Interactive testing approach is sound (fireEvent/userEvent for real interactions)
+- [ ] Should we execute A2 alone, or combine A1+A2?
+- [ ] Any adjustments or clarifications needed
+
+**Once approved, implementation will begin with Phase 1A (Criteria Configuration Modal).**
 
 ---
 
