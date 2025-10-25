@@ -18,7 +18,7 @@
     - [Hardware Monitoring](#hardware-monitoring)
     - [Claude Code Memory Leak Monitoring](#claude-code-memory-leak-monitoring)
     - [Resource Limits Configuration](#resource-limits-configuration)
-    - [Summary: What You Don't Need to Remember](#summary-what-you-dont-need-to-remember)
+    - [Division of Responsibility](#division-of-responsibility)
   - [Development Commands](#development-commands)
     - [Database Setup](#database-setup)
     - [Backend (Rust)](#backend-rust)
@@ -382,20 +382,20 @@ pool: 'forks',              // Use forks pool (better isolation, less memory lea
 - Still maintains parallelism for reasonable speed
 - Safer for system stability
 
-### Summary: What You Don't Need to Remember
+### Division of Responsibility
 
-Claude automatically handles:
-- ✅ System health checks before/during/after intensive work
-- ✅ Background process verification after test runs
-- ✅ Hardware diagnostic suggestions when appropriate
-- ✅ Claude Code memory leak monitoring via GitHub
-- ✅ Session restart suggestions at optimal times
-- ✅ Resource usage pattern detection
+**Claude runs automatically** (read-only checks):
+- `./system-health-check.sh` (quick mode) - memory, CPU, process counts
+- `/bashes` - check background tasks
+- Process monitoring and pattern detection
+- Claude Code memory leak monitoring via GitHub
+- Session restart suggestions at optimal times
 
-You only need to:
-- Respond to Claude's suggestions when prompted
-- Run the recommended commands when Claude suggests them
-- Trust that Claude is monitoring in the background
+**You approve/run** (requires sudo or kills processes):
+- `./system-health-check.sh --full` - thermal checks (needs sudo password)
+- `./system-health-check.sh --cleanup` - kills orphaned processes (has safety prompts)
+
+**Workflow:** Claude monitors → detects issues → asks you to approve cleanup if needed.
 
 **See also:** [system-health-check.sh documentation](README_dev.md#system-health-checksh) for detailed script usage.
 
