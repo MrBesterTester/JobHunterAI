@@ -9,6 +9,10 @@
 
 set -e
 
+# Find the project root (directory containing this script)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -266,7 +270,7 @@ echo ""
 
 # Regenerate bug index
 echo -e "${YELLOW}🔄 Regenerating bug index...${NC}"
-python3 scripts/generate-bug-index.py
+./regenerate-bug-index.sh
 echo -e "${GREEN}✅ Bug index regenerated${NC}"
 echo ""
 
