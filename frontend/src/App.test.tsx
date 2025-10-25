@@ -4618,4 +4618,603 @@ describe('App (JobHunterDashboard)', () => {
       });
     });
   });
+
+  describe('Email Composer Modal (Phase 1D)', () => {
+    const mockJob1 = {
+      job_id: 'job-1',
+      title: 'Software Test Engineer',
+      company: 'TechCorp',
+      location: 'Remote',
+      status: 'approved' as const,
+      source: 'linkedin' as const,
+      date_email_sent: new Date().toISOString(),
+      description: 'Test job description',
+    };
+
+    const mockStats = {
+      new: 0,
+      approved: 1,
+      applied: 0,
+      rejected: 0,
+      filtered: 0,
+      pending: 0,
+      interviewing: 0,
+      offer: 0,
+      failed: 0,
+      ignored: 0,
+      duplicates: 0,
+      ranked: 0
+    };
+
+    const mockGeneratedContent = {
+      resume: 'Sam Kirk\nSoftware Test Engineer\n...',
+      cover_letter: 'Dear Hiring Manager,\n\nI am excited to apply...',
+      resume_format: 'pdf',
+      generated_at: new Date().toISOString(),
+      generation_method: 'llm' as const,
+      llm_model: 'claude-3-5-haiku-20241022',
+      tokens_used: 1500,
+      cost_estimate: 0.0234,
+      generation_time_ms: 2500,
+    };
+
+    // Mock helper for email composer tests
+    const createMocksForEmailComposer = () => {
+      return (url: string, options?: RequestInit): Promise<Response> => {
+        // GET /api/jobs - return a job
+        if (url.includes('/api/jobs') && !url.includes('applications') && !url.includes('create-draft') && !url.includes('/score') && options?.method !== 'PUT') {
+          return mockFetchSuccess([mockJob1]);
+        }
+
+        // POST /api/jobs/{id}/generate-content - generate content
+        if (url.includes('/generate-content') && options?.method === 'POST') {
+          return mockFetchSuccess(mockGeneratedContent);
+        }
+
+        // GET /api/applications - return application with generated content
+        if (url.includes('/api/applications') && !url.includes('create-draft')) {
+          const mockApplication = {
+            application_id: 'app-123',
+            job_id: 'job-1',
+            resume_version_id: 'resume-1',
+            cover_letter: mockGeneratedContent.cover_letter,
+            resume_content: mockGeneratedContent.resume,
+            resume_format: mockGeneratedContent.resume_format,
+            created_at: new Date().toISOString(),
+            status: 'draft'
+          };
+          return mockFetchSuccess([mockApplication]);
+        }
+
+        // POST /api/applications/{id}/create-draft - create Gmail draft
+        if (url.includes('/create-draft') && options?.method === 'POST') {
+          return mockFetchSuccess({
+            draft_id: 'draft-123',
+            gmail_draft_id: 'r-1234567890',
+            gmail_url: 'https://mail.google.com/mail/u/0/#drafts/r-1234567890',
+            status: 'created'
+          });
+        }
+
+        // GET /api/jobs/{id}/condense-description
+        if (url.includes('/condense-description')) {
+          return mockFetchSuccess({ condensed_description: 'Test job description' });
+        }
+
+        // GET /api/jobs/{id}/score
+        if (url.includes('/score')) {
+          return mockFetchSuccess({
+            job_id: 'job-1',
+            total_score: 75,
+            match_score: 80,
+            experience_score: 70
+          });
+        }
+
+        // GET /api/stats
+        if (url.includes('/stats')) {
+          return mockFetchSuccess(mockStats);
+        }
+
+        // GET /api/criteria
+        if (url.includes('/api/criteria')) {
+          return mockFetchSuccess(null);
+        }
+
+        // GET /api/job-sources (for IntakeTab)
+        if (url.includes('/api/job-sources')) {
+          return mockFetchSuccess([]);
+        }
+
+        // GET /api/intake/logs (for IntakeTab)
+        if (url.includes('/api/intake/logs')) {
+          return mockFetchSuccess([]);
+        }
+
+        // GET /api/intake/source-summaries (for IntakeTab)
+        if (url.includes('/api/intake/source-summaries')) {
+          return mockFetchSuccess([]);
+        }
+
+        // Default response
+        return mockFetchSuccess({});
+      };
+    };
+
+    it('opens email composer from content generation', async () => {
+      (fetch as Mock).mockImplementation(createMocksForEmailComposer());
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Navigate to Approved tab
+      await waitFor(() => {
+        const approvedTab = screen.getByRole('button', { name: /approved/i });
+        fireEvent.click(approvedTab);
+      }, { timeout: 3000 });
+
+      // Wait for job to appear and click "Generate Content"
+      await waitFor(() => {
+        expect(screen.getByText('Software Test Engineer')).toBeInTheDocument();
+      });
+
+      const generateButton = screen.getByTestId('generate-content-button');
+      fireEvent.click(generateButton);
+
+      // Wait for content generation modal
+      await waitFor(() => {
+        expect(screen.getByTestId('modal-overlay')).toBeInTheDocument();
+        expect(screen.getByText('Generated Content')).toBeInTheDocument();
+      }, { timeout: 5000 });
+
+      // Click "Create Email Draft" button
+      const createDraftButton = screen.getByTestId('create-draft-button');
+      fireEvent.click(createDraftButton);
+
+      // Should open email composer modal
+      await waitFor(() => {
+        expect(screen.getByTestId('email-composer-modal')).toBeInTheDocument();
+      });
+    });
+
+    it('pre-fills recipient, subject, body', async () => {
+      (fetch as Mock).mockImplementation(createMocksForEmailComposer());
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Navigate and open email composer
+      await waitFor(() => {
+        const approvedTab = screen.getByRole('button', { name: /approved/i });
+        fireEvent.click(approvedTab);
+      }, { timeout: 3000 });
+
+      await waitFor(() => {
+        expect(screen.getByText('Software Test Engineer')).toBeInTheDocument();
+      });
+
+      const generateButton = screen.getByTestId('generate-content-button');
+      fireEvent.click(generateButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('content-generation-modal')).toBeInTheDocument();
+      });
+
+      const createDraftButton = screen.getByTestId('create-draft-button');
+      fireEvent.click(createDraftButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('email-composer-modal')).toBeInTheDocument();
+      });
+
+      // Check pre-filled fields
+      const subjectInput = screen.getByTestId('subject-line') as HTMLInputElement;
+      expect(subjectInput.value).toContain('Software Test Engineer');
+      expect(subjectInput.value).toContain('Sam Kirk');
+
+      const coverLetterPreview = screen.getByTestId('cover-letter-preview');
+      expect(coverLetterPreview).toHaveTextContent('Dear Hiring Manager');
+      expect(coverLetterPreview).toHaveTextContent('I am excited to apply');
+    });
+
+    it('displays cover letter preview', async () => {
+      (fetch as Mock).mockImplementation(createMocksForEmailComposer());
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Navigate and open email composer
+      await waitFor(() => {
+        const approvedTab = screen.getByRole('button', { name: /approved/i });
+        fireEvent.click(approvedTab);
+      }, { timeout: 3000 });
+
+      await waitFor(() => {
+        expect(screen.getByText('Software Test Engineer')).toBeInTheDocument();
+      });
+
+      const generateButton = screen.getByTestId('generate-content-button');
+      fireEvent.click(generateButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('content-generation-modal')).toBeInTheDocument();
+      });
+
+      const createDraftButton = screen.getByTestId('create-draft-button');
+      fireEvent.click(createDraftButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('email-composer-modal')).toBeInTheDocument();
+      });
+
+      // Cover letter should be displayed in preview
+      const coverLetterPreview = screen.getByTestId('cover-letter-preview');
+      expect(coverLetterPreview).toBeInTheDocument();
+      expect(coverLetterPreview).toHaveTextContent('Dear Hiring Manager');
+    });
+
+    it('shows resume attachment info', async () => {
+      (fetch as Mock).mockImplementation(createMocksForEmailComposer());
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Navigate and open email composer
+      await waitFor(() => {
+        const approvedTab = screen.getByRole('button', { name: /approved/i });
+        fireEvent.click(approvedTab);
+      }, { timeout: 3000 });
+
+      await waitFor(() => {
+        expect(screen.getByText('Software Test Engineer')).toBeInTheDocument();
+      });
+
+      const generateButton = screen.getByTestId('generate-content-button');
+      fireEvent.click(generateButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('content-generation-modal')).toBeInTheDocument();
+      });
+
+      const createDraftButton = screen.getByTestId('create-draft-button');
+      fireEvent.click(createDraftButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('email-composer-modal')).toBeInTheDocument();
+      });
+
+      // Check resume attachment info
+      const resumeAttachment = screen.getByTestId('resume-attachment');
+      expect(resumeAttachment).toBeInTheDocument();
+      expect(resumeAttachment).toHaveTextContent('techcorp_resume.pdf');
+      expect(resumeAttachment).toHaveTextContent('KB'); // Should show file size
+    });
+
+    it('allows editing fields', async () => {
+      (fetch as Mock).mockImplementation(createMocksForEmailComposer());
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Navigate and open email composer
+      await waitFor(() => {
+        const approvedTab = screen.getByRole('button', { name: /approved/i });
+        fireEvent.click(approvedTab);
+      }, { timeout: 3000 });
+
+      await waitFor(() => {
+        expect(screen.getByText('Software Test Engineer')).toBeInTheDocument();
+      });
+
+      const generateButton = screen.getByTestId('generate-content-button');
+      fireEvent.click(generateButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('content-generation-modal')).toBeInTheDocument();
+      });
+
+      const createDraftButton = screen.getByTestId('create-draft-button');
+      fireEvent.click(createDraftButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('email-composer-modal')).toBeInTheDocument();
+      });
+
+      // Edit recipient email
+      const recipientInput = screen.getByTestId('recipient-email') as HTMLInputElement;
+      fireEvent.change(recipientInput, { target: { value: 'recruiter@techcorp.com' } });
+      expect(recipientInput.value).toBe('recruiter@techcorp.com');
+
+      // Edit subject
+      const subjectInput = screen.getByTestId('subject-line') as HTMLInputElement;
+      fireEvent.change(subjectInput, { target: { value: 'Updated Subject Line' } });
+      expect(subjectInput.value).toBe('Updated Subject Line');
+    });
+
+    it('creates Gmail draft when submitted', async () => {
+      (fetch as Mock).mockImplementation(createMocksForEmailComposer());
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Navigate and open email composer
+      await waitFor(() => {
+        const approvedTab = screen.getByRole('button', { name: /approved/i });
+        fireEvent.click(approvedTab);
+      }, { timeout: 3000 });
+
+      await waitFor(() => {
+        expect(screen.getByText('Software Test Engineer')).toBeInTheDocument();
+      });
+
+      const generateButton = screen.getByTestId('generate-content-button');
+      fireEvent.click(generateButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('content-generation-modal')).toBeInTheDocument();
+      });
+
+      const createDraftButton = screen.getByTestId('create-draft-button');
+      fireEvent.click(createDraftButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('email-composer-modal')).toBeInTheDocument();
+      });
+
+      // Enter recipient and submit
+      const recipientInput = screen.getByTestId('recipient-email');
+      fireEvent.change(recipientInput, { target: { value: 'recruiter@techcorp.com' } });
+
+      const submitButton = screen.getAllByTestId('create-draft-button').find(btn =>
+        btn.textContent?.includes('Create Gmail Draft')
+      );
+      expect(submitButton).toBeDefined();
+      fireEvent.click(submitButton!);
+
+      // Should call create-draft API
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/applications/app-123/create-draft'),
+          expect.objectContaining({
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: expect.stringContaining('recruiter@techcorp.com')
+          })
+        );
+      });
+    });
+
+    it('displays success message with Gmail link', async () => {
+      (fetch as Mock).mockImplementation(createMocksForEmailComposer());
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Navigate and open email composer
+      await waitFor(() => {
+        const approvedTab = screen.getByRole('button', { name: /approved/i });
+        fireEvent.click(approvedTab);
+      }, { timeout: 3000 });
+
+      await waitFor(() => {
+        expect(screen.getByText('Software Test Engineer')).toBeInTheDocument();
+      });
+
+      const generateButton = screen.getByTestId('generate-content-button');
+      fireEvent.click(generateButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('content-generation-modal')).toBeInTheDocument();
+      });
+
+      const createDraftButton = screen.getByTestId('create-draft-button');
+      fireEvent.click(createDraftButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('email-composer-modal')).toBeInTheDocument();
+      });
+
+      // Enter recipient and submit
+      const recipientInput = screen.getByTestId('recipient-email');
+      fireEvent.change(recipientInput, { target: { value: 'recruiter@techcorp.com' } });
+
+      const submitButton = screen.getAllByTestId('create-draft-button').find(btn =>
+        btn.textContent?.includes('Create Gmail Draft')
+      );
+      fireEvent.click(submitButton!);
+
+      // Should show success message
+      await waitFor(() => {
+        expect(screen.getByTestId('success-message')).toBeInTheDocument();
+      });
+
+      // Should show "Draft Created Successfully"
+      expect(screen.getByText(/Draft Created Successfully/i)).toBeInTheDocument();
+      expect(screen.getByText(/open, review, and send/i)).toBeInTheDocument();
+
+      // Should show Gmail link
+      const gmailLink = screen.getByTestId('open-gmail-link');
+      expect(gmailLink).toBeInTheDocument();
+      expect(gmailLink).toHaveAttribute('href', 'https://mail.google.com/mail/u/0/#drafts/r-1234567890');
+      expect(gmailLink).toHaveAttribute('target', '_blank');
+    });
+
+    it('opens Gmail in new tab', async () => {
+      (fetch as Mock).mockImplementation(createMocksForEmailComposer());
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Navigate and open email composer
+      await waitFor(() => {
+        const approvedTab = screen.getByRole('button', { name: /approved/i });
+        fireEvent.click(approvedTab);
+      }, { timeout: 3000 });
+
+      await waitFor(() => {
+        expect(screen.getByText('Software Test Engineer')).toBeInTheDocument();
+      });
+
+      const generateButton = screen.getByTestId('generate-content-button');
+      fireEvent.click(generateButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('content-generation-modal')).toBeInTheDocument();
+      });
+
+      const createDraftButton = screen.getByTestId('create-draft-button');
+      fireEvent.click(createDraftButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('email-composer-modal')).toBeInTheDocument();
+      });
+
+      // Enter recipient and submit
+      const recipientInput = screen.getByTestId('recipient-email');
+      fireEvent.change(recipientInput, { target: { value: 'recruiter@techcorp.com' } });
+
+      const submitButton = screen.getAllByTestId('create-draft-button').find(btn =>
+        btn.textContent?.includes('Create Gmail Draft')
+      );
+      fireEvent.click(submitButton!);
+
+      // Wait for success
+      await waitFor(() => {
+        expect(screen.getByTestId('success-message')).toBeInTheDocument();
+      });
+
+      // Check Gmail link opens in new tab
+      const gmailLink = screen.getByTestId('open-gmail-link');
+      expect(gmailLink).toHaveAttribute('target', '_blank');
+      expect(gmailLink).toHaveAttribute('rel', 'noopener noreferrer');
+    });
+
+    it('handles errors gracefully', async () => {
+      (fetch as Mock).mockImplementation((url: string, options?: RequestInit) => {
+        // Fail on create-draft
+        if (url.includes('/create-draft') && options?.method === 'POST') {
+          return Promise.resolve({
+            ok: false,
+            status: 500,
+            statusText: 'Internal Server Error',
+            json: () => Promise.resolve({ error: 'Gmail API authentication failed' }),
+          } as Response);
+        }
+        return createMocksForEmailComposer()(url, options);
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Navigate and open email composer
+      await waitFor(() => {
+        const approvedTab = screen.getByRole('button', { name: /approved/i });
+        fireEvent.click(approvedTab);
+      }, { timeout: 3000 });
+
+      await waitFor(() => {
+        expect(screen.getByText('Software Test Engineer')).toBeInTheDocument();
+      });
+
+      const generateButton = screen.getByTestId('generate-content-button');
+      fireEvent.click(generateButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('content-generation-modal')).toBeInTheDocument();
+      });
+
+      const createDraftButton = screen.getByTestId('create-draft-button');
+      fireEvent.click(createDraftButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('email-composer-modal')).toBeInTheDocument();
+      });
+
+      // Enter recipient and submit
+      const recipientInput = screen.getByTestId('recipient-email');
+      fireEvent.change(recipientInput, { target: { value: 'recruiter@techcorp.com' } });
+
+      const submitButton = screen.getAllByTestId('create-draft-button').find(btn =>
+        btn.textContent?.includes('Create Gmail Draft')
+      );
+      fireEvent.click(submitButton!);
+
+      // Should show error message
+      await waitFor(() => {
+        expect(screen.getByTestId('error-message')).toBeInTheDocument();
+      });
+
+      expect(screen.getByText(/Gmail API authentication failed/i)).toBeInTheDocument();
+    });
+
+    it('closes modal', async () => {
+      (fetch as Mock).mockImplementation(createMocksForEmailComposer());
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Navigate and open email composer
+      await waitFor(() => {
+        const approvedTab = screen.getByRole('button', { name: /approved/i });
+        fireEvent.click(approvedTab);
+      }, { timeout: 3000 });
+
+      await waitFor(() => {
+        expect(screen.getByText('Software Test Engineer')).toBeInTheDocument();
+      });
+
+      const generateButton = screen.getByTestId('generate-content-button');
+      fireEvent.click(generateButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('content-generation-modal')).toBeInTheDocument();
+      });
+
+      const createDraftButton = screen.getByTestId('create-draft-button');
+      fireEvent.click(createDraftButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('email-composer-modal')).toBeInTheDocument();
+      });
+
+      // Close modal via X button
+      const closeButton = screen.getByTestId('close-button');
+      fireEvent.click(closeButton);
+
+      // Modal should close
+      await waitFor(() => {
+        expect(screen.queryByTestId('email-composer-modal')).not.toBeInTheDocument();
+      });
+    });
+  });
 });
