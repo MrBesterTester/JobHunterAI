@@ -3617,9 +3617,9 @@ describe('App (JobHunterDashboard)', () => {
         expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
       }, { timeout: 3000 });
 
-      // Click on Approved tab to show approved jobs
+      // Click on Approved tab to show approved jobs (tabs are button elements, not role="tab")
       await waitFor(() => {
-        const approvedTab = screen.getByRole('tab', { name: /approved/i });
+        const approvedTab = screen.getByRole('button', { name: /approved/i });
         fireEvent.click(approvedTab);
       }, { timeout: 3000 });
 
