@@ -843,6 +843,11 @@ open coverage/index.html
 - [x] Filters jobs correctly on applied tab
 - [x] Displays all jobs on all tab
 
+**Implementation Notes**:
+- All 18 tests passing
+- Fixed bug in App.tsx:1495 - improved null/undefined check for score rendering
+- Coverage data not available (unable to run coverage report during implementation)
+
 #### 2B. Job List Filtering Tests (4-5 hours, ~15-20 tests)
 
 **Tests to Add**:
