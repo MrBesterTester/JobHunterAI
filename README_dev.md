@@ -81,6 +81,7 @@
       - [`create-bug.sh`](#create-bugsh)
       - [`move-bug.sh`](#move-bugsh)
       - [`regenerate-bug-index.sh`](#regenerate-bug-indexsh)
+      - [`system-health-check.sh`](#system-health-checksh)
     - [Security Notes](#security-notes)
   - [API Endpoints](#api-endpoints)
     - [Jobs](#jobs)
@@ -2223,6 +2224,107 @@ cd backend
 # Also works from project root
 ./regenerate-bug-index.sh   # ✅ Success
 ```
+
+#### [`system-health-check.sh`](system-health-check.sh)
+Monitors system resources and detects issues during Claude Code sessions to prevent system overload.
+
+**Context:** Created for [ISSUE-019](bugs/open/ISSUE-019-macos-nearly-chokes-to-death-during-test-runs.md) after a system freeze during intensive test debugging. Helps prevent resource exhaustion from Claude Code memory leaks, Vitest parallel workers, and orphaned processes.
+
+**Usage:**
+```bash
+# Quick health check (default) - run before/after sessions
+./system-health-check.sh
+
+# Show help information
+./system-health-check.sh --help
+
+# Full diagnostic with hardware checks (thermal, SSD)
+./system-health-check.sh --full
+
+# Cleanup orphaned processes (with confirmation prompts)
+./system-health-check.sh --cleanup
+
+# Monitor during long sessions (runs every 30 seconds)
+./system-health-check.sh --monitor
+```
+
+**What it checks:**
+
+Quick mode (default):
+- Memory usage and percentage of total RAM
+- Node.js, Vitest, and Claude Code process counts
+- CPU load average vs available cores
+- Color-coded warnings when thresholds exceeded
+
+Full mode (--full):
+- All quick mode checks
+- CPU temperature (requires sudo)
+- SSD/disk usage and free space
+- SMART disk health status
+- Thermal warnings with cooling suggestions
+
+Cleanup mode (--cleanup):
+- Detects orphaned Node.js/Vitest processes
+- Lists processes before cleanup
+- Requires confirmation before killing processes
+- Optional memory purge (sudo purge) with safety warning
+- User can skip risky operations
+
+Monitor mode (--monitor):
+- Continuous health checks every 30 seconds
+- Real-time memory, process, and load tracking
+- Alerts when thresholds exceeded
+- Ctrl+C to exit
+
+**When to use:**
+- **Before long Claude Code sessions:** Check baseline resource usage
+- **During intensive test runs:** Monitor mode to detect resource buildup
+- **After completing work:** Cleanup orphaned processes
+- **When system feels slow:** Full diagnostic to identify bottlenecks
+- **Before committing:** Quick check that tests didn't leave orphans
+
+**Thresholds:**
+- Memory: Warning at 80%, Critical at 90%
+- Process count: Warning at 50 Node processes, Critical at 100
+- CPU temp: Warning at 75°C, Critical at 85°C
+- Disk usage: Warning at 80%, Critical at 90%
+
+**Example output:**
+```bash
+$ ./system-health-check.sh
+=== Quick Health Check ===
+
+Memory: 18432 MB / 32.00 GB (57.6%)
+✅ Memory usage normal
+
+=== Process Counts ===
+Node.js processes:  12
+Vitest processes:   0
+Claude processes:   3
+Total processes:    387
+✅ Process counts normal
+
+=== CPU Load ===
+CPU cores: 6
+Load average: 2.45 1.89 1.56
+✅ CPU load normal
+```
+
+**Safety features:**
+- All destructive operations require explicit confirmation
+- Memory purge shows warning and allows skipping
+- Color-coded output for quick visual scanning
+- Detailed explanations for all warnings
+- No automatic process killing without user approval
+
+**Why this matters:**
+Prevents system freeze scenarios like ISSUE-019 where:
+- Claude Code memory leak accumulated over session
+- Vitest spawned too many parallel workers
+- Orphaned processes consumed resources
+- System became unresponsive requiring force restart
+
+**See also:** [ISSUE-019](bugs/open/ISSUE-019-macos-nearly-chokes-to-death-during-test-runs.md) for full background and rationale
 
 ### Security Notes
 

@@ -12,6 +12,13 @@
     - [Token Efficiency & Session Restarts](#token-efficiency--session-restarts)
     - [Documentation Updates from Git History](#documentation-updates-from-git-history)
     - [Documentation Status Accuracy](#documentation-status-accuracy)
+  - [System Health Monitoring & Resource Management](#system-health-monitoring--resource-management)
+    - [During Claude Code Sessions](#during-claude-code-sessions)
+    - [After Test Runs](#after-test-runs)
+    - [Hardware Monitoring](#hardware-monitoring)
+    - [Claude Code Memory Leak Monitoring](#claude-code-memory-leak-monitoring)
+    - [Resource Limits Configuration](#resource-limits-configuration)
+    - [Summary: What You Don't Need to Remember](#summary-what-you-dont-need-to-remember)
   - [Development Commands](#development-commands)
     - [Database Setup](#database-setup)
     - [Backend (Rust)](#backend-rust)
@@ -232,6 +239,165 @@ Claude:
 ```
 
 **User benefit**: Documentation completion markers are trustworthy and reflect actual verified implementation status, not aspirational goals.
+
+## System Health Monitoring & Resource Management
+
+**✅ IMPLEMENTED**: Automated system health monitoring for Claude Code sessions (2025-10-25)
+
+**Context:** Created for [ISSUE-019](bugs/open/ISSUE-019-macos-nearly-chokes-to-death-during-test-runs.md) after a critical incident where the system became nearly unresponsive during intensive test debugging. This section defines automated monitoring practices to prevent resource exhaustion.
+
+### During Claude Code Sessions
+
+**Automatic Reminders:** Claude will proactively monitor and suggest system health checks during long sessions.
+
+**When Claude will remind you:**
+- Before starting intensive test runs (>100 tests)
+- Every 60-90 minutes during extended sessions
+- When token usage reaches 100K+ (session restart time)
+- After completing long-running tasks (builds, test suites)
+
+**System health check commands:**
+```bash
+# Quick health check (use this regularly)
+./system-health-check.sh
+
+# Check background tasks
+/bashes
+
+# Full diagnostic if system feels slow
+./system-health-check.sh --full
+```
+
+**What Claude monitors:**
+- Process counts (Node.js, Vitest, background shells)
+- Memory usage patterns
+- Session duration and complexity
+- Background task accumulation
+
+**User benefit:** No need to remember to check system health - Claude handles this automatically.
+
+### After Test Runs
+
+**Automatic Verification:** Claude will automatically verify process cleanup after test runs.
+
+**Claude's automatic workflow after tests:**
+1. Check for orphaned Vitest/Node processes
+2. Verify background shells terminated properly
+3. Run quick health check if test run was >5 minutes
+4. Suggest cleanup if orphaned processes detected
+
+**Cleanup command (if needed):**
+```bash
+./system-health-check.sh --cleanup
+```
+
+**Why this matters:**
+- Vitest parallel workers can remain orphaned after tests
+- Background bash shells from Claude Code may not terminate
+- Accumulated processes lead to memory exhaustion
+- Prevention is easier than recovery
+
+**User benefit:** Automated process verification after every significant test run - no manual checking required.
+
+### Hardware Monitoring
+
+**Automatic Thermal & Resource Checks:** Claude will suggest hardware diagnostics when appropriate.
+
+**When Claude suggests hardware checks:**
+- Before starting intensive sessions on hot days
+- If you report system slowness or fan noise
+- Before extended test runs (CI/CD, comprehensive suites)
+- After system has been under load for >2 hours
+
+**Full diagnostic command:**
+```bash
+./system-health-check.sh --full
+```
+
+**What gets checked:**
+- CPU temperature (requires sudo, may prompt for password)
+- SSD health and free space
+- Memory pressure and swap usage
+- Thermal throttling indicators
+
+**Hardware notes:**
+- ✅ Internal fans and filters cleaned (2025-10-25)
+- 2018 MacBook Pro has known thermal constraints under sustained load
+- M1 iMac available as alternative for intensive sessions (trade-off: no 34" monitor)
+
+**User benefit:** Claude proactively suggests hardware checks before they become critical issues.
+
+### Claude Code Memory Leak Monitoring
+
+**Automatic GitHub Monitoring:** Claude will periodically check for Claude Code memory leak reports.
+
+**What Claude monitors:**
+- New memory leak issues in anthropics/claude-code GitHub repository
+- Release notes for v2.0.27+ mentioning memory fixes
+- Community reports of process multiplication bugs
+- Updates to known issues (#8382, #4953, #8968, #10139, #1935, #4666)
+
+**Monitoring frequency:**
+- Weekly during active development
+- Before major test sessions
+- When user reports slowness or issues
+- After Claude Code updates
+
+**How Claude monitors:**
+```
+# Claude runs web searches like:
+"Claude Code v2.0.27 v2.0.28 memory leak issues site:github.com/anthropics/claude-code"
+```
+
+**Claude will report findings:**
+- New critical issues discovered
+- Confirmed fixes in recent versions
+- Workarounds shared by community
+- Recommendations for version updates
+
+**GitHub issue template available:** See [ISSUE-019](bugs/open/ISSUE-019-macos-nearly-chokes-to-death-during-test-runs.md) for template if filing becomes necessary.
+
+**User benefit:** Claude handles all memory leak monitoring - you don't need to manually check GitHub or remember to search for issues.
+
+### Resource Limits Configuration
+
+**✅ CONFIGURED**: Vitest resource limits implemented to prevent system overload.
+
+**Configuration:** `frontend/vitest.config.ts` (ISSUE-019)
+```typescript
+maxWorkers: 4,              // Limit to 4 parallel workers (vs 6-12 default)
+minWorkers: 1,              // Don't spawn unnecessary workers
+pool: 'forks',              // Use forks pool (better isolation, less memory leak)
+```
+
+**Benefits:**
+- Reduces parallel worker count from 6-12 to 4
+- Uses forks pool with better memory isolation vs threads
+- Prevents CPU bottleneck on main thread
+- Limits cumulative memory leak impact
+- More predictable resource usage
+
+**Trade-offs:**
+- Test runs may take ~25-50% longer
+- Still maintains parallelism for reasonable speed
+- Safer for system stability
+
+### Summary: What You Don't Need to Remember
+
+Claude automatically handles:
+- ✅ System health checks before/during/after intensive work
+- ✅ Background process verification after test runs
+- ✅ Hardware diagnostic suggestions when appropriate
+- ✅ Claude Code memory leak monitoring via GitHub
+- ✅ Session restart suggestions at optimal times
+- ✅ Resource usage pattern detection
+
+You only need to:
+- Respond to Claude's suggestions when prompted
+- Run the recommended commands when Claude suggests them
+- Trust that Claude is monitoring in the background
+
+**See also:** [system-health-check.sh documentation](README_dev.md#system-health-checksh) for detailed script usage.
 
 ## Development Commands
 

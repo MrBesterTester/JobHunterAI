@@ -51,6 +51,17 @@ export default defineConfig({
 
     // Test timeout (equivalent to Jest's testTimeout)
     testTimeout: 10000,
+
+    // RESOURCE LIMITS FOR MACOS STABILITY (ISSUE-019)
+    // Limits parallel workers to prevent system overload during test runs
+    maxWorkers: 4,              // Limit to 4 parallel workers (vs 6-12 default)
+    minWorkers: 1,              // Don't spawn unnecessary workers
+    pool: 'forks',              // Use forks pool (better isolation, less memory leak)
+    poolOptions: {
+      forks: {
+        singleFork: false,      // Allow parallelism but controlled
+      }
+    },
   },
 
   resolve: {
