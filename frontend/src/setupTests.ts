@@ -41,6 +41,8 @@ global.IntersectionObserver = class IntersectionObserver {
 const originalError = console.error;
 beforeAll(() => {
   console.error = (...args: any[]) => {
+    const message = args[0]?.toString() || '';
+
     // Filter out known React warnings that are expected in tests
     if (
       typeof args[0] === 'string' &&
@@ -53,6 +55,17 @@ beforeAll(() => {
     ) {
       return;
     }
+
+    // Filter out expected API errors (tests run without backend, so API calls fail)
+    if (
+      message.includes('Failed to fetch') ||
+      message.includes('Error fetching') ||
+      message.includes('Error: Failed to fetch') ||
+      message.includes('500')
+    ) {
+      return; // Suppress expected API errors in tests
+    }
+
     originalError.call(console, ...args);
   };
 });
