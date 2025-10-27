@@ -3,7 +3,7 @@
 # Session End Hook - Cleanup Orphaned Processes
 # This hook runs when Claude Code session ends
 
-set -e
+# Note: Not using 'set -e' to ensure we always reach JSON output even if commands fail
 
 # Read hook input from stdin
 input=$(cat)
@@ -45,15 +45,25 @@ echo "========================================" >&2
 echo "" >&2
 
 # Output JSON for Claude Code
-python3 <<'PYTHON_EOF'
+# Ensure this always succeeds and produces valid JSON
+python3 <<'PYTHON_EOF' || echo '{"hookSpecificOutput":{"hookEventName":"SessionEnd","additionalContext":"Cleanup completed"}}'
 import json
+import sys
 
-output = {
-    "hookSpecificOutput": {
-        "hookEventName": "SessionEnd",
-        "additionalContext": "Cleanup completed: checked for orphaned processes"
+try:
+    output = {
+        "hookSpecificOutput": {
+            "hookEventName": "SessionEnd",
+            "additionalContext": "Cleanup completed: checked for orphaned processes"
+        }
     }
-}
-
-print(json.dumps(output))
+    print(json.dumps(output), flush=True)
+    sys.exit(0)
+except Exception as e:
+    # Fallback to basic JSON if anything fails
+    print('{"hookSpecificOutput":{"hookEventName":"SessionEnd","additionalContext":"Cleanup error"}}', flush=True)
+    sys.exit(0)
 PYTHON_EOF
+
+# Ensure script always exits with success
+exit 0
