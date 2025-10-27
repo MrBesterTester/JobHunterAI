@@ -36,6 +36,7 @@ related_issues: [ISSUE-018, ISSUE-019]](#type-issue%0Aid-issue-021%0Atitle-vites
   - [Implementation Status](#implementation-status)
     - [✅ COMPLETED (2025-10-27)](#-completed-2025-10-27)
     - [🔄 REMAINING](#-remaining)
+  - [Test Results: Vitest 4.0.4 Upgrade](#test-results-vitest-404-upgrade)
   - [Next Steps](#next-steps)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -749,21 +750,50 @@ This identifies exactly what's keeping the process alive.
 
 **Confidence Level**: High - v4.0.4 specifically fixes worker stability and hanging issues.
 
+## Test Results: Vitest 4.0.4 Upgrade
+
+**✅ COMPLETED (2025-10-27)**: Upgraded to Vitest 4.0.4
+
+**Packages upgraded**:
+- `vitest@4.0.3` → `vitest@4.0.4`
+- `@vitest/ui@4.0.3` → `@vitest/ui@4.0.4`
+- `@vitest/coverage-v8@4.0.3` → `@vitest/coverage-v8@4.0.4`
+
+**Test Results**:
+- ❌ **Hanging issue NOT resolved**: Phase 2A tests still hang indefinitely
+- Configuration tested: `pool: 'forks'`, `maxWorkers: 1`, `singleFork: true`
+- Test execution: Hangs after displaying test names, never completes
+- Duration before manual termination: ~2+ minutes (expected: 5-10 seconds)
+
+**Findings**:
+1. Upgrade to 4.0.4 did NOT fix the hanging issue as anticipated
+2. Tests hang during execution, not during setup/teardown
+3. Current forks pool configuration (Step 3) already applied, no improvement
+4. Hanging-process reporter (Step 4) unable to provide diagnostic output
+5. **Root cause likely in test code** (Step 5 investigation needed)
+
 ## Next Steps
 
-**✅ APPROVED PLAN: Upgrade to Vitest 4.0.4**
+**Current Status**: Upgrade complete, but hanging persists
 
-**Next action**: Implement Step 1 (upgrade to 4.0.4) and test with Phase 2A tests.
+**Immediate next actions**:
+1. **Step 5: Deep Test Code Investigation** (HIGH PRIORITY)
+   - Review Phase 2A tests for unclosed async operations
+   - Check for uncleared timers (`setTimeout`, `setInterval`)
+   - Verify event listeners are removed
+   - Ensure Promises are properly awaited
+   - Confirm React effects have proper cleanup
 
-**If successful**:
-- Consider reverting `maxWorkers` back to 4 (from current 1) for better performance
-- Remove experimental config: `teardownTimeout`, `logHeapUsage`, `singleFork`
-- Document the fix in ISSUE-021
+2. **Alternative approaches**:
+   - Try `pool: 'threads'` instead of 'forks'
+   - Test with `maxWorkers: 4` to rule out concurrency issues
+   - Remove experimental config (teardownTimeout, logHeapUsage, singleFork)
+   - Run individual Phase 2A tests to isolate problematic test(s)
 
-**If upgrade doesn't resolve hanging**:
-- Proceed to Step 3 (try forks pool)
-- Then Step 4 (hanging-process reporter for deep debugging)
-- Then Step 5 (test code investigation)
+**Decision needed**: Should we:
+- Option A: Investigate test code for hanging root cause (Step 5)
+- Option B: Downgrade to Vitest 1.x (higher risk, known bugs)
+- Option C: Continue with hanging tests and manual Ctrl+C (not sustainable)
 
 **Usage:**
 ```bash
@@ -780,8 +810,8 @@ cd frontend && ./run-tests.sh --filter "Phase 2A"
 ---
 
 **Created**: 2025-10-27
-**Updated**: 2025-10-27 (Option D research complete)
-**Status**: Open - Ready for Implementation (Options A+B complete, C exhausted, D researched with clear upgrade recommendation)
-**Priority**: Medium-High (tests work but hang indefinitely, dev experience severely impacted)
-**Complexity**: Medium (patch version upgrade to v4.0.4 should resolve hanging issue)
-**Next Action**: Upgrade to Vitest 4.0.4 and test
+**Updated**: 2025-10-27 (Vitest 4.0.4 upgrade complete - hanging NOT resolved)
+**Status**: Open - Investigation Required (Options A+B complete, C exhausted, D complete but unsuccessful)
+**Priority**: HIGH (tests hang indefinitely, blocking development workflow)
+**Complexity**: Medium-High (Vitest upgrade didn't fix issue, root cause likely in test code)
+**Next Action**: Step 5 - Deep test code investigation for unclosed async operations
