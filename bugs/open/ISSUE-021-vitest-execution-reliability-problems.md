@@ -53,6 +53,11 @@ related_issues: [ISSUE-018, ISSUE-019]](#type-issue%0Aid-issue-021%0Atitle-vites
   - [Next Steps](#next-steps)
     - [Expected Results](#expected-results)
     - [Confidence Level](#confidence-level)
+  - [Option i Implementation Results (2025-10-27)](#option-i-implementation-results-2025-10-27)
+  - [All Options Status Summary](#all-options-status-summary)
+    - [Original Implementation Options (Foundation)](#original-implementation-options-foundation)
+    - [Resolution Options (Root Cause Fixes)](#resolution-options-root-cause-fixes)
+  - [Next Steps - Option iii Implementation Plan](#next-steps---option-iii-implementation-plan)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -1121,9 +1126,151 @@ cd frontend && ./run-tests.sh --filter "Phase 2A"
 
 ---
 
+## Option i Implementation Results (2025-10-27)
+
+**Status**: ✅ **COMPLETED** - But hanging issue persists
+
+**Implementation Summary**:
+
+Successfully removed all setTimeout calls from test mock implementations:
+- ✅ `frontend/src/App.test.tsx`: Fixed 3 instances (lines 808, 2291, 3332)
+- ✅ `frontend/src/IntakeTab.test.tsx`: Fixed 1 instance (line 330)
+- ✅ `frontend/src/WeightAdjustmentPanel.test.tsx`: Fixed 2 instances (lines 725, 755)
+- ✅ Verified: No setTimeout remaining in any test files (*.test.tsx)
+- ✅ Reverted vitest config: `maxWorkers: 1` → `maxWorkers: 4` (parallel execution restored)
+
+**Test Results**: ❌ **HANGING PERSISTS**
+- Phase 2A tests still hang after 30+ seconds
+- Expected: 5-10 seconds completion
+- Observed: Tests execute but Vitest never exits
+- Console output is clean (suppression working)
+- Tried `--reporter=hanging-process` but it also hung
+
+**Analysis**: Option i alone did NOT resolve the hanging issue.
+
+**Conclusion**:
+- The Step 5 investigation identified setTimeout in test mocks as the primary cause
+- However, removing them alone was insufficient to fix the hanging
+- Component setTimeout calls (not in test files) are likely contributing to the issue
+- Other async operations may also be preventing clean exit
+
+**Next Recommended Action**: ✅ **Implement Option iii** (Component setTimeout Cleanup)
+
+---
+
+## All Options Status Summary
+
+### Original Implementation Options (Foundation)
+
+**Option A: Standardized Test Execution Script** - ✅ **COMPLETED (2025-10-27)**
+- Status: Fully implemented and working
+- Result: Created `frontend/run-tests.sh` with all features
+- Benefits: Clean output, log files, exit code explanations, timing measurements
+- Conclusion: Script works perfectly, provides excellent developer experience
+
+**Option B: Console Error Suppression** - ✅ **COMPLETED (2025-10-27)**
+- Status: Fully implemented and working
+- Result: Updated `frontend/src/setupTests.ts` to suppress expected API errors
+- Benefits: Reduced output from 320+ lines to ~0 (97%+ noise reduction)
+- Conclusion: Console suppression working as intended, real errors still visible
+
+**Option C: Investigate Vitest Configuration** - ✅ **COMPLETED (2025-10-27)**
+- Status: Tested multiple configurations, reverted to parallel execution
+- Results tested:
+  - `teardownTimeout: 5000` - Did NOT fix hanging
+  - `maxWorkers: 1, singleFork: true` - Did NOT fix hanging (even sequential)
+  - `maxWorkers: 4, pool: 'forks'` - Reverted to this (current config)
+- Conclusion: Configuration changes alone do not fix hanging issue
+
+**Option D: Upgrade Vitest** - ✅ **COMPLETED (2025-10-27)**
+- Status: Upgraded to Vitest 4.0.4 (latest patch)
+- Results: Hanging issue persisted after upgrade
+- Packages upgraded:
+  - `vitest@4.0.3` → `vitest@4.0.4`
+  - `@vitest/ui@4.0.3` → `@vitest/ui@4.0.4`
+  - `@vitest/coverage-v8@4.0.3` → `@vitest/coverage-v8@4.0.4`
+- Conclusion: Vitest version is not the cause of hanging
+
+### Resolution Options (Root Cause Fixes)
+
+**Option i: Remove setTimeout from Test Mocks** - ✅ **COMPLETED (2025-10-27)** ❌ **DID NOT FIX HANGING**
+- Status: Fully implemented, hanging persists
+- Files fixed: App.test.tsx (3), IntakeTab.test.tsx (1), WeightAdjustmentPanel.test.tsx (2)
+- Result: Tests still hang after 30+ seconds
+- Conclusion: Test mock setTimeout was not the only cause
+- **Next step required**: Option iii (component setTimeout cleanup)
+
+**Option ii: Use Fake Timers in Tests with setTimeout** - ⏸️ **NOT STARTED**
+- Status: Alternative approach if Option iii doesn't work
+- Complexity: Medium (requires adding `vi.useFakeTimers()` to affected tests)
+- Risk: May interfere with React Testing Library's async utilities
+- Recommendation: Use only if Option iii fails
+
+**Option iii: Add Cleanup to Component setTimeout** - 🎯 **RECOMMENDED NEXT STEP**
+- Status: ⏸️ **PENDING IMPLEMENTATION**
+- Priority: **HIGH** - Most likely remaining cause of hanging
+- Component setTimeout calls identified:
+  - `frontend/src/IntakeTab.tsx:241` (3 second delay after Gmail auth)
+  - `frontend/src/ResumeManagement.tsx:80, 118, 139, 163` (4 instances, 3 second delays)
+  - `frontend/src/App.tsx:1258` (100ms delay for download sequencing)
+- Why this matters: These timers trigger when components mount during tests, preventing Vitest from exiting
+- Estimated effort: 2-3 hours
+- Expected outcome: Tests complete cleanly without hanging
+
+**Option iv: Add AbortController to Fetch Operations** - ⏸️ **NOT STARTED**
+- Status: Code quality improvement, not related to hanging
+- Priority: LOW - Implement after fixing hanging issue
+- Complexity: High (8-12 hours across multiple components)
+- Recommendation: Optional, good production practice but not urgent
+
+---
+
+## Next Steps - Option iii Implementation Plan
+
+**Goal**: Add proper cleanup to component setTimeout calls to prevent tests from hanging.
+
+**Files to modify** (in priority order):
+
+1. **IntakeTab.tsx:241** (Gmail auth 3-second delay)
+   ```typescript
+   // Before
+   setTimeout(() => { fetchSources(); }, 3000);
+
+   // After
+   useEffect(() => {
+     const timeoutId = setTimeout(() => { fetchSources(); }, 3000);
+     return () => clearTimeout(timeoutId);
+   }, []);
+   ```
+
+2. **ResumeManagement.tsx** (4 success message auto-hide delays)
+   - Lines: 80, 118, 139, 163
+   - Each: `setTimeout(() => setSuccessMessage(null), 3000);`
+   - Fix: Store timeout ID and clear in cleanup
+
+3. **App.tsx:1258** (100ms download sequencing delay)
+   - Used in download flow for cover letter
+   - Fix: Store timeout ID and clear if component unmounts
+
+**Expected Results After Option iii**:
+- ✅ Tests complete cleanly without hanging
+- ✅ Execution time: 5-10 seconds for Phase 2A (18 tests)
+- ✅ No manual termination (Ctrl+C) required
+- ✅ Exit code 0 (success) instead of timeout
+- ✅ No React warnings about state updates on unmounted components
+
+**If Option iii still doesn't fix hanging**:
+- Proceed to Option ii (fake timers in tests)
+- Investigate other async operations (Promises, event listeners)
+- Consider deeper profiling with `--inspect-brk` flag
+
+**Confidence Level**: High - Component setTimeout calls are the most likely remaining cause of hanging after Option i did not fully resolve the issue.
+
+---
+
 **Created**: 2025-10-27
-**Updated**: 2025-10-27 (Step 5 investigation complete - Root cause identified)
-**Status**: Open - Resolution Required (Options A-D complete, Step 5 complete, Option i recommended)
+**Updated**: 2025-10-27 (Option i complete, hanging persists, Option iii recommended)
+**Status**: Open - Resolution Required (Options A-D complete, Option i complete but insufficient, Option iii next)
 **Priority**: HIGH (tests hang indefinitely, blocking development workflow)
-**Complexity**: Medium (Root cause identified, fix is straightforward)
-**Next Action**: Option i - Remove setTimeout from test mocks (1-2 hours estimated)
+**Complexity**: Medium (Root cause likely in component setTimeout, fix is straightforward)
+**Next Action**: Option iii - Add cleanup to component setTimeout calls (2-3 hours estimated)

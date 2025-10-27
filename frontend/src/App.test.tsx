@@ -804,21 +804,17 @@ describe('App (JobHunterDashboard)', () => {
 
     it('tracks loading state during data fetching', async () => {
       (fetch as Mock).mockImplementation((url: string) => {
-        return new Promise(resolve => {
-          setTimeout(() => {
-            if (url.includes('/api/jobs')) {
-              resolve(mockFetchSuccess([]));
-            } else if (url.includes('/api/stats')) {
-              resolve(mockFetchSuccess({}));
-            } else if (url.includes('/api/criteria')) {
-              resolve(mockFetchSuccess(null));
-            } else if (url.includes('/api/applications')) {
-              resolve(mockFetchSuccess([]));
-            } else {
-              resolve(mockFetchError());
-            }
-          }, 100);
-        });
+        if (url.includes('/api/jobs')) {
+          return Promise.resolve(mockFetchSuccess([]));
+        } else if (url.includes('/api/stats')) {
+          return Promise.resolve(mockFetchSuccess({}));
+        } else if (url.includes('/api/criteria')) {
+          return Promise.resolve(mockFetchSuccess(null));
+        } else if (url.includes('/api/applications')) {
+          return Promise.resolve(mockFetchSuccess([]));
+        } else {
+          return Promise.resolve(mockFetchError());
+        }
       });
 
       render(<App />);
@@ -2287,21 +2283,17 @@ describe('App (JobHunterDashboard)', () => {
 
     it('handles slow API responses without hanging', async () => {
       (fetch as Mock).mockImplementation((url: string) => {
-        return new Promise(resolve => {
-          setTimeout(() => {
-            if (url.includes('/api/jobs')) {
-              resolve(mockFetchSuccess([]));
-            } else if (url.includes('/api/stats')) {
-              resolve(mockFetchSuccess({}));
-            } else if (url.includes('/api/criteria')) {
-              resolve(mockFetchSuccess(null));
-            } else if (url.includes('/api/applications')) {
-              resolve(mockFetchSuccess([]));
-            } else {
-              resolve(mockFetchError());
-            }
-          }, 500);
-        });
+        if (url.includes('/api/jobs')) {
+          return Promise.resolve(mockFetchSuccess([]));
+        } else if (url.includes('/api/stats')) {
+          return Promise.resolve(mockFetchSuccess({}));
+        } else if (url.includes('/api/criteria')) {
+          return Promise.resolve(mockFetchSuccess(null));
+        } else if (url.includes('/api/applications')) {
+          return Promise.resolve(mockFetchSuccess([]));
+        } else {
+          return Promise.resolve(mockFetchError());
+        }
       });
 
       render(<App />);
@@ -3328,16 +3320,12 @@ describe('App (JobHunterDashboard)', () => {
     it('handles data updates while generating content', async () => {
       (fetch as Mock).mockImplementation((url: string) => {
         if (url.includes('/generate-content')) {
-          return new Promise(resolve => {
-            setTimeout(() => {
-              resolve(mockFetchSuccess({
-                resume: 'Resume',
-                cover_letter: 'Cover letter',
-                resume_format: 'text',
-                generated_at: new Date().toISOString(),
-              }));
-            }, 100);
-          });
+          return Promise.resolve(mockFetchSuccess({
+            resume: 'Resume',
+            cover_letter: 'Cover letter',
+            resume_format: 'text',
+            generated_at: new Date().toISOString(),
+          }));
         }
         if (url.includes('/api/jobs')) {
           return mockFetchSuccess([

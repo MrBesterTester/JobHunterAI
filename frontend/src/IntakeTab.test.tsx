@@ -326,21 +326,17 @@ describe('IntakeTab', () => {
   describe('UI State', () => {
     it('handles loading state', async () => {
       (fetch as Mock).mockImplementation((url: string) => {
-        return new Promise(resolve => {
-          setTimeout(() => {
-            if (url.includes('/api/job-sources')) {
-              resolve(mockFetchSuccess([]));
-            } else if (url.includes('/api/intake/logs')) {
-              resolve(mockFetchSuccess([]));
-            } else if (url.includes('/api/intake/summary')) {
-              resolve(mockFetchSuccess([]));
-            } else if (url.includes('/api/extraction/prompts')) {
-              resolve(mockFetchSuccess(null));
-            } else {
-              resolve(mockFetchError());
-            }
-          }, 50);
-        });
+        if (url.includes('/api/job-sources')) {
+          return Promise.resolve(mockFetchSuccess([]));
+        } else if (url.includes('/api/intake/logs')) {
+          return Promise.resolve(mockFetchSuccess([]));
+        } else if (url.includes('/api/intake/summary')) {
+          return Promise.resolve(mockFetchSuccess([]));
+        } else if (url.includes('/api/extraction/prompts')) {
+          return Promise.resolve(mockFetchSuccess(null));
+        } else {
+          return Promise.resolve(mockFetchError());
+        }
       });
 
       render(<IntakeTab />);

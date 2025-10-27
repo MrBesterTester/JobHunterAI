@@ -62,15 +62,9 @@ export default defineConfig({
 
     // RESOURCE LIMITS FOR MACOS STABILITY (ISSUE-019 + ISSUE-021)
     // Limits parallel workers to prevent system overload during test runs
-    // ISSUE-021: Reduced to 1 for sequential execution to prevent hanging
-    maxWorkers: 1,              // Force sequential execution (was 4, more stable)
+    maxWorkers: 4,              // Limit to 4 parallel workers (vs 6-12 default)
     minWorkers: 1,              // Don't spawn unnecessary workers
     pool: 'forks',              // Use forks pool (better isolation, less memory leak)
-    poolOptions: {
-      forks: {
-        singleFork: true,       // ISSUE-021: Single fork for sequential execution
-      }
-    },
   },
 
   resolve: {

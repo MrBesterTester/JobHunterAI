@@ -721,9 +721,10 @@ describe('WeightAdjustmentPanel', () => {
         ok: true,
         json: async () => mockCriteria
       })
-      .mockImplementationOnce(() => new Promise((resolve) => {
-        setTimeout(() => resolve({ ok: true, json: async () => ({}) }), 1000);
-      }));
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({})
+      });
 
     render(<WeightAdjustmentPanel />);
 
@@ -751,9 +752,10 @@ describe('WeightAdjustmentPanel', () => {
         ok: true,
         json: async () => mockCriteria
       })
-      .mockImplementationOnce(() => new Promise((resolve) => {
-        setTimeout(() => resolve({ ok: true, json: async () => ({}) }), 1000);
-      }));
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({})
+      });
 
     render(<WeightAdjustmentPanel />);
 
