@@ -45,23 +45,22 @@ echo "========================================" >&2
 echo "" >&2
 
 # Output JSON for Claude Code
-# Ensure this always succeeds and produces valid JSON
-python3 <<'PYTHON_EOF' || echo '{"hookSpecificOutput":{"hookEventName":"SessionEnd","additionalContext":"Cleanup completed"}}'
+# SessionEnd hooks only support common fields (not hookSpecificOutput)
+# See: https://docs.claude.com/en/docs/claude-code/hooks
+python3 <<'PYTHON_EOF' || echo '{}'
 import json
 import sys
 
 try:
     output = {
-        "hookSpecificOutput": {
-            "hookEventName": "SessionEnd",
-            "additionalContext": "Cleanup completed: checked for orphaned processes"
-        }
+        "systemMessage": "Cleanup completed: checked for orphaned processes",
+        "suppressOutput": False
     }
     print(json.dumps(output), flush=True)
     sys.exit(0)
 except Exception as e:
-    # Fallback to basic JSON if anything fails
-    print('{"hookSpecificOutput":{"hookEventName":"SessionEnd","additionalContext":"Cleanup error"}}', flush=True)
+    # Fallback to empty JSON if anything fails
+    print('{}', flush=True)
     sys.exit(0)
 PYTHON_EOF
 
