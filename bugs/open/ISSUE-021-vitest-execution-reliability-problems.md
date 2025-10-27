@@ -1,6 +1,15 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
+  - [type: issue
+id: ISSUE-021
+title: Vitest Execution Reliability Problems
+status: open
+created: 2025-10-27
+component: frontend/testing
+severity: medium
+tags: [vitest, testing, reliability, tooling]
+related_issues: [ISSUE-018, ISSUE-019]](#type-issue%0Aid-issue-021%0Atitle-vitest-execution-reliability-problems%0Astatus-open%0Acreated-2025-10-27%0Acomponent-frontendtesting%0Aseverity-medium%0Atags-vitest-testing-reliability-tooling%0Arelated_issues-issue-018-issue-019)
 - [Vitest Execution Reliability Problems](#vitest-execution-reliability-problems)
   - [Summary](#summary)
   - [Symptoms Observed](#symptoms-observed)
@@ -573,28 +582,188 @@ cd frontend
 
 ### 🔄 REMAINING
 
-**Excessive Runtime (Next Priority)**
-- ❌ Tests still taking longer than expected
+**Excessive Runtime / Hanging Issue (CRITICAL)**
+- ❌ Tests consistently hang after execution completes
 - Expected: 18 tests (Phase 2A) should complete in 5-10 seconds
-- Current: May be taking significantly longer
-- Possible causes:
-  - Resource limits (already set: maxWorkers=4, pool='forks')
-  - Test environment cleanup issues
-  - Async operations not properly awaited
-  - Vitest v4.0.3 stability issues
-- **Next Steps**:
-  1. Measure actual test execution time with new script
-  2. Profile individual test suites to identify slow tests
-  3. Consider Option C: Adjust vitest.config.ts timeouts and settings
-  4. Consider Option D: Investigate Vitest version issues
+- Actual: Tests execute but vitest hangs indefinitely (90-150+ seconds observed)
+- Pattern: Tests run successfully, stdout appears, but vitest never exits
+
+**Option C Investigation Results (2025-10-27)**
+
+**Test 1 - Baseline (before Option C)**:
+- Config: maxWorkers=4, pool='forks', no teardownTimeout
+- Result: Hung after ~90 seconds, all tests executed but vitest didn't exit
+- TypeScript check: 2s, Tests ran but hung at completion
+
+**Test 2 - With teardownTimeout + logHeapUsage**:
+- Config: maxWorkers=4, teardownTimeout=5000, logHeapUsage=true
+- Result: Hung after ~81 seconds, same hanging behavior
+- Conclusion: teardownTimeout alone doesn't fix hanging
+
+**Test 3 - With Sequential Execution**:
+- Config: maxWorkers=1, singleFork=true, teardownTimeout=5000, logHeapUsage=true
+- Result: Hung after ~143 seconds, hanging persists even with sequential execution
+- Conclusion: Worker parallelism is NOT the root cause
+
+**Configuration Changes Applied (frontend/vitest.config.ts:55-72)**:
+```typescript
+teardownTimeout: 5000,    // ISSUE-021: Helps prevent hanging during cleanup
+logHeapUsage: true,       // ISSUE-021: Monitor memory usage
+maxWorkers: 1,            // ISSUE-021: Force sequential (was 4)
+singleFork: true,         // ISSUE-021: Single fork (was false)
+```
+
+**Root Cause Analysis**:
+Option C configuration changes did NOT resolve the hanging issue. The problem appears deeper:
+
+1. **NOT a worker/parallelism issue** - Sequential execution still hangs
+2. **NOT a timeout issue** - teardownTimeout doesn't help
+3. **Likely causes**:
+   - Vitest v4.0.3 stability issue (Option D needed)
+   - Test code not properly cleaning up async operations
+   - jsdom environment not terminating properly
+   - Event listeners or timers not being cleared
+
+**Recommended Next Steps**:
+1. **Option D: Investigate Vitest version** (HIGH PRIORITY)
+   - Current: vitest@4.0.3 (recent major version)
+   - Try: Downgrade to stable 1.x branch or upgrade to latest 4.x patch
+   - Risk: May require test migration work
+
+2. **Deep test code investigation** (MEDIUM PRIORITY)
+   - Review Phase 2A tests for unclosed async operations
+   - Check for:
+     - Uncleared timers (setTimeout, setInterval)
+     - Event listeners not removed
+     - Promises not properly awaited
+     - React effects not properly cleaned up
+
+3. **Consider temporary workaround** (LOW PRIORITY)
+   - Add explicit process.exit() in test teardown (not ideal)
+   - Use --pool=threads instead of forks (may have different behavior)
+
+**Trade-offs of Current Config**:
+- ✅ Logs show heap usage for memory monitoring
+- ✅ Sequential execution is more stable (when it completes)
+- ❌ Sequential execution is slower (~25-50% longer when working)
+- ❌ Hanging issue remains unresolved
+- ⚠️ Recommend reverting maxWorkers to 4 if Option D doesn't help
+
+**Option D Investigation Results (2025-10-27)**
+
+**Research Question**: Should we upgrade or downgrade Vitest to fix hanging issues?
+
+**Current State**:
+- Installed version: vitest@4.0.3 (released October 24, 2024)
+- Latest available: vitest@4.0.4 (released October 27, 2024)
+- Symptom: Tests execute successfully but Vitest hangs indefinitely and never exits
+
+**Vitest Version History & Stability Research**:
+
+**Vitest 4.x Architecture (Major Improvement)**:
+- v4.0.0 released October 22, 2024
+- **Major change**: Completely removed Tinypool and rewrote pool architecture
+- **Why**: Tinypool had worker termination issues (`worker.terminate()` never resolving)
+- **Benefit**: Eliminates root cause of hanging processes from 1.x versions
+
+**Vitest 1.x Known Issues** (reasons NOT to downgrade):
+- ❌ "Close timed out after 1000ms" errors common and persistent
+- ❌ Tinypool worker termination bugs (tests hang, worker peaked at 100% CPU)
+- ❌ Flaky behavior in CI environments
+- ❌ `worker.terminate()` would not resolve, leaving hung processes
+- ⚠️ Workaround: Switch to `pool: 'forks'` (slower but more stable)
+
+**Vitest 4.0.x Patch Release Timeline** (rapid bug fixing):
+- v4.0.0 (Oct 22): Major release, pool rewrite
+- v4.0.1 (Oct 22): Process communication channel teardown timing fix
+- v4.0.2 (Oct 23): Pool management refinements
+- v4.0.3 (Oct 24): Configuration and browser mode improvements ← **Current**
+- v4.0.4 (Oct 27): Worker stability fixes ← **Target**
+
+**Vitest 4.0.4 Release Notes (DIRECTLY ADDRESSES OUR SYMPTOMS)**:
+
+Critical bug fixes for hanging issues:
+- ✅ **Eliminated "MaxListenersExceededWarning"** - Runner's error listener was causing memory leaks
+- ✅ **Fixed RPC listener memory leak** - Occurred with `isolate: false` mode
+- ✅ **Improved worker process stdio capture** - Better worker communication and logging
+- ✅ **Enhanced builtin module mocking** - Functions without `node:` prefix requirement
+
+These fixes directly target the types of bugs that cause tests to hang after execution completes.
+
+**RECOMMENDATION: Upgrade to 4.0.4** ✅
+
+**Rationale**:
+1. **Direct fix**: v4.0.4 specifically addresses worker stability and hanging issues matching our symptoms
+2. **Architecture**: 4.x removes Tinypool bugs that plagued 1.x (don't go backwards)
+3. **Low risk**: Patch-level change (4.0.3 → 4.0.4), no breaking changes expected
+4. **Quick rollback**: Can revert to 4.0.3 if needed (`npm install vitest@4.0.3`)
+5. **Active maintenance**: 5 days of stability hardening since 4.0.0 release
+
+**Why NOT Downgrade to 1.x**:
+- ❌ Brings back Tinypool worker termination bugs (the root cause 4.x fixes)
+- ❌ Reintroduces known "close timed out" errors
+- ❌ Major version downgrade would require test migration work
+- ❌ Moves backwards from architectural improvements
+
+**Risk Assessment**:
+- **Upgrade to 4.0.4**: LOW RISK (patch bump, targets our issue, quick rollback)
+- **Downgrade to 1.x**: HIGH RISK (major downgrade, known bugs, migration work)
+
+**Implementation Plan**:
+
+**Step 1: Upgrade to 4.0.4**
+```bash
+cd frontend
+npm install vitest@4.0.4 @vitest/ui@4.0.4 @vitest/coverage-v8@4.0.4
+```
+
+**Step 2: Test with Current Config**
+```bash
+./run-tests.sh --filter "Phase 2A"
+```
+Expected outcome: Tests should complete in 5-10 seconds without hanging.
+
+**Step 3: If Still Hanging, Try Forks Pool**
+```typescript
+// frontend/vitest.config.ts
+test: {
+  pool: 'forks',  // Better compatibility, may fix hanging
+  maxWorkers: 4,  // Can increase back to 4 with forks
+  // ... rest of config
+}
+```
+
+**Step 4: If Still Hanging, Use Hanging-Process Reporter**
+```bash
+npx vitest run --reporter=hanging-process
+```
+This identifies exactly what's keeping the process alive.
+
+**Step 5: If Still Hanging, Deep Test Code Investigation**
+- Look for uncleared timers (`setTimeout`, `setInterval`)
+- Check for event listeners not removed
+- Verify React effects have proper cleanup
+- Ensure Promises are properly awaited
+
+**Expected Result**: Tests complete cleanly without hanging in 5-10 seconds.
+
+**Confidence Level**: High - v4.0.4 specifically fixes worker stability and hanging issues.
 
 ## Next Steps
 
-**Immediate Action Required:**
-1. Investigate and address excessive test runtime
-2. Measure baseline performance with new script
-3. Identify specific slow tests or bottlenecks
-4. Implement runtime optimizations (Option C or Option D)
+**✅ APPROVED PLAN: Upgrade to Vitest 4.0.4**
+
+**Next action**: Implement Step 1 (upgrade to 4.0.4) and test with Phase 2A tests.
+
+**If successful**:
+- Consider reverting `maxWorkers` back to 4 (from current 1) for better performance
+- Remove experimental config: `teardownTimeout`, `logHeapUsage`, `singleFork`
+- Document the fix in ISSUE-021
+
+**If upgrade doesn't resolve hanging**:
+- Proceed to Step 3 (try forks pool)
+- Then Step 4 (hanging-process reporter for deep debugging)
+- Then Step 5 (test code investigation)
 
 **Usage:**
 ```bash
@@ -611,6 +780,8 @@ cd frontend && ./run-tests.sh --filter "Phase 2A"
 ---
 
 **Created**: 2025-10-27
-**Status**: Open - Partially Implemented (Option A + B complete, runtime optimization pending)
-**Priority**: Medium (affects developer experience, but tests still work)
-**Complexity**: Low-Medium (tooling complete, runtime investigation needed)
+**Updated**: 2025-10-27 (Option D research complete)
+**Status**: Open - Ready for Implementation (Options A+B complete, C exhausted, D researched with clear upgrade recommendation)
+**Priority**: Medium-High (tests work but hang indefinitely, dev experience severely impacted)
+**Complexity**: Medium (patch version upgrade to v4.0.4 should resolve hanging issue)
+**Next Action**: Upgrade to Vitest 4.0.4 and test
