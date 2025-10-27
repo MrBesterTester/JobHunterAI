@@ -12,6 +12,16 @@
     - [Token Efficiency & Session Restarts](#token-efficiency--session-restarts)
     - [Documentation Updates from Git History](#documentation-updates-from-git-history)
     - [Documentation Status Accuracy](#documentation-status-accuracy)
+  - [Testing & Verification Standards](#testing--verification-standards)
+    - [Core Principles](#core-principles)
+    - [Test Result Reporting Standards](#test-result-reporting-standards)
+    - [Investigation Workflow](#investigation-workflow)
+    - [Performance Monitoring](#performance-monitoring)
+    - [Console Suppression Context](#console-suppression-context)
+    - [Automated Test Execution](#automated-test-execution)
+    - [When to Mark Tests as Complete](#when-to-mark-tests-as-complete)
+    - [Examples of Rigorous Investigation](#examples-of-rigorous-investigation)
+    - [User Accountability](#user-accountability)
   - [System Health Monitoring & Resource Management](#system-health-monitoring--resource-management)
     - [During Claude Code Sessions](#during-claude-code-sessions)
     - [After Test Runs](#after-test-runs)
@@ -239,6 +249,309 @@ Claude:
 ```
 
 **User benefit**: Documentation completion markers are trustworthy and reflect actual verified implementation status, not aspirational goals.
+
+## Testing & Verification Standards
+
+**✅ IMPLEMENTED**: Comprehensive testing standards for frontend (Vitest) and backend (Cargo) test suites (2025-10-27)
+
+**Context**: Created to ensure rigorous test result analysis beyond superficial pass/fail reporting. Console output suppression (ISSUE-021) makes output cleaner, but does NOT mean ignoring failures, skipped tests, or warnings. Investigation depth and test result understanding are critical.
+
+### Core Principles
+
+**CRITICAL RULE**: Test results require investigation and understanding, not just pass/fail counts.
+
+**What "passing tests" actually means**:
+- ✅ All assertions passed
+- ✅ No skipped tests (or skipped tests are intentional and documented)
+- ✅ No unexpected warnings or deprecation notices
+- ✅ Execution time is reasonable (not hanging or degraded)
+- ✅ No flaky behavior (consistent pass/fail across runs)
+
+**Investigation is ALWAYS required for**:
+- Test failures (even a single failure)
+- Skipped tests (understand why they're skipped)
+- Warnings or deprecation notices
+- Performance degradation (execution time increases)
+- Exit codes other than 0 (especially 143, 137)
+- Unusual patterns in output
+
+### Test Result Reporting Standards
+
+**❌ UNACCEPTABLE Reporting** (superficial):
+```
+Tests passed! ✅
+```
+
+**✅ REQUIRED Reporting** (investigative):
+```
+Test results from ./run-tests.sh:
+- ✅ 77/78 tests passing (98.7%)
+- ❌ 1 failing: IntakeTab.test.tsx:245 - assertion failure in 'should handle source identification'
+  - Expected: sourceType = 'gmail'
+  - Actual: sourceType = 'unknown'
+  - Root cause: API mock not returning correct source identification
+- ⏭️ 2 skipped: CalendarTab.test.tsx:82, :183
+  - Reason: Marked as .skip() with comment 'TODO: API integration pending'
+  - Assessment: Intentional, tracked in ISSUE-018 Phase 2B
+- ⚠️ Warning: Test execution took 45s (expected 10-15s)
+  - Possible cause: Resource contention or memory pressure
+  - Action: Running system health check...
+- 📊 Log saved: logs/frontend-tests/test-run-20251027-143022.log
+
+Investigating the IntakeTab.test.tsx:245 failure...
+```
+
+### Investigation Workflow
+
+**Step 1: Read Full Test Output**
+- Don't just count passed/failed - read the error messages
+- Look for patterns (same error repeated, related failures)
+- Note any warnings or deprecation notices
+- Check execution times for anomalies
+
+**Step 2: Investigate Failures**
+When tests fail:
+```bash
+# 1. Read the test file to understand what's being tested
+Read frontend/src/components/IntakeTab.test.tsx
+
+# 2. Read the component being tested
+Read frontend/src/components/IntakeTab.tsx
+
+# 3. Check the test log for full stack trace
+Read logs/frontend-tests/test-run-TIMESTAMP.log
+
+# 4. Understand expected vs actual behavior
+# 5. Identify root cause (not just symptoms)
+# 6. Propose specific fix with reasoning
+```
+
+**Step 3: Investigate Skipped Tests**
+When tests are marked as skipped:
+```bash
+# 1. Find the .skip() or .todo() in source
+Grep "\.skip\(\)" or "\.todo\(\)" in test files
+
+# 2. Read comments explaining why
+# 3. Determine if skip is:
+#    - Intentional (work in progress) → OK, verify it's tracked
+#    - Accidental (forgotten) → Flag for fixing
+#    - Obsolete (reason no longer applies) → Suggest un-skipping
+
+# 4. Check related issue tracker
+# 5. Report findings to user
+```
+
+**Step 4: Investigate Warnings**
+When warnings appear:
+```bash
+# Examples of warnings requiring investigation:
+- Deprecation warnings → Check if library updates needed
+- Performance warnings → Check for bottlenecks
+- Memory warnings → Check for leaks
+- Security warnings → Immediate attention required
+```
+
+**Step 5: Review Log Files**
+```bash
+# Test logs are saved automatically:
+ls -lt logs/frontend-tests/  # Most recent logs first
+
+# Read log when:
+# - Tests failed unexpectedly
+# - Performance degraded
+# - Output looked unusual
+# - User asks for deep dive
+```
+
+### Performance Monitoring
+
+**Expected Execution Times** (baseline for comparison):
+- Frontend unit tests (all): 15-25 seconds with typecheck
+- Frontend unit tests (Phase 2A, 18 tests): 5-10 seconds
+- Backend cargo test (78 tests): 2-5 seconds
+- E2E tests (full suite): 3-5 minutes
+
+**When to investigate performance**:
+- Execution time >2x expected baseline
+- Gradual degradation over multiple runs
+- Tests hang or time out
+- Resource usage spikes (check with ./system-health-check.sh)
+
+**Investigation steps**:
+```bash
+# 1. Compare with baseline
+echo "Expected: 10s, Actual: 45s → 4.5x slower (investigate)"
+
+# 2. Check system resources
+./system-health-check.sh
+
+# 3. Look for patterns
+# - Specific test suite slow?
+# - All tests slow?
+# - Only first run slow (cold start)?
+
+# 4. Review test logs for timeouts or hangs
+grep -i "timeout\|hang" logs/frontend-tests/*.log
+```
+
+### Console Suppression Context
+
+**What console suppression does** (ISSUE-021):
+- Filters out expected API errors during tests (e.g., "Failed to fetch", "500")
+- Reduces output noise from 320+ lines to ~0 for clean reading
+- **Does NOT suppress**:
+  - Test assertion failures
+  - Unexpected errors
+  - Warnings or deprecation notices
+  - Performance issues
+
+**Configuration**: `frontend/src/setupTests.ts:399-419`
+
+**Why this matters**:
+- Console suppression = cleaner output, NOT ignoring problems
+- Real errors and failures are always visible
+- Investigation depth remains unchanged
+
+### Automated Test Execution
+
+**Use standardized test scripts** (ISSUE-021):
+```bash
+# Frontend tests (recommended)
+cd frontend && ./run-tests.sh
+
+# Frontend tests (fast iteration, skip typecheck temporarily)
+cd frontend && ./run-tests.sh --no-typecheck
+
+# Frontend tests (specific suite)
+cd frontend && ./run-tests.sh --filter "Phase 2A"
+
+# Backend tests
+cd backend && cargo test
+```
+
+**Why use scripts vs direct commands**:
+- Automatic log file creation with timestamps
+- Clear exit code explanations (143, 137, etc.)
+- Integrated TypeScript checking
+- Timing measurements
+- Consistent execution across sessions
+
+### When to Mark Tests as Complete
+
+**Before marking any work "✅ COMPLETED" in documentation**:
+1. ✅ All tests pass (no failures)
+2. ✅ No unintentional skipped tests
+3. ✅ No new warnings introduced
+4. ✅ Performance is acceptable (within 2x baseline)
+5. ✅ Test coverage meets requirements
+6. ✅ Tests actually validate the implemented functionality (not just mock stubs)
+
+**This aligns with**: "Documentation Status Accuracy" section above - only mark complete after verification.
+
+### Examples of Rigorous Investigation
+
+**Example 1: Single Test Failure**
+```
+User: "Run the frontend tests"
+
+Claude:
+✅ Ran frontend tests with ./run-tests.sh
+
+Results: 77/78 passing (98.7%)
+❌ 1 failure detected
+
+[Claude reads test output]
+[Claude reads failing test file]
+[Claude reads component being tested]
+[Claude reads test log for stack trace]
+
+The failure is in IntakeTab.test.tsx:245:
+- Test: "should handle source identification"
+- Expected: API response includes sourceType field
+- Actual: sourceType is undefined
+- Root cause: Mock API response missing sourceType field in test setup
+
+This is a test bug, not a component bug. The mock in line 38 needs to include:
+  sourceType: 'gmail'
+
+Let me fix this...
+```
+
+**Example 2: Skipped Tests**
+```
+User: "Run the frontend tests"
+
+Claude:
+✅ Ran frontend tests with ./run-tests.sh
+
+Results: 78/78 passing (100%)
+⏭️ 2 tests skipped
+
+[Claude searches for .skip() in test files]
+[Claude reads comments explaining why]
+
+Found 2 skipped tests in CalendarTab.test.tsx:
+1. Line 82: "should sync with Google Calendar"
+   - Reason: Google Calendar API integration not yet implemented
+   - Tracked in: ISSUE-018 Phase 3
+   - Assessment: Intentional skip, properly documented
+
+2. Line 183: "should handle recurring events"
+   - Reason: Unclear - no comment, no tracking issue
+   - Assessment: May be forgotten or obsolete
+   - Recommendation: Investigate if this should be un-skipped
+
+Would you like me to investigate test #2 further?
+```
+
+**Example 3: Performance Degradation**
+```
+User: "Run the Phase 2A tests"
+
+Claude:
+✅ Ran Phase 2A tests (18 tests)
+
+Results: 18/18 passing (100%)
+⚠️ Performance concern detected
+
+Execution time: 45 seconds
+Expected: 5-10 seconds
+Degradation: 4.5-9x slower than baseline
+
+[Claude checks system resources]
+[Claude reviews test log]
+
+Investigation:
+- System resources: OK (no CPU/memory pressure)
+- No hanging or timeouts visible
+- Pattern: All tests slow, not just specific suite
+
+Running system health check...
+[Claude runs ./system-health-check.sh]
+
+Found: 12 orphaned Node.js processes from previous test runs
+Recommendation: Run cleanup and re-test
+
+./system-health-check.sh --cleanup
+
+[After cleanup]
+Re-running tests...
+Execution time: 8 seconds ✅ (back to baseline)
+```
+
+### User Accountability
+
+**Hold Claude accountable** - If you ever see:
+- ❌ Just pass/fail stats without investigation
+- ❌ Ignoring skipped tests
+- ❌ Not reading error messages or stack traces
+- ❌ Marking work complete without running tests
+- ❌ Superficial "looks good" without verification
+
+**Please call it out immediately.** This documentation codifies the investigation standard expected for every test run.
+
+**User benefit**: Rigorous, investigative test result analysis ensures test suite integrity, catches regressions early, and maintains high code quality. Documentation and completion markers are trustworthy.
 
 ## System Health Monitoring & Resource Management
 
