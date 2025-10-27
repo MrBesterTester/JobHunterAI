@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Upload, FileText, Check, X, AlertCircle, Trash2 } from 'lucide-react';
 
 const API_URL = 'http://localhost:8080/api';
@@ -28,8 +28,20 @@ const ResumeManagement: React.FC<ResumeManagementProps> = ({ onClose }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // Ref to track setTimeout for cleanup (ISSUE-021 Option iii)
+  const successMessageTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     fetchResumes();
+  }, []);
+
+  // Cleanup setTimeout on unmount (ISSUE-021 Option iii)
+  useEffect(() => {
+    return () => {
+      if (successMessageTimeoutRef.current) {
+        clearTimeout(successMessageTimeoutRef.current);
+      }
+    };
   }, []);
 
   const fetchResumes = async () => {
@@ -77,7 +89,11 @@ const ResumeManagement: React.FC<ResumeManagementProps> = ({ onClose }) => {
       setResumeContent('');
       await fetchResumes();
 
-      setTimeout(() => setSuccessMessage(null), 3000);
+      // Clear any existing timeout and set new one (ISSUE-021 Option iii)
+      if (successMessageTimeoutRef.current) {
+        clearTimeout(successMessageTimeoutRef.current);
+      }
+      successMessageTimeoutRef.current = setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');
     } finally {
@@ -115,7 +131,11 @@ const ResumeManagement: React.FC<ResumeManagementProps> = ({ onClose }) => {
       setSuccessMessage('Master resume loaded from data/resumes/master_resume.md');
       await fetchResumes();
 
-      setTimeout(() => setSuccessMessage(null), 3000);
+      // Clear any existing timeout and set new one (ISSUE-021 Option iii)
+      if (successMessageTimeoutRef.current) {
+        clearTimeout(successMessageTimeoutRef.current);
+      }
+      successMessageTimeoutRef.current = setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load from file');
     } finally {
@@ -136,7 +156,11 @@ const ResumeManagement: React.FC<ResumeManagementProps> = ({ onClose }) => {
       setSuccessMessage('Master resume updated!');
       await fetchResumes();
 
-      setTimeout(() => setSuccessMessage(null), 3000);
+      // Clear any existing timeout and set new one (ISSUE-021 Option iii)
+      if (successMessageTimeoutRef.current) {
+        clearTimeout(successMessageTimeoutRef.current);
+      }
+      successMessageTimeoutRef.current = setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to set master');
     }
@@ -160,7 +184,11 @@ const ResumeManagement: React.FC<ResumeManagementProps> = ({ onClose }) => {
       setSuccessMessage('Resume deleted successfully!');
       await fetchResumes();
 
-      setTimeout(() => setSuccessMessage(null), 3000);
+      // Clear any existing timeout and set new one (ISSUE-021 Option iii)
+      if (successMessageTimeoutRef.current) {
+        clearTimeout(successMessageTimeoutRef.current);
+      }
+      successMessageTimeoutRef.current = setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete');
     }

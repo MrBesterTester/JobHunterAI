@@ -58,6 +58,7 @@ related_issues: [ISSUE-018, ISSUE-019]](#type-issue%0Aid-issue-021%0Atitle-vites
     - [Original Implementation Options (Foundation)](#original-implementation-options-foundation)
     - [Resolution Options (Root Cause Fixes)](#resolution-options-root-cause-fixes)
   - [Next Steps - Option iii Implementation Plan](#next-steps---option-iii-implementation-plan)
+  - [Option iii Implementation Results (2025-10-27)](#option-iii-implementation-results-2025-10-27)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -1268,9 +1269,99 @@ Successfully removed all setTimeout calls from test mock implementations:
 
 ---
 
+## Option iii Implementation Results (2025-10-27)
+
+**Status**: ✅ **COMPLETED** - But hanging issue persists
+
+**Implementation Summary**:
+
+Successfully added cleanup to all component setTimeout calls as planned:
+
+1. **IntakeTab.tsx:241** - Gmail auth 3-second delay
+   - ✅ Added `useRef` import
+   - ✅ Created `gmailAuthTimeoutRef` ref to track timeout ID
+   - ✅ Added cleanup useEffect to clear timeout on unmount
+   - ✅ Updated setTimeout to store ID in ref
+
+2. **ResumeManagement.tsx** - 4 success message auto-hide delays (lines 80, 118, 139, 163)
+   - ✅ Added `useRef` import
+   - ✅ Created `successMessageTimeoutRef` ref to track timeout ID
+   - ✅ Added cleanup useEffect to clear timeout on unmount
+   - ✅ Updated all 4 setTimeout calls to clear previous timeout and store new ID
+   - ✅ Pattern: Clears existing timeout before setting new one (prevents multiple active timeouts)
+
+3. **App.tsx:1258** - 100ms download sequencing delay
+   - ✅ Created `downloadTimeoutRef` ref (using existing `React.useRef` pattern)
+   - ✅ Added cleanup useEffect to clear timeout on unmount
+   - ✅ Updated setTimeout to store ID in ref
+
+**Code Quality Improvements**:
+- All component setTimeout calls now properly clean up on unmount
+- Prevents potential state updates on unmounted components
+- Follows React best practices for timer cleanup
+
+**Test Results**: ❌ **HANGING PERSISTS**
+
+**Phase 2A Test Execution** (killed after 74+ seconds):
+- Expected: 5-10 seconds completion
+- Actual: Tests hung indefinitely, never completed
+- Pattern: Tests execute and display output, but Vitest never exits
+- Console output: Clean (suppression working as expected)
+- Exit: Manual termination required (killed background process)
+
+**Analysis**: Option iii alone did NOT resolve the hanging issue.
+
+**Conclusion**:
+- Component setTimeout cleanup was implemented correctly
+- All React best practices followed
+- However, hanging persists despite removing/cleaning up ALL setTimeout calls (both test mocks and component code)
+- This indicates other async operations are preventing Vitest from exiting cleanly
+
+**Likely Remaining Causes**:
+1. **Unclosed async operations** - Event listeners, intervals, or other timers not tracked
+2. **Promises not properly resolved** - Pending fetch operations or async logic
+3. **React effects without cleanup** - useEffect hooks with missing cleanup functions
+4. **jsdom environment issues** - Browser environment simulation not terminating properly
+5. **Vitest pool/worker issues** - Despite v4.0.4 upgrade, worker processes may not be terminating
+
+**Next Recommended Actions** (in priority order):
+
+1. **Option ii: Use Fake Timers** (2-3 hours)
+   - Add `vi.useFakeTimers()` / `vi.useRealTimers()` to tests
+   - Control timer progression explicitly
+   - Higher confidence this may help if timers are still involved
+
+2. **Deep async operation investigation** (3-4 hours)
+   - Review all useEffect hooks for missing cleanup
+   - Check for unclosed intervals (setInterval)
+   - Audit event listeners (addEventListener without removeEventListener)
+   - Look for Promises without proper await/resolution
+
+3. **Vitest hanging-process reporter** (30 minutes)
+   - Run: `npx vitest run --reporter=hanging-process --filter "Phase 2A"`
+   - Identify exactly what's keeping the process alive
+   - Note: Previously tried but hung itself
+
+4. **Consider workarounds** (1 hour)
+   - Add explicit `process.exit(0)` in global teardown (not ideal)
+   - Try `--pool=threads` instead of `--pool=forks`
+   - Try `--no-isolate` mode (risky but may reveal issue)
+
+**Updated Status Summary**:
+- ✅ Option A (test script): Complete and working
+- ✅ Option B (console suppression): Complete and working
+- ✅ Option C (config changes): Tested, reverted to parallel execution
+- ✅ Option D (Vitest 4.0.4 upgrade): Complete, hanging persists
+- ✅ Option i (remove setTimeout from test mocks): Complete, hanging persists
+- ✅ **Option iii (component setTimeout cleanup): Complete, hanging persists** ← Current
+- ⏸️ Option ii (fake timers): Next recommended step
+- ⏸️ Option iv (AbortController): Lower priority, production code quality
+
+---
+
 **Created**: 2025-10-27
-**Updated**: 2025-10-27 (Option i complete, hanging persists, Option iii recommended)
-**Status**: Open - Resolution Required (Options A-D complete, Option i complete but insufficient, Option iii next)
+**Updated**: 2025-10-27 (Option iii complete, hanging persists, Option ii recommended next)
+**Status**: Open - Resolution Required (Options A-D, i, iii complete but hanging persists)
 **Priority**: HIGH (tests hang indefinitely, blocking development workflow)
-**Complexity**: Medium (Root cause likely in component setTimeout, fix is straightforward)
-**Next Action**: Option iii - Add cleanup to component setTimeout calls (2-3 hours estimated)
+**Complexity**: Medium-High (setTimeout cleanup didn't fix it, deeper investigation needed)
+**Next Action**: Option ii - Use fake timers in tests OR deep async operation audit

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Mail, Briefcase, Search, RefreshCw, Settings, CheckCircle, XCircle, AlertCircle, Clock, TrendingUp, Filter } from 'lucide-react';
 
 const API_URL = 'http://localhost:8080/api';
@@ -112,6 +112,9 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
   const [refiltering, setRefiltering] = useState<boolean>(false);
   const [refilterScope, setRefilterScope] = useState<string>('last_sync');
   const [lastRefilterResult, setLastRefilterResult] = useState<RefilterResponse | null>(null);
+
+  // Ref to track setTimeout for cleanup (ISSUE-021 Option iii)
+  const gmailAuthTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch job sources
   const fetchSources = async (): Promise<void> => {
@@ -227,6 +230,15 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
     }
   }, [syncingSource, syncingAll]);
 
+  // Cleanup setTimeout on unmount (ISSUE-021 Option iii)
+  useEffect(() => {
+    return () => {
+      if (gmailAuthTimeoutRef.current) {
+        clearTimeout(gmailAuthTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Gmail authentication
   const handleGmailAuth = async (): Promise<void> => {
     try {
@@ -238,7 +250,8 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
       window.open(data.auth_url, '_blank', 'width=600,height=600');
 
       // Refresh sources after a delay to check connection status
-      setTimeout(() => {
+      // Store timeout ID for cleanup (ISSUE-021 Option iii)
+      gmailAuthTimeoutRef.current = setTimeout(() => {
         fetchSources();
       }, 3000);
     } catch (err) {

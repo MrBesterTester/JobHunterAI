@@ -913,6 +913,9 @@ const JobHunterDashboard: React.FC = () => {
   // Track which jobs are currently being fetched to prevent duplicate requests
   const fetchingJobsRef = React.useRef<Set<string>>(new Set());
 
+  // Ref to track setTimeout for cleanup (ISSUE-021 Option iii)
+  const downloadTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
   const fetchJobs = async (): Promise<void> => {
     try {
       const response = await fetch(`${API_URL}/jobs`);
@@ -1255,7 +1258,8 @@ const JobHunterDashboard: React.FC = () => {
     URL.revokeObjectURL(resumeUrl);
 
     // Download cover letter (with a small delay to avoid browser blocking multiple downloads)
-    setTimeout(() => {
+    // Store timeout ID for cleanup (ISSUE-021 Option iii)
+    downloadTimeoutRef.current = setTimeout(() => {
       const coverLetterBlob = new Blob([generatedContent.cover_letter], { type: 'text/plain' });
       const coverLetterUrl = URL.createObjectURL(coverLetterBlob);
       const coverLetterLink = document.createElement('a');
@@ -1455,6 +1459,15 @@ const JobHunterDashboard: React.FC = () => {
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
   }, [selectedJob, showContentGeneration, showCriteriaConfig, showEmailComposer]);
+
+  // Cleanup setTimeout on unmount (ISSUE-021 Option iii)
+  useEffect(() => {
+    return () => {
+      if (downloadTimeoutRef.current) {
+        clearTimeout(downloadTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const meetsMinSalary = (job: Job): boolean => job.salary ? job.salary >= 130000 : false;
   const isRemote = (job: Job): boolean => job.location?.toLowerCase().includes('remote') || false;
