@@ -3,7 +3,16 @@
 // expect(element).toHaveTextContent(/react/i)
 // learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom';
-import { vi } from 'vitest';
+import { cleanup } from '@testing-library/react';
+import { vi, afterEach } from 'vitest';
+
+// ISSUE-021 Option v: Explicitly cleanup React Testing Library after each test
+// React Testing Library cleanup is NOT automatic in Vitest - must be called explicitly
+// This ensures all rendered components unmount properly, triggering their useEffect cleanup functions
+// Without this, components stay "mounted" in jsdom, keeping intervals/timers/listeners alive
+afterEach(() => {
+  cleanup();
+});
 
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
