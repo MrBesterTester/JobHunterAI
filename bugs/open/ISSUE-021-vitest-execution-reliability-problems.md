@@ -50,6 +50,9 @@ related_issues: [ISSUE-018, ISSUE-019]](#type-issue%0Aid-issue-021%0Atitle-vites
     - [Option ii: Use Fake Timers in Tests with setTimeout (Alternative)](#option-ii-use-fake-timers-in-tests-with-settimeout-alternative)
     - [Option iii: Add Cleanup to Component setTimeout (Code Quality)](#option-iii-add-cleanup-to-component-settimeout-code-quality)
     - [Option iv: Add AbortController to Fetch Operations (Advanced Code Quality)](#option-iv-add-abortcontroller-to-fetch-operations-advanced-code-quality)
+    - [Option v: Deep Async Operation Audit ✅ **RECOMMENDED (Highest Priority)**](#option-v-deep-async-operation-audit--recommended-highest-priority)
+    - [Option vi: Vitest Community Investigation (Alternative)](#option-vi-vitest-community-investigation-alternative)
+    - [Option vii: Workaround Solutions (Last Resort)](#option-vii-workaround-solutions-last-resort)
   - [Next Steps](#next-steps)
     - [Expected Results](#expected-results)
     - [Confidence Level](#confidence-level)
@@ -59,6 +62,7 @@ related_issues: [ISSUE-018, ISSUE-019]](#type-issue%0Aid-issue-021%0Atitle-vites
     - [Resolution Options (Root Cause Fixes)](#resolution-options-root-cause-fixes)
   - [Next Steps - Option iii Implementation Plan](#next-steps---option-iii-implementation-plan)
   - [Option iii Implementation Results (2025-10-27)](#option-iii-implementation-results-2025-10-27)
+  - [Option ii Implementation Results (2025-10-27)](#option-ii-implementation-results-2025-10-27)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -1068,6 +1072,198 @@ useEffect(() => {
 - Refactor other component fetch operations: ~3-4 hours
 - Test abort behavior: ~1-2 hours
 
+**Status**: ⏸️ **SKIPPED** - Not related to test hanging issue, production code quality improvement only
+
+---
+
+### Option v: Deep Async Operation Audit ✅ **RECOMMENDED (Highest Priority)**
+
+**Investigate non-timer async operations preventing Vitest from exiting cleanly** - All timer-based solutions (Options i, ii, iii) have failed to resolve hanging. Root cause is likely unclosed async operations.
+
+**Implementation Approach**:
+
+**Step 1: Research Vitest 4.0.4 Documentation** (30 minutes)
+- **Web Search Required**: Search for Vitest 4.0.4 official documentation on async operations, cleanup, and hanging issues
+- Search queries:
+  - `"Vitest 4.0.4" async cleanup hanging site:vitest.dev`
+  - `"Vitest 4.0.4" tests not exiting cleanup site:vitest.dev`
+  - `"Vitest 4.0.4" useEffect cleanup teardown site:vitest.dev`
+  - `"Vitest 4.0.4" jsdom environment cleanup site:vitest.dev`
+  - `"Vitest" hanging process async operations cleanup`
+- Focus areas:
+  - Test environment lifecycle and cleanup
+  - Known issues with jsdom environment not terminating
+  - Best practices for cleaning up async operations in tests
+  - Global teardown and afterAll hooks configuration
+  - Issues with React Testing Library + Vitest integration
+
+**Step 2: Audit Component Async Operations** (1-2 hours)
+- Review all `useEffect` hooks for missing cleanup functions
+- Check for:
+  - `setInterval` calls without `clearInterval` in cleanup
+  - Event listeners (`addEventListener`) without `removeEventListener`
+  - Fetch operations without AbortController cleanup
+  - WebSocket/EventSource connections not closed
+  - Promises without proper resolution/rejection handling
+  - Async state updates after component unmount
+
+**Files to audit (priority order)**:
+1. `frontend/src/App.tsx` - Primary component rendered by Phase 2A tests
+2. `frontend/src/IntakeTab.tsx` - Has Gmail auth flow with async operations
+3. `frontend/src/CalendarTab.tsx`, `FollowupsTab.tsx`, `RankedJobsTab.tsx` - All rendered by App
+4. `frontend/src/ResumeManagement.tsx` - Has upload/delete async operations
+5. All tab components that mount when App renders
+
+**Step 3: Review Test Setup/Teardown** (30 minutes)
+- Check `frontend/src/setupTests.ts` for incomplete cleanup
+- Verify global afterAll/afterEach hooks are configured
+- Look for test utilities that may not clean up properly
+- Review mock implementations for missing cleanup
+
+**Step 4: Try Vitest hanging-process Reporter** (30 minutes)
+```bash
+npx vitest run --reporter=hanging-process --testTimeout=60000 --filter "Phase 2A"
+```
+May reveal exactly what's keeping the process alive
+
+**Benefits:**
+- ✅ Follows Vitest official best practices based on documentation
+- ✅ Addresses root cause (non-timer async operations)
+- ✅ Systematic approach guided by official documentation
+- ✅ May reveal patterns documented in Vitest 4.0.4 release notes
+- ✅ Improves component code quality (proper cleanup)
+- ✅ Likely to resolve hanging issue
+
+**Trade-offs:**
+- ⚠️ Time intensive (3-4 hours total)
+- ⚠️ Requires careful analysis of each component
+- ⚠️ May require significant refactoring if many issues found
+
+**Expected Outcome**:
+- Identify specific async operations preventing clean exit
+- Implement cleanup functions guided by Vitest documentation
+- Tests complete cleanly without hanging in 5-10 seconds
+
+**Estimated Effort**: 3-4 hours
+- Web search + documentation review: ~30 minutes
+- Component async operation audit: ~1-2 hours
+- Test setup/teardown review: ~30 minutes
+- hanging-process reporter investigation: ~30 minutes
+- Fix implementation (if issues found): ~1-2 hours
+
+---
+
+### Option vi: Vitest Community Investigation (Alternative)
+
+**Search Vitest GitHub issues and discussions for similar hanging problems** - Alternative if Option v doesn't reveal root cause.
+
+**Implementation Approach**:
+
+**Step 1: Search Vitest GitHub Issues** (30 minutes)
+```
+"vitest tests hang" "never exit" site:github.com/vitest-dev/vitest
+"vitest 4.0" hanging cleanup site:github.com/vitest-dev/vitest
+"vitest jsdom" cleanup hanging site:github.com/vitest-dev/vitest
+"vitest React Testing Library" hang site:github.com/vitest-dev/vitest
+```
+
+**Step 2: Review Similar Issue Reports** (30 minutes)
+- Look for issues with similar symptoms (tests execute but never exit)
+- Check if forks/threads pool differences mentioned
+- Look for jsdom-specific cleanup issues
+- Review proposed workarounds and fixes
+
+**Step 3: Create Minimal Reproduction** (1 hour)
+- Strip down Phase 2A test to minimal case that hangs
+- Create isolated reproduction repository
+- Post to Vitest discussions with reproduction
+
+**Step 4: Monitor for Community Response** (ongoing)
+
+**Benefits:**
+- ✅ May find existing solution from community
+- ✅ Engages Vitest maintainers if it's a bug
+- ✅ Helps broader community if it's a common issue
+
+**Trade-offs:**
+- ❌ Response time unpredictable (may take days/weeks)
+- ❌ May not yield immediate solution
+- ❌ Requires creating reproduction case
+
+**Estimated Effort**: 2-3 hours
+- GitHub issue search: ~30 minutes
+- Review similar issues: ~30 minutes
+- Create minimal reproduction: ~1 hour
+- Post to community: ~30 minutes
+
+---
+
+### Option vii: Workaround Solutions (Last Resort)
+
+**Accept hanging as Vitest/jsdom limitation and implement workarounds** - Only if Options v and vi don't resolve the issue.
+
+**Approach 1: Force Process Exit in Global Teardown**
+```typescript
+// frontend/vitest.config.ts
+export default defineConfig({
+  test: {
+    globalTeardown: './vitest.teardown.ts'
+  }
+});
+
+// frontend/vitest.teardown.ts
+export default () => {
+  console.log('Force exiting after tests...');
+  process.exit(0);
+};
+```
+
+**Trade-offs:**
+- ✅ Tests will complete and exit cleanly
+- ❌ Masks the root cause
+- ❌ May hide real issues in the future
+- ❌ Not ideal practice
+
+**Approach 2: CI/CD Timeout Wrapper**
+```bash
+# In CI/CD or run-tests.sh
+timeout 30s npx vitest run || exit_code=$?
+if [ $exit_code -eq 124 ]; then
+  echo "Tests completed but Vitest hung - known issue"
+  exit 0
+fi
+```
+
+**Trade-offs:**
+- ✅ Works in CI/CD environments
+- ✅ Doesn't modify test code
+- ❌ Relies on external timeout mechanism
+- ❌ Harder to debug when real hangs occur
+
+**Approach 3: Use --no-isolate Mode**
+```bash
+npx vitest run --no-isolate
+```
+Runs tests in a single process without worker isolation - may prevent hanging.
+
+**Trade-offs:**
+- ✅ May resolve worker-related hanging
+- ❌ Tests share global state (may cause flaky tests)
+- ❌ Defeats purpose of test isolation
+
+**Benefits:**
+- ✅ Unblocks development workflow immediately
+- ✅ Can be implemented quickly
+
+**Trade-offs:**
+- ❌ Doesn't fix root cause
+- ❌ May hide future issues
+- ❌ Not best practice
+
+**Estimated Effort**: 1 hour
+- Implement global teardown: ~30 minutes
+- Test and verify: ~30 minutes
+
 ---
 
 ## Next Steps
@@ -1357,11 +1553,100 @@ Successfully added cleanup to all component setTimeout calls as planned:
 - ⏸️ Option ii (fake timers): Next recommended step
 - ⏸️ Option iv (AbortController): Lower priority, production code quality
 
+## Option ii Implementation Results (2025-10-27)
+
+**Status**: ❌ **FAILED** - Hanging persists with fake timers
+
+**Implementation Summary**:
+
+Attempted fake timers approach to intercept and control all timer operations during tests.
+
+**Approach 1: beforeEach/afterEach Fake Timers**
+
+Added to Phase 2A describe block (App.test.tsx:1728-1736):
+```typescript
+beforeEach(() => {
+  vi.useFakeTimers();
+});
+
+afterEach(() => {
+  vi.runAllTimers(); // Clear any pending timers
+  vi.useRealTimers();
+});
+```
+
+**Test Results**: ❌ **HANGING PERSISTS**
+- Phase 2A tests still hang after 90+ seconds
+- Expected: 5-10 seconds completion
+- Observed: Tests execute but Vitest never exits
+- Pattern: Same hanging behavior as without fake timers
+
+**Root Cause of Failure**:
+React Testing Library's `waitFor` utility uses real timers internally. When fake timers are enabled globally via beforeEach, `waitFor` stops functioning correctly, which may cause tests to hang waiting for assertions that never resolve.
+
+**Approach 2: --pool=threads Instead of --pool=forks**
+
+Tested running with threads pool mode:
+```bash
+npx vitest run --pool=threads -t "Phase 2A"
+```
+
+**Test Results**: ❌ **HANGING PERSISTS**
+- Phase 2A tests still hang after 40+ seconds
+- No difference in behavior compared to forks pool
+- Conclusion: Pool mode is NOT the root cause
+
+**Analysis**: Option ii fake timers approach does NOT resolve the hanging issue.
+
+**Why Fake Timers Failed**:
+1. **React Testing Library incompatibility** - `waitFor` requires real timers to function correctly
+2. **Wrong timing** - Running `vi.runAllTimers()` in afterEach is too late (tests have already hung)
+3. **Incomplete coverage** - Fake timers only intercept `setTimeout`/`setInterval`, not other async operations
+4. **Root cause mismatch** - Hanging is likely caused by non-timer async operations
+
+**Conclusion**:
+- Fake timers with beforeEach/afterEach pattern is incompatible with React Testing Library
+- Alternative fake timer patterns (per-test, with advanceTimersByTime) would require rewriting all 168 tests that render <App />
+- Pool mode change (threads vs forks) has no effect on hanging
+- **The hanging issue is NOT caused by timers** (setTimeout cleanup in Options i & iii, fake timers in Option ii all failed)
+
+**Updated Status Summary**:
+- ✅ Option A (test script): Complete and working
+- ✅ Option B (console suppression): Complete and working
+- ✅ Option C (config investigation): Complete, reverted to parallel execution
+- ✅ Option D (Vitest 4.0.4 upgrade): Complete, hanging persists
+- ✅ Option i (remove setTimeout from test mocks): Complete, hanging persists
+- ✅ Option iii (component setTimeout cleanup): Complete, hanging persists
+- ❌ **Option ii (fake timers): Complete, FAILED - hanging persists** ← Current
+- ⏸️ Option iv (AbortController): Lower priority, production code quality
+
+**Next Recommended Actions** (in priority order):
+
+**See Resolution Options below for detailed implementation plans:**
+
+1. ✅ **Option v: Deep Async Operation Audit** (3-4 hours) - HIGHEST PRIORITY
+   - Start with web search for Vitest 4.0.4 documentation on async cleanup
+   - Review all useEffect hooks for missing cleanup
+   - Audit all async operations preventing clean exit
+   - Implement fixes based on Vitest documentation best practices
+
+2. **Option vi: Vitest Community Investigation** (2-3 hours) - Alternative
+   - Search Vitest GitHub issues for similar hanging problems
+   - Create minimal reproduction case
+   - Engage with Vitest maintainers and community
+
+3. **Option vii: Workaround Solutions** (1 hour) - Last Resort
+   - Force process exit in global teardown
+   - CI/CD timeout wrappers
+   - --no-isolate mode
+
+**Confidence Level**: Medium - Timer-based solutions exhausted, root cause likely in non-timer async operations
+
 ---
 
 **Created**: 2025-10-27
-**Updated**: 2025-10-27 (Option iii complete, hanging persists, Option ii recommended next)
-**Status**: Open - Resolution Required (Options A-D, i, iii complete but hanging persists)
+**Updated**: 2025-10-27 (Options A-D, i, ii, iii all complete - hanging persists; Added Options v, vi, vii)
+**Status**: Open - Resolution Required (All timer-based solutions failed)
 **Priority**: HIGH (tests hang indefinitely, blocking development workflow)
-**Complexity**: Medium-High (setTimeout cleanup didn't fix it, deeper investigation needed)
-**Next Action**: Option ii - Use fake timers in tests OR deep async operation audit
+**Complexity**: HIGH (setTimeout cleanup and fake timers both failed, root cause unknown)
+**Next Action**: Option v - Deep async operation audit (start with Vitest 4.0.4 documentation web search)
