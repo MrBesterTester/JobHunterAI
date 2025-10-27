@@ -496,25 +496,47 @@ bugs/
 
 ### When User Asks to "File a Bug"
 
-**Use helper script (recommended):**
+**REQUIRED: Always use the helper script (never create bug files manually):**
 ```bash
 ./create-bug.sh              # Interactive mode
 ./create-bug.sh --type bug   # Direct bug creation
 ./create-bug.sh --type issue # Direct issue creation
 ```
 
-Automatically determines ID, prompts for fields, creates file, regenerates index, and stages for commit.
+**CRITICAL**: The script will output the next available bug/issue ID (e.g., "Next ID: ISSUE-021"). **ALWAYS use the exact ID the script provides.** The script scans all three directories (open, mitigated, fixed) to avoid ID collisions. Never second-guess or override the script's ID assignment.
+
+**What the script does automatically**:
+- Determines next available ID (scans all bug directories)
+- Prompts for required fields
+- Creates file with correct naming
+- Regenerates bug index
+- Stages files for commit
+
+**Why this is required**:
+- Prevents ID collisions with existing bugs in other directories
+- Ensures consistent file naming and YAML frontmatter
+- Maintains bug index integrity
+- Avoids manual errors in ID assignment
 
 See [README_dev.md - Helper Scripts](README_dev.md#helper-scripts) for full documentation.
 
 ### Moving Bugs Between States
 
-**Use helper script (recommended):**
+**REQUIRED: Always use the helper script (never move bug files manually):**
 ```bash
 ./move-bug.sh BUG-001 fixed
 ```
 
-Automatically moves file, updates YAML, regenerates index, and stages for commit.
+**What the script does automatically**:
+- Moves file to correct directory (open/mitigated/fixed)
+- Updates YAML frontmatter status
+- Regenerates bug index
+- Stages files for commit
+
+**Why this is required**:
+- Ensures YAML frontmatter matches file location
+- Maintains bug index integrity
+- Prevents manual errors
 
 See [README_dev.md - Helper Scripts](README_dev.md#helper-scripts) for full documentation.
 
