@@ -3924,6 +3924,11 @@ describe('App (JobHunterDashboard)', () => {
       return mockFetchError();
     };
 
+    beforeEach(() => {
+      // Ensure clean mock state before each test
+      jest.clearAllMocks();
+    });
+
     afterEach(() => {
       // Clean up any global mocks
       jest.restoreAllMocks();
@@ -3988,8 +3993,13 @@ describe('App (JobHunterDashboard)', () => {
       // Create a mock with delayed response to catch loading state
       (fetch as jest.Mock).mockImplementation((url: string, options?: RequestInit) => {
         if (url.includes('/generate-content')) {
-          // Add delay to allow catching the loading state
-          return new Promise(resolve => setTimeout(() => resolve(mockFetchSuccess(mockGeneratedContent)), 100));
+          // Add delay to allow catching the loading state (longer delay)
+          return new Promise(resolve => {
+            setTimeout(async () => {
+              const response = await mockFetchSuccess(mockGeneratedContent);
+              resolve(response);
+            }, 500);
+          });
         }
         return createMocksForContentGeneration()(url, options);
       });
@@ -4003,11 +4013,17 @@ describe('App (JobHunterDashboard)', () => {
 
       fireEvent.click(generateButton);
 
-      // Should show "Generating..." state
+      // Should show "Generating..." state (wait for state update)
       await waitFor(() => {
         expect(generateButton).toHaveTextContent('Generating...');
-        expect(generateButton).toBeDisabled();
-      });
+      }, { timeout: 100 });
+
+      expect(generateButton).toBeDisabled();
+
+      // Wait for generation to complete
+      await waitFor(() => {
+        expect(generateButton).not.toBeDisabled();
+      }, { timeout: 1000 });
     });
 
     it('displays generated resume content after successful generation', async () => {
