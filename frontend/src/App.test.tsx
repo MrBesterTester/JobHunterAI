@@ -5032,14 +5032,15 @@ describe('App (JobHunterDashboard)', () => {
     // Mock helper for email composer tests
     const createMocksForEmailComposer = () => {
       return (url: string, options?: RequestInit): Promise<Response> => {
+        // GET /api/jobs/{id}/generate-content - generate content (CHECK THIS FIRST!)
+        // IMPORTANT: Must check this before the general /api/jobs check below
+        if (url.includes('/generate-content')) {
+          return mockFetchSuccess(mockGeneratedContent);
+        }
+
         // GET /api/jobs - return a job
         if (url.includes('/api/jobs') && !url.includes('applications') && !url.includes('create-draft') && !url.includes('/score') && options?.method !== 'PUT') {
           return mockFetchSuccess([mockJob1]);
-        }
-
-        // GET /api/jobs/{id}/generate-content - generate content
-        if (url.includes('/generate-content')) {
-          return mockFetchSuccess(mockGeneratedContent);
         }
 
         // GET /api/applications - return application with generated content
@@ -5180,12 +5181,13 @@ describe('App (JobHunterDashboard)', () => {
       fireEvent.click(generateButton);
 
       // Wait for content generation modal AND content to ACTUALLY load (not just div existence!)
-      // FIX (ISSUE-022): Previously only checked if div existed, now verify actual content is populated
+      // FIX (ISSUE-023): Wait for actual content in specific test-id divs, not using getByText
       await waitFor(() => {
         expect(screen.getByTestId('content-generation-modal')).toBeInTheDocument();
         const resumeContent = screen.getByTestId('resume-content');
         expect(resumeContent).toHaveTextContent('Sam Kirk'); // Wait for actual resume content!
-        expect(screen.getByText('Dear Hiring Manager')).toBeInTheDocument(); // Wait for cover letter!
+        const coverLetterContent = screen.getByTestId('cover-letter-content');
+        expect(coverLetterContent).toHaveTextContent('Dear Hiring Manager'); // Wait for cover letter!
       }, { timeout: 5000 });
 
       const createDraftButton = screen.getByTestId('create-draft-button');
@@ -5233,12 +5235,13 @@ describe('App (JobHunterDashboard)', () => {
       fireEvent.click(generateButton);
 
       // Wait for content generation modal AND content to ACTUALLY load (not just div existence!)
-      // FIX (ISSUE-022): Same fix as "pre-fills" test - wait for actual content
+      // FIX (ISSUE-023): Wait for actual content in specific test-id divs, not using getByText
       await waitFor(() => {
         expect(screen.getByTestId('content-generation-modal')).toBeInTheDocument();
         const resumeContent = screen.getByTestId('resume-content');
         expect(resumeContent).toHaveTextContent('Sam Kirk'); // Wait for actual resume content!
-        expect(screen.getByText('Dear Hiring Manager')).toBeInTheDocument(); // Wait for cover letter!
+        const coverLetterContent = screen.getByTestId('cover-letter-content');
+        expect(coverLetterContent).toHaveTextContent('Dear Hiring Manager'); // Wait for cover letter!
       }, { timeout: 5000 });
 
       const createDraftButton = screen.getByTestId('create-draft-button');
@@ -5282,12 +5285,13 @@ describe('App (JobHunterDashboard)', () => {
       fireEvent.click(generateButton);
 
       // Wait for content generation modal AND content to ACTUALLY load (not just div existence!)
-      // FIX (ISSUE-022): Same fix as other tests - wait for actual content to ensure resume_format is populated
+      // FIX (ISSUE-023): Wait for actual content in specific test-id divs, not using getByText
       await waitFor(() => {
         expect(screen.getByTestId('content-generation-modal')).toBeInTheDocument();
         const resumeContent = screen.getByTestId('resume-content');
         expect(resumeContent).toHaveTextContent('Sam Kirk'); // Wait for actual resume content!
-        expect(screen.getByText('Dear Hiring Manager')).toBeInTheDocument(); // Wait for cover letter!
+        const coverLetterContent = screen.getByTestId('cover-letter-content');
+        expect(coverLetterContent).toHaveTextContent('Dear Hiring Manager'); // Wait for cover letter!
       }, { timeout: 5000 });
 
       const createDraftButton = screen.getByTestId('create-draft-button');
