@@ -435,6 +435,46 @@ Root cause analysis:
 - Tests use `waitFor()` with 5000ms timeout, but content never appears in the expected elements
 - This appears to be a test environment-specific issue rather than application code bug
 
+**Follow-up Fix #1: Mock HTTP Method Issue (2025-10-27 late evening)**:
+
+**Root Cause**: Frontend code makes GET requests to `/generate-content` endpoint (no `method` specified in fetch = GET by default), but test mocks were checking for `options?.method === 'POST'`, causing mocks to not match and fall through to error responses.
+
+**Investigation**:
+- Backend supports BOTH `GET` and `POST` for `/generate-content` (main.rs:6413-6414)
+- 7 test mock implementations had `&& options?.method === 'POST'` checks
+- This prevented mocks from matching GET requests, causing tests to timeout
+
+**Fix**: Removed `&& options?.method === 'POST'` from all mock implementations:
+- `createMocksForContentGeneration()` helper (line 3877)
+- Inline mocks for error handling tests (lines 4065, 4091)
+- Inline mocks for multi-job tests (lines 4289, 4371)
+- Inline mocks for email composer tests (line 4966)
+- Early test suite mock (line 351)
+
+**Results**:
+- **Before**: 401/422 passing (95%), 21 failures
+- **After**: 413/422 passing (97.9%), 9 failures
+- **Fixed**: 12 of 17 Content Generation Modal tests
+- **Improvement**: 57% reduction in test failures
+
+**Remaining 9 Test Failures**:
+
+Breakdown by issue type:
+- **5 tests**: Content Generation Modal (Phase 1B) - Transient state timing issues
+  - "shows loading state during generation" - Can't catch button in "Generating..." state
+  - "allows retry after generation error" - setupApprovedJobsView timeout
+  - "downloads resume when Download button clicked" - setupApprovedJobsView timeout
+  - "preserves generated content when modal reopened" - setupApprovedJobsView timeout
+  - "shows different content for different jobs" - setupApprovedJobsView timeout
+
+- **3 tests**: Email Composer Modal (Phase 1D) - Data propagation issues
+  - "pre-fills recipient, subject, body" - Cover letter preview is empty
+  - "displays cover letter preview" - Cover letter preview is empty
+  - "shows resume attachment info" - Filename shows `techcorp_resume.undefined` instead of `techcorp_resume.pdf`
+
+- **1 test**: Tab Navigation (Phase 2A) - State management
+  - "preserves tab state when opening and closing criteria modal" - Tab selection not preserved
+
 ---
 
 ## Testing
