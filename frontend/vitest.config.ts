@@ -70,6 +70,10 @@ export default defineConfig({
     maxWorkers: 4,              // Limit to 4 parallel workers (vs 6-12 default)
     minWorkers: 1,              // Don't spawn unnecessary workers
     pool: 'forks',              // Use forks pool (better isolation, less memory leak)
+
+    // OPTION v.4: ACTIVE HANDLE DETECTION (ISSUE-021)
+    // Logs all active handles keeping Node.js process alive after tests complete
+    globalTeardown: './vitest.teardown.ts',
   },
 
   resolve: {

@@ -30,7 +30,8 @@
     "msw": "^1.2.0",
     "supertest": "^6.3.0",
     "ts-node": "^10.9.0",
-    "vitest": "^4.0.4"
+    "vitest": "^4.0.4",
+    "why-is-node-running": "^3.2.2"
   },
   "scripts": {
     "start": "react-scripts start",

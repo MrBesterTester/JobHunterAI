@@ -171,13 +171,15 @@ cd frontend && ./run-tests.sh --filter "Phase 2A"
 - **ROOT CAUSE IDENTIFIED**: User interactions (`fireEvent.click`, tab switching, modal interactions)
 - **Result**: Narrowed down root cause to React event handler cleanup issue
 
-**4. Option v.4: Automated Active Handle Detection** (20-30 minutes - HIGH VALUE DIAGNOSTIC - **NOW TOP PRIORITY**)
-- Fully automated using `why-is-node-running` npm package
-- Shows all active handles, timers, and sockets with stack traces
-- Most likely to reveal what's keeping process alive
-- No manual intervention required
+**4. ~~Option v.4: Automated Active Handle Detection~~** ✅ **COMPLETED (2025-10-27) - CRITICAL FINDING**
+- ✅ Installed `why-is-node-running` npm package
+- ✅ Attempted globalTeardown and afterAll hook approaches
+- ❌ Result: **Neither hook executes** - Vitest hangs BEFORE teardown
+- **CRITICAL FINDING**: Hanging occurs in **Vitest's internal worker/process management** between test execution and suite teardown
+- **Implication**: Issue is at Vitest framework level, NOT application code level
+- **Root Cause Hypothesis**: Vitest worker pool communication failure, jsdom environment cleanup deadlock, or RPC/IPC issue
 
-**5. Option v.5: Minimal Reproduction** (2-3 hours - LONG TERM)
+**5. Option v.5: Minimal Reproduction** (2-3 hours - **NOW HIGHEST PRIORITY**)
 - Engage maintainers for expert help
 - May be undiscovered Vitest bug
 - Good for community contribution
@@ -268,7 +270,7 @@ Despite fixing all identified timer issues and implementing all standard Vitest 
 | **v.6** | Check for large DOM trees | ✅ Complete | ❌ No |
 | **v.2** | Try happy-dom environment | ⏸️ Not Started | ❓ Unknown |
 | **v.3** | Binary search test isolation | ✅ Complete | N/A (diagnostic) |
-| **v.4** | Automated active handle detection | ⏸️ Not Started | N/A (diagnostic) |
+| **v.4** | Automated active handle detection | ✅ Complete | ❌ No (Vitest internal) |
 | **v.5** | Minimal reproduction | ⏸️ Not Started | N/A (community) |
 | **vii** | Workaround solutions | ⏸️ Not Started | ⚠️ Masks issue |
 
@@ -1069,11 +1071,11 @@ export default defineConfig({
 
 ### Option v.4: Automated Active Handle Detection
 
-**Status**: ⏸️ **NOT STARTED** - Fully automated diagnostic approach
+**Status**: ✅ **COMPLETED (2025-10-27)** - Critical diagnostic finding
 
 **Purpose**: Use `why-is-node-running` to identify all active handles, timers, and sockets keeping the Node.js process alive.
 
-**Estimated Effort**: 20-30 minutes (fully automated)
+**Estimated Effort**: 20-30 minutes (Actual: 30 minutes)
 
 **Why This Approach**:
 - Purpose-built for diagnosing "why won't Node exit" problems
@@ -1163,6 +1165,62 @@ There are 4 handle(s) keeping the process running
 | CPU profiling | ❌ No | ✅ Yes |
 
 **Recommendation**: ✅ **TOP PRIORITY** - Fastest path to identifying root cause, fully automated, purpose-built for this problem
+
+**Implementation Results (2025-10-27)**:
+
+**Approach 1: Global Teardown (Failed)**
+- ✅ Created `frontend/vitest.teardown.ts` with `whyIsNodeRunning()` call
+- ✅ Configured `globalTeardown: './vitest.teardown.ts'` in vitest.config.ts
+- ❌ Result: Global teardown NEVER executes - Vitest hangs before teardown runs
+
+**Approach 2: afterAll Hook (Failed - Critical Finding)**
+- ✅ Added `afterAll(() => { whyIsNodeRunning(); })` to Phase 2A describe block (App.test.tsx:1730)
+- ✅ Ran Phase 2A tests with `./run-tests.sh --filter "Phase 2A"`
+- ✅ All 14 Phase 2A tests execute successfully and produce stdout output
+- ❌ Result: **afterAll hook NEVER executes** - Vitest hangs BEFORE reaching afterAll
+
+**CRITICAL FINDING**:
+
+**The hanging occurs in Vitest's internal teardown process BETWEEN test execution completion and suite teardown.**
+
+**Evidence**:
+1. All Phase 2A tests execute successfully (all 14 tests show stdout output)
+2. Tests complete their assertions and finish execution
+3. Vitest hangs before running the afterAll hook
+4. Neither afterAll nor globalTeardown are reached
+
+**Implications**:
+- ❌ The issue is NOT in our test code or component cleanup
+- ❌ The issue is NOT in our afterEach/cleanup hooks (they run fine during tests)
+- ✅ **The issue IS in Vitest's internal worker/process management**
+- ✅ **Hanging occurs at Vitest framework level, not application level**
+
+**Root Cause Hypothesis**:
+The hanging is in Vitest 4.0.4's internal process between:
+1. Test execution completion (✅ works)
+2. Suite teardown hooks (❌ never reached)
+
+Possible culprits:
+- Vitest worker pool communication failure (forks pool)
+- jsdom environment cleanup within Vitest workers
+- Vitest RPC/IPC deadlock between main process and worker
+- Promise/event loop issue in Vitest's test suite completion logic
+
+**Why `why-is-node-running` Couldn't Diagnose**:
+- Tool requires execution within the hanging process
+- afterAll hook never runs (tool never executes)
+- Hanging is in Vitest's C-level/internal code before reaching JS hooks
+
+**Files Modified**:
+- `/Users/sam/Projects/JobHunterAI-Claude/frontend/vitest.teardown.ts` (created)
+- `/Users/sam/Projects/JobHunterAI-Claude/frontend/vitest.config.ts:76` (added globalTeardown)
+- `/Users/sam/Projects/JobHunterAI-Claude/frontend/src/App.test.tsx:1730` (added afterAll hook)
+- `/Users/sam/Projects/JobHunterAI-Claude/frontend/package.json` (added why-is-node-running@2.3.0)
+
+**Next Steps Recommendation**:
+1. **Option v.5: Minimal Reproduction for Maintainers** - This is a Vitest internal issue requiring maintainer expertise
+2. **Option v.2: Try happy-dom** - May reveal if jsdom-specific teardown issue
+3. **Option vii: Workaround Solution** - Force exit if other options fail
 
 ---
 

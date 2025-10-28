@@ -1725,6 +1725,14 @@ describe('App (JobHunterDashboard)', () => {
       });
     });
 
+    // OPTION v.4: ACTIVE HANDLE DETECTION (ISSUE-021)
+    // Log all active handles keeping Node.js process alive after Phase 2A tests complete
+    afterAll(() => {
+      console.log('\n=== CHECKING WHY NODE IS STILL RUNNING (Phase 2A) ===\n');
+      const whyIsNodeRunning = require('why-is-node-running');
+      whyIsNodeRunning();
+    });
+
     it('displays intake tab as default on mount', async () => {
       render(<App />);
 
