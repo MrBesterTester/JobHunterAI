@@ -1,7 +1,12 @@
 import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
 import path from 'path';
 
 export default defineConfig({
+  // OPTION v.1a: EXPLICIT REACT PLUGIN (ISSUE-021)
+  // Add explicit @vitejs/plugin-react for better React transformation and cleanup
+  plugins: [react()],
+
   test: {
     // Use jsdom environment for React component testing
     environment: 'jsdom',

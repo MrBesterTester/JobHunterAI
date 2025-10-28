@@ -1,6 +1,16 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
+  - [type: issue
+id: ISSUE-021
+title: Vitest Execution Reliability Problems
+status: open
+created: 2025-10-27
+updated: 2025-10-27
+component: frontend/testing
+severity: medium
+tags: [vitest, testing, reliability, tooling]
+related_issues: [ISSUE-018, ISSUE-019]](#type-issue%0Aid-issue-021%0Atitle-vitest-execution-reliability-problems%0Astatus-open%0Acreated-2025-10-27%0Aupdated-2025-10-27%0Acomponent-frontendtesting%0Aseverity-medium%0Atags-vitest-testing-reliability-tooling%0Arelated_issues-issue-018-issue-019)
 - [Vitest Execution Reliability Problems](#vitest-execution-reliability-problems)
   - [Table of Contents](#table-of-contents)
   - [Summary](#summary)
@@ -141,12 +151,12 @@ cd frontend && ./run-tests.sh --filter "Phase 2A"
 
 ### Recommended Order (Lowest Risk First):
 
-**1. Option v.1a: Add Explicit React Plugin** (30 minutes - LOWEST RISK)
-- Easy to implement and revert
-- May improve React component cleanup
-- No compatibility risks
+**1. ~~Option v.1a: Add Explicit React Plugin~~** ❌ **ATTEMPTED (2025-10-27) - FAILED**
+- ✅ Installed and configured @vitejs/plugin-react
+- ❌ Tests still hang after 60+ seconds
+- **Result**: Did NOT resolve hanging issue
 
-**2. Option v.6: Check for Large DOM Trees** (30 minutes - QUICK DIAGNOSTIC)
+**2. Option v.6: Check for Large DOM Trees** (30 minutes - QUICK DIAGNOSTIC - **NOW TOP PRIORITY**)
 - Community reports large DOMs cause performance/hanging issues
 - Review tests using expensive `byRole` queries
 - Quick to identify, easy to fix
@@ -248,7 +258,7 @@ Despite fixing all identified timer issues and implementing all standard Vitest 
 | **v.1** | Vite plugin interactions | ✅ Complete | N/A (no plugins found) |
 | **vi** | Deep async operation audit | ✅ Complete | ❌ No |
 | **iv** | AbortController for fetch | ⏸️ Not Started | N/A (code quality) |
-| **v.1a** | Add explicit React plugin | ⏸️ Not Started | ❓ Unknown |
+| **v.1a** | Add explicit React plugin | ✅ Complete | ❌ No |
 | **v.6** | Check for large DOM trees | ⏸️ Not Started | ❓ Unknown |
 | **v.2** | Try happy-dom environment | ⏸️ Not Started | ❓ Unknown |
 | **v.3** | Binary search test isolation | ⏸️ Not Started | N/A (diagnostic) |
@@ -737,7 +747,7 @@ useEffect(() => {
 
 ### Option v.1a: Add Explicit React Plugin
 
-**Status**: ⏸️ **NOT STARTED** - Low risk, worth trying
+**Status**: ✅ **COMPLETED (2025-10-27)** - Hanging persists
 
 **Purpose**: Add explicit `@vitejs/plugin-react` to see if better React transformation improves cleanup.
 
@@ -756,6 +766,7 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 
 export default defineConfig({
+  // OPTION v.1a: EXPLICIT REACT PLUGIN (ISSUE-021)
   plugins: [react()],  // Add explicit React plugin
   test: {
     // ... existing config
@@ -763,11 +774,21 @@ export default defineConfig({
 });
 ```
 
-**Hypothesis**: Explicit plugin might improve React component cleanup behavior
+**Changes Made**:
+1. Installed `@vitejs/plugin-react` as dev dependency
+2. Added import: `import react from '@vitejs/plugin-react';`
+3. Added plugins array to config: `plugins: [react()]`
 
-**Risk**: LOW (easy to revert if no improvement)
+**Test Results**:
+- Ran Phase 2A tests (18 tests) with `npx vitest run -t "Phase 2A"`
+- Tests executed but hung after 60+ seconds (same behavior as before)
+- Expected execution time: 5-10 seconds
+- Actual: Hung indefinitely, required manual termination
 
-**Recommendation**: ✅ Worth trying as next step
+**Results**:
+- ✅ Implementation successful
+- ❌ Hanging issue **STILL PERSISTS** after 60+ seconds
+- **Conclusion**: Explicit React plugin does NOT resolve hanging issue
 
 ---
 
