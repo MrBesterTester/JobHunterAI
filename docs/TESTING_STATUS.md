@@ -14,8 +14,9 @@
     - [✅ Phase 2B: Job List Filtering Tests (COMPLETED 2025-10-28)](#-phase-2b-job-list-filtering-tests-completed-2025-10-28)
     - [✅ Phase 3A: Job Approval Workflow (COMPLETED 2025-10-28)](#-phase-3a-job-approval-workflow-completed-2025-10-28)
     - [✅ Phase 3B: Job Rejection Workflow (COMPLETED 2025-10-28)](#-phase-3b-job-rejection-workflow-completed-2025-10-28)
-    - [🔄 Phases 3C-4B: PENDING (Estimated 4-7 hours remaining)](#-phases-3c-4b-pending-estimated-4-7-hours-remaining)
-    - [Achievement Summary (Phases 1-3B)](#achievement-summary-phases-1-3b)
+    - [✅ Phase 3C: Application Workflow (COMPLETED 2025-10-28)](#-phase-3c-application-workflow-completed-2025-10-28)
+    - [🔄 Phases 4A-4B: PENDING (Estimated 2-4 hours remaining)](#-phases-4a-4b-pending-estimated-2-4-hours-remaining)
+    - [Achievement Summary (Phases 1-3C)](#achievement-summary-phases-1-3c)
   - [ISSUE-023: Frontend Test Failures ✅ FIXED](#issue-023-frontend-test-failures--fixed)
     - [✅ Session 1 (2025-10-27): Email Composer Modal Tests (3/3)](#-session-1-2025-10-27-email-composer-modal-tests-33)
     - [✅ Session 2 (2025-10-28 AM): Content Generation Modal Test (1/1)](#-session-2-2025-10-28-am-content-generation-modal-test-11)
@@ -29,13 +30,13 @@
 
 ## Quick Status Overview
 
-**Current Test Status**: 450/452 tests passing (99.6% of active tests) ✅
+**Current Test Status**: 456/459 tests passing (99.3% of active tests) ✅
 
 **Current Focus**:
-- **ISSUE-018**: Frontend Unit Test Implementation (Option A2 Phases 3C-4B)
-  - Status: Phases 3A and 3B completed (2025-10-28)
-  - Remaining: ~4-7 hours (0.5-1 developer days)
-  - Next: Phase 3C - Application Workflow
+- **ISSUE-018**: Frontend Unit Test Implementation (Option A2 Phases 4A-4B)
+  - Status: Phases 1-3 completed (2025-10-28)
+  - Remaining: ~2-4 hours (0.25-0.5 developer days)
+  - Next: Phase 4A - Job Card Interactions
 
 **Closed Issues**:
 - **ISSUE-023**: Frontend Test Failures ✅ **FIXED** (Moved to fixed/ 2025-10-28)
@@ -43,12 +44,13 @@
 **Recent Progress** (2025-10-28):
 - ✅ **Phase 3A COMPLETED**: Job Approval Workflow Tests (7 tests added, 1 skipped)
 - ✅ **Phase 3B COMPLETED**: Job Rejection Workflow Tests (7 tests added, 1 skipped)
-- ✅ Test suite: 450/452 passing (99.6%, 2 skipped total)
-- ✅ Total progress: 101/101+ App.tsx tests implemented (100% of Phase 3 target)
-- ✅ Rejection workflow: button clicks, status updates, tab transitions (New → Filtered), API calls, error handling, modal rejection, re-approval capability
-- 🎯 **ISSUE-018 Progress**: Option A2 Phases 1-3B complete, Phases 3C-4B remaining
+- ✅ **Phase 3C COMPLETED**: Application Workflow Tests (7 tests added, 1 skipped)
+- ✅ Test suite: 456/459 passing (99.3%, 3 skipped total)
+- ✅ Total progress: 108/108+ App.tsx tests implemented (100% of Phase 3 target)
+- ✅ Application workflow: mark as applied, status updates, tab transitions (Approved → Applied), modal closure, API calls, error handling, button visibility logic
+- 🎯 **ISSUE-018 Progress**: Option A2 Phases 1-3 complete, Phases 4A-4B remaining
 
-**Big Picture**: Started with **zero frontend tests** on Oct 23 → Now at **450/452 passing (99.6% of active tests)** ✅
+**Big Picture**: Started with **zero frontend tests** on Oct 23 → Now at **456/459 passing (99.3% of active tests)** ✅
 
 ---
 
@@ -139,20 +141,35 @@ From the comprehensive test report ([README_test-report-10-23-2025.md](../README
 - Data refresh after successful operations
 - Re-approval capability (undo rejection)
 
-#### 🔄 Phases 3C-4B: PENDING (Estimated 4-7 hours remaining)
+#### ✅ Phase 3C: Application Workflow (COMPLETED 2025-10-28)
+
+| Sub-Phase | Tests Created | Status |
+|-----------|---------------|--------|
+| 3C. Application Workflow | 7 (1 skipped) | ✅ Complete |
+
+**Test Coverage**:
+- Mark job as applied via "Mark as Applied" button in job details modal
+- Status transition: approved → applied
+- Cross-tab job movement verification (Approved → Applied)
+- Modal closure after successful operation
+- Job list refresh verification
+- API call structure and parameters (status: 'applied')
+- Error handling with optimistic UI updates
+- Button visibility logic (show for approved jobs, hide for applied jobs)
+
+#### 🔄 Phases 4A-4B: PENDING (Estimated 2-4 hours remaining)
 
 | Sub-Phase | Est. Tests | Est. Effort | Status |
 |-----------|------------|-------------|--------|
-| 3C. Application Workflow | 8-12 | 2-3 hours | ⏸️ Pending |
 | 4A. Job Card Interactions | 8-10 | 1-2 hours | ⏸️ Pending |
 | 4B. Job Details Modal | 8-10 | 1-2 hours | ⏸️ Pending |
 
-**Subtotal**: ~24-32 tests to be created
+**Subtotal**: ~16-20 tests to be created
 
-#### Achievement Summary (Phases 1-3B)
+#### Achievement Summary (Phases 1-3C)
 
-- **Total tests created**: 452 tests (covering App.tsx + 10 other components)
-- **Current pass rate**: 450/452 passing (99.6% - 2 intentionally skipped)
+- **Total tests created**: 459 tests (covering App.tsx + 10 other components)
+- **Current pass rate**: 456/459 passing (99.3% - 3 intentionally skipped)
 - **Components at 90%+ coverage**: 6 components
   - IgnoredTab
   - FailedTab
@@ -265,4 +282,4 @@ From the comprehensive test report ([README_test-report-10-23-2025.md](../README
 
 ---
 
-**Bottom Line**: We started with **zero frontend unit tests** on Oct 23. Now we have **452 tests (99.6% passing)**. Both issues represent significant progress but have distinct remaining work.
+**Bottom Line**: We started with **zero frontend unit tests** on Oct 23. Now we have **459 tests (99.3% passing)**. Both issues represent significant progress but have distinct remaining work.
