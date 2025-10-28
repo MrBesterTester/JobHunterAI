@@ -24,6 +24,7 @@ related: [ISSUE-013, ISSUE-023]](#id-issue-018%0Atitle-frontend-unit-test-implem
       - [4A. Job Card Interactions (8-10 tests, 1-2 hours)](#4a-job-card-interactions-8-10-tests-1-2-hours)
       - [4B. Job Details Modal ✅ **COMPLETED (2025-10-28)** (10 tests, 6 passing + 4 skipped)](#4b-job-details-modal--completed-2025-10-28-10-tests-6-passing--4-skipped)
     - [Implementation Strategy](#implementation-strategy)
+    - [Maintenance and Best Practices](#maintenance-and-best-practices)
   - [Option A1 Implementation Plan](#option-a1-implementation-plan)
     - [Executive Summary](#executive-summary-1)
     - [Goals and Success Criteria](#goals-and-success-criteria)
@@ -93,11 +94,6 @@ related: [ISSUE-013, ISSUE-023]](#id-issue-018%0Atitle-frontend-unit-test-implem
   - [Testing](#testing)
   - [Status History](#status-history)
   - [Notes](#notes)
-  - [Next Steps](#next-steps)
-    - [Recommended Implementation Approach (Historical)](#recommended-implementation-approach-historical)
-    - [Maintenance and Best Practices](#maintenance-and-best-practices)
-    - [Success Metrics](#success-metrics)
-    - [Alternative Approaches](#alternative-approaches)
   - [Appendix: User Prompts That Generated This Document](#appendix-user-prompts-that-generated-this-document)
     - [Initial Prompt (2025-10-25)](#initial-prompt-2025-10-25)
     - [Follow-up Prompt (2025-10-25)](#follow-up-prompt-2025-10-25)
@@ -302,6 +298,28 @@ related: [ISSUE-013, ISSUE-023]
 - Use existing mock helpers (createStandardMocks, etc.)
 
 **Optional Follow-up**: After Option A2 completion, Option A1 (CalendarTab/IntakeTab expansion) remains available for future implementation if desired to push overall coverage toward 60%.
+
+---
+
+### Maintenance and Best Practices
+
+**Ongoing Test Maintenance**:
+- Run `npm test` before every commit (currently ~16-21 seconds)
+- Use `npm run test:watch` during active development
+- Review coverage reports monthly: `npm run test:coverage`
+- Keep test pass rate at 98%+ (currently: 473/481 passing, 8 intentionally skipped)
+
+**Test-Driven Development (TDD) Workflow**:
+- Write tests first for new components
+- Use Phase 1-4B test patterns as templates
+- Aim for 90%+ coverage on new components
+- Maintain reasonable execution time (<30 seconds total)
+
+**CI/CD Integration Recommendations**:
+- Add pre-commit hook: Run type checking + unit tests
+- Add PR requirement: All tests must pass
+- Add coverage gate: No decrease in coverage allowed
+- Add performance gate: Test execution must stay under 30 seconds
 
 ---
 
@@ -2633,132 +2651,6 @@ The test report (October 2025) explicitly recommends adding frontend unit tests 
 - Accessibility testing (jest-axe)
 - Performance testing (React Testing Library + performance marks)
 - Storybook for component development and testing
-
-## Next Steps
-
-**Status**: ✅ Phases 1-4 complete (320 tests, 100% pass rate, 46.9% coverage)
-
-**Note**: This section contains historical planning information. See "Remaining Work to Reach 70% Coverage" section above for current recommendations.
-
-**Priority 1: App.tsx Coverage Finalization (Current: ~50-60% → Target: 60%+)**
-- **Current state**: 66 tests, estimated ~50-60% coverage (out of 2,782 LOC)
-- **Status**: ✅ **SUBSTANTIALLY ACHIEVED** - May already be at 60%+ (pending clean coverage report)
-- **If needed**: Add 5-10 more tests for any remaining gaps
-- **Estimated effort**: 0-2 hours (likely none needed)
-
-**Priority 2: Expand CalendarTab Coverage (Current: 36.76% → Target: 70%+)**
-- **Current state**: 23 tests, ~37% coverage (out of 658 LOC)
-- **Gap**: Need ~35 additional test cases
-- **Focus areas**:
-  - Calendar rendering logic (month/week/day views)
-  - Interview CRUD operations edge cases
-  - Date/time validation and formatting
-  - Conflict detection and resolution
-  - Recurring interview patterns
-- **Estimated effort**: 8-12 hours
-- **Impact**: Would bring overall coverage to ~58-61%
-
-**Priority 3: Expand IntakeTab Coverage (Current: 36.84% → Target: 60%+)**
-- **Current state**: 14 tests, ~37% coverage (out of 1,240 LOC)
-- **Gap**: Need ~40 additional test cases
-- **Focus areas**:
-  - Job source integration testing (Gmail, RapidAPI, LinkedIn)
-  - Filtering logic edge cases
-  - Job preview and approval workflows
-  - Extraction prompt management
-  - Sync operations and error handling
-  - Pagination and data refresh
-- **Estimated effort**: 10-15 hours
-- **Impact**: Would bring overall coverage to ~63-67%
-
-**Priority 4: Expand RankedJobsTab Coverage (Current: 54.71% → Target: 75%+)**
-- **Current state**: 20 tests, ~55% coverage (out of 606 LOC)
-- **Gap**: Need ~15 additional test cases
-- **Focus areas**:
-  - Sorting edge cases (ties, null values)
-  - Score recalculation scenarios
-  - Weight adjustment integration
-  - Filter combinations
-- **Estimated effort**: 5-8 hours
-- **Impact**: Would bring overall coverage to ~68-72%
-
-### Recommended Implementation Approach (Historical)
-
-**Note**: See "Remaining Work to Reach 70% Coverage" section above for updated recommendations.
-
-**Phase 5 (Future - Optional): Enhanced Coverage for Large Components**
-1. **App.tsx expansion** (12-18 hours)
-   - Focus on remaining modal workflows and job status updates
-   - Target: App.tsx to 60%+ coverage
-   - Overall target: ~55-58% coverage
-
-2. **CalendarTab + IntakeTab** (16-25 hours)
-   - CalendarTab: Focus on calendar rendering and date logic
-   - IntakeTab: Focus on job source integration and filtering
-   - Target: Both components to 60%+ coverage
-   - Overall target: ~63-67% coverage
-
-3. **Final push** (5-10 hours)
-   - RankedJobsTab expansion
-   - Fill remaining gaps in other components
-   - Target: **70%+ overall coverage achieved** ✅
-
-**Total Phase 5 Estimated Effort**: 33-53 hours (4-7 developer days)
-
-### Maintenance and Best Practices
-
-**Ongoing Test Maintenance**:
-- Run `npm test` before every commit (currently ~6 seconds)
-- Use `npm run test:watch` during active development
-- Review coverage reports monthly: `npm run test:coverage`
-- Keep test pass rate at 100% (currently: 278/278 passing)
-
-**Test-Driven Development (TDD) Workflow**:
-- Write tests first for new components
-- Use Phase 1-3 test patterns as templates
-- Aim for 90%+ coverage on new components
-- Maintain fast execution time (<10 seconds total)
-
-**CI/CD Integration**:
-- Add pre-commit hook: Run type checking + unit tests
-- Add PR requirement: All tests must pass
-- Add coverage gate: No decrease in coverage allowed
-- Add performance gate: Test execution must stay under 10 seconds
-
-### Success Metrics
-
-**Current Status** (After Phase 3):
-- ✅ Test execution time: ~6 seconds (target: <10s)
-- ⏸️ Overall coverage: 46% (target: 70%+)
-- ✅ Phase 1-3 components: 31-95% coverage (mixed)
-- ✅ Test pass rate: 100% (278/278)
-- ✅ Fast feedback loop: Enabled
-- ⏸️ CI/CD integration: Not yet implemented
-
-**Target Status** (After Phase 4):
-- ✅ Test execution time: <10 seconds
-- ✅ Overall coverage: 70%+
-- ✅ All components: 60%+ coverage minimum
-- ✅ Test pass rate: 100%
-- ✅ Fast feedback loop: Enabled
-- ✅ CI/CD integration: Implemented
-
-### Alternative Approaches
-
-**If Time Constrained**:
-- Focus only on App.tsx expansion (15-20 hours)
-- Would achieve ~55-58% coverage
-- Still provides significant value
-
-**If Resources Available**:
-- Implement all of Phase 4 (38-57 hours)
-- Achieve 70%+ target
-- Establish gold standard for frontend testing
-
-**Continuous Improvement**:
-- Add 5-10 tests per sprint
-- Focus on areas with bugs or active development
-- Gradually increase coverage over time
 
 ---
 
