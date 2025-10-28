@@ -13,7 +13,7 @@
     - [✅ Phase 2A: Tab Navigation Tests (COMPLETED 2025-10-25)](#-phase-2a-tab-navigation-tests-completed-2025-10-25)
     - [🔄 Phases 2B-4B: PENDING (Estimated 15-30 hours remaining)](#-phases-2b-4b-pending-estimated-15-30-hours-remaining)
     - [Achievement Summary (Phases 1-2A)](#achievement-summary-phases-1-2a)
-  - [ISSUE-023: Frontend Test Failures](#issue-023-frontend-test-failures)
+  - [ISSUE-023: Frontend Test Failures ✅ FIXED](#issue-023-frontend-test-failures--fixed)
     - [✅ Session 1 (2025-10-27): Email Composer Modal Tests (3/3)](#-session-1-2025-10-27-email-composer-modal-tests-33)
     - [✅ Session 2 (2025-10-28 AM): Content Generation Modal Test (1/1)](#-session-2-2025-10-28-am-content-generation-modal-test-11)
     - [✅ Session 3 (2025-10-28 PM): Content Generation Modal Tests (3/3)](#-session-3-2025-10-28-pm-content-generation-modal-tests-33)
@@ -30,7 +30,9 @@
 
 **Active Issues**:
 - **ISSUE-018**: Frontend Unit Test Implementation (Phases 2B-4B pending, ~15-30 hours remaining)
-- **ISSUE-023**: Frontend Test Failures ✅ **RESOLVED** (7/8 fixed, 1 skipped as architectural limitation)
+
+**Closed Issues**:
+- **ISSUE-023**: Frontend Test Failures ✅ **FIXED** (Moved to fixed/ 2025-10-28)
 
 **Recent Progress**:
 - ✅ Test fixes (3 sessions): 7 out of 8 failing tests resolved
@@ -122,11 +124,11 @@ From the comprehensive test report ([README_test-report-10-23-2025.md](../README
 
 ---
 
-### ISSUE-023: Frontend Test Failures
+### ISSUE-023: Frontend Test Failures ✅ FIXED
 
-**File**: [bugs/open/ISSUE-023-frontend-test-failures---content-generation-state-propagation-issues.md](../bugs/open/ISSUE-023-frontend-test-failures---content-generation-state-propagation-issues.md)
+**File**: [bugs/fixed/ISSUE-023-frontend-test-failures---content-generation-state-propagation-issues.md](../bugs/fixed/ISSUE-023-frontend-test-failures---content-generation-state-propagation-issues.md)
 
-**Created**: 2025-10-27 | **Resolved**: 2025-10-28 ✅
+**Created**: 2025-10-27 | **Fixed**: 2025-10-28 ✅
 
 **Scope**: Fix 8 specific test failures discovered during ISSUE-018 implementation
 - 5 Content Generation Modal tests (state/DOM issues)
