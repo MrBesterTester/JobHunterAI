@@ -156,12 +156,15 @@ cd frontend && ./run-tests.sh --filter "Phase 2A"
 - ❌ Tests still hang after 60+ seconds
 - **Result**: Did NOT resolve hanging issue
 
-**2. Option v.6: Check for Large DOM Trees** (30 minutes - QUICK DIAGNOSTIC - **NOW TOP PRIORITY**)
-- Community reports large DOMs cause performance/hanging issues
-- Review tests using expensive `byRole` queries
-- Quick to identify, easy to fix
+**2. ~~Option v.6: Check for Large DOM Trees~~** ❌ **ATTEMPTED (2025-10-27) - NOT THE CAUSE**
+- ✅ DOM size measured: 208 elements (medium, not large)
+- ✅ Query strategies efficient (no expensive byRole scans)
+- ✅ Single test exits cleanly (298ms)
+- ❌ Multiple tests still hang (46+ seconds)
+- **Result**: NOT a DOM size or query performance issue
+- **Key finding**: Hanging related to multiple test execution, not DOM performance
 
-**3. Option v.3: Binary Search Test Isolation** (1-2 hours - DIAGNOSTIC)
+**3. Option v.3: Binary Search Test Isolation** (1-2 hours - DIAGNOSTIC - **NOW TOP PRIORITY**)
 - Systematic approach to find problematic test
 - May reveal pattern we missed
 - Time-consuming but thorough
@@ -259,7 +262,7 @@ Despite fixing all identified timer issues and implementing all standard Vitest 
 | **vi** | Deep async operation audit | ✅ Complete | ❌ No |
 | **iv** | AbortController for fetch | ⏸️ Not Started | N/A (code quality) |
 | **v.1a** | Add explicit React plugin | ✅ Complete | ❌ No |
-| **v.6** | Check for large DOM trees | ⏸️ Not Started | ❓ Unknown |
+| **v.6** | Check for large DOM trees | ✅ Complete | ❌ No |
 | **v.2** | Try happy-dom environment | ⏸️ Not Started | ❓ Unknown |
 | **v.3** | Binary search test isolation | ⏸️ Not Started | N/A (diagnostic) |
 | **v.4** | Node.js profiling (Chrome DevTools) | ⏸️ Not Started | N/A (diagnostic) |
@@ -794,11 +797,11 @@ export default defineConfig({
 
 ### Option v.6: Check for Large DOM Trees
 
-**Status**: ⏸️ **NOT STARTED** - Quick diagnostic, community-identified issue
+**Status**: ✅ **COMPLETED (2025-10-27)** - Investigation complete, NOT the root cause
 
 **Purpose**: Identify if large DOM trees with expensive queries are causing performance/hanging issues.
 
-**Estimated Effort**: 30 minutes
+**Estimated Effort**: 30 minutes (Actual: 25 minutes)
 
 **Background from Community Research (Option v)**:
 
@@ -886,6 +889,47 @@ Run Phase 2A tests and compare:
 - ❌ `getByTestId` requires adding data-testid attributes
 
 **Recommendation**: ✅ **High priority** - Quick diagnostic from community research, easy to identify and fix
+
+**Investigation Results (2025-10-27)**:
+
+**Step 1: DOM Size Measurement**
+- Added temporary test to measure DOM size for full `<App />` component
+- Ran test: `npx vitest run -t "TEMP: measures DOM size for Phase 2A"`
+- **Results**:
+  - Total DOM elements: **208**
+  - Elements with role attribute: 0
+  - Total buttons: 25
+  - Total textboxes: 0
+  - **Assessment**: Medium-sized DOM (100-500 range), **NOT excessively large**
+
+**Step 2: Query Strategy Review**
+- Searched all test files for `byRole` query patterns
+- Found 59 total occurrences across 7 files
+- **Phase 2A query patterns analyzed**:
+  - ✅ `screen.getByRole('button', { name: /intake/i })` - Specific, efficient
+  - ✅ `screen.getByRole('button', { name: /non-job emails/i })` - Specific, efficient
+  - ✅ `screen.getAllByText('New')` - Text search, efficient
+  - ✅ No expensive patterns like `getAllByRole(/.*/)`
+  - **Assessment**: Tests use **efficient, specific queries**
+
+**Step 3: Single vs Multiple Test Behavior**
+- **Single test**: DOM measurement test ran and **exited cleanly in 298ms**
+- **Multiple tests (19 Phase 2A tests)**: Tests **hung after 46+ seconds** (timeout required manual kill)
+- **Critical finding**: Hanging occurs when running multiple tests in sequence, NOT from single test execution
+
+**Results**:
+- ✅ DOM size measured (208 elements = medium, not large)
+- ✅ Query strategies reviewed (efficient, not expensive)
+- ✅ Single test runs without hanging (298ms)
+- ❌ Multiple tests still hang (46+ seconds)
+- **Conclusion**: **NOT a large DOM tree or expensive query issue**
+
+**Root Cause Analysis**:
+- DOM size (208 elements) is moderate and within normal range
+- Query patterns are efficient and specific
+- Single test completes cleanly, suggesting DOM/queries are not the bottleneck
+- Hanging is related to **multiple test execution and test isolation/cleanup**, not DOM performance
+- Issue likely involves cumulative resource buildup or incomplete teardown between tests
 
 ---
 
