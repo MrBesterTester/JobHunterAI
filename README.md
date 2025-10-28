@@ -22,6 +22,8 @@
 # JobHunter
 
 > **For Developers**: See [README_dev.md](README_dev.md) for technical documentation, API endpoints, testing procedures, and implementation details.
+>
+> **Project Status**: See [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for current development phase, testing status, active issues, and project metrics.
 
 A workflow-driven job application management system to streamline your job search.
 

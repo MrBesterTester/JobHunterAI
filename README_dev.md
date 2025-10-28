@@ -81,6 +81,7 @@
       - [`create-bug.sh`](#create-bugsh)
       - [`move-bug.sh`](#move-bugsh)
       - [`regenerate-bug-index.sh`](#regenerate-bug-indexsh)
+      - [`scripts/update-project-status.sh`](#scriptsupdate-project-statussh)
       - [`system-health-check.sh`](#system-health-checksh)
     - [Security Notes](#security-notes)
   - [API Endpoints](#api-endpoints)
@@ -2224,6 +2225,64 @@ cd backend
 # Also works from project root
 ./regenerate-bug-index.sh   # ✅ Success
 ```
+
+#### [`scripts/update-project-status.sh`](scripts/update-project-status.sh)
+Updates the central project status document with current metrics from various sources.
+
+**Usage:**
+```bash
+./scripts/update-project-status.sh
+```
+
+This script will:
+- Extract bug counts and priorities from `bugs/README.md`
+- Extract test metrics from `docs/TESTING_STATUS.md`
+- Count total lines of code across frontend and backend
+- Get recent git commits (last 7 days)
+- Calculate bug fix rates and statistics
+- Update timestamp and metrics in `docs/PROJECT_STATUS.md`
+- Preserve manual edits in designated sections
+
+**What gets auto-updated:**
+- Last Updated timestamp
+- Open Issues count
+- Generated timestamp footer
+
+**When to use:**
+- After completing major milestones
+- Weekly status reviews
+- Before/after significant test or bug work
+- When preparing status reports
+
+**Not a one-time script:**
+This script is designed for periodic/on-demand use. Run it whenever you want to refresh the project status document with current metrics. Manual content in marked sections is preserved.
+
+**Output example:**
+```
+Updating PROJECT_STATUS.md...
+
+=== Extracted Metrics ===
+Total Bugs: 28
+  Open: 6
+  Mitigated: 3
+  Fixed: 19
+  Fix Rate: 67.9%
+
+Priority Breakdown:
+  Critical: 1
+  High: 6
+  Medium: 14
+  Low: 5
+
+Test Status: 421/421
+Total LOC: ~29028
+
+✅ Updated docs/PROJECT_STATUS.md
+
+💡 This script can be run periodically or on-demand
+```
+
+**See also:** [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for the current project status
 
 #### [`system-health-check.sh`](system-health-check.sh)
 Monitors system resources and detects issues during Claude Code sessions to prevent system overload.
