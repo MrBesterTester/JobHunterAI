@@ -3891,12 +3891,34 @@ describe('App (JobHunterDashboard)', () => {
         return mockFetchSuccess({ job_id: mockJob.job_id, total_score: 85, rank: 1, calculated_at: new Date().toISOString() });
       }
       if (url.includes('/api/stats')) {
-        return mockFetchSuccess({ approved: 1 });
+        return mockFetchSuccess({
+          new: 0,
+          approved: 1,
+          applied: 0,
+          rejected: 0,
+          filtered: 0,
+          pending: 0,
+          interviewing: 0,
+          offer: 0,
+          failed: 0,
+          ignored: 0,
+          duplicates: 0,
+          ranked: 0
+        });
       }
       if (url.includes('/api/criteria')) {
         return mockFetchSuccess(null);
       }
       if (url.includes('/api/applications')) {
+        return mockFetchSuccess([]);
+      }
+      if (url.includes('/api/job-sources')) {
+        return mockFetchSuccess([]);
+      }
+      if (url.includes('/api/intake/logs')) {
+        return mockFetchSuccess([]);
+      }
+      if (url.includes('/api/intake/source-summaries')) {
         return mockFetchSuccess([]);
       }
       return mockFetchError();
@@ -3913,11 +3935,13 @@ describe('App (JobHunterDashboard)', () => {
         expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
       }, { timeout: 3000 });
 
-      // Click on Approved tab to show approved jobs (tabs are button elements, not role="tab")
+      // Wait for Approved tab to be available, then click it
       await waitFor(() => {
-        const approvedTab = screen.getByRole('button', { name: /approved/i });
-        fireEvent.click(approvedTab);
+        expect(screen.getByRole('button', { name: /approved/i })).toBeInTheDocument();
       }, { timeout: 3000 });
+
+      const approvedTab = screen.getByRole('button', { name: /approved/i });
+      fireEvent.click(approvedTab);
 
       // Wait for the job and generate button to appear in the approved tab
       await waitFor(() => {
@@ -5085,11 +5109,13 @@ describe('App (JobHunterDashboard)', () => {
         expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
       }, { timeout: 3000 });
 
-      // Navigate and open email composer
+      // Navigate to approved tab
       await waitFor(() => {
-        const approvedTab = screen.getByRole('button', { name: /approved/i });
-        fireEvent.click(approvedTab);
+        expect(screen.getByRole('button', { name: /approved/i })).toBeInTheDocument();
       }, { timeout: 3000 });
+
+      const approvedTab = screen.getByRole('button', { name: /approved/i });
+      fireEvent.click(approvedTab);
 
       await waitFor(() => {
         expect(screen.getByText('Software Test Engineer')).toBeInTheDocument();
@@ -5098,9 +5124,11 @@ describe('App (JobHunterDashboard)', () => {
       const generateButton = screen.getByTestId('generate-content-button');
       fireEvent.click(generateButton);
 
+      // Wait for content generation modal AND content to load
       await waitFor(() => {
         expect(screen.getByTestId('content-generation-modal')).toBeInTheDocument();
-      });
+        expect(screen.getByTestId('resume-content')).toBeInTheDocument();
+      }, { timeout: 5000 });
 
       const createDraftButton = screen.getByTestId('create-draft-button');
       fireEvent.click(createDraftButton);
@@ -5114,9 +5142,12 @@ describe('App (JobHunterDashboard)', () => {
       expect(subjectInput.value).toContain('Software Test Engineer');
       expect(subjectInput.value).toContain('Sam Kirk');
 
-      const coverLetterPreview = screen.getByTestId('cover-letter-preview');
-      expect(coverLetterPreview).toHaveTextContent('Dear Hiring Manager');
-      expect(coverLetterPreview).toHaveTextContent('I am excited to apply');
+      // Wait for cover letter to populate
+      await waitFor(() => {
+        const coverLetterPreview = screen.getByTestId('cover-letter-preview');
+        expect(coverLetterPreview).toHaveTextContent('Dear Hiring Manager');
+        expect(coverLetterPreview).toHaveTextContent('I am excited to apply');
+      });
     });
 
     it('displays cover letter preview', async () => {
@@ -5128,11 +5159,13 @@ describe('App (JobHunterDashboard)', () => {
         expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
       }, { timeout: 3000 });
 
-      // Navigate and open email composer
+      // Navigate to approved tab
       await waitFor(() => {
-        const approvedTab = screen.getByRole('button', { name: /approved/i });
-        fireEvent.click(approvedTab);
+        expect(screen.getByRole('button', { name: /approved/i })).toBeInTheDocument();
       }, { timeout: 3000 });
+
+      const approvedTab = screen.getByRole('button', { name: /approved/i });
+      fireEvent.click(approvedTab);
 
       await waitFor(() => {
         expect(screen.getByText('Software Test Engineer')).toBeInTheDocument();
@@ -5141,9 +5174,11 @@ describe('App (JobHunterDashboard)', () => {
       const generateButton = screen.getByTestId('generate-content-button');
       fireEvent.click(generateButton);
 
+      // Wait for content generation modal AND content to load
       await waitFor(() => {
         expect(screen.getByTestId('content-generation-modal')).toBeInTheDocument();
-      });
+        expect(screen.getByTestId('resume-content')).toBeInTheDocument();
+      }, { timeout: 5000 });
 
       const createDraftButton = screen.getByTestId('create-draft-button');
       fireEvent.click(createDraftButton);
@@ -5152,10 +5187,12 @@ describe('App (JobHunterDashboard)', () => {
         expect(screen.getByTestId('email-composer-modal')).toBeInTheDocument();
       });
 
-      // Cover letter should be displayed in preview
-      const coverLetterPreview = screen.getByTestId('cover-letter-preview');
-      expect(coverLetterPreview).toBeInTheDocument();
-      expect(coverLetterPreview).toHaveTextContent('Dear Hiring Manager');
+      // Wait for cover letter to populate in preview
+      await waitFor(() => {
+        const coverLetterPreview = screen.getByTestId('cover-letter-preview');
+        expect(coverLetterPreview).toBeInTheDocument();
+        expect(coverLetterPreview).toHaveTextContent('Dear Hiring Manager');
+      });
     });
 
     it('shows resume attachment info', async () => {
@@ -5167,11 +5204,13 @@ describe('App (JobHunterDashboard)', () => {
         expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
       }, { timeout: 3000 });
 
-      // Navigate and open email composer
+      // Navigate to approved tab
       await waitFor(() => {
-        const approvedTab = screen.getByRole('button', { name: /approved/i });
-        fireEvent.click(approvedTab);
+        expect(screen.getByRole('button', { name: /approved/i })).toBeInTheDocument();
       }, { timeout: 3000 });
+
+      const approvedTab = screen.getByRole('button', { name: /approved/i });
+      fireEvent.click(approvedTab);
 
       await waitFor(() => {
         expect(screen.getByText('Software Test Engineer')).toBeInTheDocument();
@@ -5180,9 +5219,11 @@ describe('App (JobHunterDashboard)', () => {
       const generateButton = screen.getByTestId('generate-content-button');
       fireEvent.click(generateButton);
 
+      // Wait for content generation modal AND content to load
       await waitFor(() => {
         expect(screen.getByTestId('content-generation-modal')).toBeInTheDocument();
-      });
+        expect(screen.getByTestId('resume-content')).toBeInTheDocument();
+      }, { timeout: 5000 });
 
       const createDraftButton = screen.getByTestId('create-draft-button');
       fireEvent.click(createDraftButton);
@@ -5191,11 +5232,13 @@ describe('App (JobHunterDashboard)', () => {
         expect(screen.getByTestId('email-composer-modal')).toBeInTheDocument();
       });
 
-      // Check resume attachment info
-      const resumeAttachment = screen.getByTestId('resume-attachment');
-      expect(resumeAttachment).toBeInTheDocument();
-      expect(resumeAttachment).toHaveTextContent('techcorp_resume.pdf');
-      expect(resumeAttachment).toHaveTextContent('KB'); // Should show file size
+      // Wait for resume attachment info to populate
+      await waitFor(() => {
+        const resumeAttachment = screen.getByTestId('resume-attachment');
+        expect(resumeAttachment).toBeInTheDocument();
+        expect(resumeAttachment).toHaveTextContent('techcorp_resume.pdf');
+        expect(resumeAttachment).toHaveTextContent('KB'); // Should show file size
+      });
     });
 
     it('allows editing fields', async () => {
@@ -5207,11 +5250,13 @@ describe('App (JobHunterDashboard)', () => {
         expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
       }, { timeout: 3000 });
 
-      // Navigate and open email composer
+      // Navigate to approved tab
       await waitFor(() => {
-        const approvedTab = screen.getByRole('button', { name: /approved/i });
-        fireEvent.click(approvedTab);
+        expect(screen.getByRole('button', { name: /approved/i })).toBeInTheDocument();
       }, { timeout: 3000 });
+
+      const approvedTab = screen.getByRole('button', { name: /approved/i });
+      fireEvent.click(approvedTab);
 
       await waitFor(() => {
         expect(screen.getByText('Software Test Engineer')).toBeInTheDocument();
@@ -5220,9 +5265,11 @@ describe('App (JobHunterDashboard)', () => {
       const generateButton = screen.getByTestId('generate-content-button');
       fireEvent.click(generateButton);
 
+      // Wait for content generation modal AND content to load
       await waitFor(() => {
         expect(screen.getByTestId('content-generation-modal')).toBeInTheDocument();
-      });
+        expect(screen.getByTestId('resume-content')).toBeInTheDocument();
+      }, { timeout: 5000 });
 
       const createDraftButton = screen.getByTestId('create-draft-button');
       fireEvent.click(createDraftButton);
@@ -5251,11 +5298,13 @@ describe('App (JobHunterDashboard)', () => {
         expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
       }, { timeout: 3000 });
 
-      // Navigate and open email composer
+      // Navigate to approved tab
       await waitFor(() => {
-        const approvedTab = screen.getByRole('button', { name: /approved/i });
-        fireEvent.click(approvedTab);
+        expect(screen.getByRole('button', { name: /approved/i })).toBeInTheDocument();
       }, { timeout: 3000 });
+
+      const approvedTab = screen.getByRole('button', { name: /approved/i });
+      fireEvent.click(approvedTab);
 
       await waitFor(() => {
         expect(screen.getByText('Software Test Engineer')).toBeInTheDocument();
@@ -5264,9 +5313,11 @@ describe('App (JobHunterDashboard)', () => {
       const generateButton = screen.getByTestId('generate-content-button');
       fireEvent.click(generateButton);
 
+      // Wait for content generation modal AND content to load
       await waitFor(() => {
         expect(screen.getByTestId('content-generation-modal')).toBeInTheDocument();
-      });
+        expect(screen.getByTestId('resume-content')).toBeInTheDocument();
+      }, { timeout: 5000 });
 
       const createDraftButton = screen.getByTestId('create-draft-button');
       fireEvent.click(createDraftButton);
@@ -5307,11 +5358,13 @@ describe('App (JobHunterDashboard)', () => {
         expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
       }, { timeout: 3000 });
 
-      // Navigate and open email composer
+      // Navigate to approved tab
       await waitFor(() => {
-        const approvedTab = screen.getByRole('button', { name: /approved/i });
-        fireEvent.click(approvedTab);
+        expect(screen.getByRole('button', { name: /approved/i })).toBeInTheDocument();
       }, { timeout: 3000 });
+
+      const approvedTab = screen.getByRole('button', { name: /approved/i });
+      fireEvent.click(approvedTab);
 
       await waitFor(() => {
         expect(screen.getByText('Software Test Engineer')).toBeInTheDocument();
@@ -5320,9 +5373,11 @@ describe('App (JobHunterDashboard)', () => {
       const generateButton = screen.getByTestId('generate-content-button');
       fireEvent.click(generateButton);
 
+      // Wait for content generation modal AND content to load
       await waitFor(() => {
         expect(screen.getByTestId('content-generation-modal')).toBeInTheDocument();
-      });
+        expect(screen.getByTestId('resume-content')).toBeInTheDocument();
+      }, { timeout: 5000 });
 
       const createDraftButton = screen.getByTestId('create-draft-button');
       fireEvent.click(createDraftButton);
@@ -5365,11 +5420,13 @@ describe('App (JobHunterDashboard)', () => {
         expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
       }, { timeout: 3000 });
 
-      // Navigate and open email composer
+      // Navigate to approved tab
       await waitFor(() => {
-        const approvedTab = screen.getByRole('button', { name: /approved/i });
-        fireEvent.click(approvedTab);
+        expect(screen.getByRole('button', { name: /approved/i })).toBeInTheDocument();
       }, { timeout: 3000 });
+
+      const approvedTab = screen.getByRole('button', { name: /approved/i });
+      fireEvent.click(approvedTab);
 
       await waitFor(() => {
         expect(screen.getByText('Software Test Engineer')).toBeInTheDocument();
@@ -5378,9 +5435,11 @@ describe('App (JobHunterDashboard)', () => {
       const generateButton = screen.getByTestId('generate-content-button');
       fireEvent.click(generateButton);
 
+      // Wait for content generation modal AND content to load
       await waitFor(() => {
         expect(screen.getByTestId('content-generation-modal')).toBeInTheDocument();
-      });
+        expect(screen.getByTestId('resume-content')).toBeInTheDocument();
+      }, { timeout: 5000 });
 
       const createDraftButton = screen.getByTestId('create-draft-button');
       fireEvent.click(createDraftButton);
@@ -5429,11 +5488,13 @@ describe('App (JobHunterDashboard)', () => {
         expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
       }, { timeout: 3000 });
 
-      // Navigate and open email composer
+      // Navigate to approved tab
       await waitFor(() => {
-        const approvedTab = screen.getByRole('button', { name: /approved/i });
-        fireEvent.click(approvedTab);
+        expect(screen.getByRole('button', { name: /approved/i })).toBeInTheDocument();
       }, { timeout: 3000 });
+
+      const approvedTab = screen.getByRole('button', { name: /approved/i });
+      fireEvent.click(approvedTab);
 
       await waitFor(() => {
         expect(screen.getByText('Software Test Engineer')).toBeInTheDocument();
@@ -5442,9 +5503,11 @@ describe('App (JobHunterDashboard)', () => {
       const generateButton = screen.getByTestId('generate-content-button');
       fireEvent.click(generateButton);
 
+      // Wait for content generation modal AND content to load
       await waitFor(() => {
         expect(screen.getByTestId('content-generation-modal')).toBeInTheDocument();
-      });
+        expect(screen.getByTestId('resume-content')).toBeInTheDocument();
+      }, { timeout: 5000 });
 
       const createDraftButton = screen.getByTestId('create-draft-button');
       fireEvent.click(createDraftButton);
@@ -5479,11 +5542,13 @@ describe('App (JobHunterDashboard)', () => {
         expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
       }, { timeout: 3000 });
 
-      // Navigate and open email composer
+      // Navigate to approved tab
       await waitFor(() => {
-        const approvedTab = screen.getByRole('button', { name: /approved/i });
-        fireEvent.click(approvedTab);
+        expect(screen.getByRole('button', { name: /approved/i })).toBeInTheDocument();
       }, { timeout: 3000 });
+
+      const approvedTab = screen.getByRole('button', { name: /approved/i });
+      fireEvent.click(approvedTab);
 
       await waitFor(() => {
         expect(screen.getByText('Software Test Engineer')).toBeInTheDocument();
@@ -5492,9 +5557,11 @@ describe('App (JobHunterDashboard)', () => {
       const generateButton = screen.getByTestId('generate-content-button');
       fireEvent.click(generateButton);
 
+      // Wait for content generation modal AND content to load
       await waitFor(() => {
         expect(screen.getByTestId('content-generation-modal')).toBeInTheDocument();
-      });
+        expect(screen.getByTestId('resume-content')).toBeInTheDocument();
+      }, { timeout: 5000 });
 
       const createDraftButton = screen.getByTestId('create-draft-button');
       fireEvent.click(createDraftButton);

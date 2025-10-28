@@ -1219,13 +1219,14 @@ const JobHunterDashboard: React.FC = () => {
       // Set generated content
       setGeneratedContent(content);
 
-      // Open the modal
+      // Fetch applications to ensure we have the latest application_id BEFORE opening modal
+      // This ensures the application exists when EmailComposer tries to render
+      await fetchApplications();
+
+      // Open the modal (after application is fetched)
       setShowContentGeneration(true);
 
       console.log('[generateContent] Modal state updated, should be visible now');
-
-      // Fetch applications to ensure we have the latest application_id
-      await fetchApplications();
     } catch (error) {
       console.error('[generateContent] Error generating content:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
