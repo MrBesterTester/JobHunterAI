@@ -4179,9 +4179,11 @@ describe('App (JobHunterDashboard)', () => {
       // Retry - should succeed
       fireEvent.click(generateButton);
 
+      // FIX (ISSUE-022): Wait for actual content, not just div existence
       await waitFor(() => {
         expect(screen.getByTestId('modal-overlay')).toBeInTheDocument();
-        expect(screen.getByTestId('resume-content')).toBeInTheDocument();
+        const resumeContent = screen.getByTestId('resume-content');
+        expect(resumeContent).toHaveTextContent('Sam Kirk'); // Wait for actual content!
       }, { timeout: 5000 });
 
       consoleError.mockRestore();
@@ -5177,10 +5179,13 @@ describe('App (JobHunterDashboard)', () => {
       const generateButton = screen.getByTestId('generate-content-button');
       fireEvent.click(generateButton);
 
-      // Wait for content generation modal AND content to load
+      // Wait for content generation modal AND content to ACTUALLY load (not just div existence!)
+      // FIX (ISSUE-022): Previously only checked if div existed, now verify actual content is populated
       await waitFor(() => {
         expect(screen.getByTestId('content-generation-modal')).toBeInTheDocument();
-        expect(screen.getByTestId('resume-content')).toBeInTheDocument();
+        const resumeContent = screen.getByTestId('resume-content');
+        expect(resumeContent).toHaveTextContent('Sam Kirk'); // Wait for actual resume content!
+        expect(screen.getByText('Dear Hiring Manager')).toBeInTheDocument(); // Wait for cover letter!
       }, { timeout: 5000 });
 
       const createDraftButton = screen.getByTestId('create-draft-button');
@@ -5195,12 +5200,10 @@ describe('App (JobHunterDashboard)', () => {
       expect(subjectInput.value).toContain('Software Test Engineer');
       expect(subjectInput.value).toContain('Sam Kirk');
 
-      // Wait for cover letter to populate
-      await waitFor(() => {
-        const coverLetterPreview = screen.getByTestId('cover-letter-preview');
-        expect(coverLetterPreview).toHaveTextContent('Dear Hiring Manager');
-        expect(coverLetterPreview).toHaveTextContent('I am excited to apply');
-      });
+      // Check cover letter is pre-filled (should be there after our improved wait above)
+      const coverLetterPreview = screen.getByTestId('cover-letter-preview');
+      expect(coverLetterPreview).toHaveTextContent('Dear Hiring Manager');
+      expect(coverLetterPreview).toHaveTextContent('I am excited to apply');
     });
 
     // TODO (ISSUE-022): FAILING - Same as "pre-fills" test
@@ -5229,10 +5232,13 @@ describe('App (JobHunterDashboard)', () => {
       const generateButton = screen.getByTestId('generate-content-button');
       fireEvent.click(generateButton);
 
-      // Wait for content generation modal AND content to load
+      // Wait for content generation modal AND content to ACTUALLY load (not just div existence!)
+      // FIX (ISSUE-022): Same fix as "pre-fills" test - wait for actual content
       await waitFor(() => {
         expect(screen.getByTestId('content-generation-modal')).toBeInTheDocument();
-        expect(screen.getByTestId('resume-content')).toBeInTheDocument();
+        const resumeContent = screen.getByTestId('resume-content');
+        expect(resumeContent).toHaveTextContent('Sam Kirk'); // Wait for actual resume content!
+        expect(screen.getByText('Dear Hiring Manager')).toBeInTheDocument(); // Wait for cover letter!
       }, { timeout: 5000 });
 
       const createDraftButton = screen.getByTestId('create-draft-button');
@@ -5242,12 +5248,10 @@ describe('App (JobHunterDashboard)', () => {
         expect(screen.getByTestId('email-composer-modal')).toBeInTheDocument();
       });
 
-      // Wait for cover letter to populate in preview
-      await waitFor(() => {
-        const coverLetterPreview = screen.getByTestId('cover-letter-preview');
-        expect(coverLetterPreview).toBeInTheDocument();
-        expect(coverLetterPreview).toHaveTextContent('Dear Hiring Manager');
-      });
+      // Check cover letter is populated in preview
+      const coverLetterPreview = screen.getByTestId('cover-letter-preview');
+      expect(coverLetterPreview).toBeInTheDocument();
+      expect(coverLetterPreview).toHaveTextContent('Dear Hiring Manager');
     });
 
     // TODO (ISSUE-022): FAILING - resume_format is undefined in EmailComposer
@@ -5277,10 +5281,13 @@ describe('App (JobHunterDashboard)', () => {
       const generateButton = screen.getByTestId('generate-content-button');
       fireEvent.click(generateButton);
 
-      // Wait for content generation modal AND content to load
+      // Wait for content generation modal AND content to ACTUALLY load (not just div existence!)
+      // FIX (ISSUE-022): Same fix as other tests - wait for actual content to ensure resume_format is populated
       await waitFor(() => {
         expect(screen.getByTestId('content-generation-modal')).toBeInTheDocument();
-        expect(screen.getByTestId('resume-content')).toBeInTheDocument();
+        const resumeContent = screen.getByTestId('resume-content');
+        expect(resumeContent).toHaveTextContent('Sam Kirk'); // Wait for actual resume content!
+        expect(screen.getByText('Dear Hiring Manager')).toBeInTheDocument(); // Wait for cover letter!
       }, { timeout: 5000 });
 
       const createDraftButton = screen.getByTestId('create-draft-button');
@@ -5290,13 +5297,11 @@ describe('App (JobHunterDashboard)', () => {
         expect(screen.getByTestId('email-composer-modal')).toBeInTheDocument();
       });
 
-      // Wait for resume attachment info to populate
-      await waitFor(() => {
-        const resumeAttachment = screen.getByTestId('resume-attachment');
-        expect(resumeAttachment).toBeInTheDocument();
-        expect(resumeAttachment).toHaveTextContent('techcorp_resume.pdf');
-        expect(resumeAttachment).toHaveTextContent('KB'); // Should show file size
-      });
+      // Check resume attachment info (should be populated after our improved wait above)
+      const resumeAttachment = screen.getByTestId('resume-attachment');
+      expect(resumeAttachment).toBeInTheDocument();
+      expect(resumeAttachment).toHaveTextContent('techcorp_resume.pdf');
+      expect(resumeAttachment).toHaveTextContent('KB'); // Should show file size
     });
 
     it('allows editing fields', async () => {
