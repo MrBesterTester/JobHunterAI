@@ -8794,4 +8794,800 @@ describe('App (JobHunterDashboard)', () => {
       }
     });
   });
+
+  describe('Job Card Interactions (Phase 4A)', () => {
+    it('expands job card when clicked, opening the JobDetails modal', async () => {
+      const mockJobs = [
+        {
+          job_id: '1',
+          title: 'Software Test Engineer',
+          company: 'TechCorp',
+          status: 'approved',
+          source: 'linkedin',
+          date_email_sent: new Date().toISOString(),
+          description: 'Full job description for Software Test Engineer',
+          raw_data: {
+            compensation: {
+              type: 'salary',
+              min_salary: 130000,
+              max_salary: 160000,
+            },
+          },
+        },
+      ];
+
+      (fetch as jest.Mock).mockImplementation((url: string) => {
+        if (url.includes('/api/jobs') && !url.includes('/score') && !url.includes('/status') && !url.includes('/email-body')) {
+          return mockFetchSuccess(mockJobs);
+        }
+        if (url.includes('/score')) {
+          return mockFetchSuccess({ job_id: '1', total_score: 85, rank: 1, calculated_at: new Date().toISOString() });
+        }
+        if (url.includes('/api/stats')) {
+          return mockFetchSuccess({ approved: 1 });
+        }
+        if (url.includes('/api/criteria')) {
+          return mockFetchSuccess(null);
+        }
+        if (url.includes('/api/applications')) {
+          return mockFetchSuccess([]);
+        }
+        if (url.includes('/intake/ignored-emails')) {
+          return mockFetchSuccess([]);
+        }
+        return mockFetchError();
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Navigate to Approved tab
+      const approvedElements = screen.getAllByText('Approved');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+      expect(approvedTabButton).toBeTruthy();
+
+      if (approvedTabButton) {
+        fireEvent.click(approvedTabButton);
+
+        await waitFor(() => {
+          expect(approvedTabButton).toHaveAttribute('aria-selected', 'true');
+        });
+
+        // Click on job card to expand it
+        const jobTitle = screen.getByText('Software Test Engineer');
+        fireEvent.click(jobTitle);
+
+        // Verify JobDetails modal opens (check for modal overlay)
+        await waitFor(() => {
+          const modalOverlay = screen.queryByTestId('modal-overlay');
+          expect(modalOverlay).toBeInTheDocument();
+        });
+
+        // Verify job title appears in modal header
+        const modalTitle = screen.getByTestId('modal-job-title');
+        expect(modalTitle).toHaveTextContent('Software Test Engineer');
+      }
+    });
+
+    it('displays full job description when job card is expanded', async () => {
+      const mockJobs = [
+        {
+          job_id: '1',
+          title: 'Automation Engineer',
+          company: 'AutomationCo',
+          status: 'approved',
+          source: 'linkedin',
+          date_email_sent: new Date().toISOString(),
+          description: 'This is the full detailed job description with requirements and responsibilities.',
+        },
+      ];
+
+      (fetch as jest.Mock).mockImplementation((url: string) => {
+        if (url.includes('/api/jobs') && !url.includes('/score') && !url.includes('/status') && !url.includes('/email-body')) {
+          return mockFetchSuccess(mockJobs);
+        }
+        if (url.includes('/score')) {
+          return mockFetchSuccess({ job_id: '1', total_score: 85, rank: 1, calculated_at: new Date().toISOString() });
+        }
+        if (url.includes('/api/stats')) {
+          return mockFetchSuccess({ approved: 1 });
+        }
+        if (url.includes('/api/criteria')) {
+          return mockFetchSuccess(null);
+        }
+        if (url.includes('/api/applications')) {
+          return mockFetchSuccess([]);
+        }
+        if (url.includes('/intake/ignored-emails')) {
+          return mockFetchSuccess([]);
+        }
+        return mockFetchError();
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Navigate to Approved tab
+      const approvedElements = screen.getAllByText('Approved');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+
+      if (approvedTabButton) {
+        fireEvent.click(approvedTabButton);
+
+        await waitFor(() => {
+          expect(approvedTabButton).toHaveAttribute('aria-selected', 'true');
+        });
+
+        // Job should be visible in the list
+        expect(screen.getByText('Automation Engineer')).toBeInTheDocument();
+
+        // Click job to expand
+        const jobTitle = screen.getByText('Automation Engineer');
+        fireEvent.click(jobTitle);
+
+        // Verify full description is displayed in modal
+        await waitFor(() => {
+          expect(screen.getByText('This is the full detailed job description with requirements and responsibilities.')).toBeInTheDocument();
+        });
+      }
+    });
+
+    it('shows compensation section when job has compensation data', async () => {
+      const mockJobs = [
+        {
+          job_id: '1',
+          title: 'QA Engineer',
+          company: 'QualityCo',
+          status: 'approved',
+          source: 'linkedin',
+          date_email_sent: new Date().toISOString(),
+          description: 'Test job',
+          raw_data: {
+            compensation: {
+              type: 'salary',
+              min_salary: 140000,
+              max_salary: 170000,
+              equity_offered: true,
+              bonus_structure: '15% annual bonus',
+            },
+          },
+        },
+      ];
+
+      (fetch as jest.Mock).mockImplementation((url: string) => {
+        if (url.includes('/api/jobs') && !url.includes('/score') && !url.includes('/status') && !url.includes('/email-body')) {
+          return mockFetchSuccess(mockJobs);
+        }
+        if (url.includes('/score')) {
+          return mockFetchSuccess({ job_id: '1', total_score: 85, rank: 1, calculated_at: new Date().toISOString() });
+        }
+        if (url.includes('/api/stats')) {
+          return mockFetchSuccess({ approved: 1 });
+        }
+        if (url.includes('/api/criteria')) {
+          return mockFetchSuccess(null);
+        }
+        if (url.includes('/api/applications')) {
+          return mockFetchSuccess([]);
+        }
+        if (url.includes('/intake/ignored-emails')) {
+          return mockFetchSuccess([]);
+        }
+        if (url.includes('/email-body')) {
+          return mockFetchSuccess(null);
+        }
+        return mockFetchError();
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Navigate to Approved tab
+      const approvedElements = screen.getAllByText('Approved');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+
+      if (approvedTabButton) {
+        fireEvent.click(approvedTabButton);
+
+        await waitFor(() => {
+          expect(approvedTabButton).toHaveAttribute('aria-selected', 'true');
+        });
+
+        // Click job to expand
+        const jobTitle = screen.getByText('QA Engineer');
+        fireEvent.click(jobTitle);
+
+        // Verify compensation section is displayed
+        await waitFor(() => {
+          const compensationSection = screen.getByTestId('compensation-section');
+          expect(compensationSection).toBeInTheDocument();
+          expect(screen.getByText('Compensation Details')).toBeInTheDocument();
+          expect(screen.getByTestId('comp-type')).toHaveTextContent('salary');
+          expect(screen.getByText('15% annual bonus')).toBeInTheDocument();
+        });
+      }
+    });
+
+    it('shows employment section when job has employment data', async () => {
+      const mockJobs = [
+        {
+          job_id: '1',
+          title: 'Test Engineer',
+          company: 'TestingCo',
+          status: 'approved',
+          source: 'linkedin',
+          date_email_sent: new Date().toISOString(),
+          description: 'Test job',
+          raw_data: {
+            employment: {
+              tax_structure: 'W2',
+              relationship: 'direct',
+              benefits: 'Full benefits including health, dental, 401k',
+            },
+          },
+        },
+      ];
+
+      (fetch as jest.Mock).mockImplementation((url: string) => {
+        if (url.includes('/api/jobs') && !url.includes('/score') && !url.includes('/status') && !url.includes('/email-body')) {
+          return mockFetchSuccess(mockJobs);
+        }
+        if (url.includes('/score')) {
+          return mockFetchSuccess({ job_id: '1', total_score: 85, rank: 1, calculated_at: new Date().toISOString() });
+        }
+        if (url.includes('/api/stats')) {
+          return mockFetchSuccess({ approved: 1 });
+        }
+        if (url.includes('/api/criteria')) {
+          return mockFetchSuccess(null);
+        }
+        if (url.includes('/api/applications')) {
+          return mockFetchSuccess([]);
+        }
+        if (url.includes('/intake/ignored-emails')) {
+          return mockFetchSuccess([]);
+        }
+        return mockFetchError();
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Navigate to Approved tab
+      const approvedElements = screen.getAllByText('Approved');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+
+      if (approvedTabButton) {
+        fireEvent.click(approvedTabButton);
+
+        await waitFor(() => {
+          expect(approvedTabButton).toHaveAttribute('aria-selected', 'true');
+        });
+
+        // Job should be visible in the list
+        expect(screen.getByText('Test Engineer')).toBeInTheDocument();
+
+        // Click job to expand
+        const jobTitle = screen.getByText('Test Engineer');
+        fireEvent.click(jobTitle);
+
+        // Wait for modal to open first
+        await waitFor(() => {
+          expect(screen.getByTestId('modal-overlay')).toBeInTheDocument();
+        });
+
+        // Verify employment section is displayed
+        await waitFor(() => {
+          const employmentSection = screen.getByTestId('employment-section');
+          expect(employmentSection).toBeInTheDocument();
+          expect(screen.getByText('Employment Details')).toBeInTheDocument();
+          expect(screen.getByTestId('emp-tax')).toHaveTextContent('W-2 Employee');
+          expect(screen.getByTestId('emp-relationship')).toHaveTextContent('direct');
+          expect(screen.getByText('Full benefits including health, dental, 401k')).toBeInTheDocument();
+        });
+      }
+    });
+
+    it('shows location/remote section when job has remote work or commute data', async () => {
+      const mockJobs = [
+        {
+          job_id: '1',
+          title: 'Remote Test Engineer',
+          company: 'RemoteCo',
+          status: 'approved',
+          source: 'linkedin',
+          date_email_sent: new Date().toISOString(),
+          description: 'Test job',
+          raw_data: {
+            remote_work: {
+              policy: 'full_remote',
+              days_onsite_per_week: 0,
+            },
+            commute: {
+              office_location: 'San Francisco, CA',
+              company_shuttle: true,
+              schedule_flexibility: 'Flexible hours',
+            },
+          },
+        },
+      ];
+
+      (fetch as jest.Mock).mockImplementation((url: string) => {
+        if (url.includes('/api/jobs') && !url.includes('/score') && !url.includes('/status') && !url.includes('/email-body')) {
+          return mockFetchSuccess(mockJobs);
+        }
+        if (url.includes('/score')) {
+          return mockFetchSuccess({ job_id: '1', total_score: 85, rank: 1, calculated_at: new Date().toISOString() });
+        }
+        if (url.includes('/api/stats')) {
+          return mockFetchSuccess({ approved: 1 });
+        }
+        if (url.includes('/api/criteria')) {
+          return mockFetchSuccess(null);
+        }
+        if (url.includes('/api/applications')) {
+          return mockFetchSuccess([]);
+        }
+        if (url.includes('/intake/ignored-emails')) {
+          return mockFetchSuccess([]);
+        }
+        return mockFetchError();
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Navigate to Approved tab
+      const approvedElements = screen.getAllByText('Approved');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+
+      if (approvedTabButton) {
+        fireEvent.click(approvedTabButton);
+
+        await waitFor(() => {
+          expect(approvedTabButton).toHaveAttribute('aria-selected', 'true');
+        });
+
+        // Job should be visible in the list
+        expect(screen.getByText('Remote Test Engineer')).toBeInTheDocument();
+
+        // Click job to expand
+        const jobTitle = screen.getByText('Remote Test Engineer');
+        fireEvent.click(jobTitle);
+
+        // Wait for modal to open first
+        await waitFor(() => {
+          expect(screen.getByTestId('modal-overlay')).toBeInTheDocument();
+        });
+
+        // Verify location/commute section is displayed
+        await waitFor(() => {
+          const locationSection = screen.getByTestId('location-commute-section');
+          expect(locationSection).toBeInTheDocument();
+          expect(screen.getByText('Location & Commute')).toBeInTheDocument();
+          expect(screen.getByTestId('remote-policy')).toBeInTheDocument();
+          expect(screen.getByText('San Francisco, CA')).toBeInTheDocument();
+          expect(screen.getByText('Flexible hours')).toBeInTheDocument();
+        });
+      }
+    });
+
+    it('shows technical/domain section when job has domain data', async () => {
+      const mockJobs = [
+        {
+          job_id: '1',
+          title: 'Senior Test Automation Engineer',
+          company: 'AutomationCo',
+          status: 'approved',
+          source: 'linkedin',
+          date_email_sent: new Date().toISOString(),
+          description: 'Test job',
+          raw_data: {
+            job_domain: {
+              primary_category: 'software_testing',
+              seniority: 'senior',
+              testing_focus: true,
+              automation_focus: true,
+              tech_stack: ['Python', 'JavaScript', 'Selenium'],
+              test_automation_tools: ['Pytest', 'Jest'],
+            },
+          },
+        },
+      ];
+
+      (fetch as jest.Mock).mockImplementation((url: string) => {
+        if (url.includes('/api/jobs') && !url.includes('/score') && !url.includes('/status') && !url.includes('/email-body')) {
+          return mockFetchSuccess(mockJobs);
+        }
+        if (url.includes('/score')) {
+          return mockFetchSuccess({ job_id: '1', total_score: 85, rank: 1, calculated_at: new Date().toISOString() });
+        }
+        if (url.includes('/api/stats')) {
+          return mockFetchSuccess({ approved: 1 });
+        }
+        if (url.includes('/api/criteria')) {
+          return mockFetchSuccess(null);
+        }
+        if (url.includes('/api/applications')) {
+          return mockFetchSuccess([]);
+        }
+        if (url.includes('/intake/ignored-emails')) {
+          return mockFetchSuccess([]);
+        }
+        return mockFetchError();
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Navigate to Approved tab
+      const approvedElements = screen.getAllByText('Approved');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+
+      if (approvedTabButton) {
+        fireEvent.click(approvedTabButton);
+
+        await waitFor(() => {
+          expect(approvedTabButton).toHaveAttribute('aria-selected', 'true');
+        });
+
+        // Job should be visible in the list
+        expect(screen.getByText('Senior Test Automation Engineer')).toBeInTheDocument();
+
+        // Click job to expand
+        const jobTitle = screen.getByText('Senior Test Automation Engineer');
+        fireEvent.click(jobTitle);
+
+        // Wait for modal to open first
+        await waitFor(() => {
+          expect(screen.getByTestId('modal-overlay')).toBeInTheDocument();
+        });
+
+        // Verify technical section is displayed
+        await waitFor(() => {
+          const technicalSection = screen.getByTestId('technical-section');
+          expect(technicalSection).toBeInTheDocument();
+          expect(screen.getByText('Technical Details')).toBeInTheDocument();
+          expect(screen.getByTestId('tech-category')).toHaveTextContent('Software Testing');
+          expect(screen.getByTestId('tech-seniority')).toHaveTextContent('Senior');
+          expect(screen.getByText('Python, JavaScript, Selenium')).toBeInTheDocument();
+          expect(screen.getByText('Pytest, Jest')).toBeInTheDocument();
+        });
+      }
+    });
+
+    it('collapses job card when close button is clicked', async () => {
+      const mockJobs = [
+        {
+          job_id: '1',
+          title: 'Test Position',
+          company: 'TestCo',
+          status: 'approved',
+          source: 'linkedin',
+          date_email_sent: new Date().toISOString(),
+          description: 'Test description',
+        },
+      ];
+
+      (fetch as jest.Mock).mockImplementation((url: string) => {
+        if (url.includes('/api/jobs') && !url.includes('/score') && !url.includes('/status') && !url.includes('/email-body')) {
+          return mockFetchSuccess(mockJobs);
+        }
+        if (url.includes('/score')) {
+          return mockFetchSuccess({ job_id: '1', total_score: 85, rank: 1, calculated_at: new Date().toISOString() });
+        }
+        if (url.includes('/api/stats')) {
+          return mockFetchSuccess({ approved: 1 });
+        }
+        if (url.includes('/api/criteria')) {
+          return mockFetchSuccess(null);
+        }
+        if (url.includes('/api/applications')) {
+          return mockFetchSuccess([]);
+        }
+        if (url.includes('/intake/ignored-emails')) {
+          return mockFetchSuccess([]);
+        }
+        return mockFetchError();
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Navigate to Approved tab
+      const approvedElements = screen.getAllByText('Approved');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+
+      if (approvedTabButton) {
+        fireEvent.click(approvedTabButton);
+
+        await waitFor(() => {
+          expect(approvedTabButton).toHaveAttribute('aria-selected', 'true');
+        });
+
+        // Job should be visible in the list
+        expect(screen.getByText('Test Position')).toBeInTheDocument();
+
+        // Click job to expand
+        const jobTitle = screen.getByText('Test Position');
+        fireEvent.click(jobTitle);
+
+        // Wait for modal to open
+        await waitFor(() => {
+          expect(screen.getByTestId('modal-overlay')).toBeInTheDocument();
+        });
+
+        // Click close button
+        const closeButton = screen.getByTestId('modal-close-x');
+        fireEvent.click(closeButton);
+
+        // Verify modal is closed
+        await waitFor(() => {
+          expect(screen.queryByTestId('modal-overlay')).not.toBeInTheDocument();
+        });
+      }
+    });
+
+    it('collapses job card when modal overlay is clicked', async () => {
+      const mockJobs = [
+        {
+          job_id: '1',
+          title: 'Test Position',
+          company: 'TestCo',
+          status: 'approved',
+          source: 'linkedin',
+          date_email_sent: new Date().toISOString(),
+          description: 'Test description',
+        },
+      ];
+
+      (fetch as jest.Mock).mockImplementation((url: string) => {
+        if (url.includes('/api/jobs') && !url.includes('/score') && !url.includes('/status') && !url.includes('/email-body')) {
+          return mockFetchSuccess(mockJobs);
+        }
+        if (url.includes('/score')) {
+          return mockFetchSuccess({ job_id: '1', total_score: 85, rank: 1, calculated_at: new Date().toISOString() });
+        }
+        if (url.includes('/api/stats')) {
+          return mockFetchSuccess({ approved: 1 });
+        }
+        if (url.includes('/api/criteria')) {
+          return mockFetchSuccess(null);
+        }
+        if (url.includes('/api/applications')) {
+          return mockFetchSuccess([]);
+        }
+        if (url.includes('/intake/ignored-emails')) {
+          return mockFetchSuccess([]);
+        }
+        return mockFetchError();
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Navigate to Approved tab
+      const approvedElements = screen.getAllByText('Approved');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+
+      if (approvedTabButton) {
+        fireEvent.click(approvedTabButton);
+
+        await waitFor(() => {
+          expect(approvedTabButton).toHaveAttribute('aria-selected', 'true');
+        });
+
+        // Job should be visible in the list
+        expect(screen.getByText('Test Position')).toBeInTheDocument();
+
+        // Click job to expand
+        const jobTitle = screen.getByText('Test Position');
+        fireEvent.click(jobTitle);
+
+        // Wait for modal to open
+        await waitFor(() => {
+          expect(screen.getByTestId('modal-overlay')).toBeInTheDocument();
+        });
+
+        // Click on modal overlay to close
+        const modalOverlay = screen.getByTestId('modal-overlay');
+        fireEvent.click(modalOverlay);
+
+        // Verify modal is closed
+        await waitFor(() => {
+          expect(screen.queryByTestId('modal-overlay')).not.toBeInTheDocument();
+        });
+      }
+    });
+
+    it('only allows one job card to be expanded at a time', async () => {
+      const mockJobs = [
+        {
+          job_id: '1',
+          title: 'First Job',
+          company: 'FirstCo',
+          status: 'approved',
+          source: 'linkedin',
+          date_email_sent: new Date().toISOString(),
+          description: 'First job description',
+        },
+        {
+          job_id: '2',
+          title: 'Second Job',
+          company: 'SecondCo',
+          status: 'approved',
+          source: 'indeed',
+          date_email_sent: new Date().toISOString(),
+          description: 'Second job description',
+        },
+      ];
+
+      (fetch as jest.Mock).mockImplementation((url: string) => {
+        if (url.includes('/api/jobs') && !url.includes('/score') && !url.includes('/status') && !url.includes('/email-body')) {
+          return mockFetchSuccess(mockJobs);
+        }
+        if (url.includes('/score')) {
+          return mockFetchSuccess({ job_id: '1', total_score: 85, rank: 1, calculated_at: new Date().toISOString() });
+        }
+        if (url.includes('/api/stats')) {
+          return mockFetchSuccess({ approved: 2 });
+        }
+        if (url.includes('/api/criteria')) {
+          return mockFetchSuccess(null);
+        }
+        if (url.includes('/api/applications')) {
+          return mockFetchSuccess([]);
+        }
+        if (url.includes('/intake/ignored-emails')) {
+          return mockFetchSuccess([]);
+        }
+        return mockFetchError();
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Navigate to Approved tab
+      const approvedElements = screen.getAllByText('Approved');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+
+      if (approvedTabButton) {
+        fireEvent.click(approvedTabButton);
+
+        await waitFor(() => {
+          expect(approvedTabButton).toHaveAttribute('aria-selected', 'true');
+        });
+
+        // Click first job to expand
+        const firstJobTitle = screen.getByText('First Job');
+        fireEvent.click(firstJobTitle);
+
+        // Verify first job modal opens
+        await waitFor(() => {
+          expect(screen.getByTestId('modal-overlay')).toBeInTheDocument();
+          expect(screen.getByText('First job description')).toBeInTheDocument();
+        });
+
+        // Click second job to expand (should close first)
+        const secondJobTitle = screen.getByText('Second Job');
+        fireEvent.click(secondJobTitle);
+
+        // Verify second job modal opens and first is closed
+        await waitFor(() => {
+          expect(screen.queryByText('First job description')).not.toBeInTheDocument();
+          expect(screen.getByText('Second job description')).toBeInTheDocument();
+        });
+
+        // Verify only one modal is present
+        const modals = screen.queryAllByTestId('modal-overlay');
+        expect(modals).toHaveLength(1);
+      }
+    });
+
+    it('loads email body on demand when job details modal opens', async () => {
+      const mockJobs = [
+        {
+          job_id: '1',
+          title: 'Email Test Job',
+          company: 'EmailCo',
+          status: 'approved',
+          source: 'linkedin',
+          date_email_sent: new Date().toISOString(),
+          description: 'Test job',
+        },
+      ];
+
+      let emailBodyFetched = false;
+
+      (fetch as jest.Mock).mockImplementation((url: string) => {
+        if (url.includes('/api/jobs/1/email-body')) {
+          emailBodyFetched = true;
+          return mockFetchSuccess({
+            body_text: 'This is the email body text content',
+            body_html: '<p>This is the email body HTML content</p>',
+            subject: 'Job Opportunity: Email Test Job',
+            sender_email: 'recruiter@emailco.com',
+            sender_name: 'Jane Recruiter',
+          });
+        }
+        if (url.includes('/api/jobs') && !url.includes('/score') && !url.includes('/status') && !url.includes('/email-body')) {
+          return mockFetchSuccess(mockJobs);
+        }
+        if (url.includes('/score')) {
+          return mockFetchSuccess({ job_id: '1', total_score: 85, rank: 1, calculated_at: new Date().toISOString() });
+        }
+        if (url.includes('/api/stats')) {
+          return mockFetchSuccess({ approved: 1 });
+        }
+        if (url.includes('/api/criteria')) {
+          return mockFetchSuccess(null);
+        }
+        if (url.includes('/api/applications')) {
+          return mockFetchSuccess([]);
+        }
+        if (url.includes('/intake/ignored-emails')) {
+          return mockFetchSuccess([]);
+        }
+        return mockFetchError();
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Navigate to Approved tab
+      const approvedElements = screen.getAllByText('Approved');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+
+      if (approvedTabButton) {
+        fireEvent.click(approvedTabButton);
+
+        await waitFor(() => {
+          expect(approvedTabButton).toHaveAttribute('aria-selected', 'true');
+        });
+
+        // Email body should NOT be fetched yet
+        expect(emailBodyFetched).toBe(false);
+
+        // Click job to expand and trigger email body fetch
+        const jobTitle = screen.getByText('Email Test Job');
+        fireEvent.click(jobTitle);
+
+        // Wait for modal to open and email body to be fetched
+        await waitFor(() => {
+          expect(screen.getByTestId('modal-overlay')).toBeInTheDocument();
+          expect(emailBodyFetched).toBe(true);
+        });
+      }
+    });
+  });
 });
