@@ -8,11 +8,21 @@ priority: medium
 severity: medium
 component: frontend
 created: 2025-10-24
-updated: 2025-10-24
+updated: 2025-10-28
 affects: [frontend-testing, test-coverage, developer-experience]
-related: [ISSUE-013]](#id-issue-018%0Atitle-frontend-unit-test-implementation%0Astatus-open%0Apriority-medium%0Aseverity-medium%0Acomponent-frontend%0Acreated-2025-10-24%0Aupdated-2025-10-24%0Aaffects-frontend-testing-test-coverage-developer-experience%0Arelated-issue-013)
+related: [ISSUE-013, ISSUE-023]](#id-issue-018%0Atitle-frontend-unit-test-implementation%0Astatus-open%0Apriority-medium%0Aseverity-medium%0Acomponent-frontend%0Acreated-2025-10-24%0Aupdated-2025-10-28%0Aaffects-frontend-testing-test-coverage-developer-experience%0Arelated-issue-013-issue-023)
 - [ISSUE-018: Frontend Unit Test Implementation](#issue-018-frontend-unit-test-implementation)
   - [Executive Summary](#executive-summary)
+  - [Next Steps: Completing Option A2 (Phases 2B-4B)](#next-steps-completing-option-a2-phases-2b-4b)
+    - [Phase 2B: Job List Filtering Tests (4-5 hours)](#phase-2b-job-list-filtering-tests-4-5-hours)
+    - [Phase 3: Job Status Workflows (5-7 hours)](#phase-3-job-status-workflows-5-7-hours)
+      - [3A. Job Approval Workflow (6-8 tests, 1.5-2 hours)](#3a-job-approval-workflow-6-8-tests-15-2-hours)
+      - [3B. Job Rejection Workflow (6-8 tests, 1.5-2 hours)](#3b-job-rejection-workflow-6-8-tests-15-2-hours)
+      - [3C. Application Workflow (8-12 tests, 2-3 hours)](#3c-application-workflow-8-12-tests-2-3-hours)
+    - [Phase 4: Job Details and Expansion (2-4 hours)](#phase-4-job-details-and-expansion-2-4-hours)
+      - [4A. Job Card Interactions (8-10 tests, 1-2 hours)](#4a-job-card-interactions-8-10-tests-1-2-hours)
+      - [4B. Job Details Modal (8-10 tests, 1-2 hours)](#4b-job-details-modal-8-10-tests-1-2-hours)
+    - [Implementation Strategy](#implementation-strategy)
   - [Option A1 Implementation Plan](#option-a1-implementation-plan)
     - [Executive Summary](#executive-summary-1)
     - [Goals and Success Criteria](#goals-and-success-criteria)
@@ -36,11 +46,11 @@ related: [ISSUE-013]](#id-issue-018%0Atitle-frontend-unit-test-implementation%0A
     - [Phase 2: Tab Navigation and Filtering (6-8 hours)](#phase-2-tab-navigation-and-filtering-6-8-hours)
       - [2A. Tab Navigation Tests ✅ **COMPLETED (2025-10-25)**](#2a-tab-navigation-tests--completed-2025-10-25)
       - [2B. Job List Filtering Tests (4-5 hours, ~15-20 tests)](#2b-job-list-filtering-tests-4-5-hours-15-20-tests)
-    - [Phase 3: Job Status Workflows (5-7 hours)](#phase-3-job-status-workflows-5-7-hours)
+    - [Phase 3: Job Status Workflows (5-7 hours)](#phase-3-job-status-workflows-5-7-hours-1)
       - [3A. Job Approval Workflow (1.5-2 hours, ~6-8 tests)](#3a-job-approval-workflow-15-2-hours-6-8-tests)
       - [3B. Job Rejection Workflow (1.5-2 hours, ~6-8 tests)](#3b-job-rejection-workflow-15-2-hours-6-8-tests)
       - [3C. Application Workflow (2-3 hours, ~8-12 tests)](#3c-application-workflow-2-3-hours-8-12-tests)
-    - [Phase 4: Job Details and Expansion (2-4 hours)](#phase-4-job-details-and-expansion-2-4-hours)
+    - [Phase 4: Job Details and Expansion (2-4 hours)](#phase-4-job-details-and-expansion-2-4-hours-1)
       - [4A. Job Card Interactions (1-2 hours, ~8-10 tests)](#4a-job-card-interactions-1-2-hours-8-10-tests)
       - [4B. Job Details Modal (1-2 hours, ~8-10 tests)](#4b-job-details-modal-1-2-hours-8-10-tests)
     - [Timeline and Effort Estimates](#timeline-and-effort-estimates-1)
@@ -101,28 +111,165 @@ priority: medium
 severity: medium
 component: frontend
 created: 2025-10-24
-updated: 2025-10-24
+updated: 2025-10-28
 affects: [frontend-testing, test-coverage, developer-experience]
-related: [ISSUE-013]
+related: [ISSUE-013, ISSUE-023]
 ---
 
 # ISSUE-018: Frontend Unit Test Implementation
 
 ## Executive Summary
 
-**Current Status**: 🔄 **PARTIALLY COMPLETE** - Phases 1-4 done (320 tests, 100% passing, 46.9% coverage)
+**Last Updated**: 2025-10-28
 
-**Goal**: Add frontend unit tests targeting **70%+ code coverage** (currently at **46.9%**)
+**Current Status**: 🔄 **IN PROGRESS** - Option A2 Phase 1-2A Complete (421/421 tests passing = 100%)
 
-**What's Complete**:
+**Goal**: Add frontend unit tests targeting **60%+ App.tsx coverage** via Option A2 (currently at **~32%**)
+
+**What's Complete (2025-10-28)**:
 - ✅ **Infrastructure**: Jest + React Testing Library fully configured
-- ✅ **422 tests created** (393 passing, 93% pass rate, ~97s execution)
-- ✅ **Phases 1-4**: App.tsx + IntakeTab.tsx + 10 other components tested
-- ✅ **6 components at 90%+ coverage** (IgnoredTab, FailedTab, DuplicatesTab, TimelineView, WeightAdjustmentPanel, EmailComposer)
+- ✅ **422 tests created** (421 passing, 1 skipped = **100% pass rate**)
+- ✅ **ISSUE-023**: All test failures fixed, 1 test skipped as architectural limitation
+- ✅ **Option A2 Phase 1**: All 4 modal workflow tests complete (51 tests added)
+  - 1A: Criteria Configuration Modal (12 tests)
+  - 1B: Content Generation Modal (17 tests)
+  - 1C: Resume Management Modal (12 tests)
+  - 1D: Email Composer Modal (10 tests)
+- ✅ **Option A2 Phase 2A**: Tab Navigation Tests (18 tests)
+- ✅ **Total**: 69 new App.tsx tests added in Phases 1-2A
 
-**What Remains** (to reach 70% target):
-- 🎯 **Expand 3 large components** (App.tsx, CalendarTab, IntakeTab) from 27-37% → 60%+
-- 📊 **Estimated effort**: 28-43 hours (3.5-5.5 developer days)
+**What Remains** (Option A2 - to reach 60% App.tsx target):
+- 🎯 **Phase 2B**: Job List Filtering Tests (~15-20 tests, 4-5 hours)
+- 🎯 **Phase 3**: Job Status Workflows (~20-28 tests, 5-7 hours)
+  - 3A: Job Approval Workflow (~6-8 tests)
+  - 3B: Job Rejection Workflow (~6-8 tests)
+  - 3C: Application Workflow (~8-12 tests)
+- 🎯 **Phase 4**: Job Details and Expansion (~16-20 tests, 2-4 hours)
+  - 4A: Job Card Interactions (~8-10 tests)
+  - 4B: Job Details Modal (~8-10 tests)
+- 📊 **Estimated remaining effort**: 11-16 hours (1.5-2 developer days)
+
+## Next Steps: Completing Option A2 (Phases 2B-4B)
+
+**Status**: Ready to resume implementation after ISSUE-023 resolution (2025-10-28)
+
+**Recommended Approach**: Complete Option A2 in sequence (Phases 2B → 3 → 4)
+
+### Phase 2B: Job List Filtering Tests (4-5 hours)
+
+**Objective**: Test how jobs are filtered by status, criteria, and user preferences
+
+**Estimated Tests**: 15-20 tests
+
+**Key Test Scenarios**:
+- Filter jobs by status for each tab (approved, applied, filtered, etc.)
+- Apply salary filters from criteria
+- Apply commute time and remote preference filters
+- Combine multiple filter criteria
+- Show "No jobs" message when filters yield empty results
+- Update badge counts when filters applied
+- Handle missing filter fields gracefully
+
+**Expected Outcome**: Comprehensive coverage of job filtering logic
+
+---
+
+### Phase 3: Job Status Workflows (5-7 hours)
+
+**Objective**: Test complete user workflows for changing job statuses
+
+**Estimated Tests**: 20-28 tests across 3 sub-phases
+
+#### 3A. Job Approval Workflow (6-8 tests, 1.5-2 hours)
+- Approve job → status changes to "approved" → job moves to Approved tab
+- Badge counts update
+- Success notification displays
+- API error handling and rollback
+- Optimistic UI updates
+
+#### 3B. Job Rejection Workflow (6-8 tests, 1.5-2 hours)
+- Reject job → status changes to "filtered" → job moves to Filtered tab
+- Filter reason recorded
+- Undo rejection capability
+- Error handling
+
+#### 3C. Application Workflow (8-12 tests, 2-3 hours)
+- Mark job as applied → creates application record
+- Links to resume version and email draft
+- Application date recorded
+- Job moves to Applied tab
+- Handles partial failures
+
+**Expected Outcome**: All major status transition workflows fully tested
+
+---
+
+### Phase 4: Job Details and Expansion (2-4 hours)
+
+**Objective**: Test job card interactions and details modal
+
+**Estimated Tests**: 16-20 tests across 2 sub-phases
+
+#### 4A. Job Card Interactions (8-10 tests, 1-2 hours)
+- Expand/collapse job details
+- Display job metadata (salary, location, commute)
+- Show/hide action buttons based on status
+- Render job scores and match indicators
+
+#### 4B. Job Details Modal (8-10 tests, 1-2 hours)
+- Open job details in modal
+- Display full job description
+- Show company information
+- Navigate between jobs in modal
+- Close modal and return to list
+
+**Expected Outcome**: Complete coverage of job viewing and interaction patterns
+
+---
+
+### Implementation Strategy
+
+**Session Planning** (1.5-2 days total):
+
+**Session 1** (4-5 hours):
+- Phase 2B: Job List Filtering Tests
+- Run tests, verify coverage increase
+- Commit changes
+
+**Session 2** (3-4 hours):
+- Phase 3A & 3B: Job Approval and Rejection Workflows
+- Run tests, verify coverage
+- Commit changes
+
+**Session 3** (3-4 hours):
+- Phase 3C: Application Workflow
+- Run tests, verify coverage
+- Commit changes
+
+**Session 4** (2-4 hours):
+- Phase 4A & 4B: Job Details and Expansion
+- Final coverage verification
+- Generate coverage report
+- Update ISSUE-018 with final results
+- Mark Option A2 as complete
+- Commit changes
+
+**Success Criteria**:
+- [ ] All phases 2B-4B tests implemented and passing
+- [ ] App.tsx coverage reaches 60%+ (target: 755 lines → 1,675+ lines covered)
+- [ ] Test execution time remains under 20 seconds
+- [ ] 100% test pass rate maintained
+- [ ] Option A2 marked as complete in ISSUE-018
+
+**Risk Mitigation**:
+- Monitor system health with `./system-health-check.sh` before intensive sessions
+- Test coverage incrementally after each phase
+- Keep test patterns consistent with Phases 1-2A
+- Use existing mock helpers (createStandardMocks, etc.)
+
+**Optional Follow-up**: After Option A2 completion, Option A1 (CalendarTab/IntakeTab expansion) remains available for future implementation if desired to push overall coverage toward 60%.
+
+---
 
 **The Real Issue**:
 Your three **largest components** (3,680 LOC combined = 44% of codebase) have low coverage because they're huge and complex. The small components achieved 90%+ easily, but these giants require disproportionate effort:
