@@ -4179,36 +4179,39 @@ describe('App (JobHunterDashboard)', () => {
       // Retry - should succeed
       fireEvent.click(generateButton);
 
-      // FIX (ISSUE-022): Wait for actual content, not just div existence
+      // FIX (ISSUE-023): Wait for actual mock content, not "Sam Kirk" which isn't in the mock
       await waitFor(() => {
         expect(screen.getByTestId('modal-overlay')).toBeInTheDocument();
         const resumeContent = screen.getByTestId('resume-content');
-        expect(resumeContent).toHaveTextContent('Sam Kirk'); // Wait for actual content!
+        expect(resumeContent).toHaveTextContent('Generated resume content for the job'); // Actual mock data!
       }, { timeout: 5000 });
 
       consoleError.mockRestore();
     });
 
-    // TODO (ISSUE-022): FAILING - setupApprovedJobsView times out
-    // Root cause: Same as "allows retry" - custom mock with download spy doesn't
-    // properly forward URLs. Initial job fetch fails, no job appears in Approved tab.
     it('downloads resume when Download button clicked', async () => {
-      // Mock URL.createObjectURL and document.createElement
+      // Mock URL methods and track createElement('a') calls
       const mockCreateObjectURL = jest.fn(() => 'blob:mock-url');
       const mockRevokeObjectURL = jest.fn();
-      const originalCreateObjectURL = global.URL.createObjectURL;
-      const originalRevokeObjectURL = global.URL.revokeObjectURL;
+      const mockClick = jest.fn();
+
       global.URL.createObjectURL = mockCreateObjectURL;
       global.URL.revokeObjectURL = mockRevokeObjectURL;
 
-      const mockClick = jest.fn();
-      const mockLink = {
-        href: '',
-        download: '',
-        click: mockClick,
-        style: {},
-      };
-      const createElementSpy = jest.spyOn(document, 'createElement').mockReturnValue(mockLink as any);
+      // Spy on createElement and mock click() only for 'a' elements
+      const originalCreateElement = document.createElement.bind(document);
+      const createElementSpy = jest.spyOn(document, 'createElement').mockImplementation((tagName: string) => {
+        const element = originalCreateElement(tagName);
+        if (tagName === 'a') {
+          // Override click to track calls
+          const originalClick = element.click.bind(element);
+          element.click = () => {
+            mockClick();
+            // Don't actually trigger download in test
+          };
+        }
+        return element;
+      });
 
       (fetch as jest.Mock).mockImplementation(createMocksForContentGeneration());
 
@@ -4227,15 +4230,12 @@ describe('App (JobHunterDashboard)', () => {
       const downloadButton = screen.getByTestId('download-button');
       fireEvent.click(downloadButton);
 
-      // Verify download was triggered (click was called twice - once for resume, once for cover letter)
+      // Verify download was triggered (click called twice - once for resume, once for cover letter)
       await waitFor(() => {
-        expect(mockClick).toHaveBeenCalled();
-      });
+        expect(mockClick).toHaveBeenCalledTimes(2);
+      }, { timeout: 2000 });
 
-      // Restore mocks
       createElementSpy.mockRestore();
-      global.URL.createObjectURL = originalCreateObjectURL;
-      global.URL.revokeObjectURL = originalRevokeObjectURL;
     });
 
     it('opens email composer when Email button clicked', async () => {
@@ -4335,18 +4335,21 @@ describe('App (JobHunterDashboard)', () => {
         expect(screen.queryByTestId('modal-overlay')).not.toBeInTheDocument();
       });
 
-      // Reopen modal by clicking generate again (should show existing content without regenerating)
+      // Reopen modal by clicking generate again (will regenerate content - app clears old content first)
       fireEvent.click(generateButton);
 
-      // Content should still be there
+      // Content should be regenerated and displayed
       await waitFor(() => {
-        expect(screen.getByTestId('resume-content')).toHaveTextContent('Generated resume content for the job');
+        expect(screen.getByTestId('modal-overlay')).toBeInTheDocument();
+      }, { timeout: 5000 });
+
+      await waitFor(() => {
+        const resumeContent = screen.getByTestId('resume-content');
+        expect(resumeContent).toHaveTextContent('Generated resume content for the job');
       }, { timeout: 5000 });
     });
 
     // TODO (ISSUE-022): FAILING - setupApprovedJobsView times out
-    // Root cause: Same as other custom mock tests - multiple jobs mock doesn't properly
-    // forward URLs. Test needs simpler mock approach or URL forwarding fix.
     it('shows different content for different jobs', async () => {
       const mockJob2 = {
         ...mockJob,
@@ -4373,7 +4376,26 @@ describe('App (JobHunterDashboard)', () => {
       });
 
       render(<App />);
-      await setupApprovedJobsView();
+
+      // Custom setup for multiple jobs (can't use setupApprovedJobsView which expects single job)
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Wait for Approved tab to be available, then click it
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /approved/i })).toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      const approvedTab = screen.getByRole('button', { name: /approved/i });
+      fireEvent.click(approvedTab);
+
+      // Wait for BOTH jobs to appear in the approved tab
+      await waitFor(() => {
+        expect(screen.getByText('Senior Test Engineer')).toBeInTheDocument();
+        expect(screen.getByText('QA Lead')).toBeInTheDocument();
+        expect(screen.getAllByTestId('generate-content-button')).toHaveLength(2);
+      }, { timeout: 5000 });
 
       // Generate for first job
       const generateButtons = screen.getAllByTestId('generate-content-button');

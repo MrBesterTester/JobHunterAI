@@ -12,23 +12,16 @@
     - [Token Efficiency & Session Restarts](#token-efficiency--session-restarts)
     - [Documentation Updates from Git History](#documentation-updates-from-git-history)
     - [Documentation Status Accuracy](#documentation-status-accuracy)
+    - [Iterative Documentation Refinement](#iterative-documentation-refinement)
   - [Testing & Verification Standards](#testing--verification-standards)
     - [Core Principles](#core-principles)
     - [Test Result Reporting Standards](#test-result-reporting-standards)
     - [Investigation Workflow](#investigation-workflow)
     - [Performance Monitoring](#performance-monitoring)
-    - [Console Suppression Context](#console-suppression-context)
     - [Automated Test Execution](#automated-test-execution)
     - [When to Mark Tests as Complete](#when-to-mark-tests-as-complete)
-    - [Examples of Rigorous Investigation](#examples-of-rigorous-investigation)
     - [User Accountability](#user-accountability)
   - [System Health Monitoring & Resource Management](#system-health-monitoring--resource-management)
-    - [During Claude Code Sessions](#during-claude-code-sessions)
-    - [After Test Runs](#after-test-runs)
-    - [Hardware Monitoring](#hardware-monitoring)
-    - [Claude Code Memory Leak Monitoring](#claude-code-memory-leak-monitoring)
-    - [Resource Limits Configuration](#resource-limits-configuration)
-    - [Division of Responsibility](#division-of-responsibility)
   - [Development Commands](#development-commands)
     - [Database Setup](#database-setup)
     - [Backend (Rust)](#backend-rust)
@@ -251,6 +244,50 @@ Claude:
 
 **User benefit**: Documentation completion markers are trustworthy and reflect actual verified implementation status, not aspirational goals.
 
+### Iterative Documentation Refinement
+
+**IMPORTANT PRINCIPLE**: The best summaries always come at the end of investigation, after understanding is complete.
+
+**The Challenge**:
+- During investigation, you write detailed documentation in issue files
+- After investigation completes, you gain clarity and can write concise summaries
+- Summary documents (like `docs/TESTING_STATUS.md`) should remain high-level "forest view"
+- Detail documents (like `bugs/open/ISSUE-*.md`) contain the "tree view" investigation
+
+**Best Practice - Two-Pass Documentation**:
+
+1. **First Pass** (during investigation):
+   - Write detailed findings in the issue/bug file
+   - Include root causes, evidence, technical analysis
+   - Document everything discovered
+
+2. **Second Pass** (after investigation):
+   - Review what you wrote and distill key insights
+   - Update summary documents with concise "forest view"
+   - Link to detail documents for deep dives
+   - Remove duplicate detail from summary docs
+
+**Example - TESTING_STATUS.md should contain**:
+```markdown
+✅ Fixed 4/8 tests (50%)
+⚠️ Remaining 4 expose app code bugs
+Pattern: Sequential generation fails
+Details: See [ISSUE-023](link) for full investigation
+```
+
+**Example - TESTING_STATUS.md should NOT contain**:
+- Line-by-line test analysis
+- Detailed root cause explanations
+- Full stack traces
+- Technical implementation details
+- Everything that's already in ISSUE-023
+
+**Forest vs Trees Analogy**:
+- **Forest view** (summary docs): "4 tests reveal sequential generation bug"
+- **Tree view** (issue docs): "Test 2 fails at line 4145 because modal doesn't appear after second generateContent() call due to state not resetting..."
+
+**User benefit**: Summary documents remain readable and provide quick status overview, while detailed investigation remains available in linked issue files.
+
 ## Testing & Verification Standards
 
 **✅ IMPLEMENTED**: Comprehensive testing standards for frontend (Jest) and backend (Cargo) test suites (2025-10-27)
@@ -259,6 +296,7 @@ Claude:
 
 **Testing Status & Progress Tracking**:
 - **Current Status**: See [docs/TESTING_STATUS.md](docs/TESTING_STATUS.md) for comprehensive frontend testing progress
+- **Investigation Guide**: See [docs/TESTING_GUIDE.md](docs/TESTING_GUIDE.md) for detailed investigation examples and tutorials
 - **Genesis Report**: [README_test-report-10-23-2025.md](README_test-report-10-23-2025.md) - Initial assessment revealing zero frontend unit tests
 - **Active Issues**: ISSUE-018 (frontend unit test implementation), ISSUE-023 (test failure fixes)
 
@@ -309,115 +347,30 @@ Investigating the IntakeTab.test.tsx:245 failure...
 
 ### Investigation Workflow
 
-**Step 1: Read Full Test Output**
-- Don't just count passed/failed - read the error messages
-- Look for patterns (same error repeated, related failures)
-- Note any warnings or deprecation notices
-- Check execution times for anomalies
+**IMPORTANT**: When investigating test failures, **proactively read** [docs/TESTING_GUIDE.md](docs/TESTING_GUIDE.md) for detailed examples before reporting results. Don't rely on memory - use the documented examples.
 
-**Step 2: Investigate Failures**
-When tests fail:
-```bash
-# 1. Read the test file to understand what's being tested
-Read frontend/src/components/IntakeTab.test.tsx
+When tests fail, investigate systematically:
+1. Read full test output (error messages, patterns, warnings)
+2. Read the failing test file and component being tested
+3. Check test logs for stack traces
+4. Identify root cause (not just symptoms)
+5. Propose specific fix with reasoning
 
-# 2. Read the component being tested
-Read frontend/src/components/IntakeTab.tsx
+For skipped tests: Find `.skip()` in source, verify intentional and tracked in issues.
 
-# 3. Check the test log for full stack trace
-Read logs/frontend-tests/test-run-TIMESTAMP.log
+For warnings: Investigate deprecations, performance issues, memory leaks - don't ignore.
 
-# 4. Understand expected vs actual behavior
-# 5. Identify root cause (not just symptoms)
-# 6. Propose specific fix with reasoning
-```
+For performance degradation: Compare with baseline, check system resources with `./system-health-check.sh`.
 
-**Step 3: Investigate Skipped Tests**
-When tests are marked as skipped:
-```bash
-# 1. Find the .skip() or .todo() in source
-Grep "\.skip\(\)" or "\.todo\(\)" in test files
-
-# 2. Read comments explaining why
-# 3. Determine if skip is:
-#    - Intentional (work in progress) → OK, verify it's tracked
-#    - Accidental (forgotten) → Flag for fixing
-#    - Obsolete (reason no longer applies) → Suggest un-skipping
-
-# 4. Check related issue tracker
-# 5. Report findings to user
-```
-
-**Step 4: Investigate Warnings**
-When warnings appear:
-```bash
-# Examples of warnings requiring investigation:
-- Deprecation warnings → Check if library updates needed
-- Performance warnings → Check for bottlenecks
-- Memory warnings → Check for leaks
-- Security warnings → Immediate attention required
-```
-
-**Step 5: Review Log Files**
-```bash
-# Test logs are saved automatically:
-ls -lt logs/frontend-tests/  # Most recent logs first
-
-# Read log when:
-# - Tests failed unexpectedly
-# - Performance degraded
-# - Output looked unusual
-# - User asks for deep dive
-```
+**Reference documentation**:
+- Investigation examples: [docs/TESTING_GUIDE.md](docs/TESTING_GUIDE.md)
+- System health procedures: [README_dev.md - system-health-check.sh](README_dev.md#system-health-checksh)
 
 ### Performance Monitoring
 
-**Expected Execution Times** (baseline for comparison):
-- Frontend unit tests (all): 15-25 seconds with typecheck
-- Frontend unit tests (Phase 2A, 18 tests): 5-10 seconds
-- Backend cargo test (78 tests): 2-5 seconds
-- E2E tests (full suite): 3-5 minutes
+**Expected baselines**: Frontend tests ~15-25s, Backend ~2-5s, E2E ~3-5 mins
 
-**When to investigate performance**:
-- Execution time >2x expected baseline
-- Gradual degradation over multiple runs
-- Tests hang or time out
-- Resource usage spikes (check with ./system-health-check.sh)
-
-**Investigation steps**:
-```bash
-# 1. Compare with baseline
-echo "Expected: 10s, Actual: 45s → 4.5x slower (investigate)"
-
-# 2. Check system resources
-./system-health-check.sh
-
-# 3. Look for patterns
-# - Specific test suite slow?
-# - All tests slow?
-# - Only first run slow (cold start)?
-
-# 4. Review test logs for timeouts or hangs
-grep -i "timeout\|hang" logs/frontend-tests/*.log
-```
-
-### Console Suppression Context
-
-**What console suppression does** (ISSUE-021):
-- Filters out expected API errors during tests (e.g., "Failed to fetch", "500")
-- Reduces output noise from 320+ lines to ~0 for clean reading
-- **Does NOT suppress**:
-  - Test assertion failures
-  - Unexpected errors
-  - Warnings or deprecation notices
-  - Performance issues
-
-**Configuration**: `frontend/src/setupTests.ts:399-419`
-
-**Why this matters**:
-- Console suppression = cleaner output, NOT ignoring problems
-- Real errors and failures are always visible
-- Investigation depth remains unchanged
+Investigate when execution time >2x baseline, tests hang, or resource usage spikes. Use `./system-health-check.sh` to diagnose.
 
 ### Automated Test Execution
 
@@ -455,97 +408,6 @@ cd backend && cargo test
 
 **This aligns with**: "Documentation Status Accuracy" section above - only mark complete after verification.
 
-### Examples of Rigorous Investigation
-
-**Example 1: Single Test Failure**
-```
-User: "Run the frontend tests"
-
-Claude:
-✅ Ran frontend tests with ./run-tests.sh
-
-Results: 77/78 passing (98.7%)
-❌ 1 failure detected
-
-[Claude reads test output]
-[Claude reads failing test file]
-[Claude reads component being tested]
-[Claude reads test log for stack trace]
-
-The failure is in IntakeTab.test.tsx:245:
-- Test: "should handle source identification"
-- Expected: API response includes sourceType field
-- Actual: sourceType is undefined
-- Root cause: Mock API response missing sourceType field in test setup
-
-This is a test bug, not a component bug. The mock in line 38 needs to include:
-  sourceType: 'gmail'
-
-Let me fix this...
-```
-
-**Example 2: Skipped Tests**
-```
-User: "Run the frontend tests"
-
-Claude:
-✅ Ran frontend tests with ./run-tests.sh
-
-Results: 78/78 passing (100%)
-⏭️ 2 tests skipped
-
-[Claude searches for .skip() in test files]
-[Claude reads comments explaining why]
-
-Found 2 skipped tests in CalendarTab.test.tsx:
-1. Line 82: "should sync with Google Calendar"
-   - Reason: Google Calendar API integration not yet implemented
-   - Tracked in: ISSUE-018 Phase 3
-   - Assessment: Intentional skip, properly documented
-
-2. Line 183: "should handle recurring events"
-   - Reason: Unclear - no comment, no tracking issue
-   - Assessment: May be forgotten or obsolete
-   - Recommendation: Investigate if this should be un-skipped
-
-Would you like me to investigate test #2 further?
-```
-
-**Example 3: Performance Degradation**
-```
-User: "Run the Phase 2A tests"
-
-Claude:
-✅ Ran Phase 2A tests (18 tests)
-
-Results: 18/18 passing (100%)
-⚠️ Performance concern detected
-
-Execution time: 45 seconds
-Expected: 5-10 seconds
-Degradation: 4.5-9x slower than baseline
-
-[Claude checks system resources]
-[Claude reviews test log]
-
-Investigation:
-- System resources: OK (no CPU/memory pressure)
-- No hanging or timeouts visible
-- Pattern: All tests slow, not just specific suite
-
-Running system health check...
-[Claude runs ./system-health-check.sh]
-
-Found: 12 orphaned Node.js processes from previous test runs
-Recommendation: Run cleanup and re-test
-
-./system-health-check.sh --cleanup
-
-[After cleanup]
-Re-running tests...
-Execution time: 8 seconds ✅ (back to baseline)
-```
-
 ### User Accountability
 
 **Hold Claude accountable** - If you ever see:
@@ -561,160 +423,34 @@ Execution time: 8 seconds ✅ (back to baseline)
 
 ## System Health Monitoring & Resource Management
 
-**✅ IMPLEMENTED**: Automated system health monitoring for Claude Code sessions (2025-10-25)
+**✅ IMPLEMENTED**: Automated health monitoring for Claude Code sessions (created after ISSUE-019 critical incident)
 
-**Context:** Created for [ISSUE-019](bugs/open/ISSUE-019-macos-nearly-chokes-to-death-during-test-runs.md) after a critical incident where the system became nearly unresponsive during intensive test debugging. This section defines automated monitoring practices to prevent resource exhaustion.
+**IMPORTANT**: When system performance issues arise, **proactively read** [README_dev.md - system-health-check.sh](README_dev.md#system-health-checksh) for detailed monitoring procedures, thresholds, and diagnostic steps.
 
-### During Claude Code Sessions
-
-**Automatic Reminders:** Claude will proactively monitor and suggest system health checks during long sessions.
+**Claude proactively monitors:**
+- Process counts (Node.js, Jest, background shells)
+- Memory usage patterns and orphaned processes
+- Session duration/complexity
+- Test run performance
+- Claude Code memory leak reports (GitHub)
 
 **When Claude will remind you:**
-- Before starting intensive test runs (>100 tests)
+- Before intensive test runs (>100 tests)
 - Every 60-90 minutes during extended sessions
-- When token usage reaches 100K+ (session restart time)
-- After completing long-running tasks (builds, test suites)
+- After long-running tasks (builds, test suites >5 mins)
+- When system feels slow or resource-constrained
 
-**System health check commands:**
+**Primary commands:**
 ```bash
-# Quick health check (use this regularly)
-./system-health-check.sh
-
-# Check background tasks
-/bashes
-
-# Full diagnostic if system feels slow
-./system-health-check.sh --full
+./system-health-check.sh           # Quick check (Claude runs automatically)
+./system-health-check.sh --full    # Hardware diagnostics (needs sudo)
+./system-health-check.sh --cleanup # Kill orphaned processes (you approve)
+/bashes                             # Check background shells
 ```
 
-**What Claude monitors:**
-- Process counts (Node.js, Jest, background shells)
-- Memory usage patterns
-- Session duration and complexity
-- Background task accumulation
+**Jest resource limits**: `maxWorkers: 4` in `jest.config.js` (ISSUE-022) prevents system overload during parallel test execution.
 
-**User benefit:** No need to remember to check system health - Claude handles this automatically.
-
-### After Test Runs
-
-**Automatic Verification:** Claude will automatically verify process cleanup after test runs.
-
-**Claude's automatic workflow after tests:**
-1. Check for orphaned Jest/Node processes
-2. Verify background shells terminated properly
-3. Run quick health check if test run was >5 minutes
-4. Suggest cleanup if orphaned processes detected
-
-**Cleanup command (if needed):**
-```bash
-./system-health-check.sh --cleanup
-```
-
-**Why this matters:**
-- Jest parallel workers can remain orphaned after tests
-- Background bash shells from Claude Code may not terminate
-- Accumulated processes lead to memory exhaustion
-- Prevention is easier than recovery
-
-**User benefit:** Automated process verification after every significant test run - no manual checking required.
-
-### Hardware Monitoring
-
-**Automatic Thermal & Resource Checks:** Claude will suggest hardware diagnostics when appropriate.
-
-**When Claude suggests hardware checks:**
-- Before starting intensive sessions on hot days
-- If you report system slowness or fan noise
-- Before extended test runs (CI/CD, comprehensive suites)
-- After system has been under load for >2 hours
-
-**Full diagnostic command:**
-```bash
-./system-health-check.sh --full
-```
-
-**What gets checked:**
-- CPU temperature (requires sudo, may prompt for password)
-- SSD health and free space
-- Memory pressure and swap usage
-- Thermal throttling indicators
-
-**Hardware notes:**
-- ✅ Internal fans and filters cleaned (2025-10-25)
-- 2018 MacBook Pro has known thermal constraints under sustained load
-- M1 iMac available as alternative for intensive sessions (trade-off: no 34" monitor)
-
-**User benefit:** Claude proactively suggests hardware checks before they become critical issues.
-
-### Claude Code Memory Leak Monitoring
-
-**Automatic GitHub Monitoring:** Claude will periodically check for Claude Code memory leak reports.
-
-**What Claude monitors:**
-- New memory leak issues in anthropics/claude-code GitHub repository
-- Release notes for v2.0.27+ mentioning memory fixes
-- Community reports of process multiplication bugs
-- Updates to known issues (#8382, #4953, #8968, #10139, #1935, #4666)
-
-**Monitoring frequency:**
-- Weekly during active development
-- Before major test sessions
-- When user reports slowness or issues
-- After Claude Code updates
-
-**How Claude monitors:**
-```
-# Claude runs web searches like:
-"Claude Code v2.0.27 v2.0.28 memory leak issues site:github.com/anthropics/claude-code"
-```
-
-**Claude will report findings:**
-- New critical issues discovered
-- Confirmed fixes in recent versions
-- Workarounds shared by community
-- Recommendations for version updates
-
-**GitHub issue template available:** See [ISSUE-019](bugs/open/ISSUE-019-macos-nearly-chokes-to-death-during-test-runs.md) for template if filing becomes necessary.
-
-**User benefit:** Claude handles all memory leak monitoring - you don't need to manually check GitHub or remember to search for issues.
-
-### Resource Limits Configuration
-
-**✅ CONFIGURED**: Jest resource limits implemented to prevent system overload.
-
-**Configuration:** `frontend/jest.config.js` (ISSUE-022)
-```javascript
-maxWorkers: 4,              // Limit to 4 parallel workers (vs 50% CPU default)
-```
-
-**Benefits:**
-- Reduces parallel worker count from default (~6 on this machine) to 4
-- Prevents CPU bottleneck on main thread
-- More predictable resource usage
-- Safer for system stability
-
-**Trade-offs:**
-- Test runs may take slightly longer with fewer workers
-- Still maintains parallelism for reasonable speed
-
-**Migration Note:** Migrated from Vitest to Jest (2025-10-27) to resolve test hanging issues. See ISSUE-022 for full rationale.
-
-### Division of Responsibility
-
-**Claude runs automatically** (read-only checks):
-- `./system-health-check.sh` (quick mode) - memory, CPU, process counts
-- `/bashes` - check background tasks
-- Process monitoring and pattern detection
-- Claude Code memory leak monitoring via GitHub
-- Session restart suggestions at optimal times
-
-**You approve/run** (requires sudo or kills processes):
-- `./system-health-check.sh --full` - thermal checks (needs sudo password)
-- `./system-health-check.sh --cleanup` - kills orphaned processes (has safety prompts)
-
-**Workflow:** Claude monitors → detects issues → asks you to approve cleanup if needed.
-
-**See also:** [system-health-check.sh documentation](README_dev.md#system-health-checksh) for detailed script usage.
+**Full documentation**: [README_dev.md - system-health-check.sh](README_dev.md#system-health-checksh) - includes usage examples, thresholds, and troubleshooting.
 
 ## Development Commands
 

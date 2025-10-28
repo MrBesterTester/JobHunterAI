@@ -1,6 +1,6 @@
 # Frontend Testing Status & Progress Tracking
 
-**Last Updated**: 2025-10-27
+**Last Updated**: 2025-10-28
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -15,7 +15,8 @@
     - [Achievement Summary (Phases 1-2A)](#achievement-summary-phases-1-2a)
   - [ISSUE-023: Frontend Test Failures](#issue-023-frontend-test-failures)
     - [✅ FIXED (2025-10-27): Email Composer Modal Tests (3/3)](#-fixed-2025-10-27-email-composer-modal-tests-33)
-    - [🔄 IN PROGRESS: Content Generation Modal Tests (5 remaining)](#-in-progress-content-generation-modal-tests-5-remaining)
+    - [✅ FIXED (2025-10-28): Content Generation Modal Test (1/1)](#-fixed-2025-10-28-content-generation-modal-test-11)
+    - [⚠️ REMAINING: App Code Issues Identified (4 tests)](#-remaining-app-code-issues-identified-4-tests)
   - [Relationship Between ISSUE-018 and ISSUE-023](#relationship-between-issue-018-and-issue-023)
   - [Key Insight: Email Composer in Context](#key-insight-email-composer-in-context)
 - [Related Files](#related-files)
@@ -24,16 +25,18 @@
 
 ## Quick Status Overview
 
-**Current Test Status**: 417/422 tests passing (98.6% pass rate)
+**Current Test Status**: 418/422 tests passing (99.1% pass rate)
 
 **Active Issues**:
 - **ISSUE-018**: Frontend Unit Test Implementation (Phases 2B-4B pending, ~15-30 hours remaining)
-- **ISSUE-023**: Frontend Test Failures (3/8 fixed, 5 remaining)
+- **ISSUE-023**: Frontend Test Failures (4/8 fixed, 4 remaining - **reveal app bugs**)
 
 **Recent Progress**:
-- ✅ Email Composer Modal tests fixed (3/3) - mock bug resolved
+- ✅ Test fixes (2 sessions): 4 out of 8 failing tests resolved
 - ✅ 422 tests created (up from zero on Oct 23)
-- 🔄 5 Content Generation Modal tests still failing (investigation in progress)
+- ⚠️ **Critical finding**: 4 remaining test failures expose real app code bugs in sequential content generation
+
+**Big Picture**: Started with **zero frontend tests** on Oct 23 → Now at **418/422 passing (99.1%)**
 
 ---
 
@@ -127,42 +130,39 @@ From the comprehensive test report ([README_test-report-10-23-2025.md](../README
 - 5 Content Generation Modal tests (state propagation issues)
 - 3 **Email Composer Modal tests** (mock configuration bug)
 
-**Current Status**: ⏸️ **PARTIAL PROGRESS** - 3/8 tests fixed (37.5%)
-- **Current**: 417/422 tests passing (98.6% pass rate)
-- **Previous**: 414/422 tests passing (98.1% pass rate)
-- **Improvement**: +3 tests fixed
+**Current Status**: ✅ **SIGNIFICANT PROGRESS** - 4/8 tests fixed (50%)
+- **Current**: 418/422 tests passing (99.1% pass rate)
+- **Starting**: 414/422 tests passing (98.1% pass rate)
+- **Improvement**: +4 tests fixed over 2 sessions
+- **Key Finding**: Remaining 4 test failures expose **real app code bugs**
 
 #### ✅ FIXED (2025-10-27): Email Composer Modal Tests (3/3)
+- **Root cause**: Mock URL matching bug - reordered URL checks
+- **Result**: All 3 tests NOW PASSING ✅
 
-**Root Cause**: Mock URL matching bug in `createMocksForEmailComposer()` helper
-- **Issue**: URL pattern `/api/jobs` was checked BEFORE `/generate-content`, causing `/api/jobs/{id}/generate-content` to match the wrong condition and return job data instead of generated content
-- **Fix**: Reordered URL checks to prioritize `/generate-content` check before general `/api/jobs` check
-- **Additional Fix**: Changed test assertions from `getByText('Dear Hiring Manager')` to `getByTestId('cover-letter-content')` with `toHaveTextContent()` for more reliable DOM querying
-- **Result**: All 3 Email Composer tests NOW PASSING ✅
+#### ✅ FIXED (2025-10-28): Content Generation Modal Test (1/1)
+- **Root cause**: Mock breaking React rendering - fixed createElement spy
+- **Result**: Test NOW PASSING ✅ (418/422 total)
 
-**Files Modified**:
-- `frontend/src/test-helpers/mockHelpers.tsx` (mock URL ordering)
-- `frontend/src/App.test.tsx` (test assertions)
+#### ⚠️ REMAINING: App Code Issues Identified (4 tests)
 
-#### 🔄 IN PROGRESS: Content Generation Modal Tests (5 remaining)
+**Critical Discovery**: Remaining failures expose **app code bugs**, not test bugs.
 
-**Different root cause than Email Composer tests**:
-- All 5 tests fail during `setupApprovedJobsView()` helper, NOT during content generation itself
-- **Failure point**: Timeout waiting for "Senior Test Engineer" job to appear in Approved tab
-- **Issue**: Custom mocks in these tests may not be forwarding all required URL patterns to `createMocksForContentGeneration()`
+**Pattern**: Sequential content generation fails
+- First generation: ✅ Works
+- Second generation: ❌ Modal doesn't appear / content doesn't render
+- **Impact**: Users likely cannot generate content multiple times in same session
 
-**Next Action Needed**:
-1. Investigate why jobs aren't appearing in Approved tab during test setup
-2. Check if custom mock implementations (for retry, loading state, etc.) are properly calling fallback mock
-3. May need to refactor tests to use consistent mock setup pattern like Email Composer tests
-4. Consider if `setupApprovedJobsView()` helper itself has timing issues
+**Affected Tests**:
+1. "shows loading state during generation" - React state timing issue
+2. "allows retry after generation error" - second attempt fails
+3. "preserves generated content when modal reopened" - second attempt fails
+4. "shows different content for different jobs" - second job fails
 
-**Failing Tests** (all in Content Generation Modal suite):
-- "shows loading state during generation" (`frontend/src/App.test.tsx:4000`)
-- "allows retry after generation error" (`frontend/src/App.test.tsx:4145`)
-- "downloads resume when Download button clicked" (`frontend/src/App.test.tsx:4193`)
-- "preserves generated content when modal reopened" (`frontend/src/App.test.tsx:4314`)
-- "shows different content for different jobs" (`frontend/src/App.test.tsx:4348`)
+**Next Steps**:
+- Investigate `generateContent()` function (App.tsx:1182-1238) for state management bugs
+- Estimated effort: 2-4 hours
+- **Full investigation details**: See [ISSUE-023](../bugs/open/ISSUE-023-frontend-test-failures---content-generation-state-propagation-issues.md)
 
 ---
 
@@ -188,8 +188,9 @@ From the comprehensive test report ([README_test-report-10-23-2025.md](../README
 2. **Oct 24, 2025**: ISSUE-018 created and approved
 3. **Oct 25, 2025**: ISSUE-018 Phases 1-2A implemented (422 tests created)
 4. **Oct 27, 2025**: ISSUE-023 created to fix 8 test failures
-5. **Oct 27, 2025**: ISSUE-023 partially resolved (3/8 fixed - Email Composer tests)
-6. **Current**: ISSUE-023 has 5 tests remaining, ISSUE-018 has ~50-70 tests still to be written
+5. **Oct 27, 2025**: ISSUE-023 Session 1 - Fixed 3/8 (Email Composer tests)
+6. **Oct 28, 2025**: ISSUE-023 Session 2 - Fixed 1/8 (Download test), identified app bugs in remaining 4
+7. **Current**: ISSUE-023 has 4 tests revealing app bugs, ISSUE-018 has ~50-70 tests still to be written
 
 ---
 
