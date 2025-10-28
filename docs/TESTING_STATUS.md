@@ -13,7 +13,7 @@
     - [✅ Phase 2A: Tab Navigation Tests (COMPLETED 2025-10-25)](#-phase-2a-tab-navigation-tests-completed-2025-10-25)
     - [✅ Phase 2B: Job List Filtering Tests (COMPLETED 2025-10-28)](#-phase-2b-job-list-filtering-tests-completed-2025-10-28)
     - [✅ Phase 3A: Job Approval Workflow (COMPLETED 2025-10-28)](#-phase-3a-job-approval-workflow-completed-2025-10-28)
-    - [🔄 Phases 3B-4B: PENDING (Estimated 5-9 hours remaining)](#-phases-3b-4b-pending-estimated-5-9-hours-remaining)
+    - [🔄 Phases 3B-4B: PENDING (Estimated 5.5-9 hours remaining)](#-phases-3b-4b-pending-estimated-55-9-hours-remaining)
     - [Achievement Summary (Phases 1-3A)](#achievement-summary-phases-1-3a)
   - [ISSUE-023: Frontend Test Failures ✅ FIXED](#issue-023-frontend-test-failures--fixed)
     - [✅ Session 1 (2025-10-27): Email Composer Modal Tests (3/3)](#-session-1-2025-10-27-email-composer-modal-tests-33)
@@ -123,19 +123,7 @@ From the comprehensive test report ([README_test-report-10-23-2025.md](../README
 |-----------|---------------|--------|
 | 3A. Job Approval Workflow | 7 (1 skipped) | ✅ Complete |
 
-**Tests Implemented**:
-1. ✅ Approves job when Approve button clicked on job card
-2. ✅ Moves job from New tab to Approved tab after approval
-3. ✅ Calls API with correct parameters when approving
-4. ✅ Handles API errors gracefully with optimistic update
-5. ✅ Refreshes job list after successful approval
-6. ✅ Approves job from JobDetails modal
-7. ✅ Approves filtered job back to approved status
-8. ⏭️ Updates stats after approval (skipped - implementation detail)
-
-**Coverage**: Complete approval workflow from both job cards and JobDetails modal, including status transitions, API interactions, error handling, and cross-tab movement.
-
-#### 🔄 Phases 3B-4B: PENDING (Estimated 5-9 hours remaining)
+#### 🔄 Phases 3B-4B: PENDING (Estimated 5.5-9 hours remaining)
 
 | Sub-Phase | Est. Tests | Est. Effort | Status |
 |-----------|------------|-------------|--------|
