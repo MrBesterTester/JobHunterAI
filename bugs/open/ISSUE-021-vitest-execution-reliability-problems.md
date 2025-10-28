@@ -45,7 +45,7 @@ related_issues: [ISSUE-018, ISSUE-019]](#type-issue%0Aid-issue-021%0Atitle-vites
     - [Option v.1a: Add Explicit React Plugin](#option-v1a-add-explicit-react-plugin)
     - [Option v.6: Check for Large DOM Trees](#option-v6-check-for-large-dom-trees)
     - [Option v.2: Try happy-dom Environment (Experimental)](#option-v2-try-happy-dom-environment-experimental)
-    - [Option v.4: Node.js Profiling with Chrome DevTools](#option-v4-nodejs-profiling-with-chrome-devtools)
+    - [Option v.4: Automated Active Handle Detection](#option-v4-automated-active-handle-detection)
     - [Option v.5: Minimal Reproduction for Maintainers](#option-v5-minimal-reproduction-for-maintainers)
     - [Option vii: Workaround Solutions (Last Resort)](#option-vii-workaround-solutions-last-resort)
   - [Code Quality Improvements Achieved](#code-quality-improvements-achieved)
@@ -100,7 +100,7 @@ related_issues: [ISSUE-018, ISSUE-019]
   - [Option v.1a: Add Explicit React Plugin](#option-v1a-add-explicit-react-plugin)
   - [Option v.6: Check for Large DOM Trees](#option-v6-check-for-large-dom-trees)
   - [Option v.3: Binary Search Test Isolation](#option-v3-binary-search-test-isolation)
-  - [Option v.4: Node.js Profiling with Chrome DevTools](#option-v4-nodejs-profiling-with-chrome-devtools)
+  - [Option v.4: Automated Active Handle Detection](#option-v4-automated-active-handle-detection)
   - [Option v.5: Minimal Reproduction for Maintainers](#option-v5-minimal-reproduction-for-maintainers)
   - [Option v.2: Try happy-dom Environment (Experimental)](#option-v2-try-happy-dom-environment-experimental)
   - [Option vii: Workaround Solutions (Last Resort)](#option-vii-workaround-solutions-last-resort)
@@ -171,10 +171,11 @@ cd frontend && ./run-tests.sh --filter "Phase 2A"
 - **ROOT CAUSE IDENTIFIED**: User interactions (`fireEvent.click`, tab switching, modal interactions)
 - **Result**: Narrowed down root cause to React event handler cleanup issue
 
-**4. Option v.4: Node.js Profiling with Chrome DevTools** (1 hour - HIGH VALUE DIAGNOSTIC - **NOW TOP PRIORITY**)
+**4. Option v.4: Automated Active Handle Detection** (20-30 minutes - HIGH VALUE DIAGNOSTIC - **NOW TOP PRIORITY**)
+- Fully automated using `why-is-node-running` npm package
+- Shows all active handles, timers, and sockets with stack traces
 - Most likely to reveal what's keeping process alive
-- Actionable results
-- Worth doing before workarounds
+- No manual intervention required
 
 **5. Option v.5: Minimal Reproduction** (2-3 hours - LONG TERM)
 - Engage maintainers for expert help
@@ -267,7 +268,7 @@ Despite fixing all identified timer issues and implementing all standard Vitest 
 | **v.6** | Check for large DOM trees | ✅ Complete | ❌ No |
 | **v.2** | Try happy-dom environment | ⏸️ Not Started | ❓ Unknown |
 | **v.3** | Binary search test isolation | ✅ Complete | N/A (diagnostic) |
-| **v.4** | Node.js profiling (Chrome DevTools) | ⏸️ Not Started | N/A (diagnostic) |
+| **v.4** | Automated active handle detection | ⏸️ Not Started | N/A (diagnostic) |
 | **v.5** | Minimal reproduction | ⏸️ Not Started | N/A (community) |
 | **vii** | Workaround solutions | ⏸️ Not Started | ⚠️ Masks issue |
 
@@ -1066,35 +1067,102 @@ export default defineConfig({
 
 ---
 
-### Option v.4: Node.js Profiling with Chrome DevTools
+### Option v.4: Automated Active Handle Detection
 
-**Status**: ⏸️ **NOT STARTED** - Deep diagnostic approach
+**Status**: ⏸️ **NOT STARTED** - Fully automated diagnostic approach
 
-**Purpose**: Use Chrome DevTools to profile what's keeping the Node.js process alive.
+**Purpose**: Use `why-is-node-running` to identify all active handles, timers, and sockets keeping the Node.js process alive.
 
-**Estimated Effort**: 1 hour
+**Estimated Effort**: 20-30 minutes (fully automated)
 
-**Implementation**:
+**Why This Approach**:
+- Purpose-built for diagnosing "why won't Node exit" problems
+- Shows stack traces for where each handle was created
+- No manual intervention required (vs Chrome DevTools)
+- Output is directly readable in logs
+- Simpler and faster than Chrome DevTools profiling
+
+**Implementation Plan**:
+
+**Phase 1: Install diagnostic tool** (2 minutes - Automatic)
 ```bash
-node --inspect-brk ./node_modules/.bin/vitest run --filter "Phase 2A"
+cd frontend
+npm install --save-dev why-is-node-running
 ```
 
-Then:
-1. Open Chrome DevTools (chrome://inspect)
-2. Connect to Node.js process
-3. Profile execution
-4. Look for active handles/timers/promises when hanging
+**Phase 2: Create global teardown to log active handles** (5 minutes - Automatic)
+```typescript
+// frontend/vitest.teardown.ts (new file)
+import whyIsNodeRunning from 'why-is-node-running';
+
+export default () => {
+  console.log('\n=== CHECKING WHY NODE IS STILL RUNNING ===\n');
+  whyIsNodeRunning();
+};
+```
+
+```typescript
+// frontend/vitest.config.ts - Add globalTeardown
+export default defineConfig({
+  test: {
+    globalTeardown: './vitest.teardown.ts',
+    // ... existing config
+  }
+});
+```
+
+**Phase 3: Run tests and capture output** (5 minutes - Automatic)
+```bash
+cd frontend && ./run-tests.sh --filter "Phase 2A" 2>&1 | tee logs/node-still-running.log
+```
+
+**Phase 4: Analyze output** (10-15 minutes - Automatic)
+- Read log file showing all active handles/timers
+- Identify what's keeping Node alive (event listeners, timers, promises, etc.)
+- Examine stack traces to find where handles were created
+- Propose targeted fixes based on findings
+
+**Expected Output**:
+```
+=== CHECKING WHY NODE IS STILL RUNNING ===
+
+There are 4 handle(s) keeping the process running
+
+# Timeout
+/path/to/component.tsx:123 - setTimeout(...)
+  at IntakeTab.useEffect (/frontend/src/IntakeTab.tsx:241:5)
+
+# TCPSERVERWRAP
+/path/to/server.ts:45 - server.listen(...)
+
+# FSWatcher
+/path/to/watcher.ts:12 - fs.watch(...)
+```
 
 **Benefits**:
-- ✅ More actionable than hanging-process reporter
-- ✅ Shows exact event loop state
-- ✅ May reveal hidden async operations
+- ✅ Fully automated - no manual Chrome DevTools interaction
+- ✅ Direct stack traces showing where each handle was created
+- ✅ Output saved to log file for analysis
+- ✅ Purpose-built for this exact diagnostic need
+- ✅ Faster than Chrome DevTools approach (20 min vs 1 hour)
 
 **Trade-offs**:
-- ❌ Requires Chrome DevTools knowledge
-- ❌ May show internal Vitest operations (not test code)
+- ❌ Doesn't provide heap snapshots (not needed for this issue)
+- ❌ Doesn't provide CPU profiling (tests run fine, just hang)
+- ❌ May show internal Vitest operations mixed with test code
 
-**Recommendation**: ✅ High-value diagnostic if other options fail
+**Comparison to Chrome DevTools**:
+| Feature | why-is-node-running | Chrome DevTools |
+|---------|---------------------|-----------------|
+| Active handles | ✅ Yes | ✅ Yes |
+| Stack traces | ✅ Yes | ✅ Yes |
+| Automation | ✅ Fully automated | ❌ Manual steps required |
+| Setup time | 20 minutes | 1 hour |
+| Manual intervention | ✅ None | ❌ Browser interaction needed |
+| Heap snapshots | ❌ No | ✅ Yes |
+| CPU profiling | ❌ No | ✅ Yes |
+
+**Recommendation**: ✅ **TOP PRIORITY** - Fastest path to identifying root cause, fully automated, purpose-built for this problem
 
 ---
 
