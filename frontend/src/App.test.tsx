@@ -1975,6 +1975,10 @@ describe('App (JobHunterDashboard)', () => {
       });
     });
 
+    // FIXED (ISSUE-022): Test was using wrong test-ids
+    // - Changed 'criteria-config-modal' to 'criteria-modal-overlay'
+    // - Changed 'close-button' to 'criteria-modal-close-x'
+    // Tab state preservation was working correctly, test just couldn't find the elements.
     it('preserves tab state when opening and closing criteria modal', async () => {
       render(<App />);
 
@@ -1998,15 +2002,15 @@ describe('App (JobHunterDashboard)', () => {
         fireEvent.click(configButton);
 
         await waitFor(() => {
-          expect(screen.getByTestId('criteria-config-modal')).toBeInTheDocument();
+          expect(screen.getByTestId('criteria-modal-overlay')).toBeInTheDocument();
         });
 
         // Close modal
-        const closeButton = screen.getByTestId('close-button');
+        const closeButton = screen.getByTestId('criteria-modal-close-x');
         fireEvent.click(closeButton);
 
         await waitFor(() => {
-          expect(screen.queryByTestId('criteria-config-modal')).not.toBeInTheDocument();
+          expect(screen.queryByTestId('criteria-modal-overlay')).not.toBeInTheDocument();
         });
 
         // Verify approved tab is still active
@@ -3989,6 +3993,10 @@ describe('App (JobHunterDashboard)', () => {
       }, { timeout: 5000 });
     });
 
+    // TODO (ISSUE-022): FAILING - React state updates too fast to catch loading state
+    // Root cause: Even with 500ms delay, the "Generating..." state appears and disappears
+    // before waitFor can catch it. React batches state updates making intermediate states
+    // difficult to test. Consider testing the behavior outcome rather than transient UI states.
     it('shows loading state during generation', async () => {
       // Create a mock with delayed response to catch loading state
       (fetch as jest.Mock).mockImplementation((url: string, options?: RequestInit) => {
@@ -4130,6 +4138,10 @@ describe('App (JobHunterDashboard)', () => {
       consoleError.mockRestore();
     });
 
+    // TODO (ISSUE-022): FAILING - setupApprovedJobsView times out (can't find job)
+    // Root cause: Custom mock implementation doesn't properly forward all URL patterns
+    // to createMocksForContentGeneration fallback, causing initial job fetch to fail.
+    // Job doesn't appear in Approved tab, so test can't proceed. Needs mock debugging.
     it('allows retry after generation error', async () => {
       const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
       let attemptCount = 0;
@@ -4175,6 +4187,9 @@ describe('App (JobHunterDashboard)', () => {
       consoleError.mockRestore();
     });
 
+    // TODO (ISSUE-022): FAILING - setupApprovedJobsView times out
+    // Root cause: Same as "allows retry" - custom mock with download spy doesn't
+    // properly forward URLs. Initial job fetch fails, no job appears in Approved tab.
     it('downloads resume when Download button clicked', async () => {
       // Mock URL.createObjectURL and document.createElement
       const mockCreateObjectURL = jest.fn(() => 'blob:mock-url');
@@ -4293,6 +4308,9 @@ describe('App (JobHunterDashboard)', () => {
       });
     });
 
+    // TODO (ISSUE-022): FAILING - setupApprovedJobsView times out
+    // Root cause: Same as other custom mock tests - URL forwarding issue prevents
+    // initial job fetch from succeeding. Test cannot reach state preservation logic.
     it('preserves generated content when modal reopened', async () => {
       (fetch as jest.Mock).mockImplementation(createMocksForContentGeneration());
 
@@ -4324,6 +4342,9 @@ describe('App (JobHunterDashboard)', () => {
       }, { timeout: 5000 });
     });
 
+    // TODO (ISSUE-022): FAILING - setupApprovedJobsView times out
+    // Root cause: Same as other custom mock tests - multiple jobs mock doesn't properly
+    // forward URLs. Test needs simpler mock approach or URL forwarding fix.
     it('shows different content for different jobs', async () => {
       const mockJob2 = {
         ...mockJob,
@@ -5128,6 +5149,10 @@ describe('App (JobHunterDashboard)', () => {
       });
     });
 
+    // TODO (ISSUE-022): FAILING - cover_letter is empty in EmailComposer
+    // Root cause: generatedContent state has empty cover_letter field when EmailComposer
+    // renders. Content modal successfully displays the data, but EmailComposer doesn't
+    // receive it. Timing issue with state propagation - may need synchronization point.
     it('pre-fills recipient, subject, body', async () => {
       (fetch as jest.Mock).mockImplementation(createMocksForEmailComposer());
 
@@ -5178,6 +5203,8 @@ describe('App (JobHunterDashboard)', () => {
       });
     });
 
+    // TODO (ISSUE-022): FAILING - Same as "pre-fills" test
+    // Root cause: cover_letter is empty when EmailComposer renders. State propagation issue.
     it('displays cover letter preview', async () => {
       (fetch as jest.Mock).mockImplementation(createMocksForEmailComposer());
 
@@ -5223,6 +5250,9 @@ describe('App (JobHunterDashboard)', () => {
       });
     });
 
+    // TODO (ISSUE-022): FAILING - resume_format is undefined in EmailComposer
+    // Root cause: generatedContent.resume_format is undefined when EmailComposer renders.
+    // Shows "techcorp_resume.undefined" instead of ".pdf". Same state propagation issue.
     it('shows resume attachment info', async () => {
       (fetch as jest.Mock).mockImplementation(createMocksForEmailComposer());
 
