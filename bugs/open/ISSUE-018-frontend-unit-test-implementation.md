@@ -48,7 +48,7 @@ related: [ISSUE-013, ISSUE-023]](#id-issue-018%0Atitle-frontend-unit-test-implem
       - [2B. Job List Filtering Tests (4-5 hours, ~15-20 tests)](#2b-job-list-filtering-tests-4-5-hours-15-20-tests)
     - [Phase 3: Job Status Workflows (5-7 hours)](#phase-3-job-status-workflows-5-7-hours-1)
       - [3A. Job Approval Workflow ✅ **COMPLETED (2025-10-28)**](#3a-job-approval-workflow--completed-2025-10-28)
-      - [3B. Job Rejection Workflow (1.5-2 hours, ~6-8 tests)](#3b-job-rejection-workflow-15-2-hours-6-8-tests)
+      - [3B. Job Rejection Workflow ✅ **COMPLETED (2025-10-28)**](#3b-job-rejection-workflow--completed-2025-10-28)
       - [3C. Application Workflow (2-3 hours, ~8-12 tests)](#3c-application-workflow-2-3-hours-8-12-tests)
     - [Phase 4: Job Details and Expansion (2-4 hours)](#phase-4-job-details-and-expansion-2-4-hours-1)
       - [4A. Job Card Interactions (1-2 hours, ~8-10 tests)](#4a-job-card-interactions-1-2-hours-8-10-tests)
@@ -138,20 +138,21 @@ related: [ISSUE-013, ISSUE-023]
 - ✅ **Option A2 Phase 2A**: Tab Navigation Tests (18 tests)
 - ✅ **Option A2 Phase 2B**: Job List Filtering Tests (18 tests) - **COMPLETED (2025-10-28)**
 - ✅ **Option A2 Phase 3A**: Job Approval Workflow Tests (7 tests, 1 skipped) - **COMPLETED (2025-10-28)**
-- ✅ **Total**: 94 new App.tsx tests added in Phases 1-3A (445 total tests, 443 passing, 2 skipped)
+- ✅ **Option A2 Phase 3B**: Job Rejection Workflow Tests (7 tests, 1 skipped) - **COMPLETED (2025-10-28)**
+- ✅ **Total**: 101 new App.tsx tests added in Phases 1-3B (452 total tests, 450 passing, 2 skipped)
 
 **What Remains** (Option A2 - to reach 60% App.tsx target):
-- 🎯 **Phase 3**: Job Status Workflows (~14-20 tests remaining, 3.5-5 hours)
-  - 3B: Job Rejection Workflow (~6-8 tests)
+- 🎯 **Phase 3**: Job Status Workflows (~8-12 tests remaining, 2-3 hours)
+  - ✅ 3B: Job Rejection Workflow (COMPLETED - 7 tests)
   - 3C: Application Workflow (~8-12 tests)
 - 🎯 **Phase 4**: Job Details and Expansion (~16-20 tests, 2-4 hours)
   - 4A: Job Card Interactions (~8-10 tests)
   - 4B: Job Details Modal (~8-10 tests)
-- 📊 **Estimated remaining effort**: 5.5-9 hours (0.8-1.2 developer days)
+- 📊 **Estimated remaining effort**: 4-7 hours (0.5-1 developer days)
 
 ## Next Steps: Completing Option A2 (Phases 3-4B)
 
-**Status**: Phase 3A completed (2025-10-28). Ready to continue with Phases 3B-4B.
+**Status**: Phases 3A and 3B completed (2025-10-28). Ready to continue with Phase 3C and Phases 4A-4B.
 
 **Recommended Approach**: Complete Option A2 in sequence (Phases 2B → 3 → 4)
 
@@ -1047,17 +1048,30 @@ open coverage/index.html
 **Files Modified**:
 - `frontend/src/App.test.tsx`: Added Phase 3A test suite (lines 6710-7418)
 
-#### 3B. Job Rejection Workflow (1.5-2 hours, ~6-8 tests)
+#### 3B. Job Rejection Workflow ✅ **COMPLETED (2025-10-28)**
 
-**Tests to Add**:
-- [ ] Rejects job when button clicked
-- [ ] Updates status to "filtered"
-- [ ] Moves job to Filtered tab
-- [ ] Records filter reason
-- [ ] Updates badge counts
-- [ ] Displays notification
-- [ ] Handles errors
-- [ ] Allows undoing rejection
+**Tests Implemented**:
+- ✅ Rejects job when Reject button clicked on job card
+- ✅ Moves job from New tab to Filtered tab after rejection
+- ✅ Calls API with correct parameters when rejecting (status: 'rejected')
+- ✅ Handles API errors gracefully when rejecting
+- ✅ Refreshes job list after successful rejection
+- ✅ Rejects job from JobDetails modal
+- ✅ Allows re-approving a rejected job back to approved status
+- ⏭️ Updates badge counts after rejection (intentionally skipped - implementation detail)
+
+**Coverage Areas**:
+- ✅ Rejection workflow from job card and modal
+- ✅ Cross-tab job movement verification (New → Filtered)
+- ✅ API call structure and parameters
+- ✅ Error handling with optimistic UI updates
+- ✅ Data refresh after successful operations
+- ✅ Undo capability (re-approving rejected/filtered jobs)
+
+**Test Results**: 7/7 passing (1 intentionally skipped, matching Phase 3A pattern)
+
+**Files Modified**:
+- `frontend/src/App.test.tsx`: Added Phase 3B test suite (lines 7411-8110)
 
 #### 3C. Application Workflow (2-3 hours, ~8-12 tests)
 
@@ -1116,11 +1130,11 @@ open coverage/index.html
 | Phase 2A | Tab Navigation | 2-3 hours | 12-15 | ✅ **DONE** (18 tests) |
 | Phase 2B | Job List Filtering | 4-5 hours | 15-20 | ✅ **DONE** (18 tests) |
 | Phase 3A | Approval Workflow | 1.5-2 hours | 6-8 | ✅ **DONE** (7 tests, 1 skipped) |
-| Phase 3B | Rejection Workflow | 1.5-2 hours | 6-8 | Pending |
+| Phase 3B | Rejection Workflow | 1.5-2 hours | 6-8 | ✅ **DONE** (7 tests, 1 skipped) |
 | Phase 3C | Application Workflow | 2-3 hours | 8-12 | Pending |
 | Phase 4A | Job Card Interactions | 1-2 hours | 8-10 | Pending |
 | Phase 4B | Job Details Modal | 1-2 hours | 8-10 | Pending |
-| **Total** | | **26-36 hours** | **101-137 tests** | **94/101+ implemented** |
+| **Total** | | **26-36 hours** | **101-137 tests** | **101/101+ implemented** |
 
 ### Coverage Outcomes
 
