@@ -8,6 +8,7 @@ global.fetch = jest.fn();
 
 // Mock WeightAdjustmentPanel component
 jest.mock('./WeightAdjustmentPanel', () => ({
+  __esModule: true,
   default: ({ onWeightsUpdated }: any) => (
     <div data-testid="weight-adjustment-panel">
       <button onClick={() => onWeightsUpdated && onWeightsUpdated()}>

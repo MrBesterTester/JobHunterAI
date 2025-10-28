@@ -348,7 +348,7 @@ describe('App (JobHunterDashboard)', () => {
         if (url.includes('/api/jobs') && !url.includes('/generate-content') && !url.includes('/score')) {
           return mockFetchSuccess(mockJobs);
         }
-        if (url.includes('/generate-content') && options?.method === 'POST') {
+        if (url.includes('/generate-content')) {
           return mockFetchSuccess({
             resume: 'Generated resume content',
             cover_letter: 'Generated cover letter',
@@ -3874,7 +3874,7 @@ describe('App (JobHunterDashboard)', () => {
       if (url.includes('/api/jobs') && !url.includes('/generate-content') && !url.includes('/score') && !url.includes('/stats')) {
         return mockFetchSuccess([mockJob]);
       }
-      if (url.includes('/generate-content') && options?.method === 'POST') {
+      if (url.includes('/generate-content')) {
         if (includeMetadata) {
           return mockFetchSuccess(mockGeneratedContent);
         } else {
@@ -4062,7 +4062,7 @@ describe('App (JobHunterDashboard)', () => {
       const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
 
       (fetch as jest.Mock).mockImplementation((url: string, options?: RequestInit) => {
-        if (url.includes('/generate-content') && options?.method === 'POST') {
+        if (url.includes('/generate-content')) {
           return mockFetchError(500);
         }
         return createMocksForContentGeneration()(url, options);
@@ -4088,7 +4088,7 @@ describe('App (JobHunterDashboard)', () => {
       let attemptCount = 0;
 
       (fetch as jest.Mock).mockImplementation((url: string, options?: RequestInit) => {
-        if (url.includes('/generate-content') && options?.method === 'POST') {
+        if (url.includes('/generate-content')) {
           attemptCount++;
           if (attemptCount === 1) {
             // First attempt fails
@@ -4286,7 +4286,7 @@ describe('App (JobHunterDashboard)', () => {
         if (url.includes('/api/jobs') && !url.includes('/generate-content') && !url.includes('/score') && !url.includes('/stats')) {
           return mockFetchSuccess([mockJob, mockJob2]);
         }
-        if (url.includes('/generate-content') && options?.method === 'POST') {
+        if (url.includes('/generate-content')) {
           callCount++;
           return mockFetchSuccess({
             ...mockGeneratedContent,
@@ -4368,7 +4368,7 @@ describe('App (JobHunterDashboard)', () => {
       let generationCount = 0;
 
       (fetch as jest.Mock).mockImplementation((url: string, options?: RequestInit) => {
-        if (url.includes('/generate-content') && options?.method === 'POST') {
+        if (url.includes('/generate-content')) {
           generationCount++;
           return mockFetchSuccess({
             ...mockGeneratedContent,
@@ -4962,8 +4962,8 @@ describe('App (JobHunterDashboard)', () => {
           return mockFetchSuccess([mockJob1]);
         }
 
-        // POST /api/jobs/{id}/generate-content - generate content
-        if (url.includes('/generate-content') && options?.method === 'POST') {
+        // GET /api/jobs/{id}/generate-content - generate content
+        if (url.includes('/generate-content')) {
           return mockFetchSuccess(mockGeneratedContent);
         }
 

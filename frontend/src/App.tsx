@@ -2211,7 +2211,6 @@ const JobHunterDashboard: React.FC = () => {
               // BUG-0003 FIX: Clear old content before triggering new generation
               setGeneratedContent(null);
               setGeneratedContentJob(null);
-              setShowContentGeneration(false);
               setGenerationError(null);
               generateContent(job.job_id);
             }}
@@ -2608,7 +2607,7 @@ const JobHunterDashboard: React.FC = () => {
         />
       )}
 
-      {showContentGeneration && generatedContent && (
+      {showContentGeneration && (
         <div
           style={{
             position: 'fixed',
@@ -2628,6 +2627,7 @@ const JobHunterDashboard: React.FC = () => {
         >
           <div
             role="dialog"
+            data-testid="content-generation-modal"
             style={{
               backgroundColor: 'white',
               borderRadius: '8px',
@@ -2674,115 +2674,126 @@ const JobHunterDashboard: React.FC = () => {
             </div>
 
             <div style={{ flex: 1, overflow: 'auto', padding: '20px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', height: '100%' }}>
-                <div data-testid="cover-letter-panel">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                    <Mail style={{ width: '20px', height: '20px', color: '#10b981' }} />
-                    <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Cover Letter</h3>
-                  </div>
-                  <div
-                    data-testid="cover-letter-content"
-                    style={{
-                      backgroundColor: '#f9fafb',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '4px',
-                      padding: '16px',
-                      fontSize: '14px',
-                      lineHeight: '1.6',
-                      height: '500px',
-                      overflow: 'auto',
-                      whiteSpace: 'pre-wrap'
-                    }}>
-                    {generatedContent.cover_letter}
+              {!generatedContent ? (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px' }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>⏳</div>
+                    <div style={{ fontSize: '18px', color: '#6b7280' }}>Generating...</div>
                   </div>
                 </div>
-
-                <div data-testid="resume-panel">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                    <FileText style={{ width: '20px', height: '20px', color: '#3b82f6' }} />
-                    <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Resume</h3>
+              ) : (
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', height: '100%' }}>
+                  <div data-testid="cover-letter-panel">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                      <Mail style={{ width: '20px', height: '20px', color: '#10b981' }} />
+                      <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Cover Letter</h3>
+                    </div>
+                    <div
+                      data-testid="cover-letter-content"
+                      style={{
+                        backgroundColor: '#f9fafb',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '4px',
+                        padding: '16px',
+                        fontSize: '14px',
+                        lineHeight: '1.6',
+                        height: '500px',
+                        overflow: 'auto',
+                        whiteSpace: 'pre-wrap'
+                      }}>
+                      {generatedContent.cover_letter}
+                    </div>
                   </div>
-                  <div
-                    data-testid="resume-content"
-                    style={{
-                      backgroundColor: '#f9fafb',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '4px',
-                      padding: '16px',
-                      fontSize: '12px',
-                      fontFamily: 'monospace',
-                      lineHeight: '1.5',
-                      height: '500px',
-                      overflow: 'auto',
-                      whiteSpace: 'pre-wrap'
-                    }}>
+
+                  <div data-testid="resume-panel">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                      <FileText style={{ width: '20px', height: '20px', color: '#3b82f6' }} />
+                      <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Resume</h3>
+                    </div>
+                    <div
+                      data-testid="resume-content"
+                      style={{
+                        backgroundColor: '#f9fafb',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '4px',
+                        padding: '16px',
+                        fontSize: '12px',
+                        fontFamily: 'monospace',
+                        lineHeight: '1.5',
+                        height: '500px',
+                        overflow: 'auto',
+                        whiteSpace: 'pre-wrap'
+                      }}>
                     {generatedContent.resume}
                   </div>
                 </div>
               </div>
 
-              <div
-                data-testid="generation-metadata"
-                style={{
-                  marginTop: '20px',
-                  padding: '16px',
-                  backgroundColor: '#f3f4f6',
-                  borderRadius: '4px',
-                  fontSize: '12px',
-                  color: '#6b7280'
-                }}
-              >
-                <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '8px 16px' }}>
-                  <strong>Generated on:</strong>
-                  <span>{new Date(generatedContent.generated_at).toLocaleString()}</span>
+                <div
+                  data-testid="generation-metadata"
+                  style={{
+                    marginTop: '20px',
+                    padding: '16px',
+                    backgroundColor: '#f3f4f6',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    color: '#6b7280'
+                  }}
+                >
+                  <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '8px 16px' }}>
+                    <strong>Generated on:</strong>
+                    <span>{new Date(generatedContent.generated_at).toLocaleString()}</span>
 
-                  <strong>Format:</strong>
-                  <span>{generatedContent.resume_format}</span>
+                    <strong>Format:</strong>
+                    <span>{generatedContent.resume_format}</span>
 
-                  {generatedContent.generation_method && (
-                    <>
-                      <strong>Generation Method:</strong>
-                      <span>
-                        {generatedContent.generation_method === 'llm' ? '🤖 AI-Powered (LLM)' : '📝 Template-based'}
-                      </span>
-                    </>
-                  )}
+                    {generatedContent.generation_method && (
+                      <>
+                        <strong>Generation Method:</strong>
+                        <span>
+                          {generatedContent.generation_method === 'llm' ? '🤖 AI-Powered (LLM)' : '📝 Template-based'}
+                        </span>
+                      </>
+                    )}
 
-                  {generatedContent.llm_model && (
-                    <>
-                      <strong>Model:</strong>
-                      <span data-testid="llm-model">{generatedContent.llm_model}</span>
-                    </>
-                  )}
+                    {generatedContent.llm_model && (
+                      <>
+                        <strong>Model:</strong>
+                        <span data-testid="llm-model">{generatedContent.llm_model}</span>
+                      </>
+                    )}
 
-                  {generatedContent.generation_time_ms !== undefined && (
-                    <>
-                      <strong>Generation Time:</strong>
-                      <span data-testid="generation-time">
-                        {(generatedContent.generation_time_ms / 1000).toFixed(1)}s
-                      </span>
-                    </>
-                  )}
+                    {generatedContent.generation_time_ms !== undefined && (
+                      <>
+                        <strong>Generation Time:</strong>
+                        <span data-testid="generation-time">
+                          {(generatedContent.generation_time_ms / 1000).toFixed(1)}s
+                        </span>
+                      </>
+                    )}
 
-                  {generatedContent.tokens_used !== undefined && (
-                    <>
-                      <strong>Tokens Used:</strong>
-                      <span data-testid="tokens-used">
-                        {generatedContent.tokens_used.toLocaleString()} tokens
-                      </span>
-                    </>
-                  )}
+                    {generatedContent.tokens_used !== undefined && (
+                      <>
+                        <strong>Tokens Used:</strong>
+                        <span data-testid="tokens-used">
+                          {generatedContent.tokens_used.toLocaleString()} tokens
+                        </span>
+                      </>
+                    )}
 
-                  {generatedContent.cost_estimate !== undefined && (
-                    <>
-                      <strong>Cost Estimate:</strong>
-                      <span data-testid="cost-estimate" style={{ color: '#10b981', fontWeight: 'bold' }}>
-                        ${generatedContent.cost_estimate.toFixed(4)}
-                      </span>
-                    </>
-                  )}
+                    {generatedContent.cost_estimate !== undefined && (
+                      <>
+                        <strong>Cost Estimate:</strong>
+                        <span data-testid="cost-estimate" style={{ color: '#10b981', fontWeight: 'bold' }}>
+                          ${generatedContent.cost_estimate.toFixed(4)}
+                        </span>
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
+                </>
+              )}
             </div>
 
             <div style={{

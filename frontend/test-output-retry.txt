@@ -1,0 +1,374 @@
+
+> jobhunter-frontend@0.1.0 test
+> npm run typecheck && jest --watchAll=false --testNamePattern=allows retry after generation error --watchAll=false
+
+
+> jobhunter-frontend@0.1.0 typecheck
+> tsc --noEmit
+
+  console.log
+    [Parent] selectedJob changed: null
+
+      at src/App.tsx:892:13
+
+  console.log
+    [generateContent] Called for job: test-job-1
+
+      at src/App.tsx:1183:13
+
+  console.log
+    [generateContent] Fetching content from API
+
+      at src/App.tsx:1189:15
+
+  console.log
+    [generateContent] Generation complete
+
+      at src/App.tsx:1235:15
+
+FAIL src/App.test.tsx (6.157 s)
+  App (JobHunterDashboard)
+    Initial Rendering
+      ○ skipped renders without crashing
+      ○ skipped displays the application title
+    Data Fetching
+      ○ skipped fetches jobs on mount
+      ○ skipped fetches job stats on mount
+      ○ skipped handles API errors gracefully
+    Tab Navigation
+      ○ skipped starts with intake tab active
+      ○ skipped renders interactive tab buttons
+    Job Status Updates
+      ○ skipped updates job status via API
+    Modal Management
+      ○ skipped can open and close criteria configuration modal
+    Content Generation
+      ○ skipped handles content generation for a job
+    Data Loading and State
+      ○ skipped fetches and stores job scores
+      ○ skipped fetches criteria configuration
+      ○ skipped fetches applications data
+    Job Details and Descriptions
+      ○ skipped handles jobs with compensation details
+      ○ skipped handles jobs with remote work details
+      ○ skipped handles jobs with employment details
+    Stats Display
+      ○ skipped displays job statistics
+      ○ skipped handles empty statistics
+    Refresh Functionality
+      ○ skipped handles refresh requests
+    State Management
+      ○ skipped maintains job list state after fetching
+      ○ skipped tracks loading state during data fetching
+    Error Handling
+      ○ skipped handles network errors during job fetching
+      ○ skipped handles API unavailability gracefully
+    Integration Tests
+      ○ skipped fetches jobs and displays them in the appropriate tab
+    Modal Lifecycle - Job Details
+      ○ skipped opens job details modal when job is clicked
+      ○ skipped closes job details modal when X button is clicked
+      ○ skipped closes job details modal when clicking outside
+      ○ skipped fetches email body when modal opens
+    Modal Lifecycle - Content Generation
+      ○ skipped initiates content generation for a job
+      ○ skipped handles content generation success
+      ○ skipped handles content generation errors gracefully
+      ○ skipped displays generation metadata (LLM model, tokens, cost)
+    Modal Lifecycle - Resume Management
+      ○ skipped opens resume management modal
+      ○ skipped fetches resume versions when modal opens
+    Modal Lifecycle - Email Composer
+      ○ skipped opens email composer modal
+    Modal Lifecycle - Criteria Configuration
+      ○ skipped opens criteria configuration modal
+      ○ skipped loads existing criteria when modal opens
+    Job Status Workflows - Detailed
+      ○ skipped approves a job successfully
+      ○ skipped rejects a job successfully
+      ○ skipped marks a job as applied successfully
+      ○ skipped handles status update failures with optimistic UI update
+      ○ skipped refreshes job list after status update
+      ○ skipped updates stats after status change
+    Filter and Search Functionality
+      ○ skipped filters jobs by status (new)
+      ○ skipped filters jobs by status (approved)
+      ○ skipped filters jobs by status (applied)
+      ○ skipped filters jobs by status (filtered)
+      ○ skipped shows all jobs regardless of status
+      ○ skipped handles empty filter results
+      ○ skipped sorts filtered jobs by date
+    Tab Navigation and State (Phase 2A)
+      ○ skipped displays intake tab as default on mount
+      ○ skipped switches to ignored tab when clicked
+      ○ skipped switches to filtered tab when clicked
+      ○ skipped switches to failed tab when clicked
+      ○ skipped switches to duplicates tab when clicked
+      ○ skipped switches to new tab when clicked
+      ○ skipped switches to approved tab when clicked
+      ○ skipped switches to applied tab when clicked
+      ○ skipped switches to follow-ups tab when clicked
+      ○ skipped switches to calendar tab when clicked
+      ○ skipped switches to ranked jobs tab when clicked
+      ○ skipped switches to all tab when clicked
+      ○ skipped fetches stats on mount and displays data
+      ○ skipped preserves tab state when opening and closing criteria modal
+      ○ skipped filters jobs correctly on new tab
+      ○ skipped filters jobs correctly on approved tab
+      ○ skipped filters jobs correctly on applied tab
+      ○ skipped displays all jobs on all tab
+    Refresh and Rescore Functionality
+      ○ skipped handles manual refresh of all data
+      ○ skipped refreshes jobs, stats, and applications together
+      ○ skipped handles rescore errors gracefully
+      ○ skipped updates UI with refreshed data
+    Advanced Error Handling and Edge Cases
+      ○ skipped handles multiple simultaneous API failures
+      ○ skipped handles partial API failures gracefully
+      ○ skipped handles slow API responses without hanging
+      ○ skipped handles malformed API responses
+      ○ skipped handles empty or null job data
+      ○ skipped handles rate limiting responses (429)
+    Condensed Descriptions Management
+      ○ skipped fetches condensed description for a job
+      ○ skipped caches condensed descriptions to prevent duplicate requests
+      ○ skipped handles condensed description fetch errors gracefully
+      ○ skipped refreshes a single condensed description
+      ○ skipped clears all cached descriptions
+      ○ skipped prevents duplicate fetches for same job
+    Resume Management Workflows
+      ○ skipped opens resume management modal
+      ○ skipped fetches resume versions
+      ○ skipped handles empty resume list
+      ○ skipped handles resume fetch errors
+      ○ skipped identifies master resume
+      ○ skipped handles multiple resume versions
+    Download Functionality
+      ○ skipped downloads generated resume
+      ○ skipped downloads generated cover letter
+      ○ skipped sanitizes filenames for downloads
+      ○ skipped creates proper blob URLs for downloads
+      ○ skipped cleans up blob URLs after download
+    Complex Modal State Transitions
+      ○ skipped opens job details modal
+      ○ skipped closes job details modal
+      ○ skipped preserves state when switching between modals
+      ○ skipped handles opening multiple modals in sequence
+      ○ skipped maintains scroll position in modals
+    Application Management
+      ○ skipped fetches and displays applications
+      ○ skipped associates applications with jobs
+      ○ skipped displays draft status for applications
+      ○ skipped displays submitted status for applications
+      ○ skipped handles applications without draft URLs
+      ○ skipped handles applications without dates
+    Job Data Edge Cases
+      ○ skipped handles jobs with null salary
+      ○ skipped handles jobs with missing location
+      ○ skipped handles jobs with missing description
+      ○ skipped handles jobs with empty raw_data
+      ○ skipped handles jobs with partial raw_data
+      ○ skipped handles jobs with very long titles
+      ○ skipped handles jobs with special characters in company names
+    Concurrent Operations
+      ○ skipped handles multiple status updates in quick succession
+      ○ skipped handles refresh while modal is open
+      ○ skipped handles data updates while generating content
+    Criteria Configuration Modal (Phase 1A)
+      ○ skipped opens criteria config modal when Configure Criteria button clicked
+      ○ skipped displays current criteria values when modal opens
+      ○ skipped updates min_salary field when user types new value
+      ○ skipped updates max_commute_time field when user types
+      ○ skipped updates max_commute_days_per_week field
+      ○ skipped updates preferred_domains checkboxes when user clicks
+      ○ skipped updates remote_preference radio buttons
+      ○ skipped saves criteria when Save button clicked
+      ○ skipped calls API with correct payload on save
+      ○ skipped closes modal after successful save
+      ○ skipped displays error message if save fails
+      ○ skipped preserves unsaved changes when modal closed without saving
+    Content Generation Modal (Phase 1B)
+      ✕ allows retry after generation error (5541 ms)
+      ○ skipped opens content generation modal when Generate button clicked
+      ○ skipped displays job title and company in modal header
+      ○ skipped shows loading state during generation
+      ○ skipped displays generated resume content after successful generation
+      ○ skipped displays generated cover letter content
+      ○ skipped shows LLM metadata (model, tokens, cost, time) when available
+      ○ skipped formats LLM metadata correctly (commas, decimals)
+      ○ skipped handles generation errors gracefully
+      ○ skipped downloads resume when Download button clicked
+      ○ skipped opens email composer when Email button clicked
+      ○ skipped closes modal when close button clicked
+      ○ skipped closes modal when Close button in footer clicked
+      ○ skipped preserves generated content when modal reopened
+      ○ skipped shows different content for different jobs
+      ○ skipped handles missing LLM metadata gracefully
+      ○ skipped displays resume format indicator
+      ○ skipped allows regeneration of content
+    Resume Management Modal (Phase 1C)
+      ○ skipped opens resume management modal when button clicked
+      ○ skipped displays list of existing resume versions
+      ○ skipped shows master resume indicator
+      ○ skipped uploads new resume when form submitted
+      ○ skipped validates resume content before upload
+      ○ skipped sets first resume as master automatically
+      ○ skipped changes master resume when Set as Master clicked
+      ○ skipped deletes resume with confirmation
+      ○ skipped cancels deletion when user clicks cancel
+      ○ skipped loads resume from file
+      ○ skipped displays success/error messages
+      ○ skipped closes modal and refreshes list
+    Email Composer Modal (Phase 1D)
+      ○ skipped opens email composer from content generation
+      ○ skipped pre-fills recipient, subject, body
+      ○ skipped displays cover letter preview
+      ○ skipped shows resume attachment info
+      ○ skipped allows editing fields
+      ○ skipped creates Gmail draft when submitted
+      ○ skipped displays success message with Gmail link
+      ○ skipped opens Gmail in new tab
+      ○ skipped handles errors gracefully
+      ○ skipped closes modal
+
+  ● App (JobHunterDashboard) › Content Generation Modal (Phase 1B) › allows retry after generation error
+
+    Unable to find an element by: [data-testid="modal-overlay"]
+
+    Ignored nodes: comments, script, style
+    [36m<body>[39m
+      [36m<div>[39m
+        [36m<div[39m
+          [33mstyle[39m=[32m"min-height: 100vh; background-color: rgb(249, 250, 251); overflow-x: hidden; width: 100%;"[39m
+        [36m>[39m
+          [36m<header[39m
+            [33mstyle[39m=[32m"background-color: white; border-bottom: 1px solid rgb(229, 231, 235); width: 100%;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mstyle[39m=[32m"max-width: 1280px; margin: 0px auto; padding: 16px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center;"[39m
+            [36m>[39m
+              [36m<div>[39m
+                [36m<h1[39m
+                  [33mstyle[39m=[32m"font-size: 30px; font-weight: bold; color: rgb(17, 24, 39);"[39m
+                [36m>[39m
+                  [0mJobHunter[0m
+                [36m</h1>[39m
+                [36m<p[39m
+                  [33mstyle[39m=[32m"color: rgb(107, 114, 128);"[39m
+                [36m>[39m
+                  [0mStreamline your job search workflow[0m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mstyle[39m=[32m"display: flex; gap: 12px;"[39m
+              [36m>[39m
+                [36m<button[39m
+                  [33mstyle[39m=[32m"padding: 10px 20px; border-radius: 6px; border: 1px solid rgb(59, 130, 246); background-color: white; color: rgb(59, 130, 246); font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; transition: all 0.2s; opacity: 1;"[39m
+                  [33mtitle[39m=[32m"Refresh jobs, stats, and applications data"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33mclass[39m=[32m"lucide lucide-refresh-cw"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"24"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mstyle[39m=[32m"width: 18px; height: 18px; animation: none;"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"24"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M21 3v5h-5"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M8 16H3v5"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                  [0mRefresh Data[0m
+                [36m</button>[39m
+                [36m<button[39m
+                  [33mdata-testid[39m=[32m"configure-criteria-button"[39m
+                  [33mstyle[39m=[32m"padding: 10px 20px; border-radius: 6px; border: 1px solid rgb(139, 92, 246); background-color: white; color: rgb(139, 92, 246); font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; transition: all 0.2s;"[39m
+                  [33mtitle[39m=[32m"Configure job search criteria and filters"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33mclass[39m=[32m"lucide lucide-settings"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"24"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mstyle[39m=[32m"width: 18px; height: 18px;"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"24"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"[39m
+                    [36m/>[39m
+                    [36m<circle[39m
+                      [33mcx[39m=[32m"12"[39m
+                      [33mcy[39m=[32m"12"[39m
+                      [33mr[39m=[32m"3"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                  [0mConfigure Criteria[0m
+                [36m</button>[39m
+                [36m<button[39m
+                  [33mstyle[39m=[32m"padding: 10px 20px; border-radius: 6px; border: 1px solid rgb(245, 158, 11); background-color: white; color: rgb(245, 158, 11); font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; transition: all 0.2s; opacity: 1;"[39m
+                  [33mtitle[39m=[32m"Recalculate scores for all jobs"[39m
+                [36m>[39m
+                  [0m⭐ Rescore All[0m
+                [36m</button>[39m
+                [36m<button[39m
+                  [33mstyle[39m=[32m"padding: 10px 20px; border-radius: 6px; border: 1px solid rgb(16, 185, 129); background-color: white; color: rgb(16, 185, 129); font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; transition: all 0.2s;"[39m
+                  [33mtitle[39m=[32m"Clear all cached descriptions and refresh"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33mclass[39m=[32m"lucide lucide-refresh-cw"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"24"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mstyle[39m=[32m"width: 18px; height: 18px;"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"24"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M21 3v5h-5"[39m
+                    [36m/>[...
+
+      4116 |       fireEvent.click(generateButton);
+      4117 |
+    > 4118 |       await waitFor(() => {
+           |                    ^
+      4119 |         expect(screen.getByTestId('modal-overlay')).toBeInTheDocument();
+      4120 |         expect(screen.getByTestId('resume-content')).toBeInTheDocument();
+      4121 |       }, { timeout: 5000 });
+
+      at waitForWrapper (node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/wait-for.js:166:27)
+      at src/App.test.tsx:4118:20
+      at step (src/App.test.tsx:44:23)
+      at Object.next (src/App.test.tsx:25:53)
+      at fulfilled (src/App.test.tsx:16:58)
+
+Test Suites: 1 failed, 11 skipped, 1 of 12 total
+Tests:       1 failed, 421 skipped, 422 total
+Snapshots:   0 total
+Time:        7.183 s
+Ran all test suites with tests matching "allows retry after generation error".
