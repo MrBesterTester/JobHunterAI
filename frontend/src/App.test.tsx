@@ -4176,8 +4176,9 @@ describe('App (JobHunterDashboard)', () => {
         expect(generateButton).not.toBeDisabled();
       });
 
-      // Retry - should succeed
-      fireEvent.click(generateButton);
+      // Retry - should succeed (re-query button to get fresh reference)
+      const generateButtonRetry = screen.getByTestId('generate-content-button');
+      fireEvent.click(generateButtonRetry);
 
       // FIX (ISSUE-023): Wait for actual mock content, not "Sam Kirk" which isn't in the mock
       await waitFor(() => {
@@ -4336,7 +4337,9 @@ describe('App (JobHunterDashboard)', () => {
       });
 
       // Reopen modal by clicking generate again (will regenerate content - app clears old content first)
-      fireEvent.click(generateButton);
+      // ISSUE-023: Re-query button to get fresh DOM reference
+      const generateButtonRetry = screen.getByTestId('generate-content-button');
+      fireEvent.click(generateButtonRetry);
 
       // Content should be regenerated and displayed
       await waitFor(() => {
@@ -4413,7 +4416,9 @@ describe('App (JobHunterDashboard)', () => {
         expect(screen.queryByTestId('modal-overlay')).not.toBeInTheDocument();
       });
 
-      fireEvent.click(generateButtons[1]);
+      // ISSUE-023: Re-query buttons to get fresh DOM references
+      const generateButtonsRetry = screen.getAllByTestId('generate-content-button');
+      fireEvent.click(generateButtonsRetry[1]);
 
       await waitFor(() => {
         expect(screen.getByTestId('resume-content')).toHaveTextContent('Resume for job 2');

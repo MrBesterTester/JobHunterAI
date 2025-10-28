@@ -880,6 +880,8 @@ const JobDetails: React.FC<{
 
 const JobHunterDashboard: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
+  // ISSUE-023: Use ref to track current jobs without adding to dependency arrays
+  const jobsRef = React.useRef<Job[]>([]);
   const [jobScores, setJobScores] = useState<Map<string, JobScore>>(new Map());
   const [applications, setApplications] = useState<Application[]>([]);
   const [criteria, setCriteria] = useState<JobCriteria | null>(null);
@@ -891,6 +893,12 @@ const JobHunterDashboard: React.FC = () => {
   React.useEffect(() => {
     console.log('[Parent] selectedJob changed:', selectedJob ? `Job ID: ${selectedJob.job_id}` : 'null');
   }, [selectedJob]);
+
+  // ISSUE-023: Keep jobsRef in sync with jobs state
+  React.useEffect(() => {
+    jobsRef.current = jobs;
+  }, [jobs]);
+
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [showCriteriaConfig, setShowCriteriaConfig] = useState<boolean>(false);
@@ -1208,15 +1216,12 @@ const JobHunterDashboard: React.FC = () => {
 
       console.log('[generateContent] Content received, updating state');
 
-      // Use functional setState to get the current job
-      setJobs(prevJobs => {
-        const job = prevJobs.find(j => j.job_id === jobId);
-        console.log('[generateContent] Found job:', job ? job.title : 'not found');
-        setGeneratedContentJob(job || null);
-        return prevJobs; // Return unchanged
-      });
+      // Find the current job from ref (ISSUE-023: Use ref to avoid stale closure)
+      const job = jobsRef.current.find(j => j.job_id === jobId);
+      console.log('[generateContent] Found job:', job ? job.title : 'not found');
 
-      // Set generated content
+      // Set job and content states (ISSUE-023: Fixed nested setState anti-pattern)
+      setGeneratedContentJob(job || null);
       setGeneratedContent(content);
 
       // Fetch applications to ensure we have the latest application_id BEFORE opening modal
@@ -1235,7 +1240,7 @@ const JobHunterDashboard: React.FC = () => {
       setGeneratingContent(false);
       console.log('[generateContent] Generation complete');
     }
-  }, []); // Empty dependency array - use functional setState to access current jobs
+  }, []); // ISSUE-023: Empty dependency array, use jobsRef to access current jobs
 
   const downloadGeneratedContent = (): void => {
     if (!generatedContent || !generatedContentJob) return;
