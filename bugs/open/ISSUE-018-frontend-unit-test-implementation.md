@@ -51,7 +51,7 @@ related: [ISSUE-013, ISSUE-023]](#id-issue-018%0Atitle-frontend-unit-test-implem
       - [3B. Job Rejection Workflow ✅ **COMPLETED (2025-10-28)**](#3b-job-rejection-workflow--completed-2025-10-28)
       - [3C. Application Workflow ✅ **COMPLETED (2025-10-28)** (~2 hours, 8 tests)](#3c-application-workflow--completed-2025-10-28-2-hours-8-tests)
     - [Phase 4: Job Details and Expansion (2-4 hours)](#phase-4-job-details-and-expansion-2-4-hours-1)
-      - [4A. Job Card Interactions (1-2 hours, ~8-10 tests)](#4a-job-card-interactions-1-2-hours-8-10-tests)
+      - [4A. Job Card Interactions ✅ **COMPLETED (2025-10-28)** (10 tests)](#4a-job-card-interactions--completed-2025-10-28-10-tests)
       - [4B. Job Details Modal (1-2 hours, ~8-10 tests)](#4b-job-details-modal-1-2-hours-8-10-tests)
     - [Timeline and Effort Estimates](#timeline-and-effort-estimates-1)
     - [Coverage Outcomes](#coverage-outcomes)
@@ -1110,16 +1110,23 @@ open coverage/index.html
 
 ### Phase 4: Job Details and Expansion (2-4 hours)
 
-#### 4A. Job Card Interactions (1-2 hours, ~8-10 tests)
+#### 4A. Job Card Interactions ✅ **COMPLETED (2025-10-28)** (10 tests)
 
-**Tests to Add**:
-- [ ] Expands job card when clicked
-- [ ] Displays full description when expanded
-- [ ] Shows compensation, employment, remote, domain details sections
-- [ ] Collapses card when clicked again
-- [ ] Preserves expansion state for multiple cards
-- [ ] Scrolls to expanded card
-- [ ] Loads email body on demand
+**Tests Implemented**:
+- [x] Expands job card when clicked, opening JobDetails modal
+- [x] Displays full job description when expanded
+- [x] Shows compensation section when job has compensation data
+- [x] Shows employment section when job has employment data
+- [x] Shows location/remote section when job has remote work or commute data
+- [x] Shows technical/domain section when job has domain data
+- [x] Collapses card when close button clicked
+- [x] Collapses card when modal overlay clicked
+- [x] Only allows one job card to be expanded at a time
+- [x] Loads email body on demand when modal opens
+
+**Actual Tests**: 10 tests implemented (100% passing)
+**Actual Time**: ~2 hours
+**Result**: All job card interaction and modal display functionality comprehensively tested
 
 #### 4B. Job Details Modal (1-2 hours, ~8-10 tests)
 
@@ -1150,8 +1157,8 @@ open coverage/index.html
 | Phase 2B | Job List Filtering | 4-5 hours | 15-20 | ✅ **DONE** (18 tests) |
 | Phase 3A | Approval Workflow | 1.5-2 hours | 6-8 | ✅ **DONE** (7 tests, 1 skipped) |
 | Phase 3B | Rejection Workflow | 1.5-2 hours | 6-8 | ✅ **DONE** (7 tests, 1 skipped) |
-| Phase 3C | Application Workflow | 2-3 hours | 8-12 | Pending |
-| Phase 4A | Job Card Interactions | 1-2 hours | 8-10 | Pending |
+| Phase 3C | Application Workflow | 2-3 hours | 8-12 | ✅ **DONE** (8 tests) |
+| Phase 4A | Job Card Interactions | 1-2 hours | 8-10 | ✅ **DONE** (10 tests) |
 | Phase 4B | Job Details Modal | 1-2 hours | 8-10 | Pending |
 | **Total** | | **26-36 hours** | **101-137 tests** | **101/101+ implemented** |
 
