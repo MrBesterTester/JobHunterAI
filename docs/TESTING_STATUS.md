@@ -11,8 +11,6 @@
   - [Medium-Term Recommendation: Fix E2E Test Suite](#medium-term-recommendation-fix-e2e-test-suite)
   - [Summary: Short-Term vs Medium-Term](#summary-short-term-vs-medium-term)
   - [⚠️ Skipped Tests Summary (8 Total)](#-skipped-tests-summary-8-total)
-- [Optional Future Work](#optional-future-work)
-  - [Components Below 60% Coverage](#components-below-60%25-coverage)
 - [Comprehensive Status Report: Frontend Testing Journey](#comprehensive-status-report-frontend-testing-journey)
   - [October 23, 2025 - Test Report (Genesis)](#october-23-2025---test-report-genesis)
   - [ISSUE-018: Frontend Unit Test Implementation](#issue-018-frontend-unit-test-implementation)
@@ -174,36 +172,6 @@
    - **Details**: frontend/src/App.test.tsx lines 9727-10269 (comprehensive TODO comments)
 
 **Impact**: Skipped tests represent <2% of test suite (8/481). Core functionality is thoroughly tested through 473 passing tests.
-
----
-
-## Optional Future Work
-
-**Status**: Primary goal of 60%+ coverage achieved (78.3%). The following work is **optional** for improving coverage of specific components:
-
-### Components Below 60% Coverage
-
-1. **IntakeTab.tsx** (54.82% → 60%): ~5.2% gap
-   - Add tests for job source identification logic
-   - Add tests for filtering criteria application
-   - Add tests for manual job entry workflows
-   - **Estimated effort**: 3-5 hours
-
-2. **RankedJobsTab.tsx** (51.81% → 60%): ~8.2% gap
-   - Add tests for job ranking calculations
-   - Add tests for score weighting adjustments
-   - Add tests for ranking display logic
-   - **Estimated effort**: 4-6 hours
-
-3. **FollowupsTab.tsx** (15.5% → 60%): ~44.5% gap
-   - This component has minimal business logic (mostly display)
-   - **Low priority** - would require significant effort for minimal value
-   - **Estimated effort**: 8-12 hours
-   - **Recommendation**: Skip unless specifically needed
-
-**Total Optional Work**: 15-23 hours to bring all components to 60%+
-
-**Recommendation**: Maintain current 78.3% coverage. Focus on test quality and ensuring new features include tests to maintain 75%+ overall coverage.
 
 ---
 
