@@ -47,7 +47,7 @@ related: [ISSUE-022]
 - **Fixed**: 3 Email Composer Modal tests ✅
 - **Remaining**: 5 Content Generation Modal tests still failing (different root cause)
 
-**Started with**: 8 failing tests (5 Content Generation Modal tests + 3 Email Composer Modal tests). **Fixed**: 3 Email Composer Modal tests ✅. **Remaining**: 5 Content Generation Modal tests (still failing). **Progress**: 3 out of 8 fixed (37.5%). The test count improved from 414/422 passing (8 failing) to 417/422 passing (5 failing), an improvement of +3 tests fixed.
+**Started with**: 8 failing tests (5 Content Generation Modal tests + 3 Email Composer Modal tests). **Fixed**: 3 Email Composer Modal tests ✅. **Remaining**: 5 Content Generation Modal tests (still failing, but with a different root cause - they fail during test setup, not during content generation). **Progress**: 3 out of 8 fixed (37.5%). The test count improved from 414/422 passing (8 failing) to 417/422 passing (5 failing), an improvement of +3 tests fixed.
 
 ## Next Steps (2025-10-27)
 
