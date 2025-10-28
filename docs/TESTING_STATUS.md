@@ -6,6 +6,7 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Quick Status Overview](#quick-status-overview)
+  - [⚠️ Skipped Tests Summary (8 Total)](#-skipped-tests-summary-8-total)
 - [Comprehensive Status Report: Frontend Testing Journey](#comprehensive-status-report-frontend-testing-journey)
   - [October 23, 2025 - Test Report (Genesis)](#october-23-2025---test-report-genesis)
   - [ISSUE-018: Frontend Unit Test Implementation](#issue-018-frontend-unit-test-implementation)
@@ -40,6 +41,31 @@
 
 **Closed Issues**:
 - **ISSUE-023**: Frontend Test Failures ✅ **FIXED** (Moved to fixed/ 2025-10-28)
+
+---
+
+### ⚠️ Skipped Tests Summary (8 Total)
+
+**IMPORTANT**: 8 tests are intentionally skipped - **these are NOT app bugs**. All skipped tests document known testing limitations, not functional issues.
+
+**Breakdown by Category**:
+
+1. **Content Generation Modal (4 skipped)** - From ISSUE-023
+   - **Reason**: React state batching architectural limitation
+   - **Root Cause**: Loading states appear for microseconds (too fast to test with 100ms timeout)
+   - **Status**: Functionality verified working in production
+   - **Details**: [ISSUE-023 Session 3](../bugs/fixed/ISSUE-023-frontend-test-failures---content-generation-state-propagation-issues.md)
+
+2. **Job Details Modal (4 skipped)** - From Phase 4B
+   - **Reason**: Test environment timing issues with React render cycles
+   - **Root Cause**: Modal opening timing in specific test scenarios
+   - **Status**: Modal functionality verified working in Phase 4A tests and app
+   - **Tests**: Action buttons display, core fields display, approve/reject buttons
+   - **Details**: frontend/src/App.test.tsx lines 9727-10269 (comprehensive TODO comments)
+
+**Impact**: Skipped tests represent <2% of test suite (8/481). Core functionality is thoroughly tested through 473 passing tests.
+
+---
 
 **Recent Progress** (2025-10-28):
 - ✅ **Phase 3A COMPLETED**: Job Approval Workflow Tests (7 tests added, 1 skipped)
