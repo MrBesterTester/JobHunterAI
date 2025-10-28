@@ -67,13 +67,11 @@
 - ⚠️ RankedJobsTab.tsx: 51.81% (~8% gap to 60%)
 - ⚠️ FollowupsTab.tsx: 15.5% (low priority - minimal business logic)
 
-**Issues Ready to Close**:
-- **ISSUE-018**: Frontend Unit Test Implementation ✅ **READY TO CLOSE**
+**Closed Issues**:
+- **ISSUE-018**: Frontend Unit Test Implementation ✅ **CLOSED** (Moved to fixed/ 2025-10-28)
   - Status: All Phases 1-4B completed (2025-10-28)
   - Goal: 60%+ coverage → **ACHIEVED: 78.3%**
   - All planned work complete
-
-**Closed Issues**:
 - **ISSUE-023**: Frontend Test Failures ✅ **FIXED** (Moved to fixed/ 2025-10-28)
 
 ---
