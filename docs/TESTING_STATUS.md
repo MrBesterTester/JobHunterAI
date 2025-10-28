@@ -6,6 +6,10 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Quick Status Overview](#quick-status-overview)
+- [🎯 Recommended Next Steps](#-recommended-next-steps)
+  - [Short-Term Recommendation: Address Unit Test Coverage Gaps](#short-term-recommendation-address-unit-test-coverage-gaps)
+  - [Medium-Term Recommendation: Fix E2E Test Suite](#medium-term-recommendation-fix-e2e-test-suite)
+  - [Summary: Short-Term vs Medium-Term](#summary-short-term-vs-medium-term)
   - [⚠️ Skipped Tests Summary (8 Total)](#-skipped-tests-summary-8-total)
 - [Optional Future Work](#optional-future-work)
   - [Components Below 60% Coverage](#components-below-60%25-coverage)
@@ -73,6 +77,80 @@
   - Goal: 60%+ coverage → **ACHIEVED: 78.3%**
   - All planned work complete
 - **ISSUE-023**: Frontend Test Failures ✅ **FIXED** (Moved to fixed/ 2025-10-28)
+
+---
+
+## 🎯 Recommended Next Steps
+
+**Context**: Primary coverage goal achieved (78.3%). Both recommendations below are **optional improvements** based on business priorities.
+
+### Short-Term Recommendation: Address Unit Test Coverage Gaps
+
+**Issue**: [ISSUE-024: Frontend Test Coverage Gaps - Components Below 60%](../bugs/open/ISSUE-024-frontend-test-coverage-gaps---components-below-60.md)
+
+**Goal**: Bring specific components up to 60% individual coverage
+
+**Priority Order** (by ROI):
+1. **IntakeTab.tsx** (54.82% → 60%): 3-5 hours, HIGH ROI
+   - Job source identification logic
+   - Filtering criteria application
+   - Manual job entry workflows
+2. **RankedJobsTab.tsx** (51.81% → 60%): 4-6 hours, MEDIUM ROI
+   - Job ranking calculations
+   - Score weighting adjustments
+3. **FollowupsTab.tsx** (15.5% → 60%): 8-12 hours, LOW ROI
+   - **Recommendation: SKIP** - minimal business logic, poor effort/value ratio
+
+**Total Effort**: 3-5 hours (IntakeTab only) or 7-11 hours (IntakeTab + RankedJobsTab)
+
+**Recommendation**: Focus on IntakeTab.tsx first (best ROI), skip FollowupsTab.tsx entirely.
+
+---
+
+### Medium-Term Recommendation: Fix E2E Test Suite
+
+**Issue**: [ISSUE-025: E2E Test Suite Health - Skipped and Failing Tests](../bugs/open/ISSUE-025-e2e-test-suite-health---skipped-and-failing-tests.md)
+
+**Goal**: Restore E2E (end-to-end) browser testing to reliable state
+
+**Current E2E Status** (as of Oct 23, 2025):
+- **219 of 544 tests passing** (40.3% pass rate) ⚠️
+- **76 tests failing** (need investigation)
+- **248 tests skipped** (global timeout)
+- **Runtime**: 53 minutes (target: <10 minutes)
+
+**Why E2E tests matter:**
+- Unit tests (78.3% coverage) validate component behavior
+- E2E tests validate full workflows, browser integration, and production readiness
+- Both test types are complementary, not redundant
+
+**Phased Approach**:
+1. **Phase 1**: Investigation (4-8 hours) - Categorize failures, identify root causes
+2. **Phase 2**: Quick wins (2-4 hours) - Fix flaky tests, update configuration
+3. **Phase 3**: Systematic fixes (20-30 hours) - Address root causes
+4. **Phase 4**: Ongoing maintenance - Monitor health, keep tests updated
+
+**Total Effort**: 40-60 hours (spread over 4-6 weeks)
+
+**Recommendation**: Start with Phase 1 (investigation) to understand current state, then prioritize fixes by impact.
+
+---
+
+### Summary: Short-Term vs Medium-Term
+
+| Dimension | Short-Term (ISSUE-024) | Medium-Term (ISSUE-025) |
+|-----------|------------------------|-------------------------|
+| **Focus** | Unit test coverage gaps | E2E test suite health |
+| **Effort** | 3-11 hours | 40-60 hours |
+| **Priority** | Optional (goal achieved) | Medium (production confidence) |
+| **ROI** | High (IntakeTab), Low (FollowupsTab) | High (integration testing) |
+| **Timeline** | 1-2 days | 4-6 weeks |
+| **Next Step** | Decide on IntakeTab vs skip | Run E2E suite, analyze failures |
+
+**Guidance**: Both are optional improvements. Choose based on current business priorities:
+- Need faster component-level confidence? → Focus on ISSUE-024 (IntakeTab)
+- Need end-to-end workflow validation? → Focus on ISSUE-025 (E2E tests)
+- Limited time? → Maintain current unit test coverage (78.3%) and defer both
 
 ---
 
