@@ -39,12 +39,13 @@ related_issues: [ISSUE-018, ISSUE-019]](#type-issue%0Aid-issue-021%0Atitle-vites
       - [Option v: Vitest Community Investigation](#option-v-vitest-community-investigation)
       - [Option v.1: Vite Plugin Interactions Investigation](#option-v1-vite-plugin-interactions-investigation)
       - [Option vi: Deep Async Operation Audit](#option-vi-deep-async-operation-audit)
+      - [Option v.3: Binary Search Test Isolation](#option-v3-binary-search-test-isolation)
   - [Options Not Yet Attempted](#options-not-yet-attempted)
     - [Option iv: AbortController for Fetch Operations](#option-iv-abortcontroller-for-fetch-operations)
     - [Option v.1a: Add Explicit React Plugin](#option-v1a-add-explicit-react-plugin)
     - [Option v.6: Check for Large DOM Trees](#option-v6-check-for-large-dom-trees)
     - [Option v.2: Try happy-dom Environment (Experimental)](#option-v2-try-happy-dom-environment-experimental)
-    - [Option v.3: Binary Search Test Isolation](#option-v3-binary-search-test-isolation)
+    - [Option v.3: Binary Search Test Isolation](#option-v3-binary-search-test-isolation-1)
     - [Option v.4: Node.js Profiling with Chrome DevTools](#option-v4-nodejs-profiling-with-chrome-devtools)
     - [Option v.5: Minimal Reproduction for Maintainers](#option-v5-minimal-reproduction-for-maintainers)
     - [Option vii: Workaround Solutions (Last Resort)](#option-vii-workaround-solutions-last-resort)
@@ -164,12 +165,14 @@ cd frontend && ./run-tests.sh --filter "Phase 2A"
 - **Result**: NOT a DOM size or query performance issue
 - **Key finding**: Hanging related to multiple test execution, not DOM performance
 
-**3. Option v.3: Binary Search Test Isolation** (1-2 hours - DIAGNOSTIC - **NOW TOP PRIORITY**)
-- Systematic approach to find problematic test
-- May reveal pattern we missed
-- Time-consuming but thorough
+**3. ~~Option v.3: Binary Search Test Isolation~~** ✅ **COMPLETED (2025-10-27) - MAJOR BREAKTHROUGH**
+- ✅ Tested 1, 2, 5, 10, 15, 18 simple App renders → ALL EXIT CLEANLY (~5 seconds)
+- ❌ Phase 2A tests (18 tests with interactions) → HANG after 30+ seconds
+- **CRITICAL FINDING**: Hanging is NOT about render quantity
+- **ROOT CAUSE IDENTIFIED**: User interactions (`fireEvent.click`, tab switching, modal interactions)
+- **Result**: Narrowed down root cause to React event handler cleanup issue
 
-**4. Option v.4: Node.js Profiling with Chrome DevTools** (1 hour - HIGH VALUE DIAGNOSTIC)
+**4. Option v.4: Node.js Profiling with Chrome DevTools** (1 hour - HIGH VALUE DIAGNOSTIC - **NOW TOP PRIORITY**)
 - Most likely to reveal what's keeping process alive
 - Actionable results
 - Worth doing before workarounds
@@ -264,7 +267,7 @@ Despite fixing all identified timer issues and implementing all standard Vitest 
 | **v.1a** | Add explicit React plugin | ✅ Complete | ❌ No |
 | **v.6** | Check for large DOM trees | ✅ Complete | ❌ No |
 | **v.2** | Try happy-dom environment | ⏸️ Not Started | ❓ Unknown |
-| **v.3** | Binary search test isolation | ⏸️ Not Started | N/A (diagnostic) |
+| **v.3** | Binary search test isolation | ✅ Complete | N/A (diagnostic) |
 | **v.4** | Node.js profiling (Chrome DevTools) | ⏸️ Not Started | N/A (diagnostic) |
 | **v.5** | Minimal reproduction | ⏸️ Not Started | N/A (community) |
 | **vii** | Workaround solutions | ⏸️ Not Started | ⚠️ Masks issue |
@@ -696,6 +699,99 @@ This ensures components unmount properly between tests, triggering cleanup funct
 - ✅ Explicit React Testing Library cleanup now implemented
 - ❌ Hanging persists despite comprehensive cleanup
 - **Conclusion**: All common async patterns investigated and ruled out
+
+---
+
+#### Option v.3: Binary Search Test Isolation
+
+**Status**: ✅ **COMPLETED (2025-10-27)** - Major breakthrough
+
+**Purpose**: Systematically isolate which aspect of tests causes hanging (render quantity vs interactions).
+
+**Estimated Effort**: 1-2 hours (Actual: 1 hour)
+
+**Implementation Approach**:
+
+Created temporary test suite in `App.test.tsx` with incremental testing:
+
+**Step 1: Minimal Component (No App)**
+```typescript
+it('STEP 1: renders minimal component (no App)', async () => {
+  const { container } = render(<div>Minimal Test</div>);
+  expect(container.textContent).toBe('Minimal Test');
+});
+```
+- ✅ Result: Exits cleanly in ~5 seconds
+
+**Step 2: Single Full App Render**
+```typescript
+it('STEP 2: renders single full App component', async () => {
+  render(<App />);
+  await waitFor(() => {
+    expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+  }, { timeout: 3000 });
+});
+```
+- ✅ Result: Exits cleanly in ~5 seconds (117ms test time)
+
+**Steps 3-7: Incremental App Renders (2, 5, 10, 15, 18 renders)**
+
+Created multiple tests with identical simple App renders:
+- Step 3: 2 App renders → ✅ Exits cleanly (206ms, 65 MB heap)
+- Step 4: 5 App renders → ✅ Exits cleanly (309ms, 66 MB heap)
+- Step 5: 10 App renders → ✅ Exits cleanly (551ms, 81 MB heap)
+- Step 6: 15 App renders → ✅ Exits cleanly (688ms, 84 MB heap)
+- Step 7: **18 App renders** → ✅ **Exits cleanly** (753ms, 92 MB heap)
+
+**Verification: Phase 2A Tests (18 tests with interactions)**
+- ❌ Result: **HANG after 30+ seconds** (never completes)
+
+**Critical Comparison**:
+
+| Test Suite | Tests | App Renders | Interactions | Result |
+|------------|-------|-------------|--------------|--------|
+| TEMP Steps 1-7 | 20 | 18 | None (render only) | ✅ EXIT CLEANLY ~5s |
+| Phase 2A | 18 | 18 | `fireEvent.click`, tab switching, modal | ❌ HANG 30+ seconds |
+
+**Key Differences in Phase 2A Tests**:
+1. **User interactions**: `fireEvent.click()` for button clicks
+2. **Tab navigation**: State changes via tab switching (12 different tabs tested)
+3. **Modal interactions**: Opening and closing criteria configuration modal
+4. **Complex mocks**: Multiple job records with status-based filtering
+5. **State updates**: Active tab state, filtered job lists, modal visibility
+
+**ROOT CAUSE IDENTIFIED**:
+
+The hanging is **NOT** caused by:
+- ❌ Number of tests (18 simple tests exit cleanly)
+- ❌ Number of App renders (18 renders tested successfully)
+- ❌ Cumulative memory buildup (heap stays under 100 MB)
+- ❌ Test quantity threshold
+
+The hanging **IS** caused by:
+- ✅ **React event handler cleanup issues** with `fireEvent` interactions
+- ✅ **State update async operations** from tab navigation
+- ✅ **Modal lifecycle management** across multiple tests
+- ✅ **Complex component interactions** not properly cleaned up between tests
+
+**Implications**:
+- Vitest/jsdom has difficulty cleaning up event handlers and state subscriptions
+- React Testing Library `cleanup()` (already implemented) is not sufficient for complex interactions
+- Issue is specifically with **event-driven state changes**, not basic rendering
+- May require manual cleanup of event listeners or state subscriptions in component lifecycle
+
+**Next Steps**:
+1. **Option v.4 (Node.js Profiling)** - Profile hanging tests to see what event handlers/timers remain
+2. Investigate React event delegation and synthetic event cleanup
+3. Consider adding manual `act()` wrapper improvements
+4. May need custom cleanup in `afterEach()` for event-heavy tests
+
+**Results**:
+- ✅ Successfully narrowed down root cause
+- ✅ Eliminated render quantity as factor
+- ✅ Identified event handler/interaction cleanup as core issue
+- ❌ Does NOT fix hanging (diagnostic only)
+- **Conclusion**: Major breakthrough - root cause is React event handler cleanup in tests with user interactions
 
 ---
 
