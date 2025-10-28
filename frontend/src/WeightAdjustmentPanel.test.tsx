@@ -1,11 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import WeightAdjustmentPanel from './WeightAdjustmentPanel';
 
 describe('WeightAdjustmentPanel', () => {
   beforeEach(() => {
-    global.fetch = vi.fn();
+    global.fetch = jest.fn();
   });
 
   const mockCriteria = [
@@ -556,7 +556,7 @@ describe('WeightAdjustmentPanel', () => {
   // ===== Callback Props =====
 
   it('should call onWeightsUpdated callback after successful save', async () => {
-    const mockCallback = vi.fn();
+    const mockCallback = jest.fn();
 
     (global.fetch as any)
       .mockResolvedValueOnce({
@@ -660,7 +660,7 @@ describe('WeightAdjustmentPanel', () => {
   });
 
   it('should handle network errors when fetching criteria', async () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
     (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
 

@@ -1,14 +1,13 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { vi, Mock } from 'vitest';
 import RankedJobsTab from './RankedJobsTab';
 
 // Mock fetch globally
-global.fetch = vi.fn();
+global.fetch = jest.fn();
 
 // Mock WeightAdjustmentPanel component
-vi.mock('./WeightAdjustmentPanel', () => ({
+jest.mock('./WeightAdjustmentPanel', () => ({
   default: ({ onWeightsUpdated }: any) => (
     <div data-testid="weight-adjustment-panel">
       <button onClick={() => onWeightsUpdated && onWeightsUpdated()}>
@@ -52,13 +51,13 @@ const createStandardMocks = (overrides: any = {}) => {
 
 describe('RankedJobsTab', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    (fetch as Mock).mockReset();
+    jest.clearAllMocks();
+    (fetch as jest.Mock).mockReset();
   });
 
   describe('Initial Rendering', () => {
     it('renders without crashing', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<RankedJobsTab />);
 
@@ -70,7 +69,7 @@ describe('RankedJobsTab', () => {
     });
 
     it('fetches ranked jobs on mount', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<RankedJobsTab />);
 
@@ -80,7 +79,7 @@ describe('RankedJobsTab', () => {
     });
 
     it('displays loading state initially', () => {
-      (fetch as Mock).mockImplementation(() => new Promise(() => {})); // Never resolves
+      (fetch as jest.Mock).mockImplementation(() => new Promise(() => {})); // Never resolves
 
       render(<RankedJobsTab />);
 
@@ -120,7 +119,7 @@ describe('RankedJobsTab', () => {
         },
       };
 
-      (fetch as Mock).mockImplementation(createStandardMocks({
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({
         rankedJobs: mockJobs,
         scores: mockScores,
       }));
@@ -133,7 +132,7 @@ describe('RankedJobsTab', () => {
     });
 
     it('handles empty job list', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks({ rankedJobs: [] }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ rankedJobs: [] }));
 
       render(<RankedJobsTab />);
 
@@ -179,7 +178,7 @@ describe('RankedJobsTab', () => {
         },
       };
 
-      (fetch as Mock).mockImplementation(createStandardMocks({
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({
         rankedJobs: mockJobs,
         scores: mockScores,
       }));
@@ -204,7 +203,7 @@ describe('RankedJobsTab', () => {
         '2': { job_id: '2', total_score: 70, rank: 2, calculated_at: '2025-10-21' },
       };
 
-      (fetch as Mock).mockImplementation(createStandardMocks({
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({
         rankedJobs: mockJobs,
         scores: mockScores,
       }));
@@ -223,7 +222,7 @@ describe('RankedJobsTab', () => {
         { job_id: '1', title: 'Job A', company: 'CompanyA', source: 'linkedin', status: 'new', date_email_sent: '2025-10-20' },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ rankedJobs: mockJobs }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ rankedJobs: mockJobs }));
 
       render(<RankedJobsTab />);
 
@@ -249,7 +248,7 @@ describe('RankedJobsTab', () => {
         '2': { job_id: '2', total_score: 70, rank: 2, calculated_at: '2025-10-21' },
       };
 
-      (fetch as Mock).mockImplementation(createStandardMocks({
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({
         rankedJobs: mockJobs,
         scores: mockScores,
       }));
@@ -272,7 +271,7 @@ describe('RankedJobsTab', () => {
         // Job 2 has no score
       };
 
-      (fetch as Mock).mockImplementation(createStandardMocks({
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({
         rankedJobs: mockJobs,
         scores: mockScores,
       }));
@@ -297,7 +296,7 @@ describe('RankedJobsTab', () => {
         '2': { job_id: '2', total_score: 50, rank: 2, calculated_at: '2025-10-21' },
       };
 
-      (fetch as Mock).mockImplementation(createStandardMocks({
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({
         rankedJobs: mockJobs,
         scores: mockScores,
       }));
@@ -320,7 +319,7 @@ describe('RankedJobsTab', () => {
         '1': { job_id: '1', total_score: 50, rank: 1, calculated_at: '2025-10-20' },
       };
 
-      (fetch as Mock).mockImplementation(createStandardMocks({
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({
         rankedJobs: mockJobs,
         scores: mockScores,
       }));
@@ -349,7 +348,7 @@ describe('RankedJobsTab', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ rankedJobs: mockJobs }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ rankedJobs: mockJobs }));
 
       render(<RankedJobsTab />);
 
@@ -390,7 +389,7 @@ describe('RankedJobsTab', () => {
         },
       };
 
-      (fetch as Mock).mockImplementation(createStandardMocks({
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({
         rankedJobs: mockJobs,
         scores: mockScores,
       }));
@@ -430,7 +429,7 @@ describe('RankedJobsTab', () => {
         },
       };
 
-      (fetch as Mock).mockImplementation(createStandardMocks({
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({
         rankedJobs: mockJobs,
         scores: mockScores,
       }));
@@ -445,7 +444,7 @@ describe('RankedJobsTab', () => {
 
   describe('Weight Adjustment Integration', () => {
     it('renders weight adjustment panel', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<RankedJobsTab />);
 
@@ -462,7 +461,7 @@ describe('RankedJobsTab', () => {
     it('refreshes jobs when weights are updated', async () => {
       let fetchCallCount = 0;
 
-      (fetch as Mock).mockImplementation((url: string) => {
+      (fetch as jest.Mock).mockImplementation((url: string) => {
         if (url.includes('/api/jobs/ranked')) {
           fetchCallCount++;
           return mockFetchSuccess([]);
@@ -495,9 +494,9 @@ describe('RankedJobsTab', () => {
 
   describe('Error Handling', () => {
     it('handles fetch ranked jobs error gracefully', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-      (fetch as Mock).mockImplementation(() => mockFetchError(500));
+      (fetch as jest.Mock).mockImplementation(() => mockFetchError(500));
 
       render(<RankedJobsTab />);
 
@@ -512,13 +511,13 @@ describe('RankedJobsTab', () => {
     });
 
     it('handles fetch score error for individual job', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
       const mockJobs = [
         { job_id: '1', title: 'Job 1', company: 'A', source: 'linkedin', status: 'new', date_email_sent: '2025-10-20' },
       ];
 
-      (fetch as Mock).mockImplementation((url: string) => {
+      (fetch as jest.Mock).mockImplementation((url: string) => {
         if (url.includes('/api/jobs/ranked')) {
           return mockFetchSuccess(mockJobs);
         }
@@ -538,9 +537,9 @@ describe('RankedJobsTab', () => {
     });
 
     it('handles network errors', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-      (fetch as Mock).mockRejectedValue(new Error('Network error'));
+      (fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
 
       render(<RankedJobsTab />);
 

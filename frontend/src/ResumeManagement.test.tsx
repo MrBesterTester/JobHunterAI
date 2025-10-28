@@ -1,14 +1,13 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { vi, Mock } from 'vitest';
 import ResumeManagement from './ResumeManagement';
 
 // Mock fetch globally
-global.fetch = vi.fn();
+global.fetch = jest.fn();
 
 // Mock window.confirm
-global.confirm = vi.fn(() => true);
+global.confirm = jest.fn(() => true);
 
 // Helper to create mock fetch responses
 const mockFetchSuccess = (data: any) => {
@@ -50,18 +49,18 @@ const createStandardMocks = (overrides: any = {}) => {
 };
 
 describe('ResumeManagement', () => {
-  const mockOnClose = vi.fn();
+  const mockOnClose = jest.fn();
 
   beforeEach(() => {
-    vi.clearAllMocks();
-    (fetch as Mock).mockReset();
-    (global.confirm as Mock).mockReturnValue(true);
+    jest.clearAllMocks();
+    (fetch as jest.Mock).mockReset();
+    (global.confirm as jest.Mock).mockReturnValue(true);
     mockOnClose.mockClear();
   });
 
   describe('Initial Rendering', () => {
     it('renders without crashing', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<ResumeManagement onClose={mockOnClose} />);
 
@@ -73,7 +72,7 @@ describe('ResumeManagement', () => {
     });
 
     it('fetches resumes on mount', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<ResumeManagement onClose={mockOnClose} />);
 
@@ -83,7 +82,7 @@ describe('ResumeManagement', () => {
     });
 
     it('displays loading state initially', () => {
-      (fetch as Mock).mockImplementation(() => new Promise(() => {})); // Never resolves
+      (fetch as jest.Mock).mockImplementation(() => new Promise(() => {})); // Never resolves
 
       render(<ResumeManagement onClose={mockOnClose} />);
 
@@ -92,7 +91,7 @@ describe('ResumeManagement', () => {
     });
 
     it('calls onClose when close button is clicked', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<ResumeManagement onClose={mockOnClose} />);
 
@@ -127,7 +126,7 @@ describe('ResumeManagement', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ resumes: mockResumes }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ resumes: mockResumes }));
 
       render(<ResumeManagement onClose={mockOnClose} />);
 
@@ -137,7 +136,7 @@ describe('ResumeManagement', () => {
     });
 
     it('handles empty resume list', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks({ resumes: [] }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ resumes: [] }));
 
       render(<ResumeManagement onClose={mockOnClose} />);
 
@@ -168,7 +167,7 @@ describe('ResumeManagement', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ resumes: mockResumes }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ resumes: mockResumes }));
 
       render(<ResumeManagement onClose={mockOnClose} />);
 
@@ -190,7 +189,7 @@ describe('ResumeManagement', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ resumes: mockResumes }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ resumes: mockResumes }));
 
       render(<ResumeManagement onClose={mockOnClose} />);
 
@@ -206,7 +205,7 @@ describe('ResumeManagement', () => {
     it('uploads resume with text input', async () => {
       let uploadCallCount = 0;
 
-      (fetch as Mock).mockImplementation((url: string, options?: RequestInit) => {
+      (fetch as jest.Mock).mockImplementation((url: string, options?: RequestInit) => {
         if (url.includes('/api/resumes') && options?.method !== 'POST') {
           return mockFetchSuccess([]);
         }
@@ -227,7 +226,7 @@ describe('ResumeManagement', () => {
     });
 
     it('validates resume name and content before upload', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<ResumeManagement onClose={mockOnClose} />);
 
@@ -239,9 +238,9 @@ describe('ResumeManagement', () => {
     });
 
     it('handles upload resume error', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-      (fetch as Mock).mockImplementation((url: string, options?: RequestInit) => {
+      (fetch as jest.Mock).mockImplementation((url: string, options?: RequestInit) => {
         if (url.includes('/api/resumes') && options?.method !== 'POST') {
           return mockFetchSuccess([]);
         }
@@ -261,7 +260,7 @@ describe('ResumeManagement', () => {
     });
 
     it('sets first resume as master automatically', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks({ resumes: [] }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ resumes: [] }));
 
       render(<ResumeManagement onClose={mockOnClose} />);
 
@@ -275,7 +274,7 @@ describe('ResumeManagement', () => {
 
   describe('Resume File Upload', () => {
     it('handles file upload', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<ResumeManagement onClose={mockOnClose} />);
 
@@ -287,7 +286,7 @@ describe('ResumeManagement', () => {
     });
 
     it('extracts filename for resume name', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<ResumeManagement onClose={mockOnClose} />);
 
@@ -303,7 +302,7 @@ describe('ResumeManagement', () => {
     it('loads master resume from file', async () => {
       let loadCallCount = 0;
 
-      (fetch as Mock).mockImplementation((url: string, options?: RequestInit) => {
+      (fetch as jest.Mock).mockImplementation((url: string, options?: RequestInit) => {
         if (url.includes('/api/resumes') && !url.includes('/load-from-file')) {
           return mockFetchSuccess([]);
         }
@@ -324,9 +323,9 @@ describe('ResumeManagement', () => {
     });
 
     it('handles load from file error', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-      (fetch as Mock).mockImplementation((url: string, options?: RequestInit) => {
+      (fetch as jest.Mock).mockImplementation((url: string, options?: RequestInit) => {
         if (url.includes('/api/resumes') && !url.includes('/load-from-file')) {
           return mockFetchSuccess([]);
         }
@@ -371,7 +370,7 @@ describe('ResumeManagement', () => {
 
       let setMasterCallCount = 0;
 
-      (fetch as Mock).mockImplementation((url: string, options?: RequestInit) => {
+      (fetch as jest.Mock).mockImplementation((url: string, options?: RequestInit) => {
         if (url.includes('/api/resumes') && !url.includes('/set-master')) {
           return mockFetchSuccess(mockResumes);
         }
@@ -392,7 +391,7 @@ describe('ResumeManagement', () => {
     });
 
     it('handles set master error', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
       const mockResumes = [
         {
@@ -406,7 +405,7 @@ describe('ResumeManagement', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation((url: string, options?: RequestInit) => {
+      (fetch as jest.Mock).mockImplementation((url: string, options?: RequestInit) => {
         if (url.includes('/api/resumes') && !url.includes('/set-master')) {
           return mockFetchSuccess(mockResumes);
         }
@@ -442,7 +441,7 @@ describe('ResumeManagement', () => {
 
       let deleteCallCount = 0;
 
-      (fetch as Mock).mockImplementation((url: string, options?: RequestInit) => {
+      (fetch as jest.Mock).mockImplementation((url: string, options?: RequestInit) => {
         if (url.includes('/api/resumes') && options?.method !== 'DELETE') {
           return mockFetchSuccess(mockResumes);
         }
@@ -453,7 +452,7 @@ describe('ResumeManagement', () => {
         return mockFetchError();
       });
 
-      (global.confirm as Mock).mockReturnValue(true);
+      (global.confirm as jest.Mock).mockReturnValue(true);
 
       render(<ResumeManagement onClose={mockOnClose} />);
 
@@ -477,8 +476,8 @@ describe('ResumeManagement', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ resumes: mockResumes }));
-      (global.confirm as Mock).mockReturnValue(false);
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ resumes: mockResumes }));
+      (global.confirm as jest.Mock).mockReturnValue(false);
 
       render(<ResumeManagement onClose={mockOnClose} />);
 
@@ -487,14 +486,14 @@ describe('ResumeManagement', () => {
       });
 
       // Verify only the fetch call was made, no delete
-      const deleteCalls = (fetch as Mock).mock.calls.filter(
+      const deleteCalls = (fetch as jest.Mock).mock.calls.filter(
         (call) => call[1]?.method === 'DELETE'
       );
       expect(deleteCalls.length).toBe(0);
     });
 
     it('handles delete resume error', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
       const mockResumes = [
         {
@@ -508,7 +507,7 @@ describe('ResumeManagement', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation((url: string, options?: RequestInit) => {
+      (fetch as jest.Mock).mockImplementation((url: string, options?: RequestInit) => {
         if (url.includes('/api/resumes') && options?.method !== 'DELETE') {
           return mockFetchSuccess(mockResumes);
         }
@@ -530,7 +529,7 @@ describe('ResumeManagement', () => {
 
   describe('Upload Modes', () => {
     it('switches between text and file upload modes', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<ResumeManagement onClose={mockOnClose} />);
 
@@ -544,7 +543,7 @@ describe('ResumeManagement', () => {
 
   describe('Success Messages', () => {
     it('displays success message after upload', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<ResumeManagement onClose={mockOnClose} />);
 
@@ -556,9 +555,9 @@ describe('ResumeManagement', () => {
     });
 
     it('auto-hides success message after 3 seconds', async () => {
-      vi.useFakeTimers();
+      jest.useFakeTimers();
 
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<ResumeManagement onClose={mockOnClose} />);
 
@@ -566,15 +565,15 @@ describe('ResumeManagement', () => {
         expect(fetch).toHaveBeenCalled();
       });
 
-      vi.useRealTimers();
+      jest.useRealTimers();
     });
   });
 
   describe('Error Handling', () => {
     it('handles fetch resumes error gracefully', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-      (fetch as Mock).mockImplementation(() => mockFetchError(500));
+      (fetch as jest.Mock).mockImplementation(() => mockFetchError(500));
 
       render(<ResumeManagement onClose={mockOnClose} />);
 
@@ -589,9 +588,9 @@ describe('ResumeManagement', () => {
     });
 
     it('handles network errors', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-      (fetch as Mock).mockRejectedValue(new Error('Network error'));
+      (fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
 
       render(<ResumeManagement onClose={mockOnClose} />);
 
@@ -603,7 +602,7 @@ describe('ResumeManagement', () => {
     });
 
     it('displays error messages to user', async () => {
-      (fetch as Mock).mockImplementation(() => mockFetchError(500));
+      (fetch as jest.Mock).mockImplementation(() => mockFetchError(500));
 
       render(<ResumeManagement onClose={mockOnClose} />);
 

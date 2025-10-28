@@ -1,11 +1,10 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { vi, Mock } from 'vitest';
 import EmailComposer from './EmailComposer';
 
 // Mock fetch globally
-global.fetch = vi.fn();
+global.fetch = jest.fn();
 
 // Helper to create mock fetch responses
 const mockFetchSuccess = (data: any) => {
@@ -48,18 +47,18 @@ describe('EmailComposer', () => {
     resumeContent: '# Sam Kirk\n\nSoftware Engineer with 10 years experience...',
     resumeFormat: 'md',
     defaultRecipient: 'jobs@techcorp.com',
-    onClose: vi.fn(),
-    onDraftCreated: vi.fn(),
+    onClose: jest.fn(),
+    onDraftCreated: jest.fn(),
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
-    (fetch as Mock).mockReset();
+    jest.clearAllMocks();
+    (fetch as jest.Mock).mockReset();
   });
 
   describe('Initial Rendering', () => {
     it('renders without crashing', () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<EmailComposer {...defaultProps} />);
 
@@ -67,7 +66,7 @@ describe('EmailComposer', () => {
     });
 
     it('displays job title and company', () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<EmailComposer {...defaultProps} />);
 
@@ -76,7 +75,7 @@ describe('EmailComposer', () => {
     });
 
     it('displays default recipient email', () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<EmailComposer {...defaultProps} />);
 
@@ -85,7 +84,7 @@ describe('EmailComposer', () => {
     });
 
     it('displays default subject line', () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<EmailComposer {...defaultProps} />);
 
@@ -94,7 +93,7 @@ describe('EmailComposer', () => {
     });
 
     it('renders close button', () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<EmailComposer {...defaultProps} />);
 
@@ -105,7 +104,7 @@ describe('EmailComposer', () => {
 
   describe('Close Functionality', () => {
     it('calls onClose when close button is clicked', () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<EmailComposer {...defaultProps} />);
 
@@ -116,7 +115,7 @@ describe('EmailComposer', () => {
     });
 
     it('calls onClose when clicking outside modal', () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<EmailComposer {...defaultProps} />);
 
@@ -127,7 +126,7 @@ describe('EmailComposer', () => {
     });
 
     it('does not close when clicking inside modal', () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<EmailComposer {...defaultProps} />);
 
@@ -140,7 +139,7 @@ describe('EmailComposer', () => {
 
   describe('Recipient Email Field', () => {
     it('allows editing recipient email', () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<EmailComposer {...defaultProps} />);
 
@@ -151,7 +150,7 @@ describe('EmailComposer', () => {
     });
 
     it('handles empty recipient email', () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       const propsWithoutRecipient = {
         ...defaultProps,
@@ -167,7 +166,7 @@ describe('EmailComposer', () => {
 
   describe('Subject Field', () => {
     it('allows editing subject line', () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<EmailComposer {...defaultProps} />);
 
@@ -180,7 +179,7 @@ describe('EmailComposer', () => {
 
   describe('Cover Letter Preview', () => {
     it('displays cover letter content', () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<EmailComposer {...defaultProps} />);
 
@@ -188,7 +187,7 @@ describe('EmailComposer', () => {
     });
 
     it('preserves line breaks in cover letter', () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       const propsWithMultilineLetter = {
         ...defaultProps,
@@ -204,7 +203,7 @@ describe('EmailComposer', () => {
 
   describe('Resume Attachment Info', () => {
     it('displays resume filename', () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<EmailComposer {...defaultProps} />);
 
@@ -213,7 +212,7 @@ describe('EmailComposer', () => {
     });
 
     it('displays resume file size', () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<EmailComposer {...defaultProps} />);
 
@@ -223,7 +222,7 @@ describe('EmailComposer', () => {
     });
 
     it('handles different resume formats', () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       const propsWithPdfFormat = {
         ...defaultProps,
@@ -236,7 +235,7 @@ describe('EmailComposer', () => {
     });
 
     it('sanitizes company name for filename', () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       const propsWithSpecialChars = {
         ...defaultProps,
@@ -253,7 +252,7 @@ describe('EmailComposer', () => {
 
   describe('Draft Creation', () => {
     it('creates draft successfully', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<EmailComposer {...defaultProps} />);
 
@@ -275,7 +274,7 @@ describe('EmailComposer', () => {
     });
 
     it('validates recipient email before creating draft', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       const propsWithoutRecipient = {
         ...defaultProps,
@@ -295,7 +294,7 @@ describe('EmailComposer', () => {
     });
 
     it('displays loading state during draft creation', async () => {
-      (fetch as Mock).mockImplementation(() => new Promise(() => {})); // Never resolves
+      (fetch as jest.Mock).mockImplementation(() => new Promise(() => {})); // Never resolves
 
       render(<EmailComposer {...defaultProps} />);
 
@@ -316,7 +315,7 @@ describe('EmailComposer', () => {
         status: 'created',
       };
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ draftResponse: mockDraftResponse }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ draftResponse: mockDraftResponse }));
 
       render(<EmailComposer {...defaultProps} />);
 
@@ -338,7 +337,7 @@ describe('EmailComposer', () => {
         status: 'created',
       };
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ draftResponse: mockDraftResponse }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ draftResponse: mockDraftResponse }));
 
       render(<EmailComposer {...defaultProps} />);
 
@@ -353,9 +352,9 @@ describe('EmailComposer', () => {
     });
 
     it('handles draft creation error', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-      (fetch as Mock).mockImplementation(() => mockFetchError(500, 'Failed to create draft'));
+      (fetch as jest.Mock).mockImplementation(() => mockFetchError(500, 'Failed to create draft'));
 
       render(<EmailComposer {...defaultProps} />);
 
@@ -370,9 +369,9 @@ describe('EmailComposer', () => {
     });
 
     it('handles network errors gracefully', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-      (fetch as Mock).mockRejectedValue(new Error('Network error'));
+      (fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
 
       render(<EmailComposer {...defaultProps} />);
 
@@ -390,7 +389,7 @@ describe('EmailComposer', () => {
 
   describe('Request Body', () => {
     it('sends correct application ID', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<EmailComposer {...defaultProps} />);
 
@@ -398,14 +397,14 @@ describe('EmailComposer', () => {
       fireEvent.click(createButton);
 
       await waitFor(() => {
-        const callArgs = (fetch as Mock).mock.calls[0];
+        const callArgs = (fetch as jest.Mock).mock.calls[0];
         const body = JSON.parse(callArgs[1].body);
         expect(body.application_id).toBe('app-123');
       });
     });
 
     it('sends correct recipient email', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<EmailComposer {...defaultProps} />);
 
@@ -416,7 +415,7 @@ describe('EmailComposer', () => {
       fireEvent.click(createButton);
 
       await waitFor(() => {
-        const callArgs = (fetch as Mock).mock.calls[0];
+        const callArgs = (fetch as jest.Mock).mock.calls[0];
         const body = JSON.parse(callArgs[1].body);
         expect(body.recipient_email).toBe('hr@example.com');
       });
@@ -425,7 +424,7 @@ describe('EmailComposer', () => {
 
   describe('Props Handling', () => {
     it('handles onDraftCreated callback when not provided', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       const propsWithoutCallback = {
         ...defaultProps,
@@ -446,7 +445,7 @@ describe('EmailComposer', () => {
     });
 
     it('handles long cover letter content', () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       const longCoverLetter = 'A'.repeat(5000);
 
@@ -461,7 +460,7 @@ describe('EmailComposer', () => {
     });
 
     it('handles long resume content', () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       const longResume = 'B'.repeat(10000);
 
@@ -478,7 +477,7 @@ describe('EmailComposer', () => {
 
   describe('Error Display', () => {
     it('displays error message when shown', async () => {
-      (fetch as Mock).mockImplementation(() => mockFetchError(500, 'Custom error message'));
+      (fetch as jest.Mock).mockImplementation(() => mockFetchError(500, 'Custom error message'));
 
       render(<EmailComposer {...defaultProps} />);
 
@@ -491,7 +490,7 @@ describe('EmailComposer', () => {
     });
 
     it('clears previous error on new attempt', async () => {
-      (fetch as Mock).mockImplementation(() => mockFetchError(500, 'Error message'));
+      (fetch as jest.Mock).mockImplementation(() => mockFetchError(500, 'Error message'));
 
       render(<EmailComposer {...defaultProps} />);
 
@@ -503,7 +502,7 @@ describe('EmailComposer', () => {
       });
 
       // Change implementation to success
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       fireEvent.click(createButton);
 

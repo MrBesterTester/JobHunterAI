@@ -1,11 +1,10 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { vi, Mock } from 'vitest';
 import IntakeTab from './IntakeTab';
 
 // Mock fetch globally
-global.fetch = vi.fn();
+global.fetch = jest.fn();
 
 // Helper to create mock fetch responses
 const mockFetchSuccess = (data: any) => {
@@ -48,13 +47,13 @@ const createStandardMocks = (overrides: any = {}) => {
 
 describe('IntakeTab', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    (fetch as Mock).mockReset();
+    jest.clearAllMocks();
+    (fetch as jest.Mock).mockReset();
   });
 
   describe('Initial Rendering', () => {
     it('renders without crashing', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<IntakeTab />);
 
@@ -66,7 +65,7 @@ describe('IntakeTab', () => {
     });
 
     it('fetches job sources on mount', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<IntakeTab />);
 
@@ -76,7 +75,7 @@ describe('IntakeTab', () => {
     });
 
     it('fetches intake logs on mount', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<IntakeTab />);
 
@@ -86,7 +85,7 @@ describe('IntakeTab', () => {
     });
 
     it('fetches intake summary on mount', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<IntakeTab />);
 
@@ -112,7 +111,7 @@ describe('IntakeTab', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ sources: mockSources }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ sources: mockSources }));
 
       render(<IntakeTab />);
 
@@ -122,7 +121,7 @@ describe('IntakeTab', () => {
     });
 
     it('handles empty sources list', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks({ sources: [] }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ sources: [] }));
 
       render(<IntakeTab />);
 
@@ -137,7 +136,7 @@ describe('IntakeTab', () => {
         { source_id: '2', source_name: 'rapidapi', source_type: 'api', is_active: true, last_sync: null, sync_interval_minutes: 120, auth_required: true, auth_type: 'api_key', has_credentials: false },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ sources: mockSources }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ sources: mockSources }));
 
       render(<IntakeTab />);
 
@@ -169,7 +168,7 @@ describe('IntakeTab', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ logs: mockLogs }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ logs: mockLogs }));
 
       render(<IntakeTab />);
 
@@ -199,7 +198,7 @@ describe('IntakeTab', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ logs: mockLogs }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ logs: mockLogs }));
 
       render(<IntakeTab />);
 
@@ -226,7 +225,7 @@ describe('IntakeTab', () => {
         },
       };
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ sources: mockSources, syncResponse }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ sources: mockSources, syncResponse }));
 
       render(<IntakeTab />);
 
@@ -252,7 +251,7 @@ describe('IntakeTab', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ summary: mockSummaries }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ summary: mockSummaries }));
 
       render(<IntakeTab />);
 
@@ -264,9 +263,9 @@ describe('IntakeTab', () => {
 
   describe('Error Handling', () => {
     it('handles API errors when fetching sources', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-      (fetch as Mock).mockImplementation((url: string) => {
+      (fetch as jest.Mock).mockImplementation((url: string) => {
         if (url.includes('/api/job-sources')) {
           return mockFetchError(500);
         }
@@ -292,9 +291,9 @@ describe('IntakeTab', () => {
     });
 
     it('handles network errors gracefully', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-      (fetch as Mock).mockImplementation(() => {
+      (fetch as jest.Mock).mockImplementation(() => {
         return Promise.reject(new Error('Network error'));
       });
 
@@ -310,8 +309,8 @@ describe('IntakeTab', () => {
 
   describe('Callbacks', () => {
     it('accepts onJobsUpdated callback prop', async () => {
-      const mockCallback = vi.fn();
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      const mockCallback = jest.fn();
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<IntakeTab onJobsUpdated={mockCallback} />);
 
@@ -325,7 +324,7 @@ describe('IntakeTab', () => {
 
   describe('UI State', () => {
     it('handles loading state', async () => {
-      (fetch as Mock).mockImplementation((url: string) => {
+      (fetch as jest.Mock).mockImplementation((url: string) => {
         if (url.includes('/api/job-sources')) {
           return Promise.resolve(mockFetchSuccess([]));
         } else if (url.includes('/api/intake/logs')) {
@@ -351,7 +350,7 @@ describe('IntakeTab', () => {
         { source_id: '1', source_name: 'gmail', source_type: 'email', is_active: true, last_sync: null, sync_interval_minutes: 60, auth_required: true, auth_type: 'oauth', has_credentials: false },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ sources: mockSources }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ sources: mockSources }));
 
       render(<IntakeTab />);
 
@@ -363,7 +362,7 @@ describe('IntakeTab', () => {
 
   describe('Extraction Prompts', () => {
     it('fetches extraction prompts on mount', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<IntakeTab />);
 
@@ -386,7 +385,7 @@ describe('IntakeTab', () => {
         notes: 'Test notes',
       };
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ prompts: mockPrompt }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ prompts: mockPrompt }));
 
       render(<IntakeTab />);
 

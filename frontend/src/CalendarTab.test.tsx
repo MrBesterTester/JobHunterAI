@@ -1,11 +1,10 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { vi, Mock } from 'vitest';
 import CalendarTab from './CalendarTab';
 
 // Mock fetch globally
-global.fetch = vi.fn();
+global.fetch = jest.fn();
 
 // Helper to create mock fetch responses
 const mockFetchSuccess = (data: any) => {
@@ -25,7 +24,7 @@ const mockFetchError = (status: number = 500) => {
 };
 
 // Mock window.confirm
-global.confirm = vi.fn(() => true);
+global.confirm = jest.fn(() => true);
 
 // Standard mock implementation for most tests
 const createStandardMocks = (overrides: any = {}) => {
@@ -45,14 +44,14 @@ const createStandardMocks = (overrides: any = {}) => {
 
 describe('CalendarTab', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    (fetch as Mock).mockReset();
-    (global.confirm as Mock).mockReturnValue(true);
+    jest.clearAllMocks();
+    (fetch as jest.Mock).mockReset();
+    (global.confirm as jest.Mock).mockReturnValue(true);
   });
 
   describe('Initial Rendering', () => {
     it('renders without crashing', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<CalendarTab />);
 
@@ -64,7 +63,7 @@ describe('CalendarTab', () => {
     });
 
     it('fetches upcoming interviews on mount', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<CalendarTab />);
 
@@ -74,7 +73,7 @@ describe('CalendarTab', () => {
     });
 
     it('displays loading state initially', () => {
-      (fetch as Mock).mockImplementation(() => new Promise(() => {})); // Never resolves
+      (fetch as jest.Mock).mockImplementation(() => new Promise(() => {})); // Never resolves
 
       render(<CalendarTab />);
 
@@ -103,7 +102,7 @@ describe('CalendarTab', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ interviews: mockInterviews }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ interviews: mockInterviews }));
 
       render(<CalendarTab />);
 
@@ -113,7 +112,7 @@ describe('CalendarTab', () => {
     });
 
     it('handles empty interview list', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks({ interviews: [] }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ interviews: [] }));
 
       render(<CalendarTab />);
 
@@ -150,7 +149,7 @@ describe('CalendarTab', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ interviews: mockInterviews }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ interviews: mockInterviews }));
 
       render(<CalendarTab />);
 
@@ -162,7 +161,7 @@ describe('CalendarTab', () => {
 
   describe('Interview Scheduling', () => {
     it('opens schedule modal when schedule button is clicked', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<CalendarTab />);
 
@@ -180,7 +179,7 @@ describe('CalendarTab', () => {
     it('submits schedule form successfully', async () => {
       let scheduleCallCount = 0;
 
-      (fetch as Mock).mockImplementation((url: string, options?: RequestInit) => {
+      (fetch as jest.Mock).mockImplementation((url: string, options?: RequestInit) => {
         if (url.includes('/api/interviews/upcoming')) {
           return mockFetchSuccess([]);
         }
@@ -203,9 +202,9 @@ describe('CalendarTab', () => {
     });
 
     it('handles schedule interview error', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-      (fetch as Mock).mockImplementation((url: string, options?: RequestInit) => {
+      (fetch as jest.Mock).mockImplementation((url: string, options?: RequestInit) => {
         if (url.includes('/api/interviews/upcoming')) {
           return mockFetchSuccess([]);
         }
@@ -244,7 +243,7 @@ describe('CalendarTab', () => {
 
       let deleteCallCount = 0;
 
-      (fetch as Mock).mockImplementation((url: string, options?: RequestInit) => {
+      (fetch as jest.Mock).mockImplementation((url: string, options?: RequestInit) => {
         if (url.includes('/api/interviews/upcoming')) {
           return mockFetchSuccess(mockInterviews);
         }
@@ -255,7 +254,7 @@ describe('CalendarTab', () => {
         return mockFetchError();
       });
 
-      (global.confirm as Mock).mockReturnValue(true);
+      (global.confirm as jest.Mock).mockReturnValue(true);
 
       render(<CalendarTab />);
 
@@ -282,8 +281,8 @@ describe('CalendarTab', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ interviews: mockInterviews }));
-      (global.confirm as Mock).mockReturnValue(false);
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ interviews: mockInterviews }));
+      (global.confirm as jest.Mock).mockReturnValue(false);
 
       render(<CalendarTab />);
 
@@ -292,16 +291,16 @@ describe('CalendarTab', () => {
       });
 
       // Verify only the fetch call was made, no delete
-      const deleteCalls = (fetch as Mock).mock.calls.filter(
+      const deleteCalls = (fetch as jest.Mock).mock.calls.filter(
         (call) => call[1]?.method === 'DELETE'
       );
       expect(deleteCalls.length).toBe(0);
     });
 
     it('handles delete interview error', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-      (fetch as Mock).mockImplementation((url: string, options?: RequestInit) => {
+      (fetch as jest.Mock).mockImplementation((url: string, options?: RequestInit) => {
         if (url.includes('/api/interviews/upcoming')) {
           return mockFetchSuccess([]);
         }
@@ -336,7 +335,7 @@ describe('CalendarTab', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ interviews: mockInterviews }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ interviews: mockInterviews }));
 
       render(<CalendarTab />);
 
@@ -361,7 +360,7 @@ describe('CalendarTab', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ interviews: mockInterviews }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ interviews: mockInterviews }));
 
       render(<CalendarTab />);
 
@@ -384,7 +383,7 @@ describe('CalendarTab', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ interviews: mockInterviews }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ interviews: mockInterviews }));
 
       render(<CalendarTab />);
 
@@ -396,9 +395,9 @@ describe('CalendarTab', () => {
 
   describe('Error Handling', () => {
     it('handles fetch interviews error gracefully', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-      (fetch as Mock).mockImplementation(() => mockFetchError(500));
+      (fetch as jest.Mock).mockImplementation(() => mockFetchError(500));
 
       render(<CalendarTab />);
 
@@ -413,9 +412,9 @@ describe('CalendarTab', () => {
     });
 
     it('handles network errors', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-      (fetch as Mock).mockRejectedValue(new Error('Network error'));
+      (fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
 
       render(<CalendarTab />);
 
@@ -451,7 +450,7 @@ describe('CalendarTab', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ interviews: mockInterviews }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ interviews: mockInterviews }));
 
       render(<CalendarTab />);
 
@@ -474,7 +473,7 @@ describe('CalendarTab', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ interviews: mockInterviews }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ interviews: mockInterviews }));
 
       render(<CalendarTab />);
 

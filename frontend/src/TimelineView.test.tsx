@@ -1,10 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import TimelineView from './TimelineView';
 
 describe('TimelineView', () => {
   beforeEach(() => {
-    global.fetch = vi.fn();
+    global.fetch = jest.fn();
   });
 
   // ===== Initial Rendering and Data Fetching =====
@@ -395,7 +395,7 @@ describe('TimelineView', () => {
   // ===== Error Handling =====
 
   it('should handle fetch errors gracefully', async () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
     (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
 

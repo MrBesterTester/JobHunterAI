@@ -1,14 +1,13 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { vi, Mock } from 'vitest';
 import FollowupsTab from './FollowupsTab';
 
 // Mock fetch globally
-global.fetch = vi.fn();
+global.fetch = jest.fn();
 
 // Mock window.confirm
-global.confirm = vi.fn(() => true);
+global.confirm = jest.fn(() => true);
 
 // Helper to create mock fetch responses
 const mockFetchSuccess = (data: any) => {
@@ -45,14 +44,14 @@ const createStandardMocks = (overrides: any = {}) => {
 
 describe('FollowupsTab', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    (fetch as Mock).mockReset();
-    (global.confirm as Mock).mockReturnValue(true);
+    jest.clearAllMocks();
+    (fetch as jest.Mock).mockReset();
+    (global.confirm as jest.Mock).mockReturnValue(true);
   });
 
   describe('Initial Rendering', () => {
     it('renders without crashing', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<FollowupsTab />);
 
@@ -64,7 +63,7 @@ describe('FollowupsTab', () => {
     });
 
     it('fetches pending follow-ups on mount', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks());
+      (fetch as jest.Mock).mockImplementation(createStandardMocks());
 
       render(<FollowupsTab />);
 
@@ -74,7 +73,7 @@ describe('FollowupsTab', () => {
     });
 
     it('displays loading state initially', () => {
-      (fetch as Mock).mockImplementation(() => new Promise(() => {})); // Never resolves
+      (fetch as jest.Mock).mockImplementation(() => new Promise(() => {})); // Never resolves
 
       render(<FollowupsTab />);
 
@@ -101,7 +100,7 @@ describe('FollowupsTab', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ followUps: mockFollowUps }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ followUps: mockFollowUps }));
 
       render(<FollowupsTab />);
 
@@ -111,7 +110,7 @@ describe('FollowupsTab', () => {
     });
 
     it('handles empty follow-up list', async () => {
-      (fetch as Mock).mockImplementation(createStandardMocks({ followUps: [] }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ followUps: [] }));
 
       render(<FollowupsTab />);
 
@@ -144,7 +143,7 @@ describe('FollowupsTab', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ followUps: mockFollowUps }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ followUps: mockFollowUps }));
 
       render(<FollowupsTab />);
 
@@ -167,7 +166,7 @@ describe('FollowupsTab', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ followUps: mockFollowUps }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ followUps: mockFollowUps }));
 
       render(<FollowupsTab />);
 
@@ -188,7 +187,7 @@ describe('FollowupsTab', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ followUps: mockFollowUps }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ followUps: mockFollowUps }));
 
       render(<FollowupsTab />);
 
@@ -209,7 +208,7 @@ describe('FollowupsTab', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ followUps: mockFollowUps }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ followUps: mockFollowUps }));
 
       render(<FollowupsTab />);
 
@@ -231,7 +230,7 @@ describe('FollowupsTab', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ followUps: mockFollowUps }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ followUps: mockFollowUps }));
 
       render(<FollowupsTab />);
 
@@ -258,7 +257,7 @@ describe('FollowupsTab', () => {
 
       let approveCallCount = 0;
 
-      (fetch as Mock).mockImplementation((url: string, options?: RequestInit) => {
+      (fetch as jest.Mock).mockImplementation((url: string, options?: RequestInit) => {
         if (url.includes('/api/follow-ups/pending')) {
           return mockFetchSuccess(mockFollowUps);
         }
@@ -280,7 +279,7 @@ describe('FollowupsTab', () => {
     });
 
     it('handles approve follow-up error', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
       const mockFollowUps = [
         {
@@ -293,7 +292,7 @@ describe('FollowupsTab', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation((url: string, options?: RequestInit) => {
+      (fetch as jest.Mock).mockImplementation((url: string, options?: RequestInit) => {
         if (url.includes('/api/follow-ups/pending')) {
           return mockFetchSuccess(mockFollowUps);
         }
@@ -328,7 +327,7 @@ describe('FollowupsTab', () => {
 
       let sendCallCount = 0;
 
-      (fetch as Mock).mockImplementation((url: string, options?: RequestInit) => {
+      (fetch as jest.Mock).mockImplementation((url: string, options?: RequestInit) => {
         if (url.includes('/api/follow-ups/pending')) {
           return mockFetchSuccess(mockFollowUps);
         }
@@ -339,7 +338,7 @@ describe('FollowupsTab', () => {
         return mockFetchError();
       });
 
-      (global.confirm as Mock).mockReturnValue(true);
+      (global.confirm as jest.Mock).mockReturnValue(true);
 
       render(<FollowupsTab />);
 
@@ -362,8 +361,8 @@ describe('FollowupsTab', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ followUps: mockFollowUps }));
-      (global.confirm as Mock).mockReturnValue(false);
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ followUps: mockFollowUps }));
+      (global.confirm as jest.Mock).mockReturnValue(false);
 
       render(<FollowupsTab />);
 
@@ -372,15 +371,15 @@ describe('FollowupsTab', () => {
       });
 
       // Verify only the fetch call was made, no send
-      const sendCalls = (fetch as Mock).mock.calls.filter(
+      const sendCalls = (fetch as jest.Mock).mock.calls.filter(
         (call) => call[0].includes('/send') && call[1]?.method === 'POST'
       );
       expect(sendCalls.length).toBe(0);
     });
 
     it('handles send follow-up error', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
 
       const mockFollowUps = [
         {
@@ -393,7 +392,7 @@ describe('FollowupsTab', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation((url: string, options?: RequestInit) => {
+      (fetch as jest.Mock).mockImplementation((url: string, options?: RequestInit) => {
         if (url.includes('/api/follow-ups/pending')) {
           return mockFetchSuccess(mockFollowUps);
         }
@@ -427,7 +426,7 @@ describe('FollowupsTab', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ followUps: mockFollowUps }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ followUps: mockFollowUps }));
 
       render(<FollowupsTab />);
 
@@ -448,7 +447,7 @@ describe('FollowupsTab', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ followUps: mockFollowUps }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ followUps: mockFollowUps }));
 
       render(<FollowupsTab />);
 
@@ -474,7 +473,7 @@ describe('FollowupsTab', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ followUps: mockFollowUps }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ followUps: mockFollowUps }));
 
       render(<FollowupsTab />);
 
@@ -500,7 +499,7 @@ describe('FollowupsTab', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ followUps: mockFollowUps }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ followUps: mockFollowUps }));
 
       render(<FollowupsTab />);
 
@@ -525,7 +524,7 @@ describe('FollowupsTab', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ followUps: mockFollowUps }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ followUps: mockFollowUps }));
 
       render(<FollowupsTab />);
 
@@ -539,9 +538,9 @@ describe('FollowupsTab', () => {
 
   describe('Error Handling', () => {
     it('handles fetch follow-ups error gracefully', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-      (fetch as Mock).mockImplementation(() => mockFetchError(500));
+      (fetch as jest.Mock).mockImplementation(() => mockFetchError(500));
 
       render(<FollowupsTab />);
 
@@ -556,9 +555,9 @@ describe('FollowupsTab', () => {
     });
 
     it('handles network errors', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-      (fetch as Mock).mockRejectedValue(new Error('Network error'));
+      (fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
 
       render(<FollowupsTab />);
 
@@ -592,7 +591,7 @@ describe('FollowupsTab', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ followUps: mockFollowUps }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ followUps: mockFollowUps }));
 
       render(<FollowupsTab />);
 
@@ -613,7 +612,7 @@ describe('FollowupsTab', () => {
         },
       ];
 
-      (fetch as Mock).mockImplementation(createStandardMocks({ followUps: mockFollowUps }));
+      (fetch as jest.Mock).mockImplementation(createStandardMocks({ followUps: mockFollowUps }));
 
       render(<FollowupsTab />);
 

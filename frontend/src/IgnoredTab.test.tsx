@@ -1,11 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import IgnoredTab from './IgnoredTab';
 
 describe('IgnoredTab', () => {
   beforeEach(() => {
-    global.fetch = vi.fn();
+    global.fetch = jest.fn();
   });
 
   // ===== Initial Rendering and Data Fetching =====

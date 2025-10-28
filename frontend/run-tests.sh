@@ -135,43 +135,57 @@ if [[ "$RUN_TYPECHECK" == "true" ]]; then
   fi
 fi
 
-# Step 2: Run Vitest
+# Step 2: Run Jest
 if [[ "$QUIET_MODE" == "false" ]]; then
   if [[ "$RUN_TYPECHECK" == "true" ]]; then
-    echo -e "${YELLOW}[2/2] Running Vitest tests...${NC}"
+    echo -e "${YELLOW}[2/2] Running Jest tests...${NC}"
   else
-    echo -e "${YELLOW}[1/1] Running Vitest tests...${NC}"
+    echo -e "${YELLOW}[1/1] Running Jest tests...${NC}"
   fi
 fi
 
-# Build vitest command
-VITEST_CMD="npx vitest"
+# Build jest command
+JEST_CMD="npx jest"
 
 # Watch mode vs run mode
 if [[ "$WATCH_MODE" == "true" ]]; then
-  VITEST_CMD="$VITEST_CMD"
+  JEST_CMD="$JEST_CMD --watch"
 else
-  VITEST_CMD="$VITEST_CMD run"
+  JEST_CMD="$JEST_CMD --watchAll=false"
 fi
 
 # Coverage
 if [[ "$RUN_COVERAGE" == "true" ]]; then
-  VITEST_CMD="$VITEST_CMD --coverage"
+  JEST_CMD="$JEST_CMD --coverage"
 fi
 
 # Reporter/output mode
 if [[ "$OUTPUT_MODE" != "default" ]]; then
-  VITEST_CMD="$VITEST_CMD --reporter=$OUTPUT_MODE"
+  # Map Vitest reporters to Jest reporters
+  case "$OUTPUT_MODE" in
+    dot)
+      JEST_CMD="$JEST_CMD --reporters=jest-silent-reporter"
+      ;;
+    verbose)
+      JEST_CMD="$JEST_CMD --verbose"
+      ;;
+    json)
+      JEST_CMD="$JEST_CMD --json"
+      ;;
+    *)
+      JEST_CMD="$JEST_CMD --reporters=default"
+      ;;
+  esac
 fi
 
 # Filter pattern
 if [[ -n "$FILTER_PATTERN" ]]; then
-  VITEST_CMD="$VITEST_CMD -t \"$FILTER_PATTERN\""
+  JEST_CMD="$JEST_CMD --testNamePattern=\"$FILTER_PATTERN\""
 fi
 
 # Run tests
 if [[ "$QUIET_MODE" == "false" ]]; then
-  echo -e "${BLUE}Command: $VITEST_CMD${NC}"
+  echo -e "${BLUE}Command: $JEST_CMD${NC}"
   echo ""
 fi
 
@@ -179,7 +193,7 @@ start_time=$(date +%s)
 
 # Execute with proper error handling and output capture
 set +e
-eval "$VITEST_CMD" 2>&1 | tee -a "$LOG_FILE"
+eval "$JEST_CMD" 2>&1 | tee -a "$LOG_FILE"
 EXIT_CODE=${PIPESTATUS[0]}
 set -e
 

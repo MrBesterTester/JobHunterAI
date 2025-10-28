@@ -4,10 +4,8 @@
 // learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
-import { vi, afterEach } from 'vitest';
 
-// ISSUE-021 Option v: Explicitly cleanup React Testing Library after each test
-// React Testing Library cleanup is NOT automatic in Vitest - must be called explicitly
+// Explicitly cleanup React Testing Library after each test
 // This ensures all rendered components unmount properly, triggering their useEffect cleanup functions
 // Without this, components stay "mounted" in jsdom, keeping intervals/timers/listeners alive
 afterEach(() => {
@@ -17,22 +15,22 @@ afterEach(() => {
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: vi.fn().mockImplementation(query => ({
+  value: jest.fn().mockImplementation(query => ({
     matches: false,
     media: query,
     onchange: null,
-    addListener: vi.fn(), // deprecated
-    removeListener: vi.fn(), // deprecated
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
+    addListener: jest.fn(), // deprecated
+    removeListener: jest.fn(), // deprecated
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn(),
   })),
 });
 
 // Mock window.scrollTo
 Object.defineProperty(window, 'scrollTo', {
   writable: true,
-  value: vi.fn(),
+  value: jest.fn(),
 });
 
 // Mock IntersectionObserver
