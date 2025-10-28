@@ -38,6 +38,7 @@
     - [Database Schema Key Features](#database-schema-key-features)
     - [Job Filtering Criteria](#job-filtering-criteria)
     - [Development Phases](#development-phases)
+  - [Quick Reference: Where to Find Things](#quick-reference-where-to-find-things)
   - [File Structure](#file-structure)
   - [API Endpoints](#api-endpoints)
   - [Bug Tracking Workflow](#bug-tracking-workflow)
@@ -255,6 +256,11 @@ Claude:
 **✅ IMPLEMENTED**: Comprehensive testing standards for frontend (Jest) and backend (Cargo) test suites (2025-10-27)
 
 **Context**: Created to ensure rigorous test result analysis beyond superficial pass/fail reporting. Console output suppression (ISSUE-021) makes output cleaner, but does NOT mean ignoring failures, skipped tests, or warnings. Investigation depth and test result understanding are critical.
+
+**Testing Status & Progress Tracking**:
+- **Current Status**: See [docs/TESTING_STATUS.md](docs/TESTING_STATUS.md) for comprehensive frontend testing progress
+- **Genesis Report**: [README_test-report-10-23-2025.md](README_test-report-10-23-2025.md) - Initial assessment revealing zero frontend unit tests
+- **Active Issues**: ISSUE-018 (frontend unit test implementation), ISSUE-023 (test failure fixes)
 
 ### Core Principles
 
@@ -773,6 +779,37 @@ The system centers around three main entities:
 3. **Phase 3**: Resume/cover letter generation with LLM integration
 4. **Phase 4**: Job board integrations (LinkedIn, Indeed, Dice)
 5. **Phase 5**: Advanced features (scheduling, analytics, mobile)
+
+## Quick Reference: Where to Find Things
+
+**Documentation by Type**:
+- **Phase Plans**: `docs/PHASE_*.md` - Major feature implementation plans
+- **Feature Plans**: `planning/*.md` - Specific feature designs
+- **Bug Tracking**: `bugs/open/`, `bugs/mitigated/`, `bugs/fixed/` (see `bugs/README.md` for index)
+- **Test Reports**: `README_test-report-*.md` (root level)
+- **Testing Status**: `docs/TESTING_STATUS.md` ← **Current progress tracking**
+- **Work Summaries**: `README_work-summary-*.md` (root level, dated)
+- **Helper Scripts**: `./create-bug.sh`, `./move-bug.sh`, `./tag-session.sh`, etc. (see `README_dev.md`)
+
+**Finding Bugs/Issues**:
+1. **Always check index first**: `bugs/README.md` (auto-generated)
+2. **Use Glob for patterns**: `bugs/**/*ISSUE-018*.md`
+3. **Bug ID format**: `BUG-####` (bugs), `ISSUE-####` (issues)
+4. **Next available ID**: Run `./create-bug.sh` to see next ID (scans all directories)
+
+**Navigation Tips**:
+- Use `@bugs/README.md` to see current bug list
+- Use `@docs/TESTING_STATUS.md` for test progress
+- All file paths use `./` prefix convention (ISSUE-011)
+
+**Efficient File Discovery** (per Claude Code best practices):
+- **Glob tool**: Fast pattern matching for finding files by name/pattern
+  - Example: `Glob: bugs/**/*ISSUE-*.md` to find all issues
+- **Grep tool**: Search file contents for keywords
+  - Example: `Grep: "EmailComposer" path: ./frontend output_mode: files_with_matches`
+- **Read tool**: Direct file access when path is known
+  - Always preferred over bash commands like `cat`, `head`, `tail`
+- **Avoid**: Using `find`, `grep`, or other bash commands for file operations
 
 ## File Structure
 ```
