@@ -802,14 +802,33 @@ The system centers around three main entities:
 - Use `@docs/TESTING_STATUS.md` for test progress
 - All file paths use `./` prefix convention (ISSUE-011)
 
-**Efficient File Discovery** (per Claude Code best practices):
-- **Glob tool**: Fast pattern matching for finding files by name/pattern
-  - Example: `Glob: bugs/**/*ISSUE-*.md` to find all issues
-- **Grep tool**: Search file contents for keywords
-  - Example: `Grep: "EmailComposer" path: ./frontend output_mode: files_with_matches`
-- **Read tool**: Direct file access when path is known
+**Efficient File Discovery** (per Anthropic system instructions):
+
+**For exploratory searches** (primary method for file discovery):
+- **Use Task tool with subagent_type=Explore** - NOT Glob/Grep directly
+- This reduces context usage and provides better search results
+- **When to use**:
+  - "Where are errors from the client handled?"
+  - "How does authentication work in this codebase?"
+  - "Find files that implement feature X"
+  - "What is the codebase structure?"
+  - Any open-ended search requiring multiple rounds of discovery
+
+**For specific known targets only** (narrow exceptions):
+- **Glob tool**: When you know the exact file pattern you're looking for
+  - Example: `Glob: bugs/**/*ISSUE-018*.md` (looking for specific issue file)
+  - Use case: You know the file naming pattern and just need to find it
+- **Grep tool**: When searching within a specific file or 2-3 known files
+  - Example: `Grep: "class Foo" path: ./src/auth.ts` (finding specific class definition)
+  - Use case: Narrow search in known locations
+- **Read tool**: When you know the exact file path
   - Always preferred over bash commands like `cat`, `head`, `tail`
-- **Avoid**: Using `find`, `grep`, or other bash commands for file operations
+  - Use case: Direct access to known file
+
+**CRITICAL: Always avoid**:
+- Using bash `find`, `grep`, `cat` commands for file operations
+- Using Glob/Grep for exploratory searches (use Task/Explore instead)
+- Guessing file paths instead of searching properly
 
 ## File Structure
 ```
