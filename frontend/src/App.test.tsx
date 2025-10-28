@@ -3985,7 +3985,14 @@ describe('App (JobHunterDashboard)', () => {
     });
 
     it('shows loading state during generation', async () => {
-      (fetch as jest.Mock).mockImplementation(createMocksForContentGeneration());
+      // Create a mock with delayed response to catch loading state
+      (fetch as jest.Mock).mockImplementation((url: string, options?: RequestInit) => {
+        if (url.includes('/generate-content')) {
+          // Add delay to allow catching the loading state
+          return new Promise(resolve => setTimeout(() => resolve(mockFetchSuccess(mockGeneratedContent)), 100));
+        }
+        return createMocksForContentGeneration()(url, options);
+      });
 
       render(<App />);
       await setupApprovedJobsView();
@@ -4135,6 +4142,11 @@ describe('App (JobHunterDashboard)', () => {
       await waitFor(() => {
         expect(screen.getByTestId('generation-error')).toBeInTheDocument();
       }, { timeout: 5000 });
+
+      // Wait for button to be enabled again before retry
+      await waitFor(() => {
+        expect(generateButton).not.toBeDisabled();
+      });
 
       // Retry - should succeed
       fireEvent.click(generateButton);
