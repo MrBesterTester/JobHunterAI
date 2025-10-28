@@ -45,7 +45,6 @@ related_issues: [ISSUE-018, ISSUE-019]](#type-issue%0Aid-issue-021%0Atitle-vites
     - [Option v.1a: Add Explicit React Plugin](#option-v1a-add-explicit-react-plugin)
     - [Option v.6: Check for Large DOM Trees](#option-v6-check-for-large-dom-trees)
     - [Option v.2: Try happy-dom Environment (Experimental)](#option-v2-try-happy-dom-environment-experimental)
-    - [Option v.3: Binary Search Test Isolation](#option-v3-binary-search-test-isolation-1)
     - [Option v.4: Node.js Profiling with Chrome DevTools](#option-v4-nodejs-profiling-with-chrome-devtools)
     - [Option v.5: Minimal Reproduction for Maintainers](#option-v5-minimal-reproduction-for-maintainers)
     - [Option vii: Workaround Solutions (Last Resort)](#option-vii-workaround-solutions-last-resort)
@@ -1064,41 +1063,6 @@ export default defineConfig({
 - ❌ Tests that work in jsdom may fail in happy-dom
 
 **Recommendation**: ⚠️ Worth trying but prepare for test failures
-
----
-
-### Option v.3: Binary Search Test Isolation
-
-**Status**: ⏸️ **NOT STARTED** - Diagnostic approach
-
-**Purpose**: Find specific test or component causing hanging via systematic elimination.
-
-**Estimated Effort**: 1-2 hours
-
-**Implementation Approach**:
-
-**Step 1: Test minimal App component**
-```typescript
-it('renders minimal App without tabs', () => {
-  render(<div>Minimal App</div>);  // Don't render full <App />
-});
-```
-
-**Step 2: Test individual tabs in isolation**
-```typescript
-it('renders IntakeTab alone', () => {
-  render(<IntakeTab />);  // Not via App
-});
-```
-
-**Step 3: Binary search through Phase 2A tests**
-- Comment out half of tests
-- Run to see if hanging stops
-- Repeat with smaller subsets
-
-**Expected Outcome**: Identify if specific component or test causes hanging
-
-**Recommendation**: ⚠️ Time-intensive but may reveal pattern
 
 ---
 
