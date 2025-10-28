@@ -252,7 +252,7 @@ Claude:
 
 ## Testing & Verification Standards
 
-**✅ IMPLEMENTED**: Comprehensive testing standards for frontend (Vitest) and backend (Cargo) test suites (2025-10-27)
+**✅ IMPLEMENTED**: Comprehensive testing standards for frontend (Jest) and backend (Cargo) test suites (2025-10-27)
 
 **Context**: Created to ensure rigorous test result analysis beyond superficial pass/fail reporting. Console output suppression (ISSUE-021) makes output cleaner, but does NOT mean ignoring failures, skipped tests, or warnings. Investigation depth and test result understanding are critical.
 
@@ -582,7 +582,7 @@ Execution time: 8 seconds ✅ (back to baseline)
 ```
 
 **What Claude monitors:**
-- Process counts (Node.js, Vitest, background shells)
+- Process counts (Node.js, Jest, background shells)
 - Memory usage patterns
 - Session duration and complexity
 - Background task accumulation
@@ -594,7 +594,7 @@ Execution time: 8 seconds ✅ (back to baseline)
 **Automatic Verification:** Claude will automatically verify process cleanup after test runs.
 
 **Claude's automatic workflow after tests:**
-1. Check for orphaned Vitest/Node processes
+1. Check for orphaned Jest/Node processes
 2. Verify background shells terminated properly
 3. Run quick health check if test run was >5 minutes
 4. Suggest cleanup if orphaned processes detected
@@ -605,7 +605,7 @@ Execution time: 8 seconds ✅ (back to baseline)
 ```
 
 **Why this matters:**
-- Vitest parallel workers can remain orphaned after tests
+- Jest parallel workers can remain orphaned after tests
 - Background bash shells from Claude Code may not terminate
 - Accumulated processes lead to memory exhaustion
 - Prevention is easier than recovery
@@ -674,26 +674,24 @@ Execution time: 8 seconds ✅ (back to baseline)
 
 ### Resource Limits Configuration
 
-**✅ CONFIGURED**: Vitest resource limits implemented to prevent system overload.
+**✅ CONFIGURED**: Jest resource limits implemented to prevent system overload.
 
-**Configuration:** `frontend/vitest.config.ts` (ISSUE-019)
-```typescript
-maxWorkers: 4,              // Limit to 4 parallel workers (vs 6-12 default)
-minWorkers: 1,              // Don't spawn unnecessary workers
-pool: 'forks',              // Use forks pool (better isolation, less memory leak)
+**Configuration:** `frontend/jest.config.js` (ISSUE-022)
+```javascript
+maxWorkers: 4,              // Limit to 4 parallel workers (vs 50% CPU default)
 ```
 
 **Benefits:**
-- Reduces parallel worker count from 6-12 to 4
-- Uses forks pool with better memory isolation vs threads
+- Reduces parallel worker count from default (~6 on this machine) to 4
 - Prevents CPU bottleneck on main thread
-- Limits cumulative memory leak impact
 - More predictable resource usage
+- Safer for system stability
 
 **Trade-offs:**
-- Test runs may take ~25-50% longer
+- Test runs may take slightly longer with fewer workers
 - Still maintains parallelism for reasonable speed
-- Safer for system stability
+
+**Migration Note:** Migrated from Vitest to Jest (2025-10-27) to resolve test hanging issues. See ISSUE-022 for full rationale.
 
 ### Division of Responsibility
 

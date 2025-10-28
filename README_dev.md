@@ -2228,7 +2228,7 @@ cd backend
 #### [`system-health-check.sh`](system-health-check.sh)
 Monitors system resources and detects issues during Claude Code sessions to prevent system overload.
 
-**Context:** Created for [ISSUE-019](bugs/open/ISSUE-019-macos-nearly-chokes-to-death-during-test-runs.md) after a system freeze during intensive test debugging. Helps prevent resource exhaustion from Claude Code memory leaks, Vitest parallel workers, and orphaned processes.
+**Context:** Created for [ISSUE-019](bugs/open/ISSUE-019-macos-nearly-chokes-to-death-during-test-runs.md) after a system freeze during intensive test debugging. Helps prevent resource exhaustion from Claude Code memory leaks, Jest parallel workers, and orphaned processes.
 
 **Usage:**
 ```bash
@@ -2257,7 +2257,7 @@ Monitors system resources and detects issues during Claude Code sessions to prev
 
 Quick mode (default):
 - Memory usage and percentage of total RAM
-- Node.js, Vitest, and Claude Code process counts
+- Node.js, Jest, and Claude Code process counts
 - CPU load average vs available cores
 - Color-coded warnings when thresholds exceeded
 
@@ -2269,7 +2269,7 @@ Full mode (--full):
 - Thermal warnings with cooling suggestions
 
 Cleanup mode (--cleanup):
-- Detects orphaned Node.js/Vitest processes
+- Detects orphaned Node.js/Jest processes
 - Lists processes before cleanup
 - Requires confirmation before killing processes
 - Optional memory purge (sudo purge) with safety warning
@@ -2304,7 +2304,7 @@ Memory: 18432 MB / 32.00 GB (57.6%)
 
 === Process Counts ===
 Node.js processes:  12
-Vitest processes:   0
+Jest processes:     0
 Claude processes:   3
 Total processes:    387
 ✅ Process counts normal
@@ -2325,7 +2325,7 @@ Load average: 2.45 1.89 1.56
 **Why this matters:**
 Prevents system freeze scenarios like ISSUE-019 where:
 - Claude Code memory leak accumulated over session
-- Vitest spawned too many parallel workers
+- Jest spawned too many parallel workers
 - Orphaned processes consumed resources
 - System became unresponsive requiring force restart
 

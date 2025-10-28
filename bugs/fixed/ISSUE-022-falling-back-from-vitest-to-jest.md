@@ -26,7 +26,7 @@ related: [ISSUE-019, ISSUE-021, ISSUE-018]
 - [Evidence](#evidence)
 - [Proposed Solutions](#proposed-solutions)
   - [Context: Original Decision to Choose Vitest (from ISSUE-019)](#context-original-decision-to-choose-vitest-from-issue-019)
-  - [Option 1: Stay with Vitest and Engage Maintainers](#option-1-stay-with-vitest-and-engage-maintainers)
+  - [~~Option 1: Stay with Vitest and Engage Maintainers~~ (REJECTED)](#option-1-stay-with-vitest-and-engage-maintainers-rejected)
   - [Option 2: Migrate Back to Jest (RECOMMENDED)](#option-2-migrate-back-to-jest-recommended)
   - [Option 3: Migrate to Vite Build System (NOT RECOMMENDED)](#option-3-migrate-to-vite-build-system-not-recommended)
 - [Decision](#decision)
@@ -389,12 +389,12 @@ The original Vitest decision was sound **for a Vite project**. But this is a CRA
 - [x] Update test scripts (`run-tests.sh`)
 - [x] Remove `why-is-node-running` diagnostic code (Vitest-specific)
 
-**⏸️ Phase 3: Documentation** (In Progress)
-- [ ] Update CLAUDE.md testing sections to reference Jest
-- [ ] Update ISSUE-018 to note Jest migration
-- [ ] Mark ISSUE-021 as "mitigated/superseded" (Vitest-specific issue)
-- [ ] Mark ISSUE-022 as "fixed" after migration complete
-- [ ] Update README_dev.md if it references Vitest
+**✅ Phase 3: Documentation** (Completed 2025-10-27)
+- [x] Update CLAUDE.md testing sections to reference Jest
+- [x] Update ISSUE-018 to note Jest migration
+- [x] Mark ISSUE-021 as "mitigated/superseded" (Vitest-specific issue)
+- [x] Mark ISSUE-022 as "fixed" after migration complete
+- [x] Update README_dev.md if it references Vitest
 
 **✅ Phase 4: Verification** (Completed 2025-10-27)
 - [x] Run full test suite (422 tests) - 393 passing (93% pass rate)
@@ -460,6 +460,12 @@ npm test
   - Configuration complete (jest.config.js)
   - 393/422 tests passing (93%)
   - **Tests exit cleanly without hanging** ← Goal achieved!
+- 2025-10-27: **Phase 3 Documentation completed**
+  - Updated CLAUDE.md testing sections to reference Jest
+  - Updated ISSUE-018 to document Jest migration
+  - Confirmed ISSUE-021 marked as mitigated/superseded
+  - Updated README_dev.md to reference Jest
+  - **ISSUE-022 marked as FIXED** - All phases complete!
 
 ---
 

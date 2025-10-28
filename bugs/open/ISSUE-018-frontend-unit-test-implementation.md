@@ -115,8 +115,8 @@ related: [ISSUE-013]
 **Goal**: Add frontend unit tests targeting **70%+ code coverage** (currently at **46.9%**)
 
 **What's Complete**:
-- ✅ **Infrastructure**: Vitest + React Testing Library fully configured
-- ✅ **320 tests created** (100% pass rate, ~8.75s execution)
+- ✅ **Infrastructure**: Jest + React Testing Library fully configured
+- ✅ **422 tests created** (393 passing, 93% pass rate, ~97s execution)
 - ✅ **Phases 1-4**: App.tsx + IntakeTab.tsx + 10 other components tested
 - ✅ **6 components at 90%+ coverage** (IgnoredTab, FailedTab, DuplicatesTab, TimelineView, WeightAdjustmentPanel, EmailComposer)
 
@@ -1645,8 +1645,9 @@ describe('App', () => {
 
 **Status**: ✅ APPROVED - User approved Jest + React Testing Library approach (2025-10-24)
 **⚠️ UPDATE (2025-10-24)**: Test infrastructure migrated from Jest to Vitest (see ISSUE-019)
+**⚠️ UPDATE (2025-10-27)**: Test infrastructure migrated BACK to Jest due to Vitest hanging issues (see ISSUE-022)
 
-**Chosen Solution**: **Option 2 (Jest + React Testing Library)** → **Migrated to Vitest** (2025-10-24)
+**Chosen Solution**: **Option 2 (Jest + React Testing Library)** → **Migrated to Vitest** (2025-10-24) → **Migrated back to Jest** (2025-10-27)
 
 **Rationale for Selection**:
 1. **Industry Standard**: Jest is the de facto standard for React testing (most examples, best documentation)
@@ -1679,7 +1680,7 @@ See ISSUE-013 for updated reconciliation notes.
 
 **See**: "What's Already Complete" section above for phase summary with detailed breakdown.
 
-**Quick Summary**: Vitest + React Testing Library infrastructure fully operational with 320 passing tests covering 12 components. Infrastructure migrated from Jest to Vitest (see ISSUE-019) for better performance.
+**Quick Summary**: Jest + React Testing Library infrastructure fully operational with 393/422 tests passing (93%) covering 12 components. Infrastructure migrated from Jest to Vitest (see ISSUE-019), then back to Jest (see ISSUE-022) for reliability.
 
 **Remaining Work**: See "Remaining Work to Reach 70% Coverage" section above for detailed breakdown of what's left.
 
@@ -2325,6 +2326,28 @@ ISSUE-019 Phase 2 validated that the Vitest resource limits configuration preven
 - **Conclusion**: Vitest resource limits successfully prevent the system overload that occurred during ISSUE-019 incident (2025-10-24)
 
 See [ISSUE-019 Phase 2](../open/ISSUE-019-macos-nearly-chokes-to-death-during-test-runs.md#phase-2-short-term-this-week--high-priority) for detailed validation results.
+
+**⚠️ JEST MIGRATION (2025-10-27)**:
+After 3 days with Vitest, the test infrastructure was migrated BACK to Jest due to unresolved hanging issues with the CRA+webpack+Vitest combination (see [ISSUE-022](../fixed/ISSUE-022-falling-back-from-vitest-to-jest.md)). Key findings:
+
+**Why the migration back to Jest**:
+- **Vitest hanging issue**: Tests passed but Vitest never exited cleanly, requiring manual `Ctrl+C` to kill processes
+- **CRA+webpack incompatibility**: The CRA+webpack+Vitest combination is a niche edge case not well-supported by Vitest
+- **Exhaustive investigation**: 7+ debugging options attempted in ISSUE-021, none resolved the hanging
+- **Internal Vitest issue**: Hanging occurred BEFORE teardown hooks executed, indicating internal worker management problem
+- **Reliability over speed**: Jest + CRA is the proven, stable combination; tests must exit cleanly for CI/CD
+
+**Migration results (2025-10-27)**:
+- ✅ **PRIMARY GOAL ACHIEVED**: Tests exit cleanly without hanging (unlike Vitest)
+- ✅ **393/422 tests passing** (93% pass rate on first run)
+- ⚠️ **29 tests failing**: Mostly timeout/async timing issues requiring investigation
+- ⏱️ **Test execution time**: ~97 seconds for full suite (slower than Vitest but acceptable)
+- 🔧 **Configuration**: `frontend/jest.config.js` with `maxWorkers: 4` for resource management
+- 📦 **API changes reversed**: `vi.fn()` → `jest.fn()`, `Mock` → `jest.Mock`, `vi.spyOn()` → `jest.spyOn()`
+
+**Key takeaway**: The original Jest decision was correct for CRA projects. Vitest is excellent for Vite projects, but CRA+Vitest is fundamentally incompatible. This is evidence-based decision making, not a failure.
+
+See [ISSUE-022](../fixed/ISSUE-022-falling-back-from-vitest-to-jest.md) for complete rationale, investigation details, and migration implementation.
 
 **Context from ISSUE-013**:
 > The project planned and installed TAP (Test Anything Protocol) infrastructure for frontend unit testing from day one, but this infrastructure was never used. Instead, the project pivoted to a comprehensive E2E-only testing strategy with 302+ Playwright tests.
