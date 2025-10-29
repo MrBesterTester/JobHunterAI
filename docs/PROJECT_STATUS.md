@@ -10,13 +10,14 @@
     - [Option 2: Start Phase 2.5 - Email Composition ✉️](#option-2-start-phase-25---email-composition-)
     - [Option 3: Extend Phase 4 - Additional Job Board Features 🚀](#option-3-extend-phase-4---additional-job-board-features-)
     - [Option 4: Fix High-Priority Bugs 🐛](#option-4-fix-high-priority-bugs-)
+    - [Option 5: Hybrid Approach - RSBuild Migration After Phase 2.4 🏗️](#option-5-hybrid-approach---rsbuild-migration-after-phase-24-)
   - [Testing Status](#testing-status)
   - [Bug Tracking](#bug-tracking)
   - [Recommended Next Steps](#recommended-next-steps)
     - [Immediate (This Week)](#immediate-this-week)
-    - [Short Term (Next 2 Weeks)](#short-term-next-2-weeks)
-    - [Medium Term (Next Month)](#medium-term-next-month)
-    - [Long Term (Phase 4/5)](#long-term-phase-45)
+    - [Short Term (Next 2-3 Weeks)](#short-term-next-2-3-weeks)
+    - [Medium Term (Next 2-3 Months)](#medium-term-next-2-3-months)
+    - [Long Term (Deferred if Hybrid Approach Chosen)](#long-term-deferred-if-hybrid-approach-chosen)
   - [Project Metrics](#project-metrics)
   - [Related Documentation](#related-documentation)
 
@@ -24,7 +25,7 @@
 
 # JobHunter Project Status
 
-**Last Updated**: 2025-10-28 (Phase documentation alignment completed)
+**Last Updated**: 2025-10-28 (Phase documentation alignment + Hybrid RSBuild migration plan added)
 
 ---
 
@@ -154,6 +155,29 @@ All Phase 2 sub-phase documentation includes complete implementation details, te
 - **Effort**: 15 min - 2 hours each
 - **Priority**: MEDIUM - clean up technical debt
 
+### Option 5: Hybrid Approach - RSBuild Migration After Phase 2.4 🏗️
+- **Status**: Recommended approach from ISSUE-026 strategic analysis
+- **Timeline**:
+  1. Finish Phase 2.4 (2-3 weeks) - Complete Calendar & Follow-ups (currently 60% done)
+  2. RSBuild Migration (1-2 weeks) - Migrate from deprecated CRA to modern RSBuild
+  3. Start Phase 2.5 (2-3 days) - Build Email Composition on modern foundation
+- **Total Timeline**: ~6-7 weeks to have Calendar + Email + Modern build system
+- **Effort**: Phase 2.4 (remaining work) + 15-25 hours (migration) + Phase 2.5 (2-3 days)
+- **Value**:
+  - Finishes what you started (Phase 2.4 at 60%)
+  - Eliminates CRA technical debt before codebase grows further
+  - Phase 2.5+ built on solid modern foundation
+  - Faster builds (2-5x) for all future development
+  - Active maintenance and security patches
+- **Priority**: HIGH - Balances feature delivery with infrastructure health
+- **Why Now-ish**:
+  - **Developer sentiment**: "I simply don't like being on an unmaintained platform like CRA" - waiting until Phase 4/5 (3-6 months) means living with deprecated tooling for too long
+  - Current stability is ideal for migration (481 Jest + 318 E2E tests passing)
+  - Technical debt compounds - every feature added makes migration riskier
+  - Still captures "small codebase" benefits (before Phase 2.5, 4.2+ add more code)
+  - RSBuild migration is low-risk (webpack-compatible, official guide, avoids Vitest disaster pattern)
+- **Trade-off**: Adds 1-2 weeks before Phase 2.5 starts, but eliminates technical debt guilt and provides faster builds for all future work
+
 ---
 
 ## Testing Status
@@ -219,18 +243,28 @@ All Phase 2 sub-phase documentation includes complete implementation details, te
 - Test if ISSUE-023 sequential generation fix resolved modal reopen issue
 - Close bug if verified, otherwise continue investigation
 
-### Short Term (Next 2 Weeks)
+### Short Term (Next 2-3 Weeks)
 
-**Continue Phase 2**: **Start Phase 2.5** (Email Composition)
-- Short effort (2-3 days)
-- Completes the full application workflow end-to-end
-- Natural continuation after Phase 2.4
+**Priority Path - Hybrid Approach** (Recommended):
+1. **Finish Phase 2.4** (2-3 weeks) - Complete Calendar & Follow-ups (60% → 100%)
+2. **RSBuild Migration** (1-2 weeks) - Migrate from deprecated CRA to modern RSBuild
+   - Developer sentiment: "I simply don't like being on an unmaintained platform like CRA"
+   - Captures current stability (small codebase, 481+318 tests passing)
+   - Eliminates technical debt before Phase 2.5+ adds more code
+   - See [ISSUE-026](../bugs/open/ISSUE-026-cra-deprecation---rsbuild-migration.md) Strategic Timing Analysis
+3. **Start Phase 2.5** (2-3 days) - Email Composition on modern foundation
+   - Total timeline: ~6-7 weeks for Calendar + Email + Modern build system
+
+**Alternative Path** (If delaying migration):
+- **Start Phase 2.5** immediately after 2.4 (Email Composition - 2-3 days)
+- Complete end-to-end workflow before infrastructure work
+- Trade-off: Adds more code before migration (slightly higher risk)
 
 **Address High-Priority Bugs**:
 - BUG-0004: "All" tab E2E issue (high)
 - ISSUE-006: Brittle placeholder validation (medium)
 
-### Medium Term (Next Month)
+### Medium Term (Next 2-3 Months)
 
 **Phase 4 Extensions** (Optional):
 - Phase 4.1 already complete (RapidAPI JSearch operational)
@@ -238,12 +272,12 @@ All Phase 2 sub-phase documentation includes complete implementation details, te
 - Phase 4.3-4.6: Enhanced features (see PHASE_4.1 doc for details)
 - Current Phase 4.1 provides solid automated job discovery foundation
 
-### Long Term (Phase 4/5)
+### Long Term (Deferred if Hybrid Approach Chosen)
 
 **Infrastructure**: **ISSUE-026 - RSBuild Migration** (15-25 hours)
-- Migrate from deprecated CRA to RSBuild
-- Low priority - current system works fine
-- Address when features stabilize
+- If not done via Hybrid Approach, consider during Phase 4/5
+- Note: Hybrid approach is recommended over waiting this long
+- Rationale: Developer preference to not stay on unmaintained CRA for 3-6 months
 
 ---
 
@@ -307,6 +341,10 @@ All Phase 2 sub-phase documentation includes complete implementation details, te
 ---
 
 **Last Updated**: 2025-10-28
-**Based on**: Recent git history, bug index, testing status, and comprehensive phase documentation review
+**Based on**: Recent git history, bug index, testing status, comprehensive phase documentation review, and ISSUE-026 strategic analysis
 **Manual Updates**: This is a manually maintained document - update as needed
-**Major Update**: Phase documentation alignment completed - all phase statuses now match their corresponding PHASE docs
+**Major Updates**:
+- Phase documentation alignment completed - all phase statuses now match their corresponding PHASE docs
+- Added Option 5: Hybrid Approach for RSBuild migration (finish Phase 2.4, migrate, then start Phase 2.5)
+- Updated Recommended Next Steps to reflect hybrid approach as priority path
+- Developer sentiment captured: "I simply don't like being on an unmaintained platform like CRA" - rationale for not waiting until Phase 4/5
