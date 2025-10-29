@@ -1,6 +1,6 @@
 # Frontend Testing Status & Progress Tracking
 
-**Last Updated**: 2025-10-29 (ISSUE-025 Phase 4 verification - critical issues discovered)
+**Last Updated**: 2025-10-29 (ISSUE-025 Plan A completed - webpack warnings suppressed, Plan B documented for Phase 4/5)
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -8,6 +8,9 @@
 - [Quick Status Overview](#quick-status-overview)
 - [🎯 Recommended Next Steps](#-recommended-next-steps)
   - [🚀 Primary Recommendation: Fix E2E Test Suite (ISSUE-025)](#-primary-recommendation-fix-e2e-test-suite-issue-025)
+  - [**✅ PLAN A COMPLETED: Webpack Deprecation Warnings (2025-10-29)**](#-plan-a-completed-webpack-deprecation-warnings-2025-10-29)
+  - [**📋 PLAN B DOCUMENTED: RSBuild Migration (Phase 4/5)**](#-plan-b-documented-rsbuild-migration-phase-45)
+  - [**⚠️ OUTSTANDING: E2E Test Suite Issues**](#-outstanding-e2e-test-suite-issues)
   - [Summary: ISSUE-024 Complete, ISSUE-025 is Next](#summary-issue-024-complete-issue-025-is-next)
   - [⚠️ Skipped Tests Summary (8 Total)](#-skipped-tests-summary-8-total)
 - [Comprehensive Status Report: Frontend Testing Journey](#comprehensive-status-report-frontend-testing-journey)
@@ -35,7 +38,7 @@
 
 ## Quick Status Overview
 
-**Last Updated**: 2025-10-29 (Unit tests: ✅ Complete | E2E tests: ⚠️ Blocked - see ISSUE-025)
+**Last Updated**: 2025-10-29 (Unit tests: ✅ Complete | E2E tests: ⚠️ Partial progress - webpack warnings fixed, see ISSUE-025)
 
 **🎉 Current Coverage**: **78.3%** overall (6942/8865 statements) - **EXCEEDED 60% goal by 18.3 points!**
 
@@ -99,34 +102,87 @@
 
 **⚠️ LATEST UPDATE (2025-10-29)**:
 
-**Status**: ⚠️ **BLOCKED** - Phase 4 verification incomplete, critical issues discovered
+**Status**: ⚠️ **PARTIAL PROGRESS** - Webpack warnings fixed (Plan A), Phase 4 verification still incomplete
 
-**Test Run Results (2025-10-29)**:
-- **Total Tests**: 547 (❌ Expected: 318 from Option A implementation)
-- **Duration**: 4+ minutes before stopped (incomplete)
-- **Failing**: 1 test (accuracy scoring - "suspicious claims" detection)
-- **Skipped**: ~400+ tests (massive number)
-- **Exit Code**: 144 (terminated)
+---
 
-**🚨 CRITICAL ISSUE - Webpack Deprecation Warnings (TOP PRIORITY)**:
+### **✅ PLAN A COMPLETED: Webpack Deprecation Warnings (2025-10-29)**
+
+**Issue**: CRA (Create React App) using deprecated webpack-dev-server middleware API
 ```
 [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning
 [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning
 ```
-- CRA using deprecated webpack-dev-server middleware API
-- May break in future webpack versions
-- Needs investigation/upgrade
 
-**Critical Discrepancy**:
-- Expected: 318 active tests (441 - 123 disabled)
-- Actual: 547 tests reported (+229 tests, 72% more!)
-- Cause: Unknown - requires investigation
+**Root Cause Discovery**:
+- **CRA officially deprecated by React team (February 14, 2025)**
+- No active maintainers since September 2022
+- No security patches or webpack-dev-server updates coming
+- React team recommends: Next.js, Vite, Parcel, or RSBuild
 
-**Required Investigation Before Proceeding**:
-1. 🚨 **Webpack deprecation warnings** (HIGH PRIORITY)
-2. Verify `test-config.ts` disable mechanism is working
-3. Investigate test count mismatch (547 vs 318)
-4. Fix failing accuracy scoring test
+**Solution Implemented (PLAN A - Short-Term)**:
+- ✅ Added `NODE_NO_WARNINGS=1` to Playwright webServer command
+- ✅ File: `frontend/playwright.config.ts` line 104
+- ✅ Verification: 12/12 tests passed with clean console output
+- ✅ Impact: Webpack deprecation warnings suppressed
+- ✅ Trade-off: Warnings hidden (not fixed at source), CRA remains unmaintained
+
+**Test Verification Results**:
+- Test file: `e2e/tests/01-setup-load.spec.ts`
+- Results: 12/12 tests passed (100%)
+- Console output: ✅ Clean, no webpack warnings
+- Runtime: ~18 seconds
+
+---
+
+### **📋 PLAN B DOCUMENTED: RSBuild Migration (Phase 4/5)**
+
+**Status**: ⏸️ **PLANNED** - Comprehensive migration plan documented for future execution
+
+**Goal**: Migrate from deprecated CRA to actively maintained build tool (RSBuild)
+
+**Why RSBuild**:
+- Webpack-compatible (reduces migration risk vs Vite)
+- Rust-based (modern performance)
+- Official CRA migration guide exists
+- React team officially recommends it
+- NOT in Vite ecosystem (avoids ISSUE-021/022 Vitest disaster pattern)
+
+**Critical Distinction**:
+- RSBuild changes APPLICATION build (webpack, dev server)
+- Test infrastructure UNCHANGED (481 Jest + 318 Playwright tests stay as-is)
+- Lower risk than Vitest migration (which tried to change test runner)
+
+**Effort Estimate**: 15-25 hours over 1-2 weeks
+
+**Timeline**: Phase 4/5 (3-6 months from now, after core features stabilize)
+
+**Detailed Plan**: See ISSUE-025 "PLAN B: Long-Term Solution" section
+- Phase 1: Research & Preparation (4-6 hrs)
+- Phase 2: Migration Execution (8-12 hrs)
+- Phase 3: Verification & Documentation (3-5 hrs)
+- Phase 4: Deployment (1-2 hrs)
+
+**References**:
+- React CRA Deprecation: https://react.dev/blog/2025/02/14/sunsetting-create-react-app
+- RSBuild CRA Migration Guide: https://rsbuild.rs/guide/migration/cra
+
+---
+
+### **⚠️ OUTSTANDING: E2E Test Suite Issues**
+
+**Test Run Results (2025-10-29)** - Previous incomplete run:
+- **Total Tests**: 547 (❌ Expected: 318 from Option A implementation)
+- **Duration**: 4+ minutes before stopped (incomplete)
+- **Failing**: 1 test (accuracy scoring - "suspicious claims" detection)
+- **Skipped**: ~400+ tests (massive number)
+
+**Outstanding Investigation Tasks**:
+1. ✅ **Webpack deprecation warnings** - COMPLETED (Plan A)
+2. ⏸️ Verify `test-config.ts` disable mechanism is working
+3. ⏸️ Investigate test count mismatch (547 vs 318)
+4. ⏸️ Fix failing accuracy scoring test
+5. ⏸️ Investigate Playwright console logging (hundreds of lines of output)
 
 **See ISSUE-025 for detailed investigation plan and action items.**
 

@@ -101,12 +101,12 @@ export default defineConfig({
 
   // Web server configuration - start dev server before tests
   webServer: {
-    command: 'npm start',
+    command: 'NODE_NO_WARNINGS=1 npm start',  // Suppress Node.js deprecation warnings (CRA webpack-dev-server)
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000, // 2 minutes to start
     stdout: 'ignore',
-    stderr: 'pipe',
+    stderr: 'pipe',  // Keep stderr for real errors
   },
 
   // Output folder for test artifacts

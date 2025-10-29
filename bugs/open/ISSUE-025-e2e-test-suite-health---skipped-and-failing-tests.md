@@ -28,6 +28,21 @@ related: [ISSUE-018]
   - [Decision Gate Answer](#decision-gate-answer)
 - [Option A: Implementation Plan (Selected by User 2025-10-28)](#option-a-implementation-plan-selected-by-user-2025-10-28)
   - [Implementation Progress Summary (2025-10-29 UPDATE)](#implementation-progress-summary-2025-10-29-update)
+- [Solutions: Short-Term and Long-Term Plans](#solutions-short-term-and-long-term-plans)
+  - [**PLAN A: Short-Term Solution (Immediate - 5 minutes)**](#plan-a-short-term-solution-immediate---5-minutes)
+  - [**PLAN B: Long-Term Solution (Phase 4/5 - 15-25 hours)**](#plan-b-long-term-solution-phase-45---15-25-hours)
+    - [**Context: Why Migration Is Necessary**](#context-why-migration-is-necessary)
+    - [**Why RSBuild (Recommended Long-Term Solution)**](#why-rsbuild-recommended-long-term-solution)
+    - [**RSBuild Migration Plan (Detailed)**](#rsbuild-migration-plan-detailed)
+    - [**Risk Mitigation Strategies**](#risk-mitigation-strategies)
+    - [**Success Criteria**](#success-criteria)
+    - [**Timeline & Effort Estimate**](#timeline--effort-estimate)
+    - [**Why This Plan Avoids the Vitest Disaster**](#why-this-plan-avoids-the-vitest-disaster)
+    - [**Related Issues & Documentation**](#related-issues--documentation)
+- [Summary: Two-Plan Approach](#summary-two-plan-approach)
+  - [**PLAN A: Short-Term (This Week)**](#plan-a-short-term-this-week)
+  - [**PLAN B: Long-Term (Phase 4/5, 3-6 months)**](#plan-b-long-term-phase-45-3-6-months)
+  - [**Outstanding Issue: Playwright Console Logging (2025-10-29)**](#outstanding-issue-playwright-console-logging-2025-10-29)
   - [Implementation Progress Summary (2025-10-28)](#implementation-progress-summary-2025-10-28)
   - [Handoff Notes for Next Person](#handoff-notes-for-next-person)
   - [Step 1: Test Categorization (283 Passing Tests)](#step-1-test-categorization-283-passing-tests)
@@ -292,7 +307,7 @@ Before committing to the 40-60 hour fix effort, run a focused investigation:
 **🚨 CRITICAL: Webpack Deprecation Warnings Detected (TOP PRIORITY)**
 
 **Date**: 2025-10-29
-**Severity**: HIGH
+**Severity**: HIGH (Warnings) / CRITICAL (CRA Deprecated)
 **Component**: react-scripts (CRA webpack dev server)
 
 **Warnings Observed**:
@@ -312,19 +327,595 @@ Before committing to the 40-60 hour fix effort, run a focused investigation:
 - May break in future webpack-dev-server versions
 - Could affect E2E test reliability
 
-**Root Cause**:
-- CRA (Create React App) using deprecated webpack-dev-server middleware API
-- Likely needs CRA upgrade or custom webpack config ejection
+**Root Cause Investigation (2025-10-29)**:
 
-**Action Required**:
-1. Investigate CRA version and available upgrades
-2. Consider migrating to Vite (longer-term solution, see ISSUE-021/022 lessons)
-3. Research webpack-dev-server setupMiddlewares migration path
-4. Test if warnings affect E2E test execution reliability
+**Critical Discovery**: CRA (Create React App) was **officially deprecated by the React team on February 14, 2025**.
+
+- Current version: `react-scripts 5.0.1` (last maintained: September 2022)
+- CRA is **unmaintained** - no security patches, no webpack-dev-server updates
+- React team now recommends: Next.js, Vite, Parcel, or RSBuild
+- These webpack deprecation warnings will **never be fixed** in CRA
+- Ejecting CRA to maintain webpack config yourself is **not recommended** (maintaining abandoned code)
 
 **Related Files**:
-- `frontend/package.json` (react-scripts version)
-- CRA webpack config (internal, may need ejection)
+- `frontend/package.json` (react-scripts 5.0.1)
+- `frontend/playwright.config.ts` (webServer stdout/stderr configuration)
+- CRA webpack config (internal, hidden in node_modules/react-scripts/)
+
+---
+
+## Solutions: Short-Term and Long-Term Plans
+
+### **PLAN A: Short-Term Solution (Immediate - 5 minutes)**
+
+**Status**: ✅ **COMPLETED (2025-10-29)**
+
+**Goal**: Suppress webpack deprecation warnings to clean up console output while allowing time for proper migration.
+
+**Implementation**:
+
+**Step 1: Suppress Node.js Deprecation Warnings in Playwright Config**
+
+Edit `frontend/playwright.config.ts` (line 104):
+
+```typescript
+// Before:
+webServer: {
+  command: 'npm start',
+  url: 'http://localhost:3000',
+  reuseExistingServer: !process.env.CI,
+  timeout: 120 * 1000,
+  stdout: 'ignore',
+  stderr: 'pipe',
+},
+
+// After:
+webServer: {
+  command: 'NODE_NO_WARNINGS=1 npm start',  // ← Suppress Node.js warnings
+  url: 'http://localhost:3000',
+  reuseExistingServer: !process.env.CI,
+  timeout: 120 * 1000,
+  stdout: 'ignore',
+  stderr: 'pipe',  // Keep stderr for real errors
+},
+```
+
+**What this does**:
+- Suppresses all Node.js deprecation warnings (including webpack warnings)
+- Keeps stderr open for real errors (not warnings)
+- Zero risk - easily reversible
+- Does NOT fix underlying issue (CRA still deprecated)
+
+**Trade-offs**:
+- ✅ Clean console output immediately
+- ✅ Zero migration risk
+- ✅ Allows focus on features, not infrastructure
+- ❌ Warnings still exist, just hidden
+- ❌ CRA remains unmaintained
+- ⚠️ Suppresses ALL Node.js warnings, not just webpack deprecations
+
+**Effort**: 5 minutes
+
+**Timeline**: Implement this week (2025-10-29)
+
+**Success Criteria**:
+- [x] Edit `frontend/playwright.config.ts` line 104 ✅ (2025-10-29)
+- [x] Add `NODE_NO_WARNINGS=1` to npm start command ✅ (2025-10-29)
+- [x] Verify: No webpack deprecation warnings during E2E test runs ✅ (2025-10-29 - VERIFIED)
+- [x] Verify: Playwright tests still run successfully ✅ (2025-10-29 - 12/12 tests passed)
+- [x] Verify: Real stderr errors still visible ✅ (2025-10-29 - stderr: 'pipe' preserved)
+
+**Verification Test Results (2025-10-29)**:
+- Test file: `e2e/tests/01-setup-load.spec.ts`
+- Results: 12/12 tests passed (100%)
+- Runtime: ~18 seconds
+- Console output: ✅ Clean, no webpack deprecation warnings
+- Deprecation warnings: ✅ Successfully suppressed
+- Test functionality: ✅ All tests ran normally
+- Error visibility: ✅ No degradation (stderr still piped)
+
+---
+
+### **PLAN B: Long-Term Solution (Phase 4/5 - 15-25 hours)**
+
+**Status**: ⏸️ **PLANNED FOR PHASE 4/5 (3-6 MONTHS)**
+
+**Goal**: Migrate from deprecated CRA to actively maintained build tool (RSBuild).
+
+---
+
+#### **Context: Why Migration Is Necessary**
+
+**CRA Deprecation (February 14, 2025)**:
+- React team officially deprecated CRA for all new and existing projects
+- No active maintainers
+- No security patches
+- No webpack-dev-server updates
+- Official recommendation: Migrate to frameworks (Next.js, Remix) or build tools (Vite, Parcel, RSBuild)
+
+**What CRA Actually Does** (Important Distinction):
+- ✅ CRA builds the React APPLICATION (webpack bundling, dev server, hot reload)
+- ❌ CRA does NOT handle test infrastructure (Jest, Playwright run independently)
+- Migration changes APPLICATION build, but test infrastructure (481 Jest + 318 Playwright tests) remains UNCHANGED
+
+**Alternatives Considered**:
+
+| Tool | Type | Pros | Cons | Risk Level |
+|------|------|------|------|------------|
+| **RSBuild** | Build Tool | Webpack-compatible (easy CRA migration), Rust-based (fast), Official CRA migration guide, React team endorsed, NOT Vite ecosystem | Newer tool, smaller community | **MEDIUM** (Recommended) |
+| **Vite** | Build Tool | Official React recommendation, Fast, Large community | ISSUE-021/022 Vitest disaster (3 days lost), Vite ecosystem concerns | **MEDIUM-HIGH** |
+| **Parcel** | Build Tool | Zero-config (like CRA), Actively maintained | Smaller community, Less webpack compatibility | **MEDIUM** |
+| **Next.js** | Framework | Full-stack, SSR, React team primary recommendation | Overkill for SPA, Architectural change | **HIGH** |
+| **Eject CRA** | DIY | Expose webpack config | **WRONG APPROACH** - maintaining abandoned code | **DO NOT DO** |
+
+---
+
+#### **Why RSBuild (Recommended Long-Term Solution)**
+
+**1. Webpack Compatibility**:
+- Built on Rspack (Rust-based webpack replacement)
+- "Maximizes webpack compatibility" (official Rspack goal)
+- CRA uses webpack → RSBuild uses webpack-compatible bundler
+- Lower migration risk than switching to completely different architecture (Vite)
+
+**2. Avoids Vitest Disaster Pattern**:
+- **ISSUE-021/022 Problem**: Vitest (Vite-native) + CRA (webpack) = incompatibility
+- **RSBuild Advantage**: Webpack-compatible architecture reduces mismatch risk
+- Test infrastructure (Jest, Playwright) remains UNCHANGED
+- No test runner migration required (unlike Vitest disaster)
+
+**3. Modern Performance**:
+- Rust-based (like Vite speed, but webpack-compatible)
+- React team officially recommends it as CRA alternative
+- Active maintenance (unlike CRA)
+
+**4. Official Migration Support**:
+- Official CRA → RSBuild migration guide: https://rsbuild.rs/guide/migration/cra
+- Community reports: "fairly seamless" migrations
+- Explicit documentation for CRA projects
+
+**5. Application Build Only** (Critical Distinction):
+- Changes how React app is built/served (`npm start`, `npm run build`)
+- Test infrastructure UNCHANGED:
+  - ✅ 481 Jest unit tests (same)
+  - ✅ 318 Playwright E2E tests (same)
+  - ✅ jest.config.js (same)
+  - ✅ playwright.config.ts (same)
+- **This is why RSBuild migration is lower risk than Vitest migration**
+
+---
+
+#### **RSBuild Migration Plan (Detailed)**
+
+**Phase 1: Research & Preparation (4-6 hours)**
+
+**Step 1: Deep-Dive Research (2-3 hours)**
+- [ ] Read official RSBuild documentation: https://rsbuild.dev
+- [ ] Read CRA migration guide: https://rsbuild.rs/guide/migration/cra
+- [ ] Review community migration stories (search "CRA to RSBuild migration 2025")
+- [ ] Verify Jest compatibility (should be automatic - Jest is independent)
+- [ ] Verify Playwright compatibility (should be automatic - Playwright is independent)
+- [ ] Check if any frontend dependencies have RSBuild-specific considerations
+
+**Step 2: Create Migration Branch (30 min)**
+```bash
+git checkout -b migration/rsbuild-cra-replacement
+git push -u origin migration/rsbuild-cra-replacement
+```
+
+**Step 3: Backup Current State (30 min)**
+- [ ] Tag current working state: `git tag pre-rsbuild-migration`
+- [ ] Document current build times (baseline for comparison)
+- [ ] Run full test suite (481 Jest + 318 Playwright) - verify 100% passing
+- [ ] Take screenshots of working application
+- [ ] Document all npm scripts in package.json
+
+**Step 4: Create Rollback Plan (1-2 hours)**
+- [ ] Document exact steps to revert migration if it fails
+- [ ] Test rollback procedure on feature branch
+- [ ] Identify "point of no return" in migration
+- [ ] Define success/failure criteria for each migration step
+
+---
+
+**Phase 2: Migration Execution (8-12 hours)**
+
+**Step 1: Install RSBuild Dependencies (30 min)**
+
+```bash
+cd frontend
+
+# Remove CRA
+npm uninstall react-scripts
+
+# Install RSBuild
+npm install -D @rsbuild/core @rsbuild/plugin-react
+
+# Verify installation
+npx rsbuild --version
+```
+
+**Step 2: Create RSBuild Configuration (1-2 hours)**
+
+Create `frontend/rsbuild.config.ts`:
+
+```typescript
+import { defineConfig } from '@rsbuild/core';
+import { pluginReact } from '@rsbuild/plugin-react';
+
+export default defineConfig({
+  plugins: [pluginReact()],
+  source: {
+    entry: {
+      index: './src/index.tsx',
+    },
+  },
+  html: {
+    template: './public/index.html',
+  },
+  server: {
+    port: 3000,
+    proxy: {
+      '/api': 'http://localhost:8080', // Backend proxy
+    },
+  },
+  output: {
+    distPath: {
+      root: 'dist', // RSBuild default (was 'build' in CRA)
+    },
+  },
+});
+```
+
+**Step 3: Update package.json Scripts (30 min)**
+
+```json
+{
+  "scripts": {
+    "start": "rsbuild dev",
+    "build": "npm run typecheck && rsbuild build",
+    "preview": "rsbuild preview",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run typecheck && jest --watchAll=false",
+    "test:e2e": "playwright test",
+    // ... rest of test scripts remain unchanged
+  }
+}
+```
+
+**Step 4: Update Environment Variables (1 hour)**
+
+CRA uses `REACT_APP_` prefix, RSBuild uses `PUBLIC_` prefix:
+
+```bash
+# Search for all REACT_APP_ variables in codebase
+grep -r "REACT_APP_" frontend/src/
+
+# Update all occurrences:
+# REACT_APP_API_URL → PUBLIC_API_URL
+# Access via: import.meta.env.PUBLIC_API_URL (instead of process.env.REACT_APP_API_URL)
+```
+
+**Step 5: Update Output Directory References (30 min)**
+
+CRA outputs to `build/`, RSBuild outputs to `dist/`:
+
+```bash
+# Update .gitignore
+- /frontend/build
++ /frontend/dist
+
+# Update any deployment scripts that reference build/
+# Update CI/CD configuration if applicable
+```
+
+**Step 6: Verify TypeScript Configuration (1 hour)**
+
+RSBuild handles TypeScript differently - verify `frontend/tsconfig.json` compatibility:
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "bundler", // RSBuild recommendation
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": true,
+    // ... rest of config
+  }
+}
+```
+
+**Step 7: Test Application Build (2-3 hours)**
+
+```bash
+# Start development server
+npm start
+
+# Verify in browser:
+# - http://localhost:3000 loads correctly
+# - All tabs work (Intake, Content Generation, etc.)
+# - API calls to backend work (proxy configuration)
+# - Hot reload works (edit a file, see changes)
+# - No console errors
+# - DevTools work correctly
+
+# Test production build
+npm run build
+npm run preview
+
+# Verify production build works correctly
+```
+
+**Step 8: Verify Test Infrastructure (2-3 hours)**
+
+```bash
+# Jest unit tests (should work unchanged)
+cd frontend
+npm test
+
+# Expected: 481 tests passing (same as before)
+# If failures: investigate, fix, verify unrelated to RSBuild
+
+# Playwright E2E tests (should work unchanged)
+npm run test:e2e
+
+# Expected: 318 active tests running (same as before)
+# Verify no new failures introduced by RSBuild migration
+```
+
+**Step 9: Performance Benchmarking (1 hour)**
+
+```bash
+# Measure build times
+time npm run build
+
+# Compare to CRA baseline (documented in Phase 1 Step 3)
+# Expected: RSBuild should be 2-5x faster than CRA
+
+# Measure dev server startup
+time (npm start & sleep 10 && pkill -f rsbuild)
+
+# Compare to CRA baseline
+# Expected: RSBuild should start faster
+```
+
+---
+
+**Phase 3: Verification & Documentation (3-5 hours)**
+
+**Step 1: Comprehensive Testing (2-3 hours)**
+
+```bash
+# Run all test suites multiple times to verify stability
+npm test                 # Jest (3 times)
+npm run test:e2e         # Playwright (2 times)
+
+# Test all npm scripts
+npm run typecheck
+npm run test:coverage
+npm run test:e2e:headed
+npm run test:e2e:report
+
+# Manual testing checklist:
+# - [ ] All application features work (Intake, Content Gen, Job Details, etc.)
+# - [ ] Backend API integration works
+# - [ ] State management works (React context)
+# - [ ] Routing works (if applicable)
+# - [ ] Forms submit correctly
+# - [ ] Modals open/close
+# - [ ] All visual elements render correctly
+# - [ ] No console errors in browser
+# - [ ] Performance is acceptable (not slower than CRA)
+```
+
+**Step 2: Update Documentation (1-2 hours)**
+
+- [ ] Update `frontend/README.md` with RSBuild information
+- [ ] Update `CLAUDE.md` (remove CRA references, add RSBuild)
+- [ ] Document new build commands
+- [ ] Update environment variable documentation (PUBLIC_ prefix)
+- [ ] Update deployment documentation if affected
+- [ ] Document output directory change (build/ → dist/)
+
+**Step 3: Create Migration Summary (1 hour)**
+
+Document in ISSUE-025:
+- Migration date
+- Before/after comparison (build times, bundle sizes)
+- Any issues encountered and how they were resolved
+- Verification results (test pass rates)
+- Performance improvements observed
+- Lessons learned
+
+---
+
+**Phase 4: Deployment (1-2 hours)**
+
+**Step 1: Merge to Main**
+
+```bash
+# Verify all tests passing on migration branch
+npm test && npm run test:e2e
+
+# Merge to main
+git checkout main
+git merge migration/rsbuild-cra-replacement
+git push origin main
+
+# Tag the migration
+git tag rsbuild-migration-complete-$(date +%Y-%m-%d)
+git push --tags
+```
+
+**Step 2: Monitor Production** (if applicable)
+
+- [ ] Deploy to staging environment first
+- [ ] Verify application works in staging
+- [ ] Monitor for errors/performance issues
+- [ ] Deploy to production
+- [ ] Monitor production logs for 24-48 hours
+
+---
+
+#### **Risk Mitigation Strategies**
+
+**Risk 1: Migration breaks application functionality**
+- **Mitigation**: Comprehensive testing at every step (Phase 2 Step 7-9)
+- **Rollback**: `git checkout pre-rsbuild-migration` tag
+- **Timeline**: Can rollback in 5-10 minutes if caught early
+
+**Risk 2: Test infrastructure breaks**
+- **Mitigation**: Jest/Playwright should be unaffected (they're independent)
+- **Validation**: Test after each major step
+- **Likelihood**: LOW (tests don't depend on build tool)
+
+**Risk 3: Environment variables break**
+- **Mitigation**: Comprehensive search for REACT_APP_ prefix, systematic replacement
+- **Testing**: Verify all API calls work after migration
+- **Likelihood**: MEDIUM (requires careful search/replace)
+
+**Risk 4: Build configuration edge cases**
+- **Mitigation**: Follow official RSBuild migration guide closely
+- **Community**: Search for "CRA to RSBuild" issues on GitHub
+- **Support**: RSBuild has active Discord community for questions
+
+**Risk 5: Unknown unknowns (like Vitest disaster)**
+- **Mitigation**: Phased approach with rollback points
+- **Learning**: ISSUE-021/022 taught us to validate compatibility early
+- **Advantage**: RSBuild's webpack compatibility reduces this risk vs Vite
+
+---
+
+#### **Success Criteria**
+
+Before marking RSBuild migration complete, verify:
+
+- [ ] Application builds successfully (`npm run build`)
+- [ ] Development server runs (`npm start`)
+- [ ] All 481 Jest unit tests pass (same as pre-migration)
+- [ ] All 318 Playwright E2E tests pass (same as pre-migration)
+- [ ] All application features work (manual testing)
+- [ ] No webpack deprecation warnings (root cause fixed)
+- [ ] Build times improved or equivalent to CRA
+- [ ] Bundle sizes equivalent or smaller than CRA
+- [ ] Hot reload works in development
+- [ ] Production build works correctly
+- [ ] All documentation updated
+- [ ] Team can run application without issues
+
+---
+
+#### **Timeline & Effort Estimate**
+
+**Total Effort**: 15-25 hours (spread over 1-2 weeks)
+
+| Phase | Effort | Timeline |
+|-------|--------|----------|
+| Phase 1: Research & Preparation | 4-6 hours | Week 1, Days 1-2 |
+| Phase 2: Migration Execution | 8-12 hours | Week 1-2, Days 3-5 |
+| Phase 3: Verification & Documentation | 3-5 hours | Week 2, Day 6 |
+| Phase 4: Deployment | 1-2 hours | Week 2, Day 7 |
+
+**Recommended Schedule**:
+- **Phase 4/5 timeframe** (after core features stabilize)
+- **Not during active feature development** (requires focus)
+- **When you have 2 consecutive weeks** to commit to migration
+- **After ISSUE-025 Option A is fully complete** (E2E tests stable)
+
+---
+
+#### **Why This Plan Avoids the Vitest Disaster**
+
+**ISSUE-021/022 Lessons Applied**:
+
+1. ✅ **Validate architectural compatibility FIRST** (Phase 1 research)
+2. ✅ **Webpack-compatible tool** (RSBuild/Rspack vs Vite-native Vitest)
+3. ✅ **Application build change, NOT test runner change** (lower risk)
+4. ✅ **Comprehensive rollback plan** (learned from 3-day Vitest struggle)
+5. ✅ **Phased approach with validation checkpoints** (not all-at-once)
+6. ✅ **Community validation** (RSBuild has CRA migration guide, Vitest did not)
+7. ✅ **Test infrastructure unchanged** (Jest/Playwright stay, avoiding Vitest mistake)
+
+**Key Difference from Vitest Migration**:
+- **Vitest**: Changed test runner (Jest → Vitest) + Vite-native tool + CRA incompatibility = DISASTER
+- **RSBuild**: Changes build tool (CRA webpack → RSBuild webpack-compatible) + tests unchanged = LOWER RISK
+
+---
+
+#### **Related Issues & Documentation**
+
+**Lessons Learned From**:
+- ISSUE-021: Vitest migration attempt (Jest → Vitest, tests hung)
+- ISSUE-022: Vitest rollback (3 days lost, reverted to Jest)
+
+**References**:
+- React CRA Deprecation Announcement: https://react.dev/blog/2025/02/14/sunsetting-create-react-app
+- RSBuild Official Docs: https://rsbuild.dev
+- RSBuild CRA Migration Guide: https://rsbuild.rs/guide/migration/cra
+- Rspack (RSBuild's bundler): https://rspack.rs
+
+**Related Files**:
+- `frontend/package.json` (dependencies)
+- `frontend/playwright.config.ts` (webServer command)
+- Future: `frontend/rsbuild.config.ts` (new config file)
+
+---
+
+## Summary: Two-Plan Approach
+
+### **PLAN A: Short-Term (This Week)**
+- ✅ Suppress webpack warnings with `NODE_NO_WARNINGS=1`
+- ✅ Continue building features on CRA (works fine today)
+- ✅ Accept CRA technical debt short-term
+- ✅ Focus on Phase 2-3 features, not infrastructure
+
+### **PLAN B: Long-Term (Phase 4/5, 3-6 months)**
+- ⏸️ Migrate to RSBuild (15-25 hours)
+- ⏸️ Fix webpack deprecations at source
+- ⏸️ Modernize build tooling (Rust-based performance)
+- ⏸️ Maintain test infrastructure (no changes)
+
+**Decision**: User to approve which plan(s) to proceed with and when.
+
+---
+
+### **Outstanding Issue: Playwright Console Logging (2025-10-29)**
+
+**Status**: ⏸️ **IDENTIFIED - Not Yet Investigated**
+
+**Problem**: Playwright E2E tests output hundreds of lines of logging information to the console during test runs, making it difficult to read test results and identify failures.
+
+**Impact**:
+- Console output is cluttered and hard to read
+- Test failures may be buried in logging noise
+- Difficult to quickly assess test run status
+- May include redundant or unnecessary information
+
+**Investigation Needed**:
+- [ ] Identify source of console logging (test output, dev server logs, browser console, etc.)
+- [ ] Determine which logging is necessary vs. noise
+- [ ] Research Playwright logging configuration options
+- [ ] Evaluate if logs should be redirected to files instead of console
+- [ ] Check if `stdout: 'ignore'` and `stderr: 'pipe'` settings are optimal
+
+**Possible Solutions** (to be evaluated):
+1. Configure Playwright reporter to be more concise (currently using 'list' reporter)
+2. Redirect dev server logs to file instead of console
+3. Suppress browser console logs during tests
+4. Use Playwright's built-in logging levels (quiet, normal, verbose)
+5. Create custom reporter that filters out noise
+
+**Related Configuration**:
+- `frontend/playwright.config.ts` (reporter settings, webServer stdout/stderr)
+- Playwright CLI options for logging control
+
+**Priority**: Medium - Quality of life improvement, not blocking functionality
+
+**Timeline**: Investigate after Plan A verification complete
 
 ---
 
