@@ -8,7 +8,7 @@
   - [Feature Work Options](#feature-work-options)
     - [Option 1: Complete Phase 2.4 - Calendar & Follow-ups 📅](#option-1-complete-phase-24---calendar--follow-ups-)
     - [Option 2: Start Phase 2.5 - Email Composition ✉️](#option-2-start-phase-25---email-composition-)
-    - [Option 3: Start Phase 4.1 - Job Board RapidAPI 🚀](#option-3-start-phase-41---job-board-rapidapi-)
+    - [Option 3: Extend Phase 4 - Additional Job Board Features 🚀](#option-3-extend-phase-4---additional-job-board-features-)
     - [Option 4: Fix High-Priority Bugs 🐛](#option-4-fix-high-priority-bugs-)
   - [Testing Status](#testing-status)
   - [Bug Tracking](#bug-tracking)
@@ -24,7 +24,7 @@
 
 # JobHunter Project Status
 
-**Last Updated**: 2025-10-28
+**Last Updated**: 2025-10-28 (Phase documentation alignment completed)
 
 ---
 
@@ -58,13 +58,13 @@
 
 **Overview:**
 
-| Phase | Status | Progress | Notes |
-|-------|--------|----------|-------|
-| **Phase 1** | ✅ Complete | 100% | Core system with manual job entry |
-| **Phase 2** | 🔄 Partial | ~75% | Email integration & automation (multiple sub-phases) |
-| **Phase 3** | ✅ Complete | 100% | Resume/cover letter LLM generation |
-| **Phase 4** | 📋 Planned | 0% | Job board integrations (RapidAPI plan exists) |
-| **Phase 5** | ⏸️ Not Started | 0% | Advanced features (analytics, mobile) |
+| Phase | Status | Progress | Notes | Doc |
+|-------|--------|----------|-------|-----|
+| **Phase 1** | ✅ Complete | 100% | Core system with manual job entry | [PHASE_1](PHASE_1_core-system.md) |
+| **Phase 2** | 🔄 Partial | ~75% | Email integration & automation (multiple sub-phases) | See sub-phases below |
+| **Phase 3** | ✅ Complete | 100% | Resume/cover letter LLM generation | [PHASE_3.1](PHASE_3.1_claude-haiku-integration-plan.md) |
+| **Phase 4** | 🔄 Partial | ~25% | Job board integrations (Phase 4.1 complete) | [PHASE_4.1](PHASE_4.1_job-board-rapidAPI.md) |
+| **Phase 5** | ⏸️ Not Started | 0% | Advanced features (analytics, mobile) | TBD |
 
 **Legend**: ✅ Complete | 🔄 In Progress | 📋 Planning | ⏸️ Not Started
 
@@ -72,12 +72,14 @@
 
 ## Phase 2 Sub-Phases (Email Integration)
 
+All Phase 2 sub-phase documentation includes complete implementation details, testing strategies, and success criteria.
+
 | Sub-Phase | Title | Status | Progress | Completion | Doc |
 |-----------|-------|--------|----------|------------|-----|
 | 2.4 | Calendar & Follow-ups | 🔄 In Progress | ~60% | Est. 2-3 weeks | [PHASE_2.4](PHASE_2.4_calendar-follow-ups.md) |
 | 2.5 | Email Composition & Sending | 📋 Planning | 0% | Est. 2-3 days | [PHASE_2.5](PHASE_2.5_email-composition.md) |
-| 2.6 | LLM Job Extraction | ✅ Complete | 100% | 2025-10-11 | [PHASE_2.6](PHASE_2.6_llm-job-extraction.md) |
-| 2.7 | Microsoft Email Source | 📋 Planning | 0% | Pending | [PHASE_2.7](PHASE_2.7_samkirk-email-source-plan.md) |
+| 2.6 | LLM Job Extraction | ✅ Complete | 100% | 2025-10-11 to 2025-10-14 | [PHASE_2.6](PHASE_2.6_llm-job-extraction.md) |
+| 2.7 | Microsoft Email Source | 📋 Planning | 0% | Pending ISSUE-007 | [PHASE_2.7](PHASE_2.7_samkirk-email-source-plan.md) |
 
 **Phase 2.4 Details** (Calendar & Follow-ups):
 - ✅ Database schema migration applied
@@ -85,6 +87,30 @@
 - ✅ Frontend components (CalendarTab, FollowupsTab, TimelineView)
 - 🔄 Google Calendar OAuth integration (in progress)
 - ⏸️ Email follow-up system (pending)
+
+**Phase 2.6 Details** (LLM Job Extraction):
+- ✅ Core LLM integration complete (Claude 3.5 Haiku via Anthropic API)
+- ✅ Email processing pipeline with Claude-based extraction
+- ✅ Sub-phase 2.6.1: MECE counter system (completed 2025-10-13)
+- ✅ Sub-phase 2.6.2: Progressive email processing & date tracking (completed 2025-10-13)
+- ✅ Sub-phase 2.6.4: Trade-off based job evaluation display (completed 2025-10-14)
+- 📋 Sub-phase 2.6.3: LLM-based email filtering with Gmail labels (proposed, not started)
+
+**Phase 4.1 Details** (RapidAPI JSearch Integration - Job Board Aggregator):
+- ✅ **COMPLETED** (2025-10-23) - Full end-to-end job board integration operational
+- ✅ RapidAPI account setup and JSearch API subscription (free tier: 200 requests/month)
+- ✅ Backend implementation: All 8 sub-phases complete (4.1.1 through 4.1.8)
+  - ✅ 4.1.1: JSearch integration core (JSearch aggregates LinkedIn, Indeed, Glassdoor + 30 boards)
+  - ✅ 4.1.2: Database configuration
+  - ✅ 4.1.3: Environment configuration
+  - ✅ 4.1.4: Frontend integration (separate sync buttons for Gmail + RapidAPI)
+  - ✅ 4.1.5: Rate limiting & quota management
+  - ✅ 4.1.6: Pagination support (manual page selection)
+  - ✅ 4.1.7: Testing & validation (11/11 backend tests + 5/5 E2E tests passing)
+  - ✅ 4.1.8: Documentation complete
+- ✅ Live API testing verified: 10 jobs per sync limit, MECE validation passing
+- ✅ Frontend: RapidAPI card with purple search icon, independent sync button
+- ✅ Two independent job sources now operational: Gmail (email alerts) + RapidAPI (multi-board aggregator)
 
 ---
 
@@ -104,12 +130,22 @@
 - **Value**: Complete end-to-end application workflow (discover → review → generate → apply)
 - **Priority**: MEDIUM - natural continuation after Phase 2.4
 
-### Option 3: Start Phase 4.1 - Job Board RapidAPI 🚀
-- **Status**: Planning (plan exists)
-- **Effort**: Unknown (need to review plan)
-- **Scope**: LinkedIn, Indeed, Dice integration
-- **Value**: Automated job discovery beyond email sources
-- **Priority**: MEDIUM - major expansion
+### Option 3: Extend Phase 4 - Additional Job Board Features 🚀
+- **Status**: ✅ Phase 4.1 COMPLETE (2025-10-23), Phase 4.2+ available
+- **Completed Work**: Phase 4.1 - RapidAPI JSearch integration
+  - JSearch aggregates 30+ job boards (LinkedIn, Indeed, Glassdoor, etc.)
+  - 10 jobs per sync, 200 requests/month free tier
+  - Full backend + frontend + testing complete (11 backend tests + 5 E2E tests all passing)
+  - Two independent sources operational: Gmail + RapidAPI
+- **Available Next Steps** (from PHASE_4.1 doc):
+  - Phase 4.2: Automatic page tracking & auto-increment (4-6 hours)
+  - Phase 4.3: Enhanced filtering & search queries
+  - Phase 4.4: Increase sync limits (upgrade to Pro tier: $25/month for 10K requests)
+  - Phase 4.5: Additional specialized APIs
+  - Phase 4.6: Analytics & insights
+- **Effort**: Varies (4-8 hours for Phase 4.2, more for others)
+- **Value**: Expand automated job discovery capacity
+- **Priority**: LOW - Phase 4.1 provides solid foundation, extensions are enhancements only
 
 ### Option 4: Fix High-Priority Bugs 🐛
 - BUG-0004 (high): "All" tab E2E issue
@@ -196,9 +232,11 @@
 
 ### Medium Term (Next Month)
 
-**Start Phase 4**: **Job Board RapidAPI Integration**
-- Automated job discovery beyond email sources
-- Major expansion of job sources
+**Phase 4 Extensions** (Optional):
+- Phase 4.1 already complete (RapidAPI JSearch operational)
+- Phase 4.2: Automatic page tracking (4-6 hours)
+- Phase 4.3-4.6: Enhanced features (see PHASE_4.1 doc for details)
+- Current Phase 4.1 provides solid automated job discovery foundation
 
 ### Long Term (Phase 4/5)
 
@@ -242,12 +280,13 @@
 - [README_dev.md](../README_dev.md) - Developer workflows and scripts
 
 **Phase Plans**:
+- [PHASE_1: Core System](PHASE_1_core-system.md) ✅
 - [PHASE_2.4: Calendar & Follow-ups](PHASE_2.4_calendar-follow-ups.md) 🔄
 - [PHASE_2.5: Email Composition](PHASE_2.5_email-composition.md) 📋
 - [PHASE_2.6: LLM Job Extraction](PHASE_2.6_llm-job-extraction.md) ✅
 - [PHASE_2.7: Microsoft Email Source](PHASE_2.7_samkirk-email-source-plan.md) 📋
 - [PHASE_3.1: Claude Haiku Integration](PHASE_3.1_claude-haiku-integration-plan.md) ✅
-- [PHASE_4.1: Job Board RapidAPI](PHASE_4.1_job-board-rapidAPI.md) 📋
+- [PHASE_4.1: Job Board RapidAPI](PHASE_4.1_job-board-rapidAPI.md) ✅
 
 **Testing Documentation**:
 - [Testing Status Tracker](TESTING_STATUS.md) - Comprehensive test progress
@@ -268,5 +307,6 @@
 ---
 
 **Last Updated**: 2025-10-28
-**Based on**: Recent git history, bug index, testing status, and phase documentation
+**Based on**: Recent git history, bug index, testing status, and comprehensive phase documentation review
 **Manual Updates**: This is a manually maintained document - update as needed
+**Major Update**: Phase documentation alignment completed - all phase statuses now match their corresponding PHASE docs
