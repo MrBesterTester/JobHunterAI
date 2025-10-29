@@ -8,10 +8,10 @@ import { defineConfig, devices } from '@playwright/test';
  * - Firefox: CI/CD only (cross-browser validation)
  * - WebKit: CI/CD only (Safari-equivalent testing)
  *
- * Test Suite Timing (based on October 20, 2025 test run):
- * - E2E Tests: 10.2 minutes (464 tests, 4 workers)
- * - Recommended CI/CD Timeout: 15 minutes (with 35% buffer)
- * - Global Timeout: 20 minutes (for safety in slower environments)
+ * Test Suite Timing (based on October 29, 2025 post-RSBuild test run):
+ * - E2E Tests: 15.9 minutes reported / 11 min wall clock (529 tests, 4 workers)
+ * - Recommended CI/CD Timeout: 20 minutes (with 20.5% buffer)
+ * - Global Timeout: 20 minutes (adequate for CI/CD variability)
  */
 export default defineConfig({
   // Test directory structure
