@@ -71,7 +71,7 @@ JobHunter is a workflow-driven job application management system built to stream
 
 **Tech Stack:**
 - Backend: Rust (Actix-web framework)
-- Frontend: TypeScript/React with Create React App
+- Frontend: TypeScript/React with RSBuild
 - Database: PostgreSQL
 
 ---
