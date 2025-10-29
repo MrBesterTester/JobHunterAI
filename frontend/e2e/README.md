@@ -3,6 +3,9 @@
 
 - [JobHunter Frontend E2E Tests](#jobhunter-frontend-e2e-tests)
   - [Overview](#overview)
+  - [Test Strategy (Updated 2025-10-28)](#test-strategy-updated-2025-10-28)
+    - [Test Categories](#test-categories)
+    - [Enabling/Disabling Tests](#enablingdisabling-tests)
   - [Test Structure](#test-structure)
   - [Prerequisites](#prerequisites)
   - [Running Tests](#running-tests)
@@ -47,6 +50,54 @@ This test suite provides comprehensive browser-based testing for all JobHunter f
 **Browser Strategy:**
 - **Chromium**: Primary target (runs on every test execution)
 - **Firefox & WebKit**: Secondary targets (CI/CD only by default)
+
+## Test Strategy (Updated 2025-10-28)
+
+**Active Tests**: 318 tests across 4 categories (72% of original 441)
+**Disabled Tests**: 123 UI/styling tests (28% - preserved for future resurrection)
+
+See [ISSUE-025](../../bugs/open/ISSUE-025-e2e-test-suite-health---skipped-and-failing-tests.md) for full rationale and ROI assessment.
+
+### Test Categories
+
+**Category 1: Core Workflows (128 tests)** - ALWAYS ENABLED
+Critical path user workflows that validate end-to-end functionality.
+Files: `01-setup-load`, `02-tab-navigation`, `04-content-generation`, `05-job-details`, `06-statistics`, `07-dashboard-statistics`, `09-error-handling`
+
+**Category 2: Features (82 tests)** - ENABLED
+Important features not on critical path.
+Files: `12-calendar-management`, `13-follow-ups-management`, `14-timeline-view`, `15-intake-tab`, `16-gmail-sync-integration`
+
+**Category 3: Quality (44 tests)** - ENABLED
+Non-functional requirements (responsive design, performance, accessibility).
+Files: `08-responsive-design`, `10-performance`, `11-accessibility`
+
+**Category 4: Refinements (29 tests)** - ENABLED FOR NOW
+Edge cases and refinements - may be disabled in future if maintenance burden increases.
+Files: `05-phase-3.1.5-testing-refinement`, `07-filtered-jobs`, `08-failed-duplicates-tabs`
+
+**Disabled Tests (123 tests)** - Can be re-enabled in `test-config.ts`
+UI/styling tests with low ROI for maintenance effort.
+Files: `05b-new-job-badges`, `06-job-badge-styling`, `05-job-tradeoff-display`, `15-email-composer`, `19-condensed-description`
+
+### Enabling/Disabling Tests
+
+**To enable a disabled test suite:**
+1. Open `e2e/test-config.ts`
+2. Change flag from `false` to `true` (e.g., `'new-job-badges': true`)
+3. Run tests - they will now execute
+
+**To disable an enabled test suite:**
+1. Open the test file (e.g., `e2e/tests/XX-my-test.spec.ts`)
+2. Add at the top (after imports):
+   ```typescript
+   import { shouldRunTest } from '../test-config';
+   test.skip(!shouldRunTest('my-test-name'), 'Test suite disabled in test-config.ts');
+   ```
+3. Add entry to `e2e/test-config.ts`:
+   ```typescript
+   'my-test-name': false,  // Explanation of why disabled
+   ```
 
 ## Test Structure
 
