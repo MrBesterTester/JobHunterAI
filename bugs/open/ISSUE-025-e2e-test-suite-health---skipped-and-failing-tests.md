@@ -27,6 +27,7 @@ related: [ISSUE-018]
   - [Recommendation: Selective Approach (NOT Full 40-60 Hour Fix)](#recommendation-selective-approach-not-full-40-60-hour-fix)
   - [Decision Gate Answer](#decision-gate-answer)
 - [Option A: Implementation Plan (Selected by User 2025-10-28)](#option-a-implementation-plan-selected-by-user-2025-10-28)
+  - [Implementation Progress Summary (2025-10-29 UPDATE)](#implementation-progress-summary-2025-10-29-update)
   - [Implementation Progress Summary (2025-10-28)](#implementation-progress-summary-2025-10-28)
   - [Handoff Notes for Next Person](#handoff-notes-for-next-person)
   - [Step 1: Test Categorization (283 Passing Tests)](#step-1-test-categorization-283-passing-tests)
@@ -284,7 +285,89 @@ Before committing to the 40-60 hour fix effort, run a focused investigation:
 
 ## Option A: Implementation Plan (Selected by User 2025-10-28)
 
-**Status**: ✅ **PHASE 1-3 COMPLETE** - Core implementation and documentation done. Full suite verification recommended but optional.
+**Status**: ⚠️ **VERIFICATION INCOMPLETE** - Phase 1-3 complete, but Phase 4 verification reveals issues (2025-10-29)
+
+### Implementation Progress Summary (2025-10-29 UPDATE)
+
+**🚨 CRITICAL: Webpack Deprecation Warnings Detected (TOP PRIORITY)**
+
+**Date**: 2025-10-29
+**Severity**: HIGH
+**Component**: react-scripts (CRA webpack dev server)
+
+**Warnings Observed**:
+```
+[DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning:
+  'onAfterSetupMiddleware' option is deprecated.
+  Please use the 'setupMiddlewares' option.
+
+[DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning:
+  'onBeforeSetupMiddleware' option is deprecated.
+  Please use the 'setupMiddlewares' option.
+```
+
+**Impact**:
+- Middleware configuration in CRA is using deprecated API
+- These warnings appear during every E2E test run
+- May break in future webpack-dev-server versions
+- Could affect E2E test reliability
+
+**Root Cause**:
+- CRA (Create React App) using deprecated webpack-dev-server middleware API
+- Likely needs CRA upgrade or custom webpack config ejection
+
+**Action Required**:
+1. Investigate CRA version and available upgrades
+2. Consider migrating to Vite (longer-term solution, see ISSUE-021/022 lessons)
+3. Research webpack-dev-server setupMiddlewares migration path
+4. Test if warnings affect E2E test execution reliability
+
+**Related Files**:
+- `frontend/package.json` (react-scripts version)
+- CRA webpack config (internal, may need ejection)
+
+---
+
+**Test Run Results (2025-10-29)**
+
+**Execution Details**:
+- **Command**: `cd frontend && npm run test:e2e`
+- **Duration**: 4+ minutes (test run stopped by user - incomplete)
+- **Exit Code**: 144 (terminated)
+- **Total Tests Reported**: 547 (❌ Expected: 318 from Option A)
+- **Passing Tests**: ~96 visible before termination
+- **Failing Tests**: 1 (with retry failure)
+- **Skipped Tests**: Massive number (~400+ with `-` markers)
+
+**Failing Test**:
+```
+❌ 05-phase-3.1.5-testing-refinement.spec.ts:241
+   "should not fabricate experience or claims"
+
+   Failure: Accuracy Score 4/5 (80%)
+   - ✓ No fabricated companies detected
+   - ✗ Detected suspicious claims ← ROOT CAUSE
+   - ✓ All metrics within reasonable ranges
+   - ✓ Consistent formatting
+   - ✓ No template errors
+
+   Status: Failed initial attempt + retry #1
+```
+
+**Critical Discrepancy**:
+- **Expected**: 318 active tests (441 original - 123 disabled)
+- **Actual**: 547 tests reported by Playwright
+- **Difference**: +229 tests (72% more than expected!)
+
+**Possible Explanations**:
+1. Test count increased since Option A implementation (new tests added)
+2. `test-config.ts` disable mechanism not working correctly
+3. Test files not properly importing `shouldRunTest()` function
+4. Playwright counting/reporting tests differently than expected
+
+**Observation**: Phase 4 verification (Step 3 from handoff notes) was **never completed** after Phase 1-3 implementation. This is the first full test run since test-config.ts was created.
+
+---
 
 ### Implementation Progress Summary (2025-10-28)
 
@@ -299,7 +382,34 @@ Before committing to the 40-60 hour fix effort, run a focused investigation:
 - [x] Verified: Disabled tests show `-` marker but no skip messages in output
 - [x] Verified: Easy re-enable by changing config flag `false` → `true`
 
-**⏸️ REMAINING - Phase 2-4 (4-6 hours estimated)**
+**⚠️ BLOCKED - Phase 4 Verification Issues Discovered (2025-10-29)**
+
+**Critical Issues Found**:
+1. 🚨 **Webpack deprecation warnings** (TOP PRIORITY)
+2. ❌ **Test count mismatch**: 547 tests reported vs 318 expected
+3. ❌ **1 test failing**: Accuracy scoring test (suspicious claims detection)
+4. ⚠️ **Verification incomplete**: Phase 4 Step 3 never completed
+
+**Required Investigation** (BEFORE continuing with Phases 2-4):
+- [ ] **HIGH PRIORITY**: Investigate Webpack deprecation warnings
+  - Check react-scripts version in package.json
+  - Research migration path to setupMiddlewares
+  - Evaluate CRA upgrade options vs ejection vs Vite migration
+  - Test impact on E2E reliability
+- [ ] Verify `test-config.ts` is working correctly
+  - Check which test files are importing `shouldRunTest()`
+  - Confirm 5 test files are properly skipping tests
+  - Run `grep -l "shouldRunTest" frontend/e2e/tests/*.spec.ts` to verify
+- [ ] Investigate test count discrepancy (547 vs 318)
+  - Count tests in each spec file
+  - Check if new tests were added since Oct 28
+  - Verify Playwright counting methodology
+- [ ] Investigate failing accuracy test
+  - Review test assertion logic
+  - Check if LLM mock responses contain "suspicious claims"
+  - Determine if test is too strict or mock data needs updating
+
+**⏸️ DEFERRED - Phase 2-4 (4-6 hours estimated) - BLOCKED until investigation complete**
 - [ ] Update `e2e/README.md` with new test strategy documentation
 - [ ] Create smoke test script for CI (Category 1 core workflows only)
 - [ ] Run full E2E suite to verify 318 active tests complete successfully
