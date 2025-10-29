@@ -1,7 +1,12 @@
 import { test, expect } from '@playwright/test';
+import { shouldRunTest } from '../test-config';
 import { DashboardPage } from '../pages/DashboardPage';
 import { getJobCard } from '../pages/JobCardComponent';
 import { ContentGenerationModal } from '../pages/ModalComponent';
+
+// Conditionally skip entire file if disabled in test-config.ts
+// This will NOT show skip messages in test output
+test.skip(!shouldRunTest('email-composer'), 'Test suite disabled in test-config.ts');
 
 /**
  * Test Suite 15: Email Composer (Phase 5.2)
