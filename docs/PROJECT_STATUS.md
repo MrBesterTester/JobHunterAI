@@ -10,14 +10,14 @@
     - [Option 2: Start Phase 2.5 - Email Composition ✉️](#option-2-start-phase-25---email-composition-)
     - [Option 3: Extend Phase 4 - Additional Job Board Features 🚀](#option-3-extend-phase-4---additional-job-board-features-)
     - [Option 4: Fix High-Priority Bugs 🐛](#option-4-fix-high-priority-bugs-)
-    - [Option 5: Hybrid Approach - RSBuild Migration After Phase 2.4 🏗️](#option-5-hybrid-approach---rsbuild-migration-after-phase-24-)
+    - [Option 5: RSBuild Migration - Move Off Unsupported CRA 🏗️](#option-5-rsbuild-migration---move-off-unsupported-cra-)
   - [Testing Status](#testing-status)
   - [Bug Tracking](#bug-tracking)
   - [Recommended Next Steps](#recommended-next-steps)
     - [Immediate (This Week)](#immediate-this-week)
     - [Short Term (Next 2-3 Weeks)](#short-term-next-2-3-weeks)
     - [Medium Term (Next 2-3 Months)](#medium-term-next-2-3-months)
-    - [Long Term (Deferred if Hybrid Approach Chosen)](#long-term-deferred-if-hybrid-approach-chosen)
+    - [Long Term (Next 2-3 Months)](#long-term-next-2-3-months)
   - [Project Metrics](#project-metrics)
   - [Related Documentation](#related-documentation)
 
@@ -25,7 +25,7 @@
 
 # JobHunter Project Status
 
-**Last Updated**: 2025-10-28 (Phase documentation alignment + Hybrid RSBuild migration plan added)
+**Last Updated**: 2025-10-29 (RSBuild migration prioritized as immediate next step)
 
 ---
 
@@ -51,7 +51,7 @@
 - ISSUE-006: Brittle placeholder validation (medium)
 - ISSUE-010: CLAUDE.md token usage (low)
 - ISSUE-012: Zero-warning build policy (medium)
-- ISSUE-026: CRA deprecation - RSBuild migration (low, Phase 4/5)
+- ISSUE-026: CRA deprecation - RSBuild migration (IMMEDIATE - active priority)
 
 ---
 
@@ -155,28 +155,24 @@ All Phase 2 sub-phase documentation includes complete implementation details, te
 - **Effort**: 15 min - 2 hours each
 - **Priority**: MEDIUM - clean up technical debt
 
-### Option 5: Hybrid Approach - RSBuild Migration After Phase 2.4 🏗️
-- **Status**: Recommended approach from ISSUE-026 strategic analysis
-- **Timeline**:
-  1. Finish Phase 2.4 (2-3 weeks) - Complete Calendar & Follow-ups (currently 60% done)
-  2. RSBuild Migration (1-2 weeks) - Migrate from deprecated CRA to modern RSBuild
-  3. Start Phase 2.5 (2-3 days) - Build Email Composition on modern foundation
-- **Total Timeline**: ~6-7 weeks to have Calendar + Email + Modern build system
-- **Effort**: Phase 2.4 (remaining work) + 15-25 hours (migration) + Phase 2.5 (2-3 days)
+### Option 5: RSBuild Migration - Move Off Unsupported CRA 🏗️
+- **Status**: IMMEDIATE PRIORITY - CRA is deprecated and unmaintained since September 2022
+- **Effort**: 15-25 hours (spread over 1-2 weeks)
 - **Value**:
-  - Finishes what you started (Phase 2.4 at 60%)
-  - Eliminates CRA technical debt before codebase grows further
-  - Phase 2.5+ built on solid modern foundation
-  - Faster builds (2-5x) for all future development
+  - Eliminates technical debt from unsupported platform (CRA deprecated Feb 2025)
+  - Faster builds (2-5x speed improvement with Rust-based RSBuild)
   - Active maintenance and security patches
-- **Priority**: HIGH - Balances feature delivery with infrastructure health
-- **Why Now-ish**:
-  - **Developer sentiment**: "I simply don't like being on an unmaintained platform like CRA" - waiting until Phase 4/5 (3-6 months) means living with deprecated tooling for too long
-  - Current stability is ideal for migration (481 Jest + 318 E2E tests passing)
-  - Technical debt compounds - every feature added makes migration riskier
-  - Still captures "small codebase" benefits (before Phase 2.5, 4.2+ add more code)
-  - RSBuild migration is low-risk (webpack-compatible, official guide, avoids Vitest disaster pattern)
-- **Trade-off**: Adds 1-2 weeks before Phase 2.5 starts, but eliminates technical debt guilt and provides faster builds for all future work
+  - Modern React ecosystem alignment (React team official recommendation)
+  - Likely fixes for currently skipped tests (many issues may be CRA ecosystem problems)
+- **Priority**: IMMEDIATE - Working on unsupported platform creates compounding technical debt
+- **Rationale**:
+  - Current system uses Create React App (unmaintained since Sept 2022, deprecated Feb 2025)
+  - Many frontend unit test and E2E test issues suspected to be CRA-related
+  - Small, stable codebase (481 Jest + 318 E2E tests) is IDEAL for migration
+  - Every feature added makes migration riskier - migrate now while codebase is manageable
+  - RSBuild is webpack-compatible (low risk) with official CRA migration guide
+- **See**: [ISSUE-026](../bugs/open/ISSUE-026-cra-deprecation---rsbuild-migration.md) for comprehensive migration plan, timing analysis, and risk mitigation strategies
+- **Note**: Developer preference is clear - "I simply don't like being on an unmaintained platform like CRA" - this is the right time to migrate
 
 ---
 
@@ -203,7 +199,13 @@ All Phase 2 sub-phase documentation includes complete implementation details, te
 - ✅ ISSUE-023: Test failures - state propagation (CLOSED)
 - ✅ ISSUE-024: Coverage gaps <60% (CLOSED)
 - ✅ ISSUE-025: E2E test suite health (CLOSED)
-- ⏸️ ISSUE-026: CRA deprecation - RSBuild migration (Phase 4/5, low priority)
+- 🔄 ISSUE-026: CRA deprecation - RSBuild migration (ACTIVE - immediate priority)
+
+**Note on Skipped Tests**:
+- Current: 8 Jest unit tests + 14 E2E tests intentionally skipped
+- Hypothesis: Many test issues are likely CRA ecosystem problems (unmaintained platform)
+- Expected: RSBuild migration may resolve many currently skipped tests
+- Current stable baseline (98.3% Jest pass rate, 90.2% E2E pass rate) ideal for validating improvement
 
 **See**: [docs/TESTING_STATUS.md](TESTING_STATUS.md) for comprehensive testing progress
 
@@ -234,10 +236,13 @@ All Phase 2 sub-phase documentation includes complete implementation details, te
 
 ### Immediate (This Week)
 
-**Primary**: **Complete Phase 2.4** (Calendar & Follow-ups)
-- Already 60% done - finish what you started
-- OAuth integration is valuable infrastructure
-- Delivers complete user-facing feature
+**Primary**: **RSBuild Migration** (ISSUE-026)
+- Migrate from deprecated Create React App to RSBuild (15-25 hours over 1-2 weeks)
+- CRA is unmaintained since September 2022, deprecated February 2025
+- Current stable codebase (481 Jest + 318 E2E tests passing) is ideal migration timing
+- Likely to resolve many currently skipped test issues (suspected CRA ecosystem problems)
+- See [ISSUE-026](../bugs/open/ISSUE-026-cra-deprecation---rsbuild-migration.md) for comprehensive migration plan
+- **Benefits**: 2-5x faster builds, active maintenance, modern foundation for all future development
 
 **Secondary**: **Verify BUG-0003 Fix** (15 minutes)
 - Test if ISSUE-023 sequential generation fix resolved modal reopen issue
@@ -245,24 +250,23 @@ All Phase 2 sub-phase documentation includes complete implementation details, te
 
 ### Short Term (Next 2-3 Weeks)
 
-**Priority Path - Hybrid Approach** (Recommended):
-1. **Finish Phase 2.4** (2-3 weeks) - Complete Calendar & Follow-ups (60% → 100%)
-2. **RSBuild Migration** (1-2 weeks) - Migrate from deprecated CRA to modern RSBuild
-   - Developer sentiment: "I simply don't like being on an unmaintained platform like CRA"
-   - Captures current stability (small codebase, 481+318 tests passing)
-   - Eliminates technical debt before Phase 2.5+ adds more code
-   - See [ISSUE-026](../bugs/open/ISSUE-026-cra-deprecation---rsbuild-migration.md) Strategic Timing Analysis
-3. **Start Phase 2.5** (2-3 days) - Email Composition on modern foundation
-   - Total timeline: ~6-7 weeks for Calendar + Email + Modern build system
+**After RSBuild Migration Complete**:
 
-**Alternative Path** (If delaying migration):
-- **Start Phase 2.5** immediately after 2.4 (Email Composition - 2-3 days)
-- Complete end-to-end workflow before infrastructure work
-- Trade-off: Adds more code before migration (slightly higher risk)
+1. **Complete Phase 2.4** (Calendar & Follow-ups) - Currently 60% done
+   - OAuth integration for Google Calendar
+   - Email follow-up system
+   - Delivers complete interview/follow-up management feature
+   - **Estimate**: 2-3 weeks
+
+2. **Start Phase 2.5** (Email Composition) - 2-3 days
+   - Gmail draft creation
+   - Email composer integration
+   - Completes end-to-end workflow: discover → review → generate → apply
 
 **Address High-Priority Bugs**:
 - BUG-0004: "All" tab E2E issue (high)
 - ISSUE-006: Brittle placeholder validation (medium)
+- Note: Some bugs may resolve automatically after RSBuild migration
 
 ### Medium Term (Next 2-3 Months)
 
@@ -272,12 +276,12 @@ All Phase 2 sub-phase documentation includes complete implementation details, te
 - Phase 4.3-4.6: Enhanced features (see PHASE_4.1 doc for details)
 - Current Phase 4.1 provides solid automated job discovery foundation
 
-### Long Term (Deferred if Hybrid Approach Chosen)
+### Long Term (Next 2-3 Months)
 
-**Infrastructure**: **ISSUE-026 - RSBuild Migration** (15-25 hours)
-- If not done via Hybrid Approach, consider during Phase 4/5
-- Note: Hybrid approach is recommended over waiting this long
-- Rationale: Developer preference to not stay on unmaintained CRA for 3-6 months
+**Phase Progression**:
+- Continue with Phase 2 sub-phases (2.7: Microsoft Email Source)
+- Extend Phase 4 (Job Board features) as needed
+- Plan Phase 5 (Advanced features - analytics, mobile)
 
 ---
 
@@ -340,11 +344,13 @@ All Phase 2 sub-phase documentation includes complete implementation details, te
 
 ---
 
-**Last Updated**: 2025-10-28
-**Based on**: Recent git history, bug index, testing status, comprehensive phase documentation review, and ISSUE-026 strategic analysis
+**Last Updated**: 2025-10-29
+**Based on**: Recent git history, bug index, testing status, and ISSUE-026 strategic analysis
 **Manual Updates**: This is a manually maintained document - update as needed
 **Major Updates**:
-- Phase documentation alignment completed - all phase statuses now match their corresponding PHASE docs
-- Added Option 5: Hybrid Approach for RSBuild migration (finish Phase 2.4, migrate, then start Phase 2.5)
-- Updated Recommended Next Steps to reflect hybrid approach as priority path
-- Developer sentiment captured: "I simply don't like being on an unmaintained platform like CRA" - rationale for not waiting until Phase 4/5
+- **2025-10-29**: RSBuild migration moved to IMMEDIATE priority (no longer hybrid approach)
+  - Option 5 simplified to focus solely on RSBuild migration referencing ISSUE-026
+  - Moved to "Immediate (This Week)" in Recommended Next Steps
+  - Rationale: Developer preference to work on modern, supported platform
+  - Suspected many test issues are CRA ecosystem problems that will resolve after migration
+- **2025-10-28**: Phase documentation alignment completed - all phase statuses now match their corresponding PHASE docs
