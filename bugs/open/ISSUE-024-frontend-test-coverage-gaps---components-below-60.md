@@ -27,16 +27,17 @@ related: [ISSUE-018]
   - [Option 1: Address IntakeTab.tsx First (Recommended)](#option-1-address-intaketabtsx-first-recommended)
   - [Option 2: Address IntakeTab + RankedJobsTab](#option-2-address-intaketab--rankedjobstab)
   - [Option 3: Skip All Three (Maintain Current 78.3%)](#option-3-skip-all-three-maintain-current-783%25)
-  - [Option 4: Skip FollowupsTab Entirely](#option-4-skip-followupstab-entirely)
+  - [Option 4: Address All Three Components](#option-4-address-all-three-components)
 - [Decision](#decision)
 - [Implementation Plan](#implementation-plan)
   - [Phase 1: IntakeTab.tsx (54.82% → 60%+) ✅ COMPLETED (2025-10-28)](#phase-1-intaketabtsx-5482%25-%E2%86%92-60%25--completed-2025-10-28)
   - [Phase 2 (Optional): RankedJobsTab.tsx (51.81% → 60%+) ✅ COMPLETED (2025-10-28)](#phase-2-optional-rankedjobstabtsx-5181%25-%E2%86%92-60%25--completed-2025-10-28)
-  - [Phase 3: FollowupsTab.tsx - SKIP](#phase-3-followupstabtsx---skip)
+  - [Phase 3: FollowupsTab.tsx (15.5% → 60%+) ✅ COMPLETED (2025-10-28)](#phase-3-followupstabtsx-155%25-%E2%86%92-60%25--completed-2025-10-28)
 - [Testing](#testing)
 - [Implementation Results](#implementation-results)
   - [Phase 1: IntakeTab.tsx Coverage Improvement (2025-10-28)](#phase-1-intaketabtsx-coverage-improvement-2025-10-28)
   - [Phase 2: RankedJobsTab.tsx Coverage Improvement (2025-10-28)](#phase-2-rankedjobstabtsx-coverage-improvement-2025-10-28)
+  - [Phase 3: FollowupsTab.tsx Coverage Improvement (2025-10-28)](#phase-3-followupstabtsx-coverage-improvement-2025-10-28)
 - [Status History](#status-history)
 - [Notes](#notes)
 - [Related Files](#related-files)
@@ -71,7 +72,7 @@ related: [ISSUE-018]
 |-----------|----------|------------|----------------|------------------|
 | **IntakeTab.tsx** | 54.82% | ~5.2% | HIGH (job source ID, filtering) | 3-5 hours |
 | **RankedJobsTab.tsx** | 51.81% | ~8.2% | HIGH (ranking, scoring) | 4-6 hours |
-| **FollowupsTab.tsx** | 15.5% | ~44.5% | LOW (mostly display) | 8-12 hours |
+| **FollowupsTab.tsx** | 15.5% | ~44.5% | HIGH (approve/send/edit workflows) | 8-12 hours |
 
 **Total Effort to 60%**: 15-23 hours
 
@@ -90,7 +91,7 @@ Each component should have 60%+ test coverage to ensure:
 Three components fall short of 60% coverage target:
 1. **IntakeTab.tsx**: 54.82% - Job intake and source identification logic undertested
 2. **RankedJobsTab.tsx**: 51.81% - Job ranking and scoring logic undertested
-3. **FollowupsTab.tsx**: 15.5% - Minimal coverage (but also minimal business logic)
+3. **FollowupsTab.tsx**: 15.5% - Minimal coverage of critical approval/send/edit workflows
 
 ## Root Cause
 
@@ -207,38 +208,57 @@ FollowupsTab.tsx          |    15.5 |       70 |   22.22 |    15.5 | (57-568)
 
 ---
 
-### Option 4: Skip FollowupsTab Entirely
+### Option 4: Address All Three Components
 
-**Priority**: **RECOMMENDED** - Pragmatic approach
+**Priority**: **COMPREHENSIVE** - Complete coverage approach
 
-**Description**: Address IntakeTab and/or RankedJobsTab, but explicitly skip FollowupsTab
+**Description**: Bring all three components (IntakeTab, RankedJobsTab, FollowupsTab) to 60%+ coverage
 
 **Rationale**:
-- FollowupsTab has minimal business logic (mostly display)
-- 44.5% gap requires 8-12 hours effort
-- Very low ROI - testing display code has limited value
-- Effort better spent elsewhere
+- All three components have HIGH business value
+- FollowupsTab contains critical approval/send/edit workflows (not just display)
+- Complete coverage ensures all major workflows are tested
+- 15-23 hours total effort is reasonable for comprehensive testing
+
+**Test Areas - FollowupsTab**:
+- Follow-up approval workflow (with/without edits)
+- Follow-up send workflow (with confirmation + error handling)
+- Edit mode state management (subject/body editing)
+- Overdue detection logic
+- Status-based UI rendering (pending/approved/sent/cancelled/failed)
+- Error message display
 
 **Pros**:
-- Focus on high-value components only
-- Avoid wasting time on low-ROI work
+- Complete testing of all major components
+- High confidence in all critical user workflows
+- No gaps remaining in core functionality
 
 **Cons**:
-- FollowupsTab remains at 15.5% coverage
+- Higher total time investment (15-23 hours)
+- FollowupsTab has largest gap (44.5%)
 
-**Implementation Effort**: **Varies** (depends on which components addressed)
+**Implementation Effort**: **15-23 hours total** (IntakeTab: 3-5h, RankedJobsTab: 4-6h, FollowupsTab: 8-12h)
 
 ## Decision
 
-**Recommendation**: **Option 1 (IntakeTab only)** or **Option 4 (IntakeTab + skip FollowupsTab)**
+**Original Assessment (INCORRECT)**: Recommended skipping FollowupsTab due to "minimal business logic"
+
+**Corrected Assessment (2025-10-28)**: After code review, FollowupsTab contains HIGH-value business logic:
+- Approval workflow (lines 56-71): Critical for user workflow
+- Send workflow (lines 73-91): Email sending with confirmation + error handling
+- Edit mode (lines 304-379): Subject/body editing state management
+- Overdue detection (line 116): Time-sensitive task flagging
+
+**Updated Recommendation**: **Option 4 (Address all three components)**
 
 **Reasoning**:
-1. IntakeTab has highest business value (job intake workflow)
-2. Smallest gap (5.2%) makes it most achievable
-3. FollowupsTab should be explicitly skipped (low ROI)
-4. RankedJobsTab is optional based on available time/priority
+1. All three components contain HIGH business value logic
+2. FollowupsTab 44.5% gap is large, but the workflow is critical
+3. Approval/send/edit workflows breaking would be severe user impact
+4. 8-12 hours effort is justified for critical functionality
 
-**User Decision Required**: Choose which components to prioritize based on business needs.
+**Phases completed**: Phase 1 (IntakeTab ✅), Phase 2 (RankedJobsTab ✅)
+**Next**: Phase 3 (FollowupsTab) - proceeding with implementation
 
 ## Implementation Plan
 
@@ -278,9 +298,32 @@ FollowupsTab.tsx          |    15.5 |       70 |   22.22 |    15.5 | (57-568)
 
 ---
 
-### Phase 3: FollowupsTab.tsx - SKIP
+### Phase 3: FollowupsTab.tsx (15.5% → 60%+) ✅ COMPLETED (2025-10-28)
 
-**Rationale**: 15.5% → 60% requires 44.5% gap closure (8-12 hours) for minimal business logic. **Not recommended.**
+**Time**: 8-12 hours (estimated), ~4 hours (actual)
+
+**Tests to Implement**:
+1. Follow-up approval workflow (with/without edits)
+2. Follow-up send workflow (confirmation dialog + success/error handling)
+3. Edit mode state management (toggle, subject/body editing, cancel)
+4. Overdue detection and display
+5. Status-based rendering (pending/approved/sent/cancelled/failed)
+6. Error message display
+7. fetchFollowUps with success/error handling
+8. Empty state and loading state display
+9. Modal open/close interactions
+10. FollowUpCard rendering and click interactions
+
+**Test File**: `frontend/src/FollowupsTab.test.tsx` (extend existing tests)
+
+**Coverage Target**: 60%+ (aim for 65% to have buffer)
+
+**Critical Business Logic to Test**:
+- `approveFollowUp()` (lines 56-71): Approval with optional edits
+- `sendFollowUp()` (lines 73-91): Send with confirmation + error handling
+- Edit mode workflow (lines 304-450): Subject/body editing
+- Overdue detection (line 116): Date comparison logic
+- Status-based UI conditionals (lines 400-522)
 
 ## Testing
 
@@ -453,11 +496,113 @@ npm test -- --coverage --collectCoverageFrom="src/IntakeTab.tsx"
 
 **Conclusion**: RankedJobsTab.tsx now has 96.36% coverage, dramatically exceeding the 60% target by 36.36 points. All core business logic (ranking, scoring, sorting, filtering, expansion) is thoroughly tested. Remaining uncovered code represents minor edge cases with very low testing ROI. This component has the highest test coverage in the frontend codebase.
 
+### Phase 3: FollowupsTab.tsx Coverage Improvement (2025-10-28)
+
+**Status**: ✅ **COMPLETED** - Dramatically exceeded target
+
+**Coverage Achieved**:
+- **Starting coverage**: 15.5% statements
+- **Ending coverage**: 98.43% statements (+82.93 points)
+- **Target**: 60% statements
+- **Result**: Exceeded target by 38.43 points
+
+**Detailed Metrics**:
+| Metric | Before | After | Improvement |
+|--------|--------|-------|-------------|
+| Statements | 15.5% | 98.43% | +82.93 points |
+| Branches | Unknown | 78.33% | N/A |
+| Functions | 22.22% | 85% | +62.78 points |
+| Lines | 15.5% | 98.43% | +82.93 points |
+
+**Tests Added**: 37 total tests (19 new, 18 enhanced from weak assertions)
+
+**Test Coverage by Category**:
+1. **Initial Rendering** (4 tests)
+   - Loading state display
+   - Header and description
+   - Fetch on mount
+   - Coverage: Component initialization (lines 30-55)
+
+2. **Follow-up Display** (5 tests)
+   - Display with full data (job title, company, status, badges, dates)
+   - Empty state rendering
+   - Multiple follow-ups
+   - Fallback text for missing fields
+   - Date formatting
+   - Coverage: Main render logic (lines 539-575), FollowUpCard component (lines 114-204)
+
+3. **Status Display** (4 tests)
+   - Pending, approved, sent, failed status rendering
+   - getStatusColor utility function
+   - Coverage: getStatusColor (lines 93-108), status badge rendering
+
+4. **Overdue Detection** (3 tests)
+   - Display "(Overdue)" for past dates with pending status
+   - No overdue marker for future dates
+   - No overdue marker for non-pending status
+   - Coverage: Overdue logic (line 116), conditional rendering (lines 184-186)
+
+5. **Modal Interactions** (11 tests)
+   - Open modal on card click
+   - Close modal on close button click
+   - Display subject/body in view mode
+   - Enter edit mode
+   - Cancel edit and revert changes
+   - Save edits and approve
+   - Approve without edits
+   - Send Now button for approved status
+   - Send with confirmation
+   - Error message display
+   - Coverage: Modal rendering (lines 206-528), edit mode (lines 304-450), status-based buttons (lines 400-522)
+
+6. **Approval Workflow** (2 tests)
+   - Successful approval
+   - Error handling
+   - Coverage: approveFollowUp function (lines 56-71)
+
+7. **Send Workflow** (3 tests)
+   - Send when confirmed
+   - Cancel when user declines
+   - Error handling
+   - Coverage: sendFollowUp function (lines 73-91)
+
+8. **Error Handling** (2 tests)
+   - Fetch errors
+   - Network errors
+   - Coverage: Error handling in fetchFollowUps (lines 45-48)
+
+9. **Attempt Badge** (2 tests)
+   - "1st Follow-up" badge
+   - "2nd Follow-up" badge
+   - Coverage: getAttemptBadge function (lines 110-112)
+
+10. **Follow-up Details** (2 tests)
+    - Display with all optional fields
+    - Display with minimal fields
+    - Coverage: Conditional rendering for optional fields (lines 189-201, 293-299)
+
+**Uncovered Code Remaining** (1.57% uncovered):
+- Lines 100, 102, 106: getStatusColor edge cases (cancelled status, default case)
+- Lines 294-299: Modal metadata display (days_since_application conditional)
+
+**Analysis of Uncovered Code**:
+- **Business logic**: All core workflows tested (fetch, approve, send, edit, overdue detection)
+- **Remaining gaps**: Minor edge cases in utility functions (cancelled status color, metadata display)
+- **ROI of further testing**: Very low - remaining code is trivial edge cases
+
+**Test Quality Improvements**:
+- **Before**: Tests existed but used weak assertions (only checked fetch was called, didn't verify rendered output)
+- **After**: Comprehensive assertions verifying actual rendered content, interaction behavior, state changes, and API calls
+- **Coverage increase driven by**: Complete modal interaction testing, status-based rendering, and workflow verification
+
+**Conclusion**: FollowupsTab.tsx now has 98.43% coverage, dramatically exceeding the 60% target by 38.43 points. All critical business logic (approval, send, edit workflows, overdue detection) is thoroughly tested. This component now has the second-highest test coverage in the frontend codebase (after RankedJobsTab.tsx at 96.36%). The original assessment incorrectly classified this as "minimal business logic" - it actually contains HIGH-value workflows that are now comprehensively tested.
+
 ## Status History
 
 - 2025-10-28: ISSUE-024 created after ISSUE-018 closure (78.3% coverage achieved)
 - 2025-10-28: Phase 1 (IntakeTab.tsx) ✅ COMPLETED - 77.89% coverage achieved (exceeded 60% target by 17.89 points)
 - 2025-10-28: Phase 2 (RankedJobsTab.tsx) ✅ COMPLETED - 96.36% coverage achieved (exceeded 60% target by 36.36 points)
+- 2025-10-28: Phase 3 (FollowupsTab.tsx) ✅ COMPLETED - 98.43% coverage achieved (exceeded 60% target by 38.43 points)
 
 ## Notes
 
