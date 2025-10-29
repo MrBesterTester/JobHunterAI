@@ -1,12 +1,13 @@
 ---
 id: ISSUE-024
 title: Frontend Test Coverage Gaps - Components Below 60%
-status: open
+status: fixed
 priority: medium
 severity: medium
 component: frontend
 created: 2025-10-28
 updated: 2025-10-28
+fixed: 2025-10-28
 affects: [frontend-testing, test-coverage]
 related: [ISSUE-018]
 ---
