@@ -30,10 +30,10 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# Comprehensive Skipped & Cosmetic Tests Breakdown
+# Excluded Tests - Comprehensive Breakdown
 
 **Generated**: 2025-10-30
-**Total Skipped/Cosmetic Tests**: 140 tests (8 unit + 132 E2E)
+**Total Excluded Tests**: 140 tests (8 unit + 132 E2E)
 
 ---
 

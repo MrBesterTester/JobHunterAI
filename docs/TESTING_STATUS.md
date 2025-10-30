@@ -3,14 +3,15 @@
 
 - [Frontend Testing Status](#frontend-testing-status)
   - [Executive Summary](#executive-summary)
+    - [Test Exclusions](#test-exclusions)
     - [Unit Test Coverage](#unit-test-coverage)
     - [E2E Test Coverage](#e2e-test-coverage)
   - [Open Issues](#open-issues)
-  - [Skipped Tests Summary](#skipped-tests-summary)
-    - [Unit Tests (8 skipped)](#unit-tests-8-skipped)
+  - [Excluded Tests Summary](#excluded-tests-summary)
+    - [Unit Tests (8 excluded)](#unit-tests-8-excluded)
       - [1. Content Generation Modal (4 skipped)](#1-content-generation-modal-4-skipped)
       - [2. Job Details Modal (4 skipped)](#2-job-details-modal-4-skipped)
-    - [E2E Tests (123 skipped)](#e2e-tests-123-skipped)
+    - [E2E Tests (132 excluded)](#e2e-tests-132-excluded)
   - [Next Steps](#next-steps)
   - [Recent Activity (Last 2 Weeks)](#recent-activity-last-2-weeks)
   - [Testing Infrastructure Details](#testing-infrastructure-details)
@@ -27,11 +28,24 @@
 
 **For historical context**: See [TESTING_HISTORY.md](TESTING_HISTORY.md)
 
-**Last Updated**: 2025-10-30 (Reorganized recommendations - testing focus)
+**Last Updated**: 2025-10-30 (BUG-0004 fixed, comprehensive excluded tests breakdown added)
 
 ---
 
 ## Executive Summary
+
+### Test Exclusions
+
+**⚠️ IMPORTANT**: See **[EXCLUDED_TESTS.md](EXCLUDED_TESTS.md)** for comprehensive breakdown of 140 excluded tests.
+
+**Quick Summary**:
+- **Total Excluded**: 140 tests (13.9% of 1010 total tests)
+- **Unit Tests**: 8 excluded (1.7%) - Testing infrastructure limitations
+- **E2E Tests**: 132 excluded (25.0%) - Cosmetic styling (100), redundant coverage (32)
+- **Active Tests**: 870 tests (86.1% coverage)
+- **Categories**: 71.4% cosmetic/styling, 22.9% redundant, 5.7% testing limitations
+
+---
 
 **Overall Health**: ✅ **Production Ready**
 
@@ -75,11 +89,11 @@
 | Metric | Value | Notes |
 |--------|-------|-------|
 | **Total Tests** | 529 | Full suite |
-| **Active Tests** | 406 | 123 cosmetic tests disabled |
+| **Active Tests** | 397 | 132 excluded (see EXCLUDED_TESTS.md) |
 | **Passed** | 343 (64.8%) | Includes all core workflows |
 | **Failed** | 62 (11.7%) | Pre-existing issues, not blocking |
-| **Flaky** | 0 | Fixed on 2025-10-30 |
-| **Skipped** | 123 (23.3%) | Cosmetic tests (disabled intentionally) |
+| **Flaky** | 1 | LLM response variability |
+| **Excluded** | 132 (25.0%) | 131 disabled + 1 skipped cosmetic |
 | **Runtime** | 11 min (wall clock) | 15.9 min Playwright reported |
 | **Core Workflows** | 129/143 (90.2%) | ✅ All critical paths passing |
 
@@ -87,7 +101,7 @@
 - Core Workflows: 90.2% pass rate (primary focus)
 - Feature Tests: Active and passing
 - Quality Tests: Active and passing
-- Cosmetic Tests: 123 tests disabled (badge styling, etc.)
+- Excluded Tests: 132 total (see [EXCLUDED_TESTS.md](EXCLUDED_TESTS.md))
 
 ---
 
@@ -100,11 +114,13 @@
 
 ---
 
-## Skipped Tests Summary
+## Excluded Tests Summary
 
-### Unit Tests (8 skipped)
+**📋 Complete Breakdown**: See **[EXCLUDED_TESTS.md](EXCLUDED_TESTS.md)** for comprehensive details on all 140 excluded tests.
 
-**IMPORTANT**: These 8 tests are intentionally skipped - **NOT app bugs**. All represent known testing limitations, not functional issues.
+### Unit Tests (8 excluded)
+
+**IMPORTANT**: These 8 tests are intentionally excluded - **NOT app bugs**. All represent known testing limitations, not functional issues.
 
 #### 1. Content Generation Modal (4 skipped)
 - **Reason**: React state batching architectural limitation
@@ -123,35 +139,22 @@
 
 ---
 
-### E2E Tests (123 skipped)
+### E2E Tests (132 excluded)
 
-**Status**: Intentionally disabled with centralized control via `frontend/e2e/test-config.ts`
+**Status**: Intentionally disabled/skipped with centralized control via `frontend/e2e/test-config.ts`
 
-**Breakdown by Test File**:
+**Summary**:
+- **Disabled Suites**: 131 tests (badge styling, CSS validation, redundant coverage)
+- **Individual Skips**: 1 test (cosmetic CSS layout validation)
+- **See**: [EXCLUDED_TESTS.md](EXCLUDED_TESTS.md) for complete breakdown
 
-| Test File | Tests | Category | Reason |
-|-----------|-------|----------|--------|
-| `05b-new-job-badges.spec.ts` | 58 | Cosmetic | Badge display styling |
-| `06-job-badge-styling.spec.ts` | 32 | Cosmetic | Badge CSS validation |
-| `05-job-tradeoff-display.spec.ts` | 32 | Cosmetic | Trade-off display formatting |
-| `15-email-composer.spec.ts` | ~1 | Covered | Unit tests provide coverage |
-| `19-condensed-description.spec.ts` | 9 | Cosmetic | Description display formatting |
+**Top Categories**:
+- Cosmetic Styling: 100 tests (71.4%)
+- Redundant Coverage: 32 tests (22.9%)
 
-**Why Disabled**:
-- Cosmetic tests focus on styling/formatting, not functionality
-- Core functionality thoroughly tested by unit tests and feature E2E tests
-- Can be re-enabled by changing flags in `test-config.ts`
+**How to Re-enable**: See [EXCLUDED_TESTS.md - Re-enabling Tests](EXCLUDED_TESTS.md#re-enabling-tests) section
 
-**How to Re-enable**:
-```typescript
-// frontend/e2e/test-config.ts
-export const ENABLED_TEST_SUITES = {
-  'new-job-badges': true,  // Change false → true
-  // ... other suites
-};
-```
-
-**Impact**: Disabled tests represent 23.3% of total E2E suite. Core workflows maintain 90.2% pass rate.
+**Impact**: Excluded tests represent 25.0% of total E2E suite. Core workflows maintain 90.2% pass rate.
 
 ---
 
