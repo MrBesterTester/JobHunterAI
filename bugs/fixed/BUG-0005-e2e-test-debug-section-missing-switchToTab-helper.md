@@ -3,12 +3,13 @@
 
   - [id: BUG-0005
 title: E2E Test - Debug Section Missing switchToTab Helper
-status: open
+status: fixed
 priority: medium
 severity: low
 component: frontend
 created: 2025-10-30
 updated: 2025-10-30
+fixed: 2025-10-30
 affects: [e2e-tests, debug-section]
 related: []](#id-bug-0005%0Atitle-e2e-test---debug-section-missing-switchtotab-helper%0Astatus-open%0Apriority-medium%0Aseverity-low%0Acomponent-frontend%0Acreated-2025-10-30%0Aupdated-2025-10-30%0Aaffects-e2e-tests-debug-section%0Arelated-)
 - [BUG-0005: E2E Test - Debug Section Missing switchToTab Helper](#bug-0005-e2e-test---debug-section-missing-switchtotab-helper)
@@ -33,12 +34,13 @@ related: []](#id-bug-0005%0Atitle-e2e-test---debug-section-missing-switchtotab-h
 ---
 id: BUG-0005
 title: E2E Test - Debug Section Missing switchToTab Helper
-status: open
+status: fixed
 priority: medium
 severity: low
 component: frontend
 created: 2025-10-30
 updated: 2025-10-30
+fixed: 2025-10-30
 affects: [e2e-tests, debug-section]
 related: []
 ---
