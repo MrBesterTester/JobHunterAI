@@ -78,13 +78,24 @@
    - **Runtime**: 32.3s (down from 120s+ with timeout failures)
    - **Additional improvement**: Tests now gracefully skip when expected data doesn't exist in database
 
-3. **LOW PRIORITY**: Update test-config.ts with new test files
+3. **⚠️ OUTSTANDING**: Missing test data for job-card-summary "new jobs" test (1 test skipped)
+   - **Test**: `should display Summary section for new jobs with data` (line 34 in 17-job-card-summary.spec.ts)
+   - **Issue**: Test database has 0 jobs with status='new', causing test to skip
+   - **Database state**: 1 approved job, 71 filtered jobs, 0 new jobs, 0 applied jobs
+   - **Solution needed**: Either:
+     - Add test seed data with jobs in "new" status
+     - Or accept this as expected behavior (test validates graceful handling of empty state)
+   - **Estimated effort**: 30 minutes to add seed data
+   - **Impact**: Would increase test coverage from 12/13 to 13/13 passing
+   - **Priority**: Low (test gracefully skips, not blocking any functionality)
+
+4. **LOW PRIORITY**: Update test-config.ts with new test files
    - 88 new tests added since Oct 28
    - Some may need categorization (core, feature, quality, or disable)
    - **Estimated effort**: 1-2 hours
    - **Impact**: Centralized control of all E2E tests
 
-4. **ONGOING**: Monitor flaky accuracy test (1 test)
+5. **ONGOING**: Monitor flaky accuracy test (1 test)
    - LLM response variability is expected
    - May need to relax assertion strictness or use deterministic mock responses
    - **Estimated effort**: 30 minutes
