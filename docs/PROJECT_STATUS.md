@@ -155,10 +155,10 @@ All Phase 2 sub-phase documentation includes complete implementation details, te
 
 ### Option 4: Fix High-Priority Bugs 🐛
 - BUG-0004 (high): "All" tab E2E issue
-- BUG-0003 (medium): Modal reopen (verify if closed ISSUE-023 fixed it)
 - ISSUE-012 (medium): Zero-warning build policy
 - **Effort**: 15 min - 2 hours each
 - **Priority**: MEDIUM - clean up technical debt
+- **Note**: BUG-0003 (Modal reopen) was verified as fixed on 2025-10-30 (see Recent Fixes)
 
 ### Option 5: RSBuild Migration ✅ COMPLETED (2025-10-29)
 - **Status**: ✅ **MIGRATION COMPLETE**
