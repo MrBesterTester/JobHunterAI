@@ -2486,7 +2486,8 @@ async fn condense_description_handler(
         Some(desc) => desc,
         None => {
             return Ok(HttpResponse::Ok().json(serde_json::json!({
-                "condensed_description": "No description available"
+                "condensed_description": "No description available",
+                "has_valid_description": false
             })));
         }
     };
@@ -2504,8 +2505,10 @@ async fn condense_description_handler(
     // Call helper to condense description
     match condense_text_with_claude(&api_key, description_text).await {
         Ok(condensed) => {
+            let has_valid_description = is_valid_description(&condensed);
             Ok(HttpResponse::Ok().json(serde_json::json!({
-                "condensed_description": condensed
+                "condensed_description": condensed,
+                "has_valid_description": has_valid_description
             })))
         },
         Err(e) => {
@@ -2603,6 +2606,52 @@ async fn condense_text_with_claude(
         .to_string();
 
     Ok(condensed_text)
+}
+
+// Helper function to determine if a condensed description is valid or a placeholder
+fn is_valid_description(text: &str) -> bool {
+    let trimmed = text.trim();
+
+    // Empty descriptions are invalid
+    if trimmed.is_empty() {
+        return false;
+    }
+
+    // Known placeholder messages from the LLM
+    let placeholder_messages = [
+        "No job description to be extracted.",
+        "No description available",
+        "Loading description...",
+        "No description available.",
+        // Add variations for robustness
+        "Unable to extract job description",
+        "Cannot extract description",
+        "Description not available",
+        "Job description unavailable",
+    ];
+
+    // Check exact matches (case-sensitive for now, as prompt is specific)
+    if placeholder_messages.iter().any(|msg| trimmed == *msg) {
+        return false;
+    }
+
+    // Heuristic: Very short "descriptions" are likely placeholders (< 50 chars)
+    // Real job descriptions are typically longer
+    if trimmed.len() < 50 {
+        return false;
+    }
+
+    // Additional heuristic: Check for common failure patterns
+    // Matches patterns like "No ... description", "Unable to ...", etc.
+    let failure_pattern = regex::Regex::new(
+        r"(?i)^(no|unable|cannot|failed).*(description|extract|condense)"
+    ).unwrap();
+
+    if failure_pattern.is_match(trimmed) {
+        return false;
+    }
+
+    true
 }
 
 // Handler to get the original email body for a job

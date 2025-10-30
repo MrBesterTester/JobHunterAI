@@ -5,11 +5,11 @@
   - [Executive Summary](#executive-summary)
     - [Unit Test Coverage](#unit-test-coverage)
     - [E2E Test Coverage](#e2e-test-coverage)
-  - [Open Issues & Recommended Next Steps](#open-issues--recommended-next-steps)
-    - [1. ⚠️ ISSUE-006: Brittle Placeholder Validation](#1--issue-006-brittle-placeholder-validation)
-      - [Option 1: Quick Win (2-3 hours)](#option-1-quick-win-2-3-hours)
-      - [Option 2: Better (4-6 hours)](#option-2-better-4-6-hours)
-      - [Option 3: Best (8-12 hours)](#option-3-best-8-12-hours)
+  - [~~Open Issues~~ Recently Resolved Issues](#open-issues-recently-resolved-issues)
+    - [1. ✅ ISSUE-006: Brittle Placeholder Validation (RESOLVED 2025-10-30)](#1--issue-006-brittle-placeholder-validation-resolved-2025-10-30)
+      - [Option 1: Backend Validation Flag (4-6 hours) - RECOMMENDED](#option-1-backend-validation-flag-4-6-hours---recommended)
+      - [Option 2: Semantic Analysis with Heuristics (3-4 hours)](#option-2-semantic-analysis-with-heuristics-3-4-hours)
+      - [Option 3: Regex Pattern Matching (2-3 hours)](#option-3-regex-pattern-matching-2-3-hours)
   - [Skipped Tests Summary](#skipped-tests-summary)
     - [Unit Tests (8 skipped)](#unit-tests-8-skipped)
       - [1. Content Generation Modal (4 skipped)](#1-content-generation-modal-4-skipped)
@@ -30,7 +30,7 @@
 
 **For historical context**: See [TESTING_HISTORY.md](TESTING_HISTORY.md)
 
-**Last Updated**: 2025-10-30
+**Last Updated**: 2025-10-30 (ISSUE-006 implemented)
 
 ---
 
@@ -94,11 +94,13 @@
 
 ---
 
-## Open Issues & Recommended Next Steps
+## ~~Open Issues~~ Recently Resolved Issues
 
-### 1. ⚠️ ISSUE-006: Brittle Placeholder Validation
+### 1. ✅ ISSUE-006: Brittle Placeholder Validation (RESOLVED 2025-10-30)
 
 **File**: [bugs/open/ISSUE-006-brittle-placeholder-validation.md](../bugs/open/ISSUE-006-brittle-placeholder-validation.md)
+
+**Resolution**: Implemented Option 1 (Backend Validation Flag)
 
 **Issue**: Hardcoded string matching for placeholder detection (`hasValidDescription()`) will break if LLM output changes
 
@@ -116,31 +118,51 @@
 
 **Note**: 123 disabled cosmetic E2E tests (`05b-new-job-badges`, `19-condensed-description`, etc.) do NOT mitigate this issue
 
-**Implementation Options** (see ISSUE-006 for full details):
+**Implementation Options** (numbering matches ISSUE-006 for clarity):
 
-#### Option 1: Quick Win (2-3 hours)
-Add unit test for `hasValidDescription()` with various placeholder wordings
-- Test alternate phrasings: "Unable to extract", "Description not available", "Cannot condense"
-- Verify ranking behavior: jobs without valid descriptions rank last
-- Files: `frontend/src/App.test.tsx`
-
-#### Option 2: Better (4-6 hours)
-Add E2E test that verifies ranking and badge display
-- Create job with placeholder description
-- Verify it appears at bottom of list
-- Verify warning badge displays
-- Files: `frontend/e2e/tests/XX-description-validation.spec.ts`
-
-#### Option 3: Best (8-12 hours)
-Implement Option 1 from ISSUE-006 (Backend Validation Flag)
-- Backend returns structured response with `has_valid_description` boolean
-- Frontend uses flag instead of parsing LLM output
-- Single source of truth for validation
+#### Option 1: Backend Validation Flag (4-6 hours) - RECOMMENDED
+Backend returns structured response with `has_valid_description` boolean flag
+- Single source of truth for validation logic (backend)
+- Frontend doesn't need to parse/interpret LLM output
+- Can apply sophisticated validation logic in backend
+- Easier to maintain - only one place to update
 - Files: `backend/src/main.rs`, `frontend/src/App.tsx`
 
-**Status**: Deferred - current workaround acceptable, add to Phase 4/5 technical debt cleanup
+#### Option 2: Semantic Analysis with Heuristics (3-4 hours)
+Use multiple heuristics to identify placeholder messages
+- More flexible than exact string matching
+- Can handle variations in wording
+- No backend changes required
+- Risk of false positives/negatives
+- Files: `frontend/src/App.tsx`
 
-**Priority**: Medium
+#### Option 3: Regex Pattern Matching (2-3 hours)
+Use regex patterns to match placeholder message structures
+- More flexible than exact matching
+- Can handle variations in wording
+- Easy to extend with new patterns
+- Still requires frontend updates when patterns change
+- Files: `frontend/src/App.tsx`
+
+**Status**: ✅ **IMPLEMENTED** (2025-10-30) - Option 1 (Backend Validation Flag) deployed
+
+**Implementation Summary**:
+- Backend now returns `has_valid_description` boolean flag with API response
+- Backend uses multi-criteria validation (exact match, regex, length heuristic)
+- Frontend uses backend flag as single source of truth (with legacy fallback)
+- All tests passing (512 unit tests, backend compilation successful)
+- System now resilient to LLM output variations and prompt changes
+
+**Key Benefits**:
+- ✅ **Single source of truth**: Backend determines validation, frontend trusts it
+- ✅ **Resilient**: Handles LLM output variations automatically via regex + heuristics
+- ✅ **Maintainable**: Only one place to update validation logic
+- ✅ **Backward compatible**: Falls back to legacy matching for old cached data
+- ✅ **Future-proof**: Easy to extend with new validation criteria
+
+**See**: [ISSUE-006](../bugs/open/ISSUE-006-brittle-placeholder-validation.md) for full implementation details
+
+**Priority**: ~~Medium~~ → **RESOLVED**
 
 ---
 
@@ -218,12 +240,17 @@ export const ENABLED_TEST_SUITES = {
 - E2E validation: No regression, 64.8% pass rate maintained
 - Runtime improved: 20.5% faster (20 min → 15.9 min)
 
-**October 30, 2025**: Final cleanup
+**October 30, 2025**: ISSUE-006 Implementation + Final cleanup
+- ✅ **Implemented ISSUE-006 Option 1: Backend Validation Flag**
+  - Backend returns `has_valid_description` boolean with API responses
+  - Multi-criteria validation (exact match, regex, length heuristic)
+  - Frontend uses backend flag as single source of truth
+  - System now resilient to LLM output variations and prompt changes
 - Fixed flaky accuracy test (relaxed pattern matching)
 - Documented ISSUE-006 test coverage recommendations
 - Split testing documentation (STATUS vs HISTORY)
 
-**Status**: ✅ All testing infrastructure goals achieved, ready for feature development
+**Status**: ✅ All testing infrastructure goals achieved + ISSUE-006 resolved, ready for feature development
 
 ---
 
@@ -299,4 +326,4 @@ npm test -- --coverage --watchAll=false           # Generate coverage report
 
 ---
 
-**Next Steps**: Focus on feature development. Testing infrastructure is complete and stable. ISSUE-006 deferred to Phase 4/5 technical debt cleanup.
+**Next Steps**: Focus on feature development. Testing infrastructure is complete and stable. ~~ISSUE-006 deferred to Phase 4/5 technical debt cleanup~~ → **ISSUE-006 RESOLVED** (2025-10-30).

@@ -917,6 +917,7 @@ const JobHunterDashboard: React.FC = () => {
   const [showEmailComposer, setShowEmailComposer] = useState<boolean>(false);
   const [emailComposerJob, setEmailComposerJob] = useState<Job | null>(null);
   const [condensedDescriptions, setCondensedDescriptions] = useState<Record<string, string>>({});
+  const [validDescriptionFlags, setValidDescriptionFlags] = useState<Record<string, boolean>>({});
 
   // Track which jobs are currently being fetched to prevent duplicate requests
   const fetchingJobsRef = React.useRef<Set<string>>(new Set());
@@ -1296,6 +1297,13 @@ const JobHunterDashboard: React.FC = () => {
           ...prev,
           [jobId]: data.condensed_description
         }));
+        // Store the validation flag from backend (ISSUE-006 Option 1)
+        if (data.has_valid_description !== undefined) {
+          setValidDescriptionFlags(prev => ({
+            ...prev,
+            [jobId]: data.has_valid_description
+          }));
+        }
       }
     } catch (error) {
       console.error('Error fetching condensed description:', error);
@@ -1308,6 +1316,7 @@ const JobHunterDashboard: React.FC = () => {
   // Clear all cached condensed descriptions
   const clearAllDescriptions = (): void => {
     setCondensedDescriptions({});
+    setValidDescriptionFlags({});
   };
 
   // Refresh a single job's condensed description
@@ -1334,6 +1343,13 @@ const JobHunterDashboard: React.FC = () => {
           ...prev,
           [jobId]: data.condensed_description
         }));
+        // Store the validation flag from backend (ISSUE-006 Option 1)
+        if (data.has_valid_description !== undefined) {
+          setValidDescriptionFlags(prev => ({
+            ...prev,
+            [jobId]: data.has_valid_description
+          }));
+        }
       }
     } catch (error) {
       console.error('Error refreshing condensed description:', error);
@@ -1364,11 +1380,19 @@ const JobHunterDashboard: React.FC = () => {
   };
 
   // Helper function to check if a job has a valid condensed description
+  // ISSUE-006 Option 1: Use backend validation flag instead of parsing text
   const hasValidDescription = (jobId: string): boolean => {
+    // If we have a validation flag from the backend, use it (single source of truth)
+    if (validDescriptionFlags[jobId] !== undefined) {
+      return validDescriptionFlags[jobId];
+    }
+
+    // Fallback for backward compatibility: if no flag exists yet, check if description exists
+    // This handles the case where old cached data doesn't have the flag
     const desc = condensedDescriptions[jobId];
     if (!desc) return false;
 
-    // Treat these as invalid/placeholder descriptions
+    // Legacy string matching as fallback (will be phased out as cache refreshes)
     const invalidDescriptions = [
       'Loading description...',
       'No job description to be extracted.',
