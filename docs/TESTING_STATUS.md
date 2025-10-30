@@ -28,7 +28,7 @@
 
 **For historical context**: See [TESTING_HISTORY.md](TESTING_HISTORY.md)
 
-**Last Updated**: 2025-10-30 (BUG-0004 fixed, comprehensive excluded tests breakdown added)
+**Last Updated**: 2025-10-30 (BUG-0006 mitigated: 6 of 7 description quality tests passing)
 
 ---
 
@@ -112,26 +112,27 @@
 
 ## Open Issues
 
-**Status**: ⚠️ 4 open bugs (49 failing tests)
+**Status**: ⚠️ 3 open bugs (43 failing tests)
 
 **New Bugs (2025-10-30)** - From E2E test investigation:
 1. **BUG-0005** ✅ FIXED: Debug section missing switchToTab helper (6 tests) - Import added
-2. **BUG-0006**: Description quality validation failures (7 tests) - Needs investigation
+2. **BUG-0006** ⚠️ MITIGATED: Description quality validation failures - 6 of 7 tests passing (test implementation bugs fixed)
 3. **BUG-0007**: Refresh descriptions button not working (6 tests) - Tests disabled until feature implemented
 4. **BUG-0008**: E2E tests for unimplemented Phase 5 features (15 tests) - Tests disabled
 
-**Remaining Failures** (21 tests still failing):
+**Remaining Failures** (15 tests still failing):
+- Description refresh behavior (1 test from BUG-0006) - Test failure unrelated to quality
 - Statistics/Criteria API issues (3 tests)
 - Performance tests (3 tests)
 - Gmail sync timeouts (2 tests)
-- Miscellaneous (7 tests)
-- Intake tab unimplemented features (6 tests from BUG-0008)
+- Miscellaneous (6 tests)
 
 **See**: `bugs/open/` for detailed bug reports
 
 **Recently Resolved**:
 - **ISSUE-006** (2025-10-30): Brittle Placeholder Validation - Implemented backend validation flag. See [TESTING_HISTORY.md](TESTING_HISTORY.md#issue-006-brittle-placeholder-validation) for details.
 - **BUG-0005** (2025-10-30): Debug section import issue - Fixed by adding switchToTab import
+- **BUG-0006** (2025-10-30): Description quality tests - Mitigated by fixing tab navigation and element selectors (6 of 7 passing)
 
 ---
 
@@ -181,23 +182,30 @@
 
 ## Next Steps
 
-**Completed** ✅ (2025-10-30): E2E test investigation and cleanup
-- Ran full E2E test suite (547 tests)
-- Analyzed all 49 failures
-- Created 4 bug reports (BUG-0005 through BUG-0008)
-- Fixed BUG-0005 (debug section import)
-- Disabled 68 tests for unimplemented features
-- Improved pass rate from 64.8% → 71.3%
-- Reduced failures from 62 → 49 (13 fewer)
+**Completed** ✅ (2025-10-30): BUG-0006 Investigation and Mitigation
+- Identified root cause: Test implementation bugs (tab navigation + wrong selectors)
+- Fixed tab navigation: Replaced direct button clicks with `switchToTab()` helper
+- Fixed element selectors: Removed non-existent "Debug Info" references
+- Results: 6 of 7 tests passing (85.7% pass rate, up from 0%)
+- Confirmed LLM descriptions meet quality standards
 
-**Primary Recommendation** (Next): **Investigate BUG-0006 - Description Quality** (2-3 hours)
+**Primary Recommendation** (Next): **Investigate Description Refresh Test Failure** (1-2 hours)
 
-Seven tests in `23-description-quality.spec.ts` are failing. These validate LLM-generated job descriptions meet quality standards. High priority because it affects user-facing content.
+One remaining test in `23-description-quality.spec.ts` is failing: "refresh should regenerate description (check for different content after prompt change)".
+
+**Issue**: After clicking the refresh button on a job card's condensed description, the test receives a different job's description instead of the same job's refreshed description.
+
+**Possible Causes**:
+1. Job list re-orders after refresh (e.g., by timestamp)
+2. The `.first()` selector picks a different job after the refresh updates
+3. React state update causes job card to unmount/remount in different position
+4. Refresh button selector issue (clicking wrong job's button)
 
 **Steps**:
-1. Run tests individually and capture actual LLM output
-2. Determine if this is a prompt issue, test issue, or validation issue
-3. Implement fix (update prompt, adjust tests, or add backend validation)
+1. Review the refresh button implementation in App.tsx
+2. Check if job list re-sorts after description updates
+3. Update test to track specific job ID instead of using `.first()`
+4. Consider adding a unique test ID to track the same job card through refresh
 
 **Secondary Priorities**:
 
@@ -263,7 +271,19 @@ Seven tests in `23-description-quality.spec.ts` are failing. These validate LLM-
   - Active tests: 439 (down from 529, cleaner suite)
 - ✅ **Updated documentation**: TESTING_STATUS.md with accurate numbers
 
-**Status**: ✅ E2E test suite cleaned up and documented. Ready for targeted bug fixes (BUG-0006 high priority)
+**October 30, 2025** (Night): BUG-0006 Investigation & Mitigation
+- ✅ **Investigated BUG-0006**: Description quality validation failures
+- ✅ **Root cause identified**: Test bugs, NOT LLM quality issues
+  - Tests used direct button clicks instead of `switchToTab()` helper
+  - Tests looked for non-existent "Debug Info" section
+- ✅ **Fixed all test implementation issues**:
+  - Updated tab navigation to use `switchToTab(page, 'all')`
+  - Fixed element selectors to find "Condensed Description" on job cards
+- ✅ **Results**: 6 of 7 tests passing (85.7% pass rate, up from 0%)
+- ✅ **Verified LLM quality**: Descriptions meet all quality standards
+- ⚠️ **1 remaining test failure**: Refresh behavior issue (unrelated to quality)
+
+**Status**: ✅ BUG-0006 mitigated. Description quality validated. 1 refresh test needs investigation.
 
 ---
 
