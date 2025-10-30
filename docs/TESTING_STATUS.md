@@ -160,28 +160,34 @@
 
 ## Next Steps
 
-**Primary Recommendation**: **Add Test Coverage for Backend Validation Flag (ISSUE-006)** (2-3 hours)
+**Primary Recommendation**: **Investigate 62 Failed E2E Tests** (4-8 hours)
 
-The backend validation flag feature was just implemented but lacks test coverage. Adding tests would provide extra validation and prevent regressions.
+Currently 62 E2E tests (11.7%) are failing and marked as "pre-existing, not blocking". We don't have visibility into:
+- Whether these represent real bugs or test issues
+- If they're testing critical vs edge case functionality
+- Whether they're flaky or consistently failing
+- If they need test data updates or code fixes
 
-**Optional Test Enhancements** (Lower Priority):
+**Value**: Understanding these failures would either:
+1. Uncover real bugs that need fixing
+2. Identify tests that need updating/removal
+3. Improve overall test suite reliability from 64.8% → potentially 75%+
 
-**A. Test Coverage for Backend Validation Flag Feature** (2-3 hours)
-- Add tests for the new `has_valid_description` flag behavior
-- Test ranking behavior for jobs without descriptions
-- Test warning badge display for invalid descriptions
-- Test handling of alternate placeholder text patterns
-- **Files**: `frontend/e2e/tests/23-description-quality.spec.ts` or new unit tests
-- **Status**: Feature implemented and working, tests would add extra validation
+**Approach**:
+- Run failed tests individually to understand patterns
+- Categorize by failure type (real bugs, flaky, data issues, obsolete)
+- File bugs for real issues, update/remove problematic tests
+- Document findings
 
-**B. Failed E2E Test Investigation** (4-8 hours)
-- 62 failed tests (11.7%) marked as "pre-existing, not blocking"
-- Could investigate root causes if desired
-- **Note**: Core workflows are 90.2% passing, so these may be edge cases
+**Files**: `frontend/e2e/tests/*.spec.ts` (various test files)
 
-**C. Skipped Unit Test Investigation** (2-4 hours)
-- 8 skipped tests (4 documented as architectural limitations)
-- Remaining 4 in Job Details Modal could be investigated
+---
+
+**Optional Future Work** (Lower Priority):
+
+**Skipped Unit Test Investigation** (2-4 hours)
+- 8 skipped tests: 4 documented as architectural limitations, 4 in Job Details Modal
+- Could investigate the 4 Job Details Modal tests if desired
 - **Low value**: Functionality verified working in production
 
 ---
