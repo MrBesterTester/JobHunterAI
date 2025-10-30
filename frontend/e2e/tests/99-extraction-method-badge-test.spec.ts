@@ -1,4 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { shouldRunTest } from '../test-config';
+
+// Conditionally skip entire file if disabled in test-config.ts
+// This will NOT show skip messages in test output
+test.skip(!shouldRunTest('extraction-method-badge-test'), 'Test suite disabled in test-config.ts');
 
 /**
  * Test to verify the Expert Systems Architect job shows LLM badge after HTML preprocessing fix

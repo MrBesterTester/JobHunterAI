@@ -2,6 +2,11 @@ import { test, expect } from '@playwright/test';
 import { DashboardPage } from '../pages/DashboardPage';
 import { getJobCard, getAllJobCards } from '../pages/JobCardComponent';
 import { waitForApiCall, verifyApiRequest } from '../fixtures/test-helpers';
+import { shouldRunTest } from '../test-config';
+
+// Conditionally skip entire file if disabled in test-config.ts
+// This will NOT show skip messages in test output
+test.skip(!shouldRunTest('job-status-updates'), 'Test suite disabled in test-config.ts');
 
 /**
  * Test Suite 3: Job Status Updates

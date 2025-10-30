@@ -1,6 +1,6 @@
 # Frontend Testing Status & Progress Tracking
 
-**Last Updated**: 2025-10-29 (ISSUE-026 completed, E2E score 404 fix + job-card-summary timeout fixes implemented)
+**Last Updated**: 2025-10-29 (ISSUE-026 completed, E2E score 404 fix + job-card-summary timeout fixes + test-config.ts updated with 118 new tests)
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -89,11 +89,23 @@
    - **Impact**: Would increase test coverage from 12/13 to 13/13 passing
    - **Priority**: Low (test gracefully skips, not blocking any functionality)
 
-4. **LOW PRIORITY**: Update test-config.ts with new test files
-   - 88 new tests added since Oct 28
-   - Some may need categorization (core, feature, quality, or disable)
-   - **Estimated effort**: 1-2 hours
-   - **Impact**: Centralized control of all E2E tests
+4. **✅ FIXED (2025-10-29)**: Update test-config.ts with new test files
+   - **Issue**: 118 new tests added since Oct 28 were not categorized in test-config.ts
+   - **Solution Implemented**: Categorized all 14 new test files and added centralized control
+   - **Implementation**:
+     - Updated `frontend/e2e/test-config.ts` with 14 new test suites across 4 categories
+     - Added import and skip logic to all 14 test files for centralized control
+     - Updated summary documentation with new totals
+   - **Categorization Results**:
+     - **Core Workflow Tests** (+25): `job-status-updates` (15), `job-scoring-system` (10)
+     - **Feature Tests** (+47): `job-card-summary` (13), `rapidapi-sync-integration` (5), `refilter-jobs` (17), `extraction-method-badges` (12)
+     - **Quality Tests** (+19): `modal-scrolling` (7), `scroll-stability` (5), `description-quality` (7)
+     - **Refinement Tests** (+27): `debug-section` (8), `refresh-buttons` (8), `refresh-data-button` (7), `extraction-method-badge-test` (2), `filtered-tab-test` (2)
+   - **Results**: ✅ Total active tests: 401 (+118), all with centralized on/off control
+   - **Files Modified**:
+     - `frontend/e2e/test-config.ts` (added 14 new test suite entries)
+     - 14 test files (added shouldRunTest import and skip logic)
+   - **Impact**: All E2E tests now have centralized control - can disable any suite by changing one flag
 
 5. **ONGOING**: Monitor flaky accuracy test (1 test)
    - LLM response variability is expected

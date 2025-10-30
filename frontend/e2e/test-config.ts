@@ -12,7 +12,7 @@
 
 export const ENABLED_TEST_SUITES = {
   // ===================================================================
-  // CATEGORY 1: Core Workflow Tests (128 tests - ALWAYS ENABLED)
+  // CATEGORY 1: Core Workflow Tests (153 tests - ALWAYS ENABLED)
   // ===================================================================
   // Critical path user workflows that validate end-to-end functionality
 
@@ -20,12 +20,14 @@ export const ENABLED_TEST_SUITES = {
   'tab-navigation': true,                // 15 tests - Core navigation between tabs
   'content-generation': true,            // 32 tests - Primary feature (resume/cover letter with LLM)
   'job-details': true,                   // 18 tests - Job detail viewing and actions
+  'job-status-updates': true,            // 15 tests - Approve/reject workflow (03-job-status-updates.spec.ts)
   'statistics': true,                    // 15 tests - Dashboard stats
   'dashboard-statistics': true,          // 18 tests - Stats display and MECE validation
+  'job-scoring-system': true,            // 10 tests - Job ranking feature (27-job-scoring-system.spec.ts)
   'error-handling': true,                // 19 tests - Error handling and reliability
 
   // ===================================================================
-  // CATEGORY 2: Feature Tests (82 tests - ENABLED)
+  // CATEGORY 2: Feature Tests (129 tests - ENABLED)
   // ===================================================================
   // Valuable features but not on critical path
 
@@ -34,18 +36,25 @@ export const ENABLED_TEST_SUITES = {
   'timeline-view': true,                 // 24 tests - Timeline/communication history
   'intake-tab': true,                    // 21 tests - Job intake sources
   'gmail-sync-integration': true,        // 1 test - Gmail integration
+  'job-card-summary': true,              // 13 tests - Trade-off info summary section (17-job-card-summary.spec.ts)
+  'rapidapi-sync-integration': true,     // 5 tests - RapidAPI JSearch integration (28-rapidapi-sync-integration.spec.ts)
+  'refilter-jobs': true,                 // 17 tests - Re-filter jobs functionality (25-refilter-jobs.spec.ts)
+  'extraction-method-badges': true,      // 12 tests - LLM vs REGEX badges (26-extraction-method-badges.spec.ts)
 
   // ===================================================================
-  // CATEGORY 3: Quality Tests (44 tests - ENABLED)
+  // CATEGORY 3: Quality Tests (63 tests - ENABLED)
   // ===================================================================
   // Non-functional requirements still worth testing
 
   'responsive-design': true,             // 18 tests - Mobile/tablet compatibility
   'performance': true,                   // 10 tests - Performance benchmarks
   'accessibility': true,                 // 16 tests - A11y compliance
+  'modal-scrolling': true,               // 7 tests - Modal scroll UX (20-modal-scrolling.spec.ts)
+  'scroll-stability': true,              // 5 tests - Scroll position stability (21-scroll-stability.spec.ts)
+  'description-quality': true,           // 7 tests - Description quality validation (23-description-quality.spec.ts)
 
   // ===================================================================
-  // CATEGORY 4: Refinement Tests (29 tests - ENABLED FOR NOW)
+  // CATEGORY 4: Refinement Tests (56 tests - ENABLED FOR NOW)
   // ===================================================================
   // Edge cases and refinements - deferred decision (see ISSUE-025)
   // Can revisit in 3-6 months if maintenance burden becomes high
@@ -53,8 +62,11 @@ export const ENABLED_TEST_SUITES = {
   'testing-refinement': true,            // 10 tests - Quality scoring
   'filtered-jobs': true,                 // 8 tests - Filtered job display logic
   'failed-duplicates-tabs': true,        // 6 tests - Edge case tabs
-  // Note: 17-job-card-summary (3 passing) and 18-debug-section (2 passing)
-  // have no config entries - they will run if not explicitly skipped in test files
+  'debug-section': true,                 // 8 tests - Debug info display (18-debug-section.spec.ts)
+  'refresh-buttons': true,               // 8 tests - Per-job refresh functionality (22-refresh-buttons.spec.ts)
+  'refresh-data-button': true,           // 7 tests - Global refresh button (24-refresh-data-button.spec.ts, BUG-0001 fix)
+  'extraction-method-badge-test': true,  // 2 tests - ISSUE-001 verification (99-extraction-method-badge-test.spec.ts)
+  'filtered-tab-test': true,             // 2 tests - Filtered tab verification (99b-filtered-tab-test.spec.ts)
 
   // ===================================================================
   // UI/STYLING TESTS (123 tests - DISABLED)
@@ -99,17 +111,21 @@ export function shouldRunTest(testSuite: string): boolean {
  */
 
 /**
- * Summary of Active Tests After Option A:
+ * Summary of Active Tests (Updated 2025-10-29):
  *
- * - Category 1 (Core Workflows): 128 tests ✅
- * - Category 2 (Features): 82 tests ✅
- * - Category 3 (Quality): 44 tests ✅
- * - Category 4 (Refinements): 29 tests ✅ (deferred decision)
+ * - Category 1 (Core Workflows): 153 tests ✅ (+25 from Oct 28)
+ * - Category 2 (Features): 129 tests ✅ (+47 from Oct 28)
+ * - Category 3 (Quality): 63 tests ✅ (+19 from Oct 28)
+ * - Category 4 (Refinements): 56 tests ✅ (+27 from Oct 28)
  * - UI/Styling (Disabled): 123 tests ❌
  *
- * Total Active: 318 tests (72% of original 441)
- * Total Disabled: 123 tests (28% of original 441)
+ * Total Active: 401 tests (+118 from Oct 28)
+ * Total Disabled: 123 tests
+ * Total Tests: 524 tests (401 active + 123 disabled)
  *
- * Expected Pass Rate: >85% (270+/318 tests)
- * Expected Runtime: <18 minutes
+ * Note: Current E2E test report shows 529 total tests. The 5 test discrepancy
+ * may be from tests not using the config system (they run by default).
+ *
+ * Expected Pass Rate: ~65% (based on Oct 29 E2E results: 343/529 passing)
+ * Expected Runtime: ~12-16 minutes
  */
