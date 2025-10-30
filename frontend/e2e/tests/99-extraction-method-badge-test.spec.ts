@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { shouldRunTest } from '../test-config';
+import { switchToTab } from '../helpers/tab-navigation';
 
 // Conditionally skip entire file if disabled in test-config.ts
 // This will NOT show skip messages in test output
@@ -15,10 +16,7 @@ test.describe('Extraction Method Badge - Expert Systems Architect', () => {
     await page.goto('http://localhost:3000');
 
     // Click on "All" tab to see all jobs
-    await page.click('button:has-text("All")');
-
-    // Wait for jobs to load
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await switchToTab(page, 'all');
 
     // Find the Expert Systems Architect job card
     const jobCards = page.locator('[data-testid="job-card"]');

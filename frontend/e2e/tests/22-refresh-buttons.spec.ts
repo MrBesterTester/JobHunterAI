@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { shouldRunTest } from '../test-config';
+import { switchToTab } from '../helpers/tab-navigation';
 
 // Conditionally skip entire file if disabled in test-config.ts
 // This will NOT show skip messages in test output
@@ -36,8 +37,7 @@ test.describe('Refresh Buttons', () => {
 
   test('should display per-job refresh button in debug section', async ({ page }) => {
     // Navigate to All tab
-    await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
     const debugSection = jobCard.locator('div:has-text("🔧 Debug Info")').first();
@@ -55,8 +55,7 @@ test.describe('Refresh Buttons', () => {
 
   test('should refresh single job description when per-job button clicked', async ({ page }) => {
     // Navigate to All tab
-    await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
     const debugSection = jobCard.locator('div:has-text("🔧 Debug Info")').first();
@@ -88,8 +87,7 @@ test.describe('Refresh Buttons', () => {
 
   test('should NOT cause infinite refresh loop', async ({ page }) => {
     // Navigate to All tab
-    await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await switchToTab(page, 'all');
 
     // Get first job card's job ID for monitoring
     const jobCard = page.locator('[data-testid="job-card"]').first();
@@ -133,8 +131,7 @@ test.describe('Refresh Buttons', () => {
 
   test('should NOT change to different job descriptions after refresh', async ({ page }) => {
     // Navigate to All tab
-    await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
 
@@ -178,8 +175,7 @@ test.describe('Refresh Buttons', () => {
 
   test('global refresh button should clear all caches', async ({ page }) => {
     // Navigate to All tab
-    await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await switchToTab(page, 'all');
 
     // Wait for initial descriptions to load on all visible cards
     const jobCards = page.locator('[data-testid="job-card"]');
@@ -221,8 +217,7 @@ test.describe('Refresh Buttons', () => {
 
   test('per-job refresh button should be clickable', async ({ page }) => {
     // Navigate to All tab
-    await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
     const debugSection = jobCard.locator('div:has-text("🔧 Debug Info")').first();

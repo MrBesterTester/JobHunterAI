@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { shouldRunTest } from '../test-config';
+import { switchToTab } from '../helpers/tab-navigation';
 
 // Conditionally skip entire file if disabled in test-config.ts
 // This will NOT show skip messages in test output
@@ -17,10 +18,7 @@ test.skip(!shouldRunTest('job-tradeoff-display'), 'Test suite disabled in test-c
 test.describe('Job Trade-off Display', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:3000');
-    // Click on "All" tab to display job cards
-    await page.click('button:has-text("All")');
-    // Wait for job cards to load
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await switchToTab(page, 'all');
   });
 
   test('should display tax structure badge on job cards when present', async ({ page }) => {

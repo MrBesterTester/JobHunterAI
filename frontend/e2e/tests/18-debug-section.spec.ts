@@ -26,8 +26,7 @@ test.describe('Job Card Debug Section', () => {
 
   test('should display debug section on job cards', async ({ page }) => {
     // Navigate to All tab to see job cards
-    await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await switchToTab(page, 'all');
 
     // Get first job card
     const jobCard = page.locator('[data-testid="job-card"]').first();
@@ -38,8 +37,7 @@ test.describe('Job Card Debug Section', () => {
   });
 
   test('should display extraction method in debug section', async ({ page }) => {
-    await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
     const debugSection = jobCard.locator('div:has-text("🔧 Debug Info")');
@@ -53,8 +51,7 @@ test.describe('Job Card Debug Section', () => {
   });
 
   test('should display raw data JSON in debug section', async ({ page }) => {
-    await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
     const debugSection = jobCard.locator('div:has-text("🔧 Debug Info")');
@@ -118,8 +115,7 @@ test.describe('Job Card Debug Section', () => {
   });
 
   test('should have scrollable JSON content when data is large', async ({ page }) => {
-    await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
     const jsonPre = jobCard.locator('pre');
@@ -133,8 +129,7 @@ test.describe('Job Card Debug Section', () => {
   });
 
   test('should parse and validate JSON structure in raw_data', async ({ page }) => {
-    await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
     const jsonPre = jobCard.locator('pre');
@@ -183,8 +178,7 @@ test.describe('Job Card Debug Section', () => {
   });
 
   test('should have proper styling for debug section', async ({ page }) => {
-    await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
     const debugSection = jobCard.locator('div:has-text("🔧 Debug Info")').first();

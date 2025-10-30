@@ -2548,6 +2548,7 @@ const JobHunterDashboard: React.FC = () => {
               key={tab}
               onClick={() => setActiveTab(tab)}
               aria-selected={activeTab === tab}
+              data-testid={`${tab}-tab-button`}
               className={activeTab === tab ? 'active' : ''}
               style={{
                 padding: '8px 16px',

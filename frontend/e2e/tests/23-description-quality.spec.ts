@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { shouldRunTest } from '../test-config';
+import { switchToTab } from '../helpers/tab-navigation';
 
 // Conditionally skip entire file if disabled in test-config.ts
 // This will NOT show skip messages in test output

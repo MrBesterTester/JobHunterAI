@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { shouldRunTest } from '../test-config';
+import { switchToTab } from '../helpers/tab-navigation';
 
 // Conditionally skip entire file if disabled in test-config.ts
 // This will NOT show skip messages in test output
@@ -26,8 +27,7 @@ test.describe('Condensed Job Descriptions', () => {
 
   test('should display condensed description label in debug section', async ({ page }) => {
     // Navigate to All tab to see job cards
-    await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await switchToTab(page, 'all');
 
     // Get first job card
     const jobCard = page.locator('[data-testid="job-card"]').first();
@@ -41,8 +41,7 @@ test.describe('Condensed Job Descriptions', () => {
   });
 
   test('should NOT display "Raw Data JSON" label', async ({ page }) => {
-    await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
     const debugSection = jobCard.locator('div:has-text("🔧 Debug Info")').first();
@@ -53,8 +52,7 @@ test.describe('Condensed Job Descriptions', () => {
   });
 
   test('should load condensed description text (not "Loading description...")', async ({ page }) => {
-    await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
     const debugSection = jobCard.locator('div:has-text("🔧 Debug Info")').first();
@@ -70,8 +68,7 @@ test.describe('Condensed Job Descriptions', () => {
   });
 
   test('should display condensed description with approximately 100 words or less', async ({ page }) => {
-    await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
     const debugSection = jobCard.locator('div:has-text("🔧 Debug Info")').first();
@@ -94,8 +91,7 @@ test.describe('Condensed Job Descriptions', () => {
   });
 
   test('should display condensed descriptions on multiple job cards', async ({ page }) => {
-    await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await switchToTab(page, 'all');
 
     const jobCards = page.locator('[data-testid="job-card"]');
     const count = Math.min(await jobCards.count(), 3);
@@ -114,8 +110,7 @@ test.describe('Condensed Job Descriptions', () => {
   });
 
   test('should NOT display JSON structure in condensed description', async ({ page }) => {
-    await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
     const debugSection = jobCard.locator('div:has-text("🔧 Debug Info")').first();
@@ -157,8 +152,7 @@ test.describe('Condensed Job Descriptions', () => {
   });
 
   test('should have proper styling for condensed description container', async ({ page }) => {
-    await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
     const debugSection = jobCard.locator('div:has-text("🔧 Debug Info")').first();
@@ -178,8 +172,7 @@ test.describe('Condensed Job Descriptions', () => {
   });
 
   test('job card should not require scrolling to read debug section', async ({ page }) => {
-    await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
 
