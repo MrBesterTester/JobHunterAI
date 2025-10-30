@@ -3,12 +3,13 @@
 
   - [id: BUG-0003
 title: Content Generation Modal Doesn't Reopen After Closing
-status: open
+status: fixed
 priority: medium
 severity: medium
 component: frontend
 created: 2025-10-22
-updated: 2025-10-24
+updated: 2025-10-30
+fixed: 2025-10-30
 affects: ['content-generation-modal', 'regeneration-workflow']
 related: ['ISSUE-012']](#id-bug-0003%0Atitle-content-generation-modal-doesnt-reopen-after-closing%0Astatus-open%0Apriority-medium%0Aseverity-medium%0Acomponent-frontend%0Acreated-2025-10-22%0Aupdated-2025-10-24%0Aaffects-content-generation-modal-regeneration-workflow%0Arelated-issue-012)
 - [BUG-0003: Content Generation Modal Doesn't Reopen After Closing](#bug-0003-content-generation-modal-doesnt-reopen-after-closing)
@@ -34,12 +35,13 @@ related: ['ISSUE-012']](#id-bug-0003%0Atitle-content-generation-modal-doesnt-reo
 ---
 id: BUG-0003
 title: Content Generation Modal Doesn't Reopen After Closing
-status: open
+status: fixed
 priority: medium
 severity: medium
 component: frontend
 created: 2025-10-22
-updated: 2025-10-24
+updated: 2025-10-30
+fixed: 2025-10-30
 affects: ['content-generation-modal', 'regeneration-workflow']
 related: ['ISSUE-012']
 ---
@@ -288,6 +290,34 @@ Possible causes include:
 3. Consider using a `key` prop on modal to force unmount/remount
 4. Investigate if feature ever worked or if tests were aspirational
 
+---
+
+**Resolution (2025-10-30)**: ✅ **FIXED by ISSUE-023**
+
+This bug was resolved as a side effect of fixing ISSUE-023 (Frontend test failures - Content Generation state propagation issues). The root cause was identified and fixed in ISSUE-023:
+
+**Root Cause**: Nested `setState` anti-pattern in `generateContent()` function (frontend/src/App.tsx:1212-1217)
+- `setGeneratedContentJob()` was being called inside `setJobs()` callback
+- This React anti-pattern caused silent errors and prevented state updates from completing
+- Sequential generation attempts failed, preventing modal from reopening
+
+**Fix Applied** (ISSUE-023 Session 3):
+- Removed nested `setState` anti-pattern
+- Added `jobsRef` to track current jobs state without dependency array issues
+- State updates now complete correctly for sequential generation attempts
+
+**Verification (2025-10-30)**:
+```bash
+npx playwright test e2e/tests/04-content-generation.spec.ts \
+  --grep "should allow re-opening modal after closing|should maintain content when re-opened"
+
+Results:
+✓ "should allow re-opening modal after closing" (8.8s) ✅
+✓ "should maintain content when re-opened" (9.0s) ✅
+```
+
+Both E2E tests that were failing in the original bug report now pass. The modal reopening functionality works correctly.
+
 ## Testing
 
 **Test Command**:
@@ -320,6 +350,8 @@ npx playwright test e2e/tests/04-content-generation.spec.ts \
 - 2025-10-22: Investigation documented with detailed findings and next steps
 - 2025-10-22: Status: IN PROGRESS - requires manual browser debugging
 - 2025-10-24: Debugging difficulty led to creation of [ISSUE-012](ISSUE-012-zero-warning-clean-build-policy.md) to investigate zero-warning build policy
+- 2025-10-28: Fixed as side effect of ISSUE-023 (nested setState anti-pattern removed)
+- 2025-10-30: **VERIFIED FIXED** - Both E2E tests now passing, moved to fixed status
 
 ## Notes
 
