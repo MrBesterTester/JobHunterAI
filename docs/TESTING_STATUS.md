@@ -81,20 +81,27 @@
 3. **🚧 WORK-IN-PROGRESS**: Missing test data for job-card-summary "new jobs" test (1 test skipped)
    - **Test**: `should display Summary section for new jobs with data` (line 70 in 17-job-card-summary.spec.ts)
    - **Issue**: Test database has 0 jobs with status='new', causing test to skip
-   - **Solution In Progress**: Test seed data infrastructure implemented (2025-10-29)
+   - **Solution In Progress**: Test seed data infrastructure + Playwright best practices (2025-10-29)
      - ✅ Job creation via POST /api/jobs
      - ✅ Status update via PUT /api/jobs/{id}/status
      - ✅ Trade-off data injection via SQL UPDATE
      - ✅ Cleanup logic in afterEach hook
-     - ⚠️ Test still failing - needs debugging (data refresh timing issue suspected)
+     - ✅ **Playwright best practices applied** (researched from official sources):
+       - Use `page.waitForResponse()` to wait for API calls instead of arbitrary timeouts
+       - Use web-first assertions (`await expect(locator).toBeVisible()`) with auto-retry
+       - Removed `networkidle` and `waitForTimeout()` in favor of state-based waits
+       - Added explicit 10s timeout for test job visibility
+     - ⚠️ Test still failing - needs deeper debugging (likely status/filtering issue)
    - **Implementation**: Modified `frontend/e2e/tests/17-job-card-summary.spec.ts`
      - Added test job creation with comprehensive trade-off data
      - Implemented database cleanup after test completion
-     - Added "Refresh Data" button click to fetch new job
-   - **Next Steps**: Debug why test job isn't appearing in UI after creation
+     - Wait for `/api/jobs` GET response after clicking "Refresh Data"
+     - Use web-first assertions throughout for automatic retries
+   - **Research Sources**: playwrightsolutions.com (DataFactory pattern), GitHub Playwright issues #34367, autify.com wait methods guide
+   - **Next Steps**: Debug root cause (verify job status after creation, check backend filtering logic)
    - **Estimated effort remaining**: 30-60 minutes for debugging
    - **Impact**: Would increase test coverage from 12/13 to 13/13 passing
-   - **Priority**: Low (test infrastructure in place, just needs debugging)
+   - **Priority**: Low (test infrastructure in place with best practices, just needs root cause analysis)
 
 4. **✅ FIXED (2025-10-29)**: Update test-config.ts with new test files
    - **Issue**: 118 new tests added since Oct 28 were not categorized in test-config.ts

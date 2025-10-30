@@ -134,43 +134,39 @@ test.describe('Job Card Summary Section', () => {
       { env: { ...process.env, PGPASSWORD: dbPassword } }
     );
 
-    // Click "Refresh Data" button to fetch the newly created job
-    await page.click('button:has-text("Refresh Data")');
-    await page.waitForLoadState('networkidle');
-    // Wait a bit for the data to be fetched and rendered
-    await page.waitForTimeout(1000);
+    // Best Practice: Wait for specific API response instead of arbitrary timeouts
+    // Click "Refresh Data" and wait for the /api/jobs response to complete
+    const [response] = await Promise.all([
+      page.waitForResponse(response =>
+        response.url().includes('/api/jobs') &&
+        response.request().method() === 'GET'
+      ),
+      page.click('button:has-text("Refresh Data")')
+    ]);
+
+    // Verify the response was successful
+    expect(response.ok()).toBeTruthy();
 
     // Navigate to New tab and wait for content
     await clickTabAndWait(page, 'New');
 
-    // Debug: Log how many job cards exist
-    const allJobCards = page.locator('[data-testid="job-card"]');
-    const jobCount = await allJobCards.count();
-    console.log(`Found ${jobCount} job cards in New tab`);
-
-    // Find the test job card by company name
+    // Best Practice: Use web-first assertions that auto-retry
+    // Find the test job card by company name and wait for it to be visible
     const testJobCard = page.locator('[data-testid="job-card"]').filter({ hasText: 'E2E Test Company' });
-    const testJobCount = await testJobCard.count();
-    console.log(`Found ${testJobCount} job cards with 'E2E Test Company'`);
 
-    // Verify the job card exists
-    await expect(testJobCard).toBeVisible();
+    // This will automatically retry until the element is visible or timeout
+    await expect(testJobCard).toBeVisible({ timeout: 10000 });
 
     // Check if Summary section exists
     const summarySection = testJobCard.locator('[data-testid="job-summary"]');
 
-    // Verify Summary section is visible
+    // Verify Summary section is visible (web-first assertion with auto-retry)
     await expect(summarySection).toBeVisible();
 
     // Verify Summary header
     await expect(summarySection).toContainText('Summary');
 
-    // Summary section should have content (not just header)
-    const summaryText = await summarySection.textContent();
-    expect(summaryText).toBeTruthy();
-    expect(summaryText!.length).toBeGreaterThan('Summary'.length + 10); // More than just the header
-
-    // Verify specific trade-off information is displayed
+    // Verify specific trade-off information is displayed (all use web-first assertions)
     await expect(summarySection).toContainText('Employment:');
     await expect(summarySection).toContainText('Direct Hire');
     await expect(summarySection).toContainText('Remote Work:');
