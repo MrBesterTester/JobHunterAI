@@ -1,6 +1,6 @@
 # Frontend Testing Status & Progress Tracking
 
-**Last Updated**: 2025-10-30 (Flaky accuracy test fixed - relaxed pattern matching and lowered threshold to 80%)
+**Last Updated**: 2025-10-30 (Added ISSUE-006 test coverage recommendations with 3 implementation options)
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -134,6 +134,34 @@
    - **Results**: ✅ Test now passes consistently (verified with multiple runs)
    - **Actual effort**: 30 minutes
    - **Impact**: Eliminated flaky test while maintaining quality standards
+
+6. **⚠️ OPEN - ISSUE-006: Brittle Placeholder Validation** (See [ISSUE-006](../bugs/open/ISSUE-006-brittle-placeholder-validation.md))
+   - **Issue**: Hardcoded string matching for placeholder detection (`hasValidDescription()`) will break if LLM output changes
+   - **Current Implementation**: Exact string matching in `frontend/src/App.tsx:1249-1263`
+   - **Risk**: If LLM says "Unable to extract description" instead of "No job description to be extracted.", validation breaks
+   - **Impact**: Jobs without valid descriptions would rank at top instead of bottom, no warning badge displayed
+   - **Current Test Coverage**:
+     - ✅ `23-description-quality.spec.ts` (7 tests, enabled) - validates descriptions but uses same exact matching
+     - ❌ No tests validate ranking behavior for jobs without descriptions
+     - ❌ No tests validate warning badge display
+     - ❌ No tests validate alternate placeholder wordings
+   - **Note**: 123 disabled cosmetic E2E tests (`05b-new-job-badges`, `19-condensed-description`, etc.) do NOT mitigate this issue
+   - **Recommended Test Coverage Options** (see ISSUE-006 for full implementation details):
+     - **Quick Win (2-3 hours)**: Add unit test for `hasValidDescription()` with various placeholder wordings
+       - Test alternate phrasings: "Unable to extract", "Description not available", "Cannot condense"
+       - Verify ranking behavior: jobs without valid descriptions rank last
+       - Files: `frontend/src/App.test.tsx`
+     - **Better (4-6 hours)**: Add E2E test that verifies ranking and badge display
+       - Create job with placeholder description
+       - Verify it appears at bottom of list
+       - Verify warning badge displays
+       - Files: `frontend/e2e/tests/XX-description-validation.spec.ts`
+     - **Best (8-12 hours)**: Implement Option 1 from ISSUE-006 (Backend Validation Flag)
+       - Backend returns structured response with `has_valid_description` boolean
+       - Frontend uses flag instead of parsing LLM output
+       - Single source of truth for validation
+       - Files: `backend/src/main.rs`, `frontend/src/App.tsx`
+   - **Status**: Deferred - current workaround acceptable, add to Phase 4/5 technical debt cleanup
 
 **Note**: These are pre-existing test quality issues, not caused by the RSBuild migration. Current 64.8% pass rate is acceptable for feature development.
 
