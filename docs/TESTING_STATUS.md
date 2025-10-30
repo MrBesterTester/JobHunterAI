@@ -1,34 +1,65 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-- [Frontend Testing Status](#frontend-testing-status)
-  - [Executive Summary](#executive-summary)
-    - [Test Exclusions](#test-exclusions)
-    - [Unit Test Coverage](#unit-test-coverage)
-    - [E2E Test Coverage](#e2e-test-coverage)
-  - [Open Issues](#open-issues)
-  - [Excluded Tests Summary](#excluded-tests-summary)
-    - [Unit Tests (8 excluded)](#unit-tests-8-excluded)
-      - [1. Content Generation Modal (4 skipped)](#1-content-generation-modal-4-skipped)
-      - [2. Job Details Modal (4 skipped)](#2-job-details-modal-4-skipped)
-    - [E2E Tests (132 excluded)](#e2e-tests-132-excluded)
-  - [Next Steps](#next-steps)
-  - [Recent Activity (Last 2 Weeks)](#recent-activity-last-2-weeks)
-  - [Testing Infrastructure Details](#testing-infrastructure-details)
-    - [Test Frameworks](#test-frameworks)
-    - [Key Files](#key-files)
-  - [Related Files](#related-files)
-  - [Quick Commands Reference](#quick-commands-reference)
+- [Next Steps](#next-steps)
+- [Executive Summary](#executive-summary)
+  - [Test Exclusions](#test-exclusions)
+  - [Unit Test Coverage](#unit-test-coverage)
+  - [E2E Test Coverage](#e2e-test-coverage)
+- [Open Issues](#open-issues)
+- [Excluded Tests Summary](#excluded-tests-summary)
+  - [Unit Tests (8 excluded)](#unit-tests-8-excluded)
+    - [1. Content Generation Modal (4 skipped)](#1-content-generation-modal-4-skipped)
+    - [2. Job Details Modal (4 skipped)](#2-job-details-modal-4-skipped)
+  - [E2E Tests (132 excluded)](#e2e-tests-132-excluded)
+- [Recent Activity (Last 2 Weeks)](#recent-activity-last-2-weeks)
+- [Testing Infrastructure Details](#testing-infrastructure-details)
+  - [Test Frameworks](#test-frameworks)
+  - [Key Files](#key-files)
+- [Related Files](#related-files)
+- [Quick Commands Reference](#quick-commands-reference)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# Frontend Testing Status
+**Last Updated**: 2025-10-30 03:52 PM
 
 **Purpose**: Current testing status and open issues requiring attention.
 
-**For historical context**: See [TESTING_HISTORY.md](TESTING_HISTORY.md)
+**For completed work and detailed history**: See [TESTING_HISTORY.md](TESTING_HISTORY.md)
 
-**Last Updated**: 2025-10-30 (BUG-0006 FIXED: All 7 description quality tests passing)
+---
+
+## Next Steps
+
+**Completed** ✅ (2025-10-30): BUG-0006 Fully Resolved
+- Phase 1: Identified root cause (test implementation bugs)
+- Phase 1: Fixed tab navigation and element selectors (6 of 7 tests passing)
+- Phase 2: Fixed refresh test by adding job ID tracking to UI
+- Phase 2: Increased timeouts to accommodate slow LLM API calls (60s test, 55s expect)
+- Phase 2: Fixed test assertions to account for non-deterministic LLM output
+- **Results**: All 7 of 7 tests passing (100% pass rate)
+- Confirmed LLM descriptions meet quality standards
+
+**Primary Priorities**:
+
+**1. Statistics/Criteria API Issues** (3 tests, 2-3 hours)
+- Field naming or endpoint configuration mismatches
+- Likely quick fixes
+
+**2. Performance Test Threshold Adjustments** (3 tests, 1-2 hours)
+- Tests may have overly aggressive thresholds
+- Review and adjust as needed
+
+**3. Gmail Sync Timeout Issues** (2 tests, 1-2 hours)
+- Increase timeouts or fix sync process
+- May need backend investigation
+
+**Optional Future Work** (Lower Priority):
+
+**Skipped Unit Test Investigation** (2-4 hours)
+- 8 skipped tests: 4 documented as architectural limitations, 4 in Job Details Modal
+- Could investigate the 4 Job Details Modal tests if desired
+- **Low value**: Functionality verified working in production
 
 ---
 
@@ -176,40 +207,6 @@
 **How to Re-enable**: See [EXCLUDED_TESTS.md - Re-enabling Tests](EXCLUDED_TESTS.md#re-enabling-tests) section
 
 **Impact**: Excluded tests represent 25.0% of total E2E suite. Core workflows maintain 90.2% pass rate.
-
----
-
-## Next Steps
-
-**Completed** ✅ (2025-10-30): BUG-0006 Fully Resolved
-- Phase 1: Identified root cause (test implementation bugs)
-- Phase 1: Fixed tab navigation and element selectors (6 of 7 tests passing)
-- Phase 2: Fixed refresh test by adding job ID tracking to UI
-- Phase 2: Increased timeouts to accommodate slow LLM API calls (60s test, 55s expect)
-- Phase 2: Fixed test assertions to account for non-deterministic LLM output
-- **Results**: All 7 of 7 tests passing (100% pass rate)
-- Confirmed LLM descriptions meet quality standards
-
-**Primary Priorities**:
-
-**1. Statistics/Criteria API Issues** (3 tests, 2-3 hours)
-- Field naming or endpoint configuration mismatches
-- Likely quick fixes
-
-**2. Performance Test Threshold Adjustments** (3 tests, 1-2 hours)
-- Tests may have overly aggressive thresholds
-- Review and adjust as needed
-
-**3. Gmail Sync Timeout Issues** (2 tests, 1-2 hours)
-- Increase timeouts or fix sync process
-- May need backend investigation
-
-**Optional Future Work** (Lower Priority):
-
-**Skipped Unit Test Investigation** (2-4 hours)
-- 8 skipped tests: 4 documented as architectural limitations, 4 in Job Details Modal
-- Could investigate the 4 Job Details Modal tests if desired
-- **Low value**: Functionality verified working in production
 
 ---
 
