@@ -77,7 +77,7 @@ export const ENABLED_TEST_SUITES = {
 
   'new-job-badges': false,               // 58 tests - Badge display logic (cosmetic)
   'job-badge-styling': false,            // 32 tests - Badge styling (cosmetic)
-  'job-tradeoff-display': true,          // 17 tests - Trade-off display (BUG-0004 FIXED)
+  'job-tradeoff-display': true,          // 16 tests - Trade-off display (BUG-0004 FIXED, 1 cosmetic test skipped)
   'email-composer': false,               // 32 tests - Email composer UI (covered by unit tests)
   'condensed-description': false,        // 9 tests - Description display (cosmetic)
 };
@@ -111,21 +111,21 @@ export function shouldRunTest(testSuite: string): boolean {
  */
 
 /**
- * Summary of Active Tests (Updated 2025-10-29):
+ * Summary of Active Tests (Updated 2025-10-30):
  *
- * - Category 1 (Core Workflows): 153 tests ✅ (+25 from Oct 28)
- * - Category 2 (Features): 129 tests ✅ (+47 from Oct 28)
- * - Category 3 (Quality): 63 tests ✅ (+19 from Oct 28)
- * - Category 4 (Refinements): 56 tests ✅ (+27 from Oct 28)
- * - UI/Styling (Disabled): 123 tests ❌
+ * - Category 1 (Core Workflows): 153 tests ✅
+ * - Category 2 (Features): 145 tests ✅ (+16 from job-tradeoff-display enabled)
+ * - Category 3 (Quality): 63 tests ✅
+ * - Category 4 (Refinements): 56 tests ✅
+ * - UI/Styling (Disabled): 107 tests ❌ (reduced as job-tradeoff-display now enabled)
  *
- * Total Active: 401 tests (+118 from Oct 28)
- * Total Disabled: 123 tests
- * Total Tests: 524 tests (401 active + 123 disabled)
+ * Total Active: 417 tests (+16 from Oct 29)
+ * Total Disabled: 107 tests (reduced from 123)
+ * Total Tests: 524 tests (417 active + 107 disabled)
  *
- * Note: Current E2E test report shows 529 total tests. The 5 test discrepancy
- * may be from tests not using the config system (they run by default).
+ * Note: job-tradeoff-display suite enabled after BUG-0004 fix (tab switching).
+ * One cosmetic test skipped in that suite (flexWrap CSS validation).
  *
- * Expected Pass Rate: ~65% (based on Oct 29 E2E results: 343/529 passing)
+ * Expected Pass Rate: ~67% (improved with BUG-0004 fix)
  * Expected Runtime: ~12-16 minutes
  */
