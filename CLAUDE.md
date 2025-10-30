@@ -251,7 +251,8 @@ The system centers around three main entities:
 - **Feature Plans**: `planning/*.md` - Specific feature designs
 - **Bug Tracking**: `bugs/open/`, `bugs/mitigated/`, `bugs/fixed/` (see `bugs/README.md` for index)
 - **Test Reports**: `README_test-report-*.md` (root level)
-- **Testing Status**: `docs/TESTING_STATUS.md` ← **Current progress tracking**
+- **Testing Status**: `docs/TESTING_STATUS.md` ← **Current status & open issues**
+- **Testing History**: `docs/TESTING_HISTORY.md` ← **Completed work archive**
 - **Work Summaries**: `README_work-summary-*.md` (root level, dated)
 - **Helper Scripts**: `./create-bug.sh`, `./move-bug.sh`, `./tag-session.sh`, etc. (see `README_dev.md`)
 
@@ -263,7 +264,8 @@ The system centers around three main entities:
 
 **Navigation Tips**:
 - Use `@bugs/README.md` to see current bug list
-- Use `@docs/TESTING_STATUS.md` for test progress
+- Use `@docs/TESTING_STATUS.md` for current test status & open issues
+- Use `@docs/TESTING_HISTORY.md` for completed testing work history
 - All file paths use `./` prefix convention (ISSUE-011)
 
 **Efficient File Discovery** (per Anthropic system instructions):
