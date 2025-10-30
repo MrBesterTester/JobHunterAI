@@ -27,14 +27,14 @@ export const ENABLED_TEST_SUITES = {
   'error-handling': true,                // 19 tests - Error handling and reliability
 
   // ===================================================================
-  // CATEGORY 2: Feature Tests (129 tests - ENABLED)
+  // CATEGORY 2: Feature Tests (129 tests - SOME DISABLED)
   // ===================================================================
   // Valuable features but not on critical path
 
-  'calendar-management': true,           // 17 tests - Calendar integration
-  'follow-ups-management': true,         // 19 tests - Follow-up workflow (Phase 5.1)
-  'timeline-view': true,                 // 24 tests - Timeline/communication history
-  'intake-tab': true,                    // 21 tests - Job intake sources
+  'calendar-management': false,          // 17 tests - Phase 5 feature (not implemented) - BUG-0008
+  'follow-ups-management': false,        // 19 tests - Phase 5 feature (not implemented) - BUG-0008
+  'timeline-view': false,                // 24 tests - Phase 5 feature (not implemented) - BUG-0008
+  'intake-tab': true,                    // 21 tests - Job intake sources (partially implemented)
   'gmail-sync-integration': true,        // 1 test - Gmail integration
   'job-card-summary': true,              // 13 tests - Trade-off info summary section (17-job-card-summary.spec.ts)
   'rapidapi-sync-integration': true,     // 5 tests - RapidAPI JSearch integration (28-rapidapi-sync-integration.spec.ts)
@@ -62,8 +62,8 @@ export const ENABLED_TEST_SUITES = {
   'testing-refinement': true,            // 10 tests - Quality scoring
   'filtered-jobs': true,                 // 8 tests - Filtered job display logic
   'failed-duplicates-tabs': true,        // 6 tests - Edge case tabs
-  'debug-section': true,                 // 8 tests - Debug info display (18-debug-section.spec.ts)
-  'refresh-buttons': true,               // 8 tests - Per-job refresh functionality (22-refresh-buttons.spec.ts)
+  'debug-section': true,                 // 8 tests - Debug info display (18-debug-section.spec.ts) - BUG-0005 FIXED
+  'refresh-buttons': false,              // 8 tests - Feature not implemented - BUG-0007
   'refresh-data-button': true,           // 7 tests - Global refresh button (24-refresh-data-button.spec.ts, BUG-0001 fix)
   'extraction-method-badge-test': true,  // 2 tests - ISSUE-001 verification (99-extraction-method-badge-test.spec.ts)
   'filtered-tab-test': true,             // 2 tests - Filtered tab verification (99b-filtered-tab-test.spec.ts)
@@ -111,21 +111,23 @@ export function shouldRunTest(testSuite: string): boolean {
  */
 
 /**
- * Summary of Active Tests (Updated 2025-10-30):
+ * Summary of Active Tests (Updated 2025-10-30 - After E2E Investigation):
  *
  * - Category 1 (Core Workflows): 153 tests ✅
- * - Category 2 (Features): 145 tests ✅ (+16 from job-tradeoff-display enabled)
+ * - Category 2 (Features): 85 tests ✅ (-60 disabled: calendar, follow-ups, timeline = Phase 5)
  * - Category 3 (Quality): 63 tests ✅
- * - Category 4 (Refinements): 56 tests ✅
- * - UI/Styling (Disabled): 107 tests ❌ (reduced as job-tradeoff-display now enabled)
+ * - Category 4 (Refinements): 48 tests ✅ (-8 disabled: refresh-buttons not implemented)
+ * - UI/Styling (Disabled): 107 tests ❌
  *
- * Total Active: 417 tests (+16 from Oct 29)
- * Total Disabled: 107 tests (reduced from 123)
- * Total Tests: 524 tests (417 active + 107 disabled)
+ * Total Active: 349 tests (down from 417 after disabling unimplemented features)
+ * Total Disabled: 175 tests (up from 107)
+ * Total Tests: 524 tests (349 active + 175 disabled)
  *
- * Note: job-tradeoff-display suite enabled after BUG-0004 fix (tab switching).
- * One cosmetic test skipped in that suite (flexWrap CSS validation).
+ * Changes (2025-10-30):
+ * - BUG-0005 FIXED: debug-section import issue resolved (6 tests now passing)
+ * - BUG-0008: Disabled Phase 5 features (calendar, follow-ups, timeline = 60 tests)
+ * - BUG-0007: Disabled refresh-buttons (feature not implemented = 8 tests)
  *
- * Expected Pass Rate: ~67% (improved with BUG-0004 fix)
- * Expected Runtime: ~12-16 minutes
+ * Expected Pass Rate: ~75-80% (with unimplemented features disabled)
+ * Expected Runtime: ~10-12 minutes (fewer tests running)
  */
