@@ -74,34 +74,37 @@
      - Waits 500ms for React state to update
      - Gracefully handles empty tabs (waits for cards with timeout, catches if none exist)
    - **Implementation**: Modified `frontend/e2e/tests/17-job-card-summary.spec.ts`
-   - **Results**: ✅ 12/13 tests passing, 1 skipped (no "new" jobs in test database), 0 failures
-   - **Runtime**: 32.3s (down from 120s+ with timeout failures)
-   - **Additional improvement**: Tests now gracefully skip when expected data doesn't exist in database
+   - **Results**: ✅ 13/13 tests passing (was 10/13 failing with timeouts)
+   - **Runtime**: 31.1s (down from 120s+ with timeout failures)
+   - **Additional improvement**: Tests now gracefully handle empty tabs
 
-3. **🚧 WORK-IN-PROGRESS**: Missing test data for job-card-summary "new jobs" test (1 test skipped)
+3. **✅ FIXED (2025-10-29)**: Missing test data for job-card-summary "new jobs" test
    - **Test**: `should display Summary section for new jobs with data` (line 70 in 17-job-card-summary.spec.ts)
-   - **Issue**: Test database has 0 jobs with status='new', causing test to skip
-   - **Solution In Progress**: Test seed data infrastructure + Playwright best practices (2025-10-29)
+   - **Original Issue**: Test was failing because it couldn't find the seeded test job
+   - **Root Causes Identified and Fixed**:
+     1. **SQL Command Quoting Issue**: JSON data in psql command wasn't properly escaped for shell
+        - Original: Used `-c` flag with inline JSON, causing shell to misinterpret quotes and spaces
+        - Fix: Changed to heredoc approach (`psql <<'EOF'`) to avoid shell quoting issues
+     2. **API Response Filter Too Broad**: Test was capturing wrong endpoint response
+        - Original: `response.url().includes('/api/jobs')` matched `/api/jobs/stats` (returns counts)
+        - Fix: Changed to `response.url().endsWith('/api/jobs')` to match exact endpoint (returns Job[])
+   - **Solution Implemented**: Full test seed data infrastructure + Playwright best practices (2025-10-29)
      - ✅ Job creation via POST /api/jobs
      - ✅ Status update via PUT /api/jobs/{id}/status
-     - ✅ Trade-off data injection via SQL UPDATE
+     - ✅ Trade-off data injection via SQL UPDATE (fixed with heredoc)
      - ✅ Cleanup logic in afterEach hook
-     - ✅ **Playwright best practices applied** (researched from official sources):
-       - Use `page.waitForResponse()` to wait for API calls instead of arbitrary timeouts
+     - ✅ **Playwright best practices applied**:
+       - Use `page.waitForResponse()` to wait for specific API endpoint
        - Use web-first assertions (`await expect(locator).toBeVisible()`) with auto-retry
        - Removed `networkidle` and `waitForTimeout()` in favor of state-based waits
-       - Added explicit 10s timeout for test job visibility
-     - ⚠️ Test still failing - needs deeper debugging (likely status/filtering issue)
+       - Precise endpoint matching with `endsWith()` instead of `includes()`
    - **Implementation**: Modified `frontend/e2e/tests/17-job-card-summary.spec.ts`
+     - Fixed SQL command execution to use heredoc for proper quoting
+     - Fixed API response filter to match exact `/api/jobs` endpoint
      - Added test job creation with comprehensive trade-off data
      - Implemented database cleanup after test completion
-     - Wait for `/api/jobs` GET response after clicking "Refresh Data"
-     - Use web-first assertions throughout for automatic retries
-   - **Research Sources**: playwrightsolutions.com (DataFactory pattern), GitHub Playwright issues #34367, autify.com wait methods guide
-   - **Next Steps**: Debug root cause (verify job status after creation, check backend filtering logic)
-   - **Estimated effort remaining**: 30-60 minutes for debugging
-   - **Impact**: Would increase test coverage from 12/13 to 13/13 passing
-   - **Priority**: Low (test infrastructure in place with best practices, just needs root cause analysis)
+   - **Results**: ✅ All 13/13 tests passing (was 12/13 with 1 skipped)
+   - **Impact**: Test coverage improved from 12/13 (92.3%) to 13/13 (100%) passing
 
 4. **✅ FIXED (2025-10-29)**: Update test-config.ts with new test files
    - **Issue**: 118 new tests added since Oct 28 were not categorized in test-config.ts

@@ -127,20 +127,23 @@ test.describe('Job Card Summary Section', () => {
       }
     };
 
+    // Use heredoc to avoid shell quoting issues with JSON
     const rawDataEscaped = JSON.stringify(rawData).replace(/'/g, "''");
+    const sqlCommand = `UPDATE jobs SET raw_data = '${rawDataEscaped}'::jsonb WHERE job_id = '${testJobId}';`;
 
     await execAsync(
-      `psql -U ${dbUser} -d ${dbName} -c "UPDATE jobs SET raw_data = '${rawDataEscaped}'::jsonb WHERE job_id = '${testJobId}'"`,
+      `psql -U ${dbUser} -d ${dbName} <<'EOF'\n${sqlCommand}\nEOF`,
       { env: { ...process.env, PGPASSWORD: dbPassword } }
     );
 
     // Best Practice: Wait for specific API response instead of arbitrary timeouts
     // Click "Refresh Data" and wait for the /api/jobs response to complete
+    // IMPORTANT: Must match exactly '/api/jobs' not '/api/jobs/stats' or other variants
     const [response] = await Promise.all([
-      page.waitForResponse(response =>
-        response.url().includes('/api/jobs') &&
-        response.request().method() === 'GET'
-      ),
+      page.waitForResponse(response => {
+        const url = response.url();
+        return url.endsWith('/api/jobs') && response.request().method() === 'GET';
+      }),
       page.click('button:has-text("Refresh Data")')
     ]);
 
