@@ -1526,6 +1526,7 @@ const JobHunterDashboard: React.FC = () => {
       onClick={() => setSelectedJob(job)}
       style={{ border: '1px solid #e5e7eb' }}
       data-testid="job-card"
+      data-job-id={job.job_id}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
         <div style={{ flex: 1, minWidth: 0 }}>

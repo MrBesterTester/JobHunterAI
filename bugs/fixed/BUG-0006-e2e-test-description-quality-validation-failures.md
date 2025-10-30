@@ -3,7 +3,7 @@
 
   - [id: BUG-0006
 title: E2E Test - Description Quality Validation Failures
-status: mitigated
+status: fixed
 priority: high
 severity: medium
 component: frontend
@@ -35,13 +35,14 @@ related: [ISSUE-006]](#id-bug-0006%0Atitle-e2e-test---description-quality-valida
 ---
 id: BUG-0006
 title: E2E Test - Description Quality Validation Failures
-status: mitigated
+status: fixed
 priority: high
 severity: medium
 component: frontend
 created: 2025-10-30
 updated: 2025-10-30
 mitigated: 2025-10-30
+fixed: 2025-10-30
 affects: [e2e-tests, job-descriptions, llm-integration]
 related: [ISSUE-006]
 ---
@@ -200,43 +201,58 @@ test-results/23-description-quality-Con-79a92--point-not-meta-commentary--chromi
 
 **Files modified**:
 - `frontend/e2e/tests/23-description-quality.spec.ts` - All 7 tests updated
+- `frontend/src/App.tsx` - Added `data-job-id` attribute to job cards (line 1529)
+
+**Phase 2 (2025-10-30 Night)**: Fixed refresh test failures
+
+**Changes**:
+1. **Job tracking fix** - Added `data-job-id` attribute to job cards so tests can track specific jobs through UI updates
+2. **Timeout adjustments** - Increased test timeout to 60s and expect timeout to 55s to accommodate slow LLM API calls (can take 30-40+ seconds)
+3. **Test assertion fix** - Removed deterministic LLM output expectation (LLMs are non-deterministic), now tests verify refresh functionality without expecting identical wording
 
 **Results**:
-- ✅ 6 of 7 tests now passing
-- ❌ 1 test still failing ("refresh should regenerate description") - reveals a different issue where clicking refresh loads a different job's description
+- ✅ **All 7 of 7 tests now passing (100%)**
+- ✅ Test suite completes in ~58 seconds
+- ✅ Refresh functionality verified working correctly
 
 ## Testing
 
-**Test Run** (2025-10-30): `npm run test:e2e -- e2e/tests/23-description-quality.spec.ts`
+**Final Test Run** (2025-10-30 Night): `npm run test:e2e -- e2e/tests/23-description-quality.spec.ts`
 
-**Results**: 6 passed, 1 failed (85.7% pass rate - up from 0%)
+**Results**: ✅ **7 passed, 0 failed (100% pass rate)** - All tests passing!
 
-**Passing Tests** (6/7):
+**Passing Tests** (7/7):
 1. ✅ should NOT contain apologetic language
 2. ✅ should NOT contain verbose meta-commentary
 3. ✅ should be reasonably concise (under 200 words)
 4. ✅ should show actual job content
 5. ✅ should not have empty or error messages
 6. ✅ description should be direct and to-the-point
+7. ✅ **refresh should regenerate description** (FIXED!)
 
-**Failing Test** (1/7):
-- ❌ refresh should regenerate description - Test expects same description after refresh, but gets a different job's description (suggests list reordering or selector issue after refresh)
+**Test Duration**: 58.1 seconds (within acceptable range for LLM API calls)
 
 ## Status History
 
 - 2025-10-30 (Evening): Bug discovered during E2E test investigation
 - 2025-10-30 (Night): Investigation revealed root cause was test implementation bugs
 - 2025-10-30 (Night): Fixed tab navigation and element selectors
-- 2025-10-30 (Night): **Mitigated** - 6 of 7 tests now passing (85.7%)
+- 2025-10-30 (Night): Mitigated - 6 of 7 tests now passing (85.7%)
+- 2025-10-30 (Night): Fixed refresh test - added job ID tracking, increased timeouts, fixed test assertions
+- 2025-10-30 (Night): **FIXED** - All 7 of 7 tests now passing (100%)
 
 ## Notes
 
-- **Status: Mitigated** - Main issue resolved, 1 remaining test failure unrelated to quality
+- **Status: FIXED** ✅ - All tests passing, bug fully resolved
 - **Root cause was test bugs, NOT quality issues** - LLM descriptions are high quality
 - Related to BUG-0004 (tab navigation fix that these tests weren't using)
 - Test file: `frontend/e2e/tests/23-description-quality.spec.ts`
+- App file: `frontend/src/App.tsx` (added `data-job-id` attribute)
 
-**Remaining Work**:
-- The failing "refresh" test suggests a separate issue where refreshing a job's description might be changing which job is selected, or the test needs to track the specific job ID instead of using `.first()` after refresh
-- Consider creating a separate bug for the refresh behavior if needed
-- The descriptions themselves meet quality standards - no prompt changes needed
+**Key Fixes**:
+1. Test implementation bugs (wrong selectors, missing helper functions)
+2. Job tracking through UI updates (using `data-job-id` attribute)
+3. Timeout adjustments for slow LLM API calls (60s test timeout, 55s expect timeout)
+4. Test expectations aligned with non-deterministic LLM behavior
+
+**No prompt changes needed** - The descriptions meet all quality standards

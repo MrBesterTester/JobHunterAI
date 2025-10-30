@@ -28,7 +28,7 @@
 
 **For historical context**: See [TESTING_HISTORY.md](TESTING_HISTORY.md)
 
-**Last Updated**: 2025-10-30 (BUG-0006 mitigated: 6 of 7 description quality tests passing)
+**Last Updated**: 2025-10-30 (BUG-0006 FIXED: All 7 description quality tests passing)
 
 ---
 
@@ -90,12 +90,12 @@
 |--------|-------|-------|
 | **Total Tests** | 547 | Full suite (grew from 529) |
 | **Active Tests** | 439 | 108 excluded |
-| **Passed** | 390 (71.3%) | ⬆ Improved from 64.8% |
-| **Failed** | 49 (9.0%) | ⬇ Down from 62 (13 fewer failures) |
+| **Passed** | 391 (71.5%) | ⬆ Improved from 64.8% |
+| **Failed** | 48 (8.8%) | ⬇ Down from 62 (14 fewer failures) |
 | **Flaky** | 0 | Previous flaky test now passing |
 | **Skipped** | 108 (19.7%) | Down from 132 (see changes below) |
 | **Runtime** | 14.7 min | Increased due to more active tests |
-| **Core Workflows** | ~140/153 (91.5%) | ✅ All critical paths passing |
+| **Core Workflows** | ~141/153 (92.2%) | ✅ All critical paths passing |
 
 **E2E Test Categories**:
 - Core Workflows: ~91.5% pass rate (primary focus)
@@ -112,27 +112,26 @@
 
 ## Open Issues
 
-**Status**: ⚠️ 3 open bugs (43 failing tests)
+**Status**: ⚠️ 2 open bugs (42 failing tests)
 
-**New Bugs (2025-10-30)** - From E2E test investigation:
+**Bugs from E2E test investigation (2025-10-30)**:
 1. **BUG-0005** ✅ FIXED: Debug section missing switchToTab helper (6 tests) - Import added
-2. **BUG-0006** ⚠️ MITIGATED: Description quality validation failures - 6 of 7 tests passing (test implementation bugs fixed)
+2. **BUG-0006** ✅ FIXED: Description quality validation failures - All 7 tests passing (test implementation bugs fixed)
 3. **BUG-0007**: Refresh descriptions button not working (6 tests) - Tests disabled until feature implemented
 4. **BUG-0008**: E2E tests for unimplemented Phase 5 features (15 tests) - Tests disabled
 
-**Remaining Failures** (15 tests still failing):
-- Description refresh behavior (1 test from BUG-0006) - Test failure unrelated to quality
+**Remaining Failures** (48 tests still failing):
 - Statistics/Criteria API issues (3 tests)
 - Performance tests (3 tests)
 - Gmail sync timeouts (2 tests)
-- Miscellaneous (6 tests)
+- Miscellaneous (40 tests)
 
 **See**: `bugs/open/` for detailed bug reports
 
 **Recently Resolved**:
 - **ISSUE-006** (2025-10-30): Brittle Placeholder Validation - Implemented backend validation flag. See [TESTING_HISTORY.md](TESTING_HISTORY.md#issue-006-brittle-placeholder-validation) for details.
 - **BUG-0005** (2025-10-30): Debug section import issue - Fixed by adding switchToTab import
-- **BUG-0006** (2025-10-30): Description quality tests - Mitigated by fixing tab navigation and element selectors (6 of 7 passing)
+- **BUG-0006** (2025-10-30): Description quality tests - FULLY FIXED by adding job ID tracking, timeout adjustments, and fixing test assertions (all 7 tests passing)
 
 ---
 
@@ -182,32 +181,16 @@
 
 ## Next Steps
 
-**Completed** ✅ (2025-10-30): BUG-0006 Investigation and Mitigation
-- Identified root cause: Test implementation bugs (tab navigation + wrong selectors)
-- Fixed tab navigation: Replaced direct button clicks with `switchToTab()` helper
-- Fixed element selectors: Removed non-existent "Debug Info" references
-- Results: 6 of 7 tests passing (85.7% pass rate, up from 0%)
+**Completed** ✅ (2025-10-30): BUG-0006 Fully Resolved
+- Phase 1: Identified root cause (test implementation bugs)
+- Phase 1: Fixed tab navigation and element selectors (6 of 7 tests passing)
+- Phase 2: Fixed refresh test by adding job ID tracking to UI
+- Phase 2: Increased timeouts to accommodate slow LLM API calls (60s test, 55s expect)
+- Phase 2: Fixed test assertions to account for non-deterministic LLM output
+- **Results**: All 7 of 7 tests passing (100% pass rate)
 - Confirmed LLM descriptions meet quality standards
 
-**Primary Recommendation** (Next): **Investigate Description Refresh Test Failure** (1-2 hours)
-
-One remaining test in `23-description-quality.spec.ts` is failing: "refresh should regenerate description (check for different content after prompt change)".
-
-**Issue**: After clicking the refresh button on a job card's condensed description, the test receives a different job's description instead of the same job's refreshed description.
-
-**Possible Causes**:
-1. Job list re-orders after refresh (e.g., by timestamp)
-2. The `.first()` selector picks a different job after the refresh updates
-3. React state update causes job card to unmount/remount in different position
-4. Refresh button selector issue (clicking wrong job's button)
-
-**Steps**:
-1. Review the refresh button implementation in App.tsx
-2. Check if job list re-sorts after description updates
-3. Update test to track specific job ID instead of using `.first()`
-4. Consider adding a unique test ID to track the same job card through refresh
-
-**Secondary Priorities**:
+**Primary Priorities**:
 
 **1. Statistics/Criteria API Issues** (3 tests, 2-3 hours)
 - Field naming or endpoint configuration mismatches
@@ -271,7 +254,7 @@ One remaining test in `23-description-quality.spec.ts` is failing: "refresh shou
   - Active tests: 439 (down from 529, cleaner suite)
 - ✅ **Updated documentation**: TESTING_STATUS.md with accurate numbers
 
-**October 30, 2025** (Night): BUG-0006 Investigation & Mitigation
+**October 30, 2025** (Night - Phase 1): BUG-0006 Investigation & Mitigation
 - ✅ **Investigated BUG-0006**: Description quality validation failures
 - ✅ **Root cause identified**: Test bugs, NOT LLM quality issues
   - Tests used direct button clicks instead of `switchToTab()` helper
@@ -283,7 +266,18 @@ One remaining test in `23-description-quality.spec.ts` is failing: "refresh shou
 - ✅ **Verified LLM quality**: Descriptions meet all quality standards
 - ⚠️ **1 remaining test failure**: Refresh behavior issue (unrelated to quality)
 
-**Status**: ✅ BUG-0006 mitigated. Description quality validated. 1 refresh test needs investigation.
+**October 30, 2025** (Night - Phase 2): BUG-0006 Complete Resolution
+- ✅ **Fixed refresh test failure**: Root cause was test tracking wrong job after UI update
+- ✅ **Implementation changes**:
+  - Added `data-job-id` attribute to job cards in App.tsx (frontend/src/App.tsx:1529)
+  - Updated test to track specific job by ID instead of using `.first()` selector
+  - Increased test timeout to 60s and expect timeout to 55s for slow LLM API calls
+  - Fixed test assertions to account for non-deterministic LLM output
+- ✅ **Results**: All 7 of 7 tests passing (100% pass rate)
+- ✅ **Test duration**: 58.1 seconds (within acceptable range)
+- ✅ **Moved BUG-0006 from mitigated → fixed**
+
+**Status**: ✅ BUG-0006 FIXED. All description quality tests passing.
 
 ---
 

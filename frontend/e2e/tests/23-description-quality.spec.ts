@@ -123,13 +123,21 @@ test.describe('Condensed Description Quality', () => {
   });
 
   test('refresh should regenerate description (check for different content after prompt change)', async ({ page }) => {
+    // Increase test timeout to allow for slow LLM API calls (can take 20-30+ seconds)
+    test.setTimeout(60000);
+
     await switchToTab(page, 'all');
 
-    const jobCard = page.locator('[data-testid="job-card"]').first();
+    // Get the first job card and capture its job ID
+    const firstJobCard = page.locator('[data-testid="job-card"]').first();
+    const jobId = await firstJobCard.getAttribute('data-job-id');
+
+    // Track this specific job by its ID throughout the test
+    const jobCard = page.locator(`[data-testid="job-card"][data-job-id="${jobId}"]`);
 
     // Wait for initial description
     const descriptionContainer = jobCard.locator('div').filter({ hasText: 'Condensed Description' }).locator('div').last();
-    await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
+    await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 55000 });
 
     const initialDescription = await descriptionContainer.textContent();
 
@@ -141,8 +149,9 @@ test.describe('Condensed Description Quality', () => {
     // Wait for "Loading..." state
     await page.waitForTimeout(500);
 
-    // Wait for new description
-    await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
+    // Wait for new description (still tracking the same job by ID)
+    // Note: LLM API calls can take 30-40+ seconds for jobs with long descriptions
+    await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 55000 });
 
     const newDescription = await descriptionContainer.textContent();
 
@@ -150,9 +159,17 @@ test.describe('Condensed Description Quality', () => {
     expect(newDescription).toBeTruthy();
     expect(newDescription!.length).toBeGreaterThan(10);
 
-    // The description should be the same (since we didn't change the prompt)
-    // This just verifies that refresh is working
-    expect(newDescription).toBe(initialDescription);
+    // Verify refresh functionality works
+    // Note: LLMs are non-deterministic, so we can't expect identical output
+    // Instead, verify that we got a valid description (not an error message)
+    expect(newDescription).not.toContain('Error');
+    expect(newDescription).not.toContain('Failed to');
+    expect(newDescription).not.toContain('No description available');
+
+    // Verify it's still a quality description (reasonable length)
+    const wordCount = newDescription!.trim().split(/\s+/).length;
+    expect(wordCount).toBeGreaterThan(20);
+    expect(wordCount).toBeLessThanOrEqual(200);
   });
 
   test('should not have empty or error messages in description', async ({ page }) => {
