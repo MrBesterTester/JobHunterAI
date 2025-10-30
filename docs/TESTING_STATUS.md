@@ -215,69 +215,25 @@
 
 ## Recent Activity (Last 2 Weeks)
 
-**October 23-28, 2025**: Major testing infrastructure buildout
-- Created 481 unit tests from zero
-- Achieved 78.3% coverage (exceeded 60% goal)
-- Fixed 7/8 test failures, discovered production bug
-- Brought all components above 75% coverage
+**For detailed history**: See [TESTING_HISTORY.md](TESTING_HISTORY.md)
 
-**October 28, 2025**: E2E test suite restoration
-- Restored core workflow tests to 90.2% pass rate
-- Disabled 123 cosmetic tests with centralized control
-- Suppressed webpack warnings with `NODE_NO_WARNINGS=1`
+**October 23-28**: Major testing infrastructure buildout
+- Created 481 unit tests from zero (78.3% coverage)
+- Fixed 7/8 test failures, brought all components above 75%
 
-**October 29, 2025**: RSBuild migration
-- Migrated from Create React App to RSBuild
+**October 28**: E2E suite restoration
+- Restored core workflows to 90.2% pass rate
+- Disabled 123 cosmetic tests
+
+**October 29**: RSBuild migration
 - Build time: 5x faster (15.2s → 3.1s)
-- E2E validation: No regression, 64.8% pass rate maintained
-- Runtime improved: 20.5% faster (20 min → 15.9 min)
+- E2E runtime: 20.5% faster
 
-**October 30, 2025** (Morning): ISSUE-006 Implementation + Final cleanup
-- ✅ **Implemented ISSUE-006 Option 1: Backend Validation Flag**
-  - Backend returns `has_valid_description` boolean with API responses
-  - Multi-criteria validation (exact match, regex, length heuristic)
-  - Frontend uses backend flag as single source of truth
-  - System now resilient to LLM output variations and prompt changes
-- Fixed flaky accuracy test (relaxed pattern matching)
-- Documented ISSUE-006 test coverage recommendations
-- Split testing documentation (STATUS vs HISTORY)
-
-**October 30, 2025** (Evening): E2E Test Investigation & Cleanup
-- ✅ **Ran comprehensive E2E test suite** (547 tests, 14.7 min)
-- ✅ **Analyzed all 49 failing tests** - categorized by type
-- ✅ **Created 4 bug reports**: BUG-0005, BUG-0006, BUG-0007, BUG-0008
-- ✅ **Fixed BUG-0005**: Added missing switchToTab import (6 tests now passing)
-- ✅ **Disabled unimplemented feature tests**: 68 tests (Phase 5 features + refresh-buttons)
-- ✅ **Improved E2E metrics**:
-  - Pass rate: 64.8% → 71.3% (+6.5%)
-  - Failures: 62 → 49 (-13 tests)
-  - Active tests: 439 (down from 529, cleaner suite)
-- ✅ **Updated documentation**: TESTING_STATUS.md with accurate numbers
-
-**October 30, 2025** (Night - Phase 1): BUG-0006 Investigation & Mitigation
-- ✅ **Investigated BUG-0006**: Description quality validation failures
-- ✅ **Root cause identified**: Test bugs, NOT LLM quality issues
-  - Tests used direct button clicks instead of `switchToTab()` helper
-  - Tests looked for non-existent "Debug Info" section
-- ✅ **Fixed all test implementation issues**:
-  - Updated tab navigation to use `switchToTab(page, 'all')`
-  - Fixed element selectors to find "Condensed Description" on job cards
-- ✅ **Results**: 6 of 7 tests passing (85.7% pass rate, up from 0%)
-- ✅ **Verified LLM quality**: Descriptions meet all quality standards
-- ⚠️ **1 remaining test failure**: Refresh behavior issue (unrelated to quality)
-
-**October 30, 2025** (Night - Phase 2): BUG-0006 Complete Resolution
-- ✅ **Fixed refresh test failure**: Root cause was test tracking wrong job after UI update
-- ✅ **Implementation changes**:
-  - Added `data-job-id` attribute to job cards in App.tsx (frontend/src/App.tsx:1529)
-  - Updated test to track specific job by ID instead of using `.first()` selector
-  - Increased test timeout to 60s and expect timeout to 55s for slow LLM API calls
-  - Fixed test assertions to account for non-deterministic LLM output
-- ✅ **Results**: All 7 of 7 tests passing (100% pass rate)
-- ✅ **Test duration**: 58.1 seconds (within acceptable range)
-- ✅ **Moved BUG-0006 from mitigated → fixed**
-
-**Status**: ✅ BUG-0006 FIXED. All description quality tests passing.
+**October 30**: Bug fixes and test improvements
+- ✅ ISSUE-006: Backend validation flag implementation
+- ✅ BUG-0005: Debug section test fix (6 tests)
+- ✅ BUG-0006: Description quality tests fix (7 tests, 100% passing)
+- E2E metrics: 71.5% pass rate, 92.2% core workflows
 
 ---
 
