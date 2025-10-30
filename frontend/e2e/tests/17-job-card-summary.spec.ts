@@ -17,10 +17,41 @@ test.skip(!shouldRunTest('job-card-summary'), 'Test suite disabled in test-confi
  * - Includes: Employment, Remote Work, Technical, AI Tools, Commute, Filtered Reasons
  */
 
+// Test job data for the "new jobs" test
+// This job will be seeded before the test and cleaned up after
+let testJobId: string | null = null;
+
 test.describe('Job Card Summary Section', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:3000');
     await page.waitForLoadState('networkidle');
+  });
+
+  test.afterEach(async ({ request }) => {
+    // Cleanup: Delete the test job if it was created
+    if (testJobId) {
+      try {
+        // Since there's no DELETE endpoint for jobs, we'll use a direct SQL command
+        // via the backend or psql
+        const { exec } = require('child_process');
+        const { promisify } = require('util');
+        const execAsync = promisify(exec);
+
+        const dbName = process.env.DATABASE_NAME || 'jobhunter_personal';
+        const dbUser = process.env.DATABASE_USER || 'jobhunter_user';
+        const dbPassword = process.env.DATABASE_PASSWORD || 'jobhunter_dev_password';
+
+        await execAsync(
+          `psql -U ${dbUser} -d ${dbName} -c "DELETE FROM jobs WHERE job_id = '${testJobId}'"`,
+          { env: { ...process.env, PGPASSWORD: dbPassword } }
+        );
+
+        console.log(`Cleaned up test job: ${testJobId}`);
+        testJobId = null;
+      } catch (error) {
+        console.error(`Failed to cleanup test job: ${error}`);
+      }
+    }
   });
 
   // Helper function to click a tab and wait for content to load
@@ -36,36 +67,120 @@ test.describe('Job Card Summary Section', () => {
     }
   }
 
-  test('should display Summary section for new jobs with data', async ({ page }) => {
+  test('should display Summary section for new jobs with data', async ({ page, request }) => {
+    // Seed test data: Create a job with status='new' and trade-off information
+    const testJob = {
+      title: 'Senior Test Automation Engineer (E2E Test)',
+      company: 'E2E Test Company',
+      salary: 155000,
+      location: 'Remote',
+      source: 'E2E-Test',
+      description: 'Test automation engineer position for E2E testing purposes.',
+      url: 'https://example.com/e2e-test-job'
+    };
+
+    // POST the job to create it
+    const createResponse = await request.post('http://localhost:8080/api/jobs', {
+      data: testJob
+    });
+
+    expect(createResponse.ok()).toBeTruthy();
+    const createdJob = await createResponse.json();
+    testJobId = createdJob.job_id;
+
+    // Force the job status to 'new' (in case the backend filtered it)
+    const statusResponse = await request.put(`http://localhost:8080/api/jobs/${testJobId}/status`, {
+      data: { status: 'new' }
+    });
+    expect(statusResponse.ok()).toBeTruthy();
+
+    // Add trade-off data to the job's raw_data field
+    // Since the backend doesn't expose an endpoint to update raw_data directly,
+    // we'll use SQL to update it
+    const { exec } = require('child_process');
+    const { promisify } = require('util');
+    const execAsync = promisify(exec);
+
+    const dbName = process.env.DATABASE_NAME || 'jobhunter_personal';
+    const dbUser = process.env.DATABASE_USER || 'jobhunter_user';
+    const dbPassword = process.env.DATABASE_PASSWORD || 'jobhunter_dev_password';
+
+    const rawData = {
+      employment: {
+        relationship: 'direct_hire',
+        benefits: 'Full benefits package'
+      },
+      remote_work: {
+        remote_eligible_states: ['CA', 'NY', 'TX'],
+        timezone_requirement: 'PST preferred'
+      },
+      job_domain: {
+        primary_category: 'test_automation',
+        testing_level: 'Senior',
+        automation_focus: true,
+        ai_tools_mentioned: ['ChatGPT', 'Claude', 'Copilot']
+      },
+      commute: {
+        office_location: 'San Francisco, CA',
+        commute_perks: 'Commuter stipend',
+        schedule_flexibility: 'Flexible hybrid schedule'
+      }
+    };
+
+    const rawDataEscaped = JSON.stringify(rawData).replace(/'/g, "''");
+
+    await execAsync(
+      `psql -U ${dbUser} -d ${dbName} -c "UPDATE jobs SET raw_data = '${rawDataEscaped}'::jsonb WHERE job_id = '${testJobId}'"`,
+      { env: { ...process.env, PGPASSWORD: dbPassword } }
+    );
+
+    // Click "Refresh Data" button to fetch the newly created job
+    await page.click('button:has-text("Refresh Data")');
+    await page.waitForLoadState('networkidle');
+    // Wait a bit for the data to be fetched and rendered
+    await page.waitForTimeout(1000);
+
     // Navigate to New tab and wait for content
     await clickTabAndWait(page, 'New');
 
-    // Check if any job cards exist
-    const jobCards = page.locator('[data-testid="job-card"]');
-    const count = await jobCards.count();
+    // Debug: Log how many job cards exist
+    const allJobCards = page.locator('[data-testid="job-card"]');
+    const jobCount = await allJobCards.count();
+    console.log(`Found ${jobCount} job cards in New tab`);
 
-    if (count === 0) {
-      console.log('No new jobs to test - skipping');
-      test.skip();
-      return;
-    }
+    // Find the test job card by company name
+    const testJobCard = page.locator('[data-testid="job-card"]').filter({ hasText: 'E2E Test Company' });
+    const testJobCount = await testJobCard.count();
+    console.log(`Found ${testJobCount} job cards with 'E2E Test Company'`);
 
-    // Get first job card
-    const jobCard = jobCards.first();
+    // Verify the job card exists
+    await expect(testJobCard).toBeVisible();
 
     // Check if Summary section exists
-    const summarySection = jobCard.locator('[data-testid="job-summary"]');
+    const summarySection = testJobCard.locator('[data-testid="job-summary"]');
 
-    if (await summarySection.isVisible()) {
-      // Verify Summary header
-      const header = summarySection.locator('div').first();
-      await expect(header).toContainText('Summary');
+    // Verify Summary section is visible
+    await expect(summarySection).toBeVisible();
 
-      // Summary section should have content (not just header)
-      const summaryText = await summarySection.textContent();
-      expect(summaryText).toBeTruthy();
-      expect(summaryText!.length).toBeGreaterThan('Summary'.length + 10); // More than just the header
-    }
+    // Verify Summary header
+    await expect(summarySection).toContainText('Summary');
+
+    // Summary section should have content (not just header)
+    const summaryText = await summarySection.textContent();
+    expect(summaryText).toBeTruthy();
+    expect(summaryText!.length).toBeGreaterThan('Summary'.length + 10); // More than just the header
+
+    // Verify specific trade-off information is displayed
+    await expect(summarySection).toContainText('Employment:');
+    await expect(summarySection).toContainText('Direct Hire');
+    await expect(summarySection).toContainText('Remote Work:');
+    await expect(summarySection).toContainText('CA, NY, TX');
+    await expect(summarySection).toContainText('Technical:');
+    await expect(summarySection).toContainText('Test Automation');
+    await expect(summarySection).toContainText('AI Tools:');
+    await expect(summarySection).toContainText('ChatGPT');
+    await expect(summarySection).toContainText('Commute:');
+    await expect(summarySection).toContainText('San Francisco');
   });
 
   test('should display Summary section for approved jobs with data', async ({ page }) => {

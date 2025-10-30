@@ -78,16 +78,23 @@
    - **Runtime**: 32.3s (down from 120s+ with timeout failures)
    - **Additional improvement**: Tests now gracefully skip when expected data doesn't exist in database
 
-3. **⚠️ OUTSTANDING**: Missing test data for job-card-summary "new jobs" test (1 test skipped)
-   - **Test**: `should display Summary section for new jobs with data` (line 34 in 17-job-card-summary.spec.ts)
+3. **🚧 WORK-IN-PROGRESS**: Missing test data for job-card-summary "new jobs" test (1 test skipped)
+   - **Test**: `should display Summary section for new jobs with data` (line 70 in 17-job-card-summary.spec.ts)
    - **Issue**: Test database has 0 jobs with status='new', causing test to skip
-   - **Database state**: 1 approved job, 71 filtered jobs, 0 new jobs, 0 applied jobs
-   - **Solution needed**: Either:
-     - Add test seed data with jobs in "new" status
-     - Or accept this as expected behavior (test validates graceful handling of empty state)
-   - **Estimated effort**: 30 minutes to add seed data
+   - **Solution In Progress**: Test seed data infrastructure implemented (2025-10-29)
+     - ✅ Job creation via POST /api/jobs
+     - ✅ Status update via PUT /api/jobs/{id}/status
+     - ✅ Trade-off data injection via SQL UPDATE
+     - ✅ Cleanup logic in afterEach hook
+     - ⚠️ Test still failing - needs debugging (data refresh timing issue suspected)
+   - **Implementation**: Modified `frontend/e2e/tests/17-job-card-summary.spec.ts`
+     - Added test job creation with comprehensive trade-off data
+     - Implemented database cleanup after test completion
+     - Added "Refresh Data" button click to fetch new job
+   - **Next Steps**: Debug why test job isn't appearing in UI after creation
+   - **Estimated effort remaining**: 30-60 minutes for debugging
    - **Impact**: Would increase test coverage from 12/13 to 13/13 passing
-   - **Priority**: Low (test gracefully skips, not blocking any functionality)
+   - **Priority**: Low (test infrastructure in place, just needs debugging)
 
 4. **✅ FIXED (2025-10-29)**: Update test-config.ts with new test files
    - **Issue**: 118 new tests added since Oct 28 were not categorized in test-config.ts
