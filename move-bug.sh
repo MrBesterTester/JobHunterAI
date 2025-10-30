@@ -137,8 +137,8 @@ echo -e "${YELLOW}🔄 Regenerating bug index...${NC}"
 echo -e "${GREEN}✅ Bug index regenerated${NC}"
 echo ""
 
-# Stage changes
-git add "$NEW_FILE" bugs/README.md
+# Stage changes (both the deletion of old file and addition of new file)
+git add "$BUG_FILE" "$NEW_FILE" bugs/README.md
 echo -e "${GREEN}✅ Changes staged for commit${NC}"
 echo ""
 
