@@ -39,6 +39,7 @@
     - [Relationship Between ISSUE-018 and ISSUE-023](#relationship-between-issue-018-and-issue-023)
     - [Email Composer in Context](#email-composer-in-context)
     - [Why Both Test Types Matter](#why-both-test-types-matter)
+  - [ISSUE-006: Brittle Placeholder Validation](#issue-006-brittle-placeholder-validation)
   - [Related Files](#related-files)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -469,9 +470,47 @@ From the comprehensive test report ([README_test-report-10-23-2025.md](../README
 
 ---
 
+## ISSUE-006: Brittle Placeholder Validation
+
+**File**: [bugs/open/ISSUE-006-brittle-placeholder-validation.md](../bugs/open/ISSUE-006-brittle-placeholder-validation.md)
+
+**Status**: ✅ **FIXED (2025-10-30)**
+
+**Issue**: Hardcoded string matching for placeholder detection (`hasValidDescription()`) would break if LLM output changes
+
+**Context**:
+- Original Implementation: Exact string matching in `frontend/src/App.tsx:1249-1263`
+- Risk: If LLM says "Unable to extract description" instead of "No job description to be extracted.", validation would break
+- Impact: Jobs without valid descriptions would rank at top instead of bottom, no warning badge displayed
+
+**Resolution**: Implemented Option 1 (Backend Validation Flag)
+
+**Implementation Details**:
+- Backend now returns `has_valid_description` boolean flag with API response
+- Backend uses multi-criteria validation (exact match, regex, length heuristic)
+- Frontend uses backend flag as single source of truth (with legacy fallback)
+- All tests passing (512 unit tests, backend compilation successful)
+- System now resilient to LLM output variations and prompt changes
+
+**Key Benefits**:
+- ✅ **Single source of truth**: Backend determines validation, frontend trusts it
+- ✅ **Resilient**: Handles LLM output variations automatically via regex + heuristics
+- ✅ **Maintainable**: Only one place to update validation logic
+- ✅ **Backward compatible**: Falls back to legacy matching for old cached data
+- ✅ **Future-proof**: Easy to extend with new validation criteria
+
+**Effort**: 4-6 hours (as estimated in Option 1)
+
+**Related Files**:
+- `backend/src/main.rs` - Added `has_valid_description` field to job responses
+- `frontend/src/App.tsx` - Updated to use backend flag
+
+---
+
 ## Related Files
 
 **Primary Issues**:
+- **ISSUE-006**: [bugs/open/ISSUE-006-brittle-placeholder-validation.md](../bugs/open/ISSUE-006-brittle-placeholder-validation.md)
 - **ISSUE-018**: [bugs/fixed/ISSUE-018-frontend-unit-test-implementation.md](../bugs/fixed/ISSUE-018-frontend-unit-test-implementation.md)
 - **ISSUE-023**: [bugs/fixed/ISSUE-023-frontend-test-failures---content-generation-state-propagation-issues.md](../bugs/fixed/ISSUE-023-frontend-test-failures---content-generation-state-propagation-issues.md)
 - **ISSUE-024**: [bugs/fixed/ISSUE-024-frontend-test-coverage-gaps---components-below-60.md](../bugs/fixed/ISSUE-024-frontend-test-coverage-gaps---components-below-60.md)

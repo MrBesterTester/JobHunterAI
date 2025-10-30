@@ -5,16 +5,13 @@
   - [Executive Summary](#executive-summary)
     - [Unit Test Coverage](#unit-test-coverage)
     - [E2E Test Coverage](#e2e-test-coverage)
-  - [~~Open Issues~~ Recently Resolved Issues](#open-issues-recently-resolved-issues)
-    - [1. ✅ ISSUE-006: Brittle Placeholder Validation (RESOLVED 2025-10-30)](#1--issue-006-brittle-placeholder-validation-resolved-2025-10-30)
-      - [Option 1: Backend Validation Flag (4-6 hours) - RECOMMENDED](#option-1-backend-validation-flag-4-6-hours---recommended)
-      - [Option 2: Semantic Analysis with Heuristics (3-4 hours)](#option-2-semantic-analysis-with-heuristics-3-4-hours)
-      - [Option 3: Regex Pattern Matching (2-3 hours)](#option-3-regex-pattern-matching-2-3-hours)
+  - [Open Issues](#open-issues)
   - [Skipped Tests Summary](#skipped-tests-summary)
     - [Unit Tests (8 skipped)](#unit-tests-8-skipped)
       - [1. Content Generation Modal (4 skipped)](#1-content-generation-modal-4-skipped)
       - [2. Job Details Modal (4 skipped)](#2-job-details-modal-4-skipped)
     - [E2E Tests (123 skipped)](#e2e-tests-123-skipped)
+  - [Next Steps](#next-steps)
   - [Recent Activity (Last 2 Weeks)](#recent-activity-last-2-weeks)
   - [Testing Infrastructure Details](#testing-infrastructure-details)
     - [Test Frameworks](#test-frameworks)
@@ -30,7 +27,7 @@
 
 **For historical context**: See [TESTING_HISTORY.md](TESTING_HISTORY.md)
 
-**Last Updated**: 2025-10-30 (ISSUE-006 implemented)
+**Last Updated**: 2025-10-30 (Reorganized recommendations - testing focus)
 
 ---
 
@@ -94,75 +91,12 @@
 
 ---
 
-## ~~Open Issues~~ Recently Resolved Issues
+## Open Issues
 
-### 1. ✅ ISSUE-006: Brittle Placeholder Validation (RESOLVED 2025-10-30)
+**Status**: ✅ No open testing issues
 
-**File**: [bugs/open/ISSUE-006-brittle-placeholder-validation.md](../bugs/open/ISSUE-006-brittle-placeholder-validation.md)
-
-**Resolution**: Implemented Option 1 (Backend Validation Flag)
-
-**Issue**: Hardcoded string matching for placeholder detection (`hasValidDescription()`) will break if LLM output changes
-
-**Current Implementation**: Exact string matching in `frontend/src/App.tsx:1249-1263`
-
-**Risk**: If LLM says "Unable to extract description" instead of "No job description to be extracted.", validation breaks
-
-**Impact**: Jobs without valid descriptions would rank at top instead of bottom, no warning badge displayed
-
-**Current Test Coverage**:
-- ✅ `23-description-quality.spec.ts` (7 tests, enabled) - validates descriptions but uses same exact matching
-- ❌ No tests validate ranking behavior for jobs without descriptions
-- ❌ No tests validate warning badge display
-- ❌ No tests validate alternate placeholder wordings
-
-**Note**: 123 disabled cosmetic E2E tests (`05b-new-job-badges`, `19-condensed-description`, etc.) do NOT mitigate this issue
-
-**Implementation Options** (numbering matches ISSUE-006 for clarity):
-
-#### Option 1: Backend Validation Flag (4-6 hours) - RECOMMENDED
-Backend returns structured response with `has_valid_description` boolean flag
-- Single source of truth for validation logic (backend)
-- Frontend doesn't need to parse/interpret LLM output
-- Can apply sophisticated validation logic in backend
-- Easier to maintain - only one place to update
-- Files: `backend/src/main.rs`, `frontend/src/App.tsx`
-
-#### Option 2: Semantic Analysis with Heuristics (3-4 hours)
-Use multiple heuristics to identify placeholder messages
-- More flexible than exact string matching
-- Can handle variations in wording
-- No backend changes required
-- Risk of false positives/negatives
-- Files: `frontend/src/App.tsx`
-
-#### Option 3: Regex Pattern Matching (2-3 hours)
-Use regex patterns to match placeholder message structures
-- More flexible than exact matching
-- Can handle variations in wording
-- Easy to extend with new patterns
-- Still requires frontend updates when patterns change
-- Files: `frontend/src/App.tsx`
-
-**Status**: ✅ **IMPLEMENTED** (2025-10-30) - Option 1 (Backend Validation Flag) deployed
-
-**Implementation Summary**:
-- Backend now returns `has_valid_description` boolean flag with API response
-- Backend uses multi-criteria validation (exact match, regex, length heuristic)
-- Frontend uses backend flag as single source of truth (with legacy fallback)
-- All tests passing (512 unit tests, backend compilation successful)
-- System now resilient to LLM output variations and prompt changes
-
-**Key Benefits**:
-- ✅ **Single source of truth**: Backend determines validation, frontend trusts it
-- ✅ **Resilient**: Handles LLM output variations automatically via regex + heuristics
-- ✅ **Maintainable**: Only one place to update validation logic
-- ✅ **Backward compatible**: Falls back to legacy matching for old cached data
-- ✅ **Future-proof**: Easy to extend with new validation criteria
-
-**See**: [ISSUE-006](../bugs/open/ISSUE-006-brittle-placeholder-validation.md) for full implementation details
-
-**Priority**: ~~Medium~~ → **RESOLVED**
+**Recently Resolved**:
+- **ISSUE-006** (2025-10-30): Brittle Placeholder Validation - Implemented backend validation flag. See [TESTING_HISTORY.md](TESTING_HISTORY.md#issue-006-brittle-placeholder-validation) for details.
 
 ---
 
@@ -218,6 +152,34 @@ export const ENABLED_TEST_SUITES = {
 ```
 
 **Impact**: Disabled tests represent 23.3% of total E2E suite. Core workflows maintain 90.2% pass rate.
+
+---
+
+## Next Steps
+
+**Primary Recommendation**: **Add Test Coverage for Backend Validation Flag (ISSUE-006)** (2-3 hours)
+
+The backend validation flag feature was just implemented but lacks test coverage. Adding tests would provide extra validation and prevent regressions.
+
+**Optional Test Enhancements** (Lower Priority):
+
+**A. Test Coverage for Backend Validation Flag Feature** (2-3 hours)
+- Add tests for the new `has_valid_description` flag behavior
+- Test ranking behavior for jobs without descriptions
+- Test warning badge display for invalid descriptions
+- Test handling of alternate placeholder text patterns
+- **Files**: `frontend/e2e/tests/23-description-quality.spec.ts` or new unit tests
+- **Status**: Feature implemented and working, tests would add extra validation
+
+**B. Failed E2E Test Investigation** (4-8 hours)
+- 62 failed tests (11.7%) marked as "pre-existing, not blocking"
+- Could investigate root causes if desired
+- **Note**: Core workflows are 90.2% passing, so these may be edge cases
+
+**C. Skipped Unit Test Investigation** (2-4 hours)
+- 8 skipped tests (4 documented as architectural limitations)
+- Remaining 4 in Job Details Modal could be investigated
+- **Low value**: Functionality verified working in production
 
 ---
 
