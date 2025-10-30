@@ -19,6 +19,28 @@ async function checkBackendHealth(maxAttempts = 30): Promise<boolean> {
   return false;
 }
 
+async function calculateAllJobScores(): Promise<void> {
+  console.log('📊 Calculating scores for all jobs...');
+
+  try {
+    const response = await fetch('http://localhost:8080/api/jobs/calculate-all-scores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Score calculation failed with status ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log(`✅ Calculated scores for ${result.scored_count} jobs (${result.failed_count} failed)`);
+  } catch (error) {
+    console.error('❌ Failed to calculate job scores:', error);
+    // Don't throw - some tests may not need scores, and this shouldn't block all tests
+    console.warn('⚠️  Continuing without pre-calculated scores (some tests may fail)');
+  }
+}
+
 async function globalSetup() {
   console.log('🧪 Setting up test environment...');
 
@@ -27,6 +49,9 @@ async function globalSetup() {
     const response = await fetch('http://localhost:8080/api/jobs');
     if (response.ok) {
       console.log('✅ Backend already running on port 8080');
+
+      // Calculate scores for all jobs to prevent 404 errors in E2E tests
+      await calculateAllJobScores();
       return;
     }
   } catch (error) {
@@ -46,6 +71,9 @@ async function globalSetup() {
     if (!isReady) {
       throw new Error('Backend failed to start within 30 seconds');
     }
+
+    // Calculate scores for all jobs to prevent 404 errors in E2E tests
+    await calculateAllJobScores();
 
     console.log('✅ Test environment setup complete');
   } catch (error) {

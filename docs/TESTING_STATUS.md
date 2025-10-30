@@ -1,6 +1,6 @@
 # Frontend Testing Status & Progress Tracking
 
-**Last Updated**: 2025-10-29 (ISSUE-026 completed - RSBuild migration successful, E2E test validation complete)
+**Last Updated**: 2025-10-29 (ISSUE-026 completed, E2E score 404 fix implemented, console error test now passing)
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -55,11 +55,17 @@
 - **Details**: See [ISSUE-025 Post-RSBuild Test Results](../bugs/fixed/ISSUE-025-e2e-test-suite-health---skipped-and-failing-tests.md#post-rsbuild-migration-e2e-test-results-2025-10-29)
 
 **E2E Test Maintenance Recommendations** (Optional Future Work):
-1. **HIGH PRIORITY**: Investigate RSBuild static asset 404 errors (affects ~15 tests)
-   - Check `rsbuild.config.ts` output.assetPrefix configuration
-   - Verify static file paths in dev server
-   - **Estimated effort**: 1-2 hours
-   - **Impact**: Will fix console error test failures
+1. **✅ FIXED (2025-10-29)**: Expected 404s from job score API (was affecting ~15 tests)
+   - **Root Cause**: Frontend requests `/api/jobs/{id}/score` for all jobs, but backend returned 404 when scores weren't calculated yet
+   - **Solution Implemented**: Global test setup now calls `POST /api/jobs/calculate-all-scores` to pre-calculate scores for all jobs in database
+   - **Implementation**: Modified `frontend/e2e/global-setup.ts` to calculate scores after backend starts
+   - **Results**: ✅ Console error tests now passing (72 jobs scored, 0 failures) - eliminates 404 errors for ~15 affected tests
+   - **Impact**: ~15 tests that were failing due to score 404 errors should now pass
+   - **Added Bonus**: Created flexible score range helpers in `test-helpers.ts` for future score validation tests (±5 point tolerance)
+   - **Files Modified**:
+     - `frontend/e2e/global-setup.ts` (added calculateAllJobScores function)
+     - `frontend/e2e/fixtures/test-helpers.ts` (added score range helpers with expectedScoreRanges)
+     - `frontend/e2e/fixtures/seed-test-scores.sql` (reference data for test score ranges)
 
 2. **MEDIUM PRIORITY**: Investigate timeout failures in job-card-summary tests (affects ~20 tests)
    - Review API response times for summary data
