@@ -27,14 +27,12 @@ test.describe('Condensed Description Quality', () => {
 
   test('should NOT contain apologetic language like "I apologize"', async ({ page }) => {
     // Navigate to All tab
-    await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
-    const debugSection = jobCard.locator('div:has-text("🔧 Debug Info")').first();
 
     // Wait for description to load
-    const descriptionContainer = debugSection.locator('div').filter({ hasText: 'Condensed Description:' }).locator('div').last();
+    const descriptionContainer = jobCard.locator('div').filter({ hasText: 'Condensed Description' }).locator('div').last();
     await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
 
     const descriptionText = await descriptionContainer.textContent();
@@ -46,13 +44,11 @@ test.describe('Condensed Description Quality', () => {
   });
 
   test('should NOT contain verbose meta-commentary', async ({ page }) => {
-    await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
-    const debugSection = jobCard.locator('div:has-text("🔧 Debug Info")').first();
 
-    const descriptionContainer = debugSection.locator('div').filter({ hasText: 'Condensed Description:' }).locator('div').last();
+    const descriptionContainer = jobCard.locator('div').filter({ hasText: 'Condensed Description' }).locator('div').last();
     await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
 
     const descriptionText = await descriptionContainer.textContent();
@@ -64,13 +60,11 @@ test.describe('Condensed Description Quality', () => {
   });
 
   test('should be reasonably concise (under 200 words)', async ({ page }) => {
-    await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
-    const debugSection = jobCard.locator('div:has-text("🔧 Debug Info")').first();
 
-    const descriptionContainer = debugSection.locator('div').filter({ hasText: 'Condensed Description:' }).locator('div').last();
+    const descriptionContainer = jobCard.locator('div').filter({ hasText: 'Condensed Description' }).locator('div').last();
     await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
 
     const descriptionText = await descriptionContainer.textContent();
@@ -83,8 +77,7 @@ test.describe('Condensed Description Quality', () => {
   });
 
   test('should show actual job content (not just "No job description")', async ({ page }) => {
-    await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await switchToTab(page, 'all');
 
     // Check multiple job cards to find one with actual content
     const jobCards = page.locator('[data-testid="job-card"]');
@@ -94,8 +87,7 @@ test.describe('Condensed Description Quality', () => {
 
     for (let i = 0; i < count; i++) {
       const card = jobCards.nth(i);
-      const debugSection = card.locator('div:has-text("🔧 Debug Info")').first();
-      const descriptionContainer = debugSection.locator('div').filter({ hasText: 'Condensed Description:' }).locator('div').last();
+      const descriptionContainer = card.locator('div').filter({ hasText: 'Condensed Description' }).locator('div').last();
 
       await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
 
@@ -131,21 +123,19 @@ test.describe('Condensed Description Quality', () => {
   });
 
   test('refresh should regenerate description (check for different content after prompt change)', async ({ page }) => {
-    await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
-    const debugSection = jobCard.locator('div:has-text("🔧 Debug Info")').first();
 
     // Wait for initial description
-    const descriptionContainer = debugSection.locator('div').filter({ hasText: 'Condensed Description:' }).locator('div').last();
+    const descriptionContainer = jobCard.locator('div').filter({ hasText: 'Condensed Description' }).locator('div').last();
     await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
 
     const initialDescription = await descriptionContainer.textContent();
 
     // Click refresh
-    const descriptionHeader = debugSection.locator('div:has-text("Condensed Description:")').first();
-    const refreshButton = descriptionHeader.locator('button');
+    const descriptionHeader = jobCard.locator('strong:has-text("Condensed Description")').first();
+    const refreshButton = descriptionHeader.locator('..').locator('button');
     await refreshButton.click();
 
     // Wait for "Loading..." state
@@ -166,16 +156,14 @@ test.describe('Condensed Description Quality', () => {
   });
 
   test('should not have empty or error messages in description', async ({ page }) => {
-    await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await switchToTab(page, 'all');
 
     const jobCards = page.locator('[data-testid="job-card"]');
     const count = Math.min(await jobCards.count(), 5);
 
     for (let i = 0; i < count; i++) {
       const card = jobCards.nth(i);
-      const debugSection = card.locator('div:has-text("🔧 Debug Info")').first();
-      const descriptionContainer = debugSection.locator('div').filter({ hasText: 'Condensed Description:' }).locator('div').last();
+      const descriptionContainer = card.locator('div').filter({ hasText: 'Condensed Description' }).locator('div').last();
 
       await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
 
@@ -193,13 +181,11 @@ test.describe('Condensed Description Quality', () => {
   });
 
   test('description should be direct and to-the-point (not meta-commentary)', async ({ page }) => {
-    await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
-    const debugSection = jobCard.locator('div:has-text("🔧 Debug Info")').first();
 
-    const descriptionContainer = debugSection.locator('div').filter({ hasText: 'Condensed Description:' }).locator('div').last();
+    const descriptionContainer = jobCard.locator('div').filter({ hasText: 'Condensed Description' }).locator('div').last();
     await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
 
     const descriptionText = await descriptionContainer.textContent();

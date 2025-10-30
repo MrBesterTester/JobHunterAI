@@ -3,12 +3,13 @@
 
   - [id: BUG-0006
 title: E2E Test - Description Quality Validation Failures
-status: open
+status: mitigated
 priority: high
 severity: medium
 component: frontend
 created: 2025-10-30
 updated: 2025-10-30
+mitigated: 2025-10-30
 affects: [e2e-tests, job-descriptions, llm-integration]
 related: [ISSUE-006]](#id-bug-0006%0Atitle-e2e-test---description-quality-validation-failures%0Astatus-open%0Apriority-high%0Aseverity-medium%0Acomponent-frontend%0Acreated-2025-10-30%0Aupdated-2025-10-30%0Aaffects-e2e-tests-job-descriptions-llm-integration%0Arelated-issue-006)
 - [BUG-0006: E2E Test - Description Quality Validation Failures](#bug-0006-e2e-test---description-quality-validation-failures)
@@ -34,12 +35,13 @@ related: [ISSUE-006]](#id-bug-0006%0Atitle-e2e-test---description-quality-valida
 ---
 id: BUG-0006
 title: E2E Test - Description Quality Validation Failures
-status: open
+status: mitigated
 priority: high
 severity: medium
 component: frontend
 created: 2025-10-30
 updated: 2025-10-30
+mitigated: 2025-10-30
 affects: [e2e-tests, job-descriptions, llm-integration]
 related: [ISSUE-006]
 ---
@@ -86,11 +88,13 @@ Tests are failing, suggesting descriptions may contain:
 
 ## Root Cause
 
-**Needs Investigation**. Possible causes:
-1. LLM prompt not properly constraining output
-2. Backend validation not enforcing quality standards
-3. Test expectations misaligned with actual LLM behavior
-4. ISSUE-006 backend validation flag not fully addressing quality
+**IDENTIFIED** (2025-10-30): Test implementation errors, NOT description quality issues.
+
+1. **Incorrect tab navigation** - Tests used `page.click('button:has-text("All")')` instead of the `switchToTab()` helper (which was created to fix BUG-0004). This caused tests to fail before reaching the "All" tab.
+
+2. **Wrong element selectors** - Tests looked for descriptions inside a non-existent `div:has-text("🔧 Debug Info")` section. The actual UI displays condensed descriptions directly on job cards, not in a debug section.
+
+The LLM prompt quality is fine (already has clear rules against apologetic language and meta-commentary). The actual failure was tests couldn't find the UI elements they were looking for.
 
 ## Evidence
 
@@ -161,38 +165,78 @@ test-results/23-description-quality-Con-79a92--point-not-meta-commentary--chromi
 
 ## Decision
 
-**Selected**: TBD - Requires investigation
+**Selected**: Fix test implementation (root cause was test bugs, not quality issues)
 
-**Next Steps**:
-1. Run tests individually and capture actual LLM output
-2. Review LLM prompts for description generation
-3. Determine if this is:
-   - Prompt issue (fix prompt)
-   - Test issue (adjust expectations)
-   - Validation issue (implement backend checks)
+**Rationale**:
+- Investigation revealed tests were failing due to incorrect selectors
+- LLM prompt already has quality constraints (`prompts/job_condensed_description.md`)
+- Actual descriptions are high quality (verified after fixing selectors)
 
 ## Implementation
 
-[To be completed after investigation]
+**Completed** (2025-10-30): `frontend/e2e/tests/23-description-quality.spec.ts`
+
+**Changes made**:
+
+1. **Tab navigation fix** - Replaced all direct button clicks:
+   ```typescript
+   // OLD (broken)
+   await page.click('button:has-text("All")');
+   await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+
+   // NEW (working)
+   await switchToTab(page, 'all');
+   ```
+
+2. **Selector fix** - Updated element locators to match actual UI structure:
+   ```typescript
+   // OLD (broken - looking for non-existent debug section)
+   const debugSection = jobCard.locator('div:has-text("🔧 Debug Info")').first();
+   const descriptionContainer = debugSection.locator('div').filter({ hasText: 'Condensed Description:' }).locator('div').last();
+
+   // NEW (working - condensed description is directly on job card)
+   const descriptionContainer = jobCard.locator('div').filter({ hasText: 'Condensed Description' }).locator('div').last();
+   ```
+
+**Files modified**:
+- `frontend/e2e/tests/23-description-quality.spec.ts` - All 7 tests updated
+
+**Results**:
+- ✅ 6 of 7 tests now passing
+- ❌ 1 test still failing ("refresh should regenerate description") - reveals a different issue where clicking refresh loads a different job's description
 
 ## Testing
 
-1. Run description quality tests individually
-2. Capture and analyze actual LLM output
-3. Compare against test expectations
-4. Verify fix addresses root cause
+**Test Run** (2025-10-30): `npm run test:e2e -- e2e/tests/23-description-quality.spec.ts`
 
-**Success Criteria**: All 7 tests pass with high-quality descriptions
+**Results**: 6 passed, 1 failed (85.7% pass rate - up from 0%)
+
+**Passing Tests** (6/7):
+1. ✅ should NOT contain apologetic language
+2. ✅ should NOT contain verbose meta-commentary
+3. ✅ should be reasonably concise (under 200 words)
+4. ✅ should show actual job content
+5. ✅ should not have empty or error messages
+6. ✅ description should be direct and to-the-point
+
+**Failing Test** (1/7):
+- ❌ refresh should regenerate description - Test expects same description after refresh, but gets a different job's description (suggests list reordering or selector issue after refresh)
 
 ## Status History
 
-- 2025-10-30: Bug discovered during E2E test investigation
-- 2025-10-30: Initial analysis - requires deeper investigation
+- 2025-10-30 (Evening): Bug discovered during E2E test investigation
+- 2025-10-30 (Night): Investigation revealed root cause was test implementation bugs
+- 2025-10-30 (Night): Fixed tab navigation and element selectors
+- 2025-10-30 (Night): **Mitigated** - 6 of 7 tests now passing (85.7%)
 
 ## Notes
 
-- **Priority: High** - This affects user-facing content quality
-- Related to ISSUE-006 (backend validation flag)
-- May want to expand ISSUE-006 solution to cover broader quality checks
-- Consider adding quality scoring similar to content generation tests
+- **Status: Mitigated** - Main issue resolved, 1 remaining test failure unrelated to quality
+- **Root cause was test bugs, NOT quality issues** - LLM descriptions are high quality
+- Related to BUG-0004 (tab navigation fix that these tests weren't using)
 - Test file: `frontend/e2e/tests/23-description-quality.spec.ts`
+
+**Remaining Work**:
+- The failing "refresh" test suggests a separate issue where refreshing a job's description might be changing which job is selected, or the test needs to track the specific job ID instead of using `.first()` after refresh
+- Consider creating a separate bug for the refresh behavior if needed
+- The descriptions themselves meet quality standards - no prompt changes needed
