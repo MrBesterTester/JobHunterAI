@@ -1,6 +1,6 @@
 ---
 id: ISSUE-028
-title: Multiple Markdown Previews with Mermaid Support in Cursor/VSCode
+title: Multiple Markdown Previews in Cursor
 status: open
 priority: low
 severity: low
@@ -8,10 +8,10 @@ component: docs
 created: 2025-10-31
 updated: 2025-10-31
 affects: []
-related: []
+related: [ISSUE-029]
 ---
 
-# ISSUE-028: Multiple Markdown Previews with Mermaid Support in Cursor/VSCode
+# ISSUE-028: Multiple Markdown Previews in Cursor
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -27,7 +27,6 @@ related: []
 - [Proposed Solutions](#proposed-solutions)
   - [Option 1: Use Locked Preview Feature in Cursor](#option-1-use-locked-preview-feature-in-cursor)
   - [Option 2: Configure Editor Association for Markdown Files](#option-2-configure-editor-association-for-markdown-files)
-  - [Option 3: Install Mermaid Extension in VSCode](#option-3-install-mermaid-extension-in-vscode)
 - [Decision](#decision)
 - [Implementation](#implementation)
 - [Testing](#testing)
@@ -39,42 +38,38 @@ related: []
 
 ## Summary
 
-Research findings on how to view multiple markdown preview files simultaneously in Cursor (v2.0.43) and enable Mermaid diagram rendering in VSCode. Both issues have built-in solutions.
+Research findings on how to view multiple markdown preview files simultaneously in Cursor (v2.0.43). Cursor has a built-in "locked preview" feature that solves this issue.
+
+**Note**: VSCode mermaid diagram rendering is covered separately in ISSUE-029.
 
 ## Impact
 
 **Who/What is affected:**
 - Developer workflow when reviewing multiple markdown documentation files
-- Ability to visualize Mermaid diagrams in markdown files
-- Choice between Cursor and VSCode editors
+- Efficiency when comparing or referencing multiple documentation files side-by-side
 
 **Severity:**
 - Low - workflow improvement rather than blocker
 - Affects documentation review efficiency
+- Not widely known feature in Cursor
 
 ## Steps to Reproduce
 
-**Issue 1 - Multiple Markdown Previews:**
-1. Open a markdown file in Cursor
+**Multiple Markdown Previews Issue:**
+1. Open a markdown file in Cursor (e.g., `./README.md`)
 2. Open markdown preview (default preview)
-3. Switch to another markdown file
-4. Notice previous preview is replaced
-
-**Issue 2 - Mermaid Diagram Rendering:**
-1. Open a markdown file with mermaid diagram in VSCode
-2. Open markdown preview
-3. Without extension: mermaid code block shown as plain text
-4. With extension: diagram renders visually
+3. Switch to another markdown file (e.g., `./CLAUDE.md`)
+4. Open preview for the second file
+5. Notice previous preview is replaced by new preview
+6. Cannot view both previews simultaneously
 
 ## Expected Behavior
 
-- Cursor: Ability to have multiple markdown preview panes open simultaneously for different files
-- VSCode: Mermaid diagrams should render as visual diagrams in markdown preview
+Ability to have multiple markdown preview panes open simultaneously for different files, allowing side-by-side comparison of documentation.
 
 ## Actual Behavior
 
-- Cursor: Default behavior only maintains one unlocked markdown preview at a time
-- VSCode: Requires extension installation for mermaid diagram support
+Cursor's default behavior only maintains one unlocked markdown preview at a time. Opening a new markdown preview replaces the existing preview.
 
 ## Root Cause
 
@@ -82,11 +77,10 @@ Research findings on how to view multiple markdown preview files simultaneously 
 - VS Code (and Cursor by extension) default behavior: only one unlocked markdown preview window
 - Opening a new markdown file replaces the current preview
 - Built-in "locked preview" feature exists but not widely known
+- Design choice to prevent cluttering workspace with multiple preview panes
 
-**Mermaid Rendering:**
-- VSCode does not include mermaid rendering in base installation
-- Requires extension: "Markdown Preview Mermaid Support" by Matt Bierner
-- Extension integrates seamlessly with VSCode's built-in markdown preview
+**Why This is Not a Bug:**
+This is an intentional design decision. The locked preview feature provides the flexibility for users who need multiple previews while keeping the default behavior simple for most users.
 
 ## Evidence
 
@@ -94,14 +88,10 @@ Research findings on how to view multiple markdown preview files simultaneously 
 
 **Multiple Markdown Previews:**
 - Stack Overflow: "How do you open multiple markdown previews at the same time in VS Code?"
-- Confirmed: Cursor inherits VS Code's locked preview feature
-
-**Mermaid Support:**
-- VSCode Marketplace: "Markdown Preview Mermaid Support" extension
-  - Latest version: 1.29.0 (updated September 2025)
-  - Supports Mermaid version 11.12.0
-  - 5M+ downloads
-- Alternative: "Mermaid Preview" extension with pan/zoom features
+  - Confirmed: Cursor inherits VS Code's locked preview feature
+  - Two solutions documented: locked previews and editor associations
+- Cursor Community Forum: Users requesting this feature unaware it already exists
+- VS Code documentation: Locked preview feature available since early versions
 
 ## Proposed Solutions
 
@@ -168,54 +158,22 @@ Research findings on how to view multiple markdown preview files simultaneously 
 
 **Maintenance**: None - configuration persists
 
-### Option 3: Install Mermaid Extension in VSCode
-
-**Description**: Install "Markdown Preview Mermaid Support" extension in VSCode
-
-**Implementation Steps:**
-1. Open VSCode
-2. Open Extensions view (`Cmd+Shift+X`)
-3. Search for "Markdown Preview Mermaid Support"
-4. Install extension by Matt Bierner (bierner.markdown-mermaid)
-5. Restart VSCode
-6. Mermaid diagrams in markdown will render automatically
-
-**Extension Details:**
-- Extension ID: `bierner.markdown-mermaid`
-- Latest Version: 1.29.0
-- Mermaid Version: 11.12.0
-- VSCode Marketplace: https://marketplace.visualstudio.com/items?itemName=bierner.markdown-mermaid
-
-**Pros**:
-- Official Microsoft-maintained extension
-- Seamless integration with built-in markdown preview
-- Supports latest Mermaid features
-- 5M+ downloads, well-tested
-- Free and open source
-
-**Cons**:
-- Requires extension installation
-- VSCode only (Cursor may have built-in mermaid support)
-
-**Implementation Effort**: 5 minutes
-
-**Maintenance**: Auto-updates with VSCode extensions
-
 ## Decision
 
-**Recommendation**: Use both Option 1 and Option 3
+**Recommendation**: Option 1 - Use Locked Preview Feature
 
-**For Cursor:**
-- Use "Markdown: Open Locked Preview to the Side" command (Option 1)
-- This is the most straightforward solution with no configuration changes
-- Provides immediate benefit with zero setup
+**Rationale:**
+- Built-in feature, no configuration required
+- Most straightforward solution
+- Zero setup time, works immediately
+- Provides maximum flexibility (unlimited locked previews)
+- Option 2 is available if user prefers automatic behavior
 
-**For VSCode:**
-- Install "Markdown Preview Mermaid Support" extension (Option 3)
-- Enables full feature parity with Cursor for mermaid diagram rendering
-- Makes VSCode a viable alternative to Cursor
+**For Users Who Want Multiple Markdown Previews:**
+1. Use "Markdown: Open Locked Preview to the Side" command (Option 1 - Recommended)
+2. Or configure editor associations for automatic preview behavior (Option 2)
 
-**Result**: User can confidently use either editor with full functionality
+**Result**: Cursor users can efficiently view and compare multiple markdown documentation files side-by-side
 
 ## Implementation
 
@@ -223,40 +181,45 @@ Research findings on how to view multiple markdown preview files simultaneously 
 
 **Documented Solutions:**
 1. ✅ Multiple markdown previews in Cursor: Use locked preview command
-2. ✅ Mermaid rendering in VSCode: Install extension
+2. ✅ Alternative: Configure editor associations for automatic behavior
 
-**User can choose either editor based on preference:**
-- Cursor: Already has mermaid support, now knows how to use multiple previews
-- VSCode: Can add mermaid support, already has multiple preview capability
+**Usage Instructions:**
+- **Quick Method**: Use locked preview command when needed
+- **Persistent Method**: Configure editor associations in settings.json
 
 ## Testing
 
 **Test Commands:**
 ```bash
-# Test locked preview in Cursor
-# 1. Open ./README.md
-# 2. Cmd+Shift+P → "Markdown: Open Locked Preview to the Side"
-# 3. Open ./CLAUDE.md
-# 4. Cmd+Shift+P → "Markdown: Open Locked Preview to the Side"
-# 5. Verify both previews are visible simultaneously
+# Test Option 1: Locked Preview in Cursor
+# 1. Open Cursor
+# 2. Open ./README.md
+# 3. Cmd+Shift+P → type "locked" → select "Markdown: Open Locked Preview to the Side"
+# 4. Open ./CLAUDE.md (in a new editor tab)
+# 5. Cmd+Shift+P → "Markdown: Open Locked Preview to the Side"
+# 6. Open ./docs/PROJECT_STATUS.md
+# 7. Cmd+Shift+P → "Markdown: Open Locked Preview to the Side"
+# 8. Verify all three previews are visible simultaneously
 
-# Test mermaid in VSCode (after extension installation)
-# 1. Install "Markdown Preview Mermaid Support" extension
-# 2. Open ./README.md (contains mermaid diagram)
-# 3. Open markdown preview
-# 4. Verify mermaid diagram renders as visual flowchart
+# Test Option 2: Editor Associations (if configured)
+# 1. Configure settings.json with workbench.editorAssociations
+# 2. Open multiple markdown files
+# 3. Verify each opens in preview mode automatically
+# 4. Double-click preview to edit when needed
 ```
 
 **Verification:**
 - [x] Research completed on multiple markdown previews
-- [x] Research completed on mermaid diagram support
 - [x] Solutions documented with step-by-step instructions
+- [x] Command Palette access instructions clarified for Cursor v2.0.43
 - [ ] User validates locked preview works in Cursor v2.0.43
-- [ ] User validates mermaid extension works in VSCode
+- [ ] User validates multiple previews can be open simultaneously
 
 ## Status History
 
-- 2025-10-31: ISSUE created and documented with research findings
+- 2025-10-31 (initial): ISSUE created and documented with research findings for both multiple markdown previews and mermaid rendering
+- 2025-10-31 (split): VSCode mermaid rendering content moved to ISSUE-029, this issue now focuses solely on multiple markdown previews in Cursor
+- 2025-10-31: settings.json access instructions clarified for Cursor v2.0.43
 
 ## Notes
 
@@ -266,29 +229,34 @@ Research findings on how to view multiple markdown preview files simultaneously 
    - "Markdown: Open Locked Preview to the Side" command
    - Can also use "Markdown: Toggle Preview Locking" on existing previews
    - No installation or configuration required
+   - Feature inherited from VS Code base
 
-2. **VSCode Mermaid Support**: Official extension available and actively maintained
-   - "Markdown Preview Mermaid Support" by Matt Bierner
-   - Version 1.29.0 (September 2025)
-   - Supports Mermaid 11.12.0
-   - 5M+ downloads, well-tested
+2. **Alternative Configuration Method**: Editor associations
+   - Configure `workbench.editorAssociations` in settings.json
+   - Opens markdown files as previews by default
+   - Requires one-time configuration
 
-3. **Editor Parity**: Both editors now support both features
-   - Cursor: Has mermaid support + can use locked previews
-   - VSCode: Can add mermaid via extension + has locked previews
+3. **Accessing settings.json in Cursor**: Not obvious in UI
+   - Use Command Palette (`Cmd+Shift+P`)
+   - Type "settings json"
+   - Select "Preferences: Open User Settings (JSON)"
+
+**Related Issues:**
+- ISSUE-029: VSCode mermaid diagram rendering (split from this issue)
 
 **Documentation Source**: Web research conducted 2025-10-31
 - Stack Overflow discussion on multiple markdown previews
-- VSCode Marketplace extension listings
-- Mermaid extension documentation
+- VS Code documentation on locked preview feature
+- Cursor Community Forum discussions
 
 ## Related Files
 
 **Project Markdown Files** (examples where feature is useful):
-- `./README.md` - Contains mermaid diagram
-- `./CLAUDE.md` - Main project documentation
+- `./README.md` - Main project documentation
+- `./CLAUDE.md` - Project instructions and conventions
 - `./docs/PROJECT_STATUS.md` - Status documentation
 - `./docs/TESTING_STATUS.md` - Testing documentation
 - `./bugs/README.md` - Bug tracking index
+- `./planning/*.md` - Feature planning documents
 
 **No code changes required** - documentation and workflow improvement only
