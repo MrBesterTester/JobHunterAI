@@ -814,7 +814,7 @@ const JobDetails: React.FC<{
         </div>
 
         <div style={{ display: 'flex', gap: '8px' }}>
-          {(job.status === 'new') && (
+          {(job.status === 'new' || job.status === 'filtered' || job.status === 'rejected') && (
             <>
               <button
                 onClick={() => { updateJobStatus(job.job_id, 'approved'); onClose(); }}

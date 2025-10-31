@@ -7288,7 +7288,16 @@ describe('App (JobHunterDashboard)', () => {
         // Job should be visible in Filtered tab
         expect(screen.getByText('Filtered Job')).toBeInTheDocument();
 
-        // Click Approve button
+        // Click on job to open modal
+        const jobTitle = screen.getByText('Filtered Job');
+        fireEvent.click(jobTitle);
+
+        // Wait for modal to open
+        await waitFor(() => {
+          expect(screen.getByTestId('modal-company')).toHaveTextContent('FilteredCo');
+        });
+
+        // Click Approve button in modal
         const approveButtons = screen.getAllByText('Approve');
         const approveButton = approveButtons.find(el => el.tagName === 'BUTTON');
 
@@ -7904,7 +7913,16 @@ describe('App (JobHunterDashboard)', () => {
         // Job should be visible in Filtered tab
         expect(screen.getByText('Filtered Job')).toBeInTheDocument();
 
-        // Click Approve button to undo the rejection
+        // Click on job to open modal
+        const jobTitle = screen.getByText('Filtered Job');
+        fireEvent.click(jobTitle);
+
+        // Wait for modal to open
+        await waitFor(() => {
+          expect(screen.getByTestId('modal-company')).toHaveTextContent('FilteredCo');
+        });
+
+        // Click Approve button in modal to undo the rejection
         const approveButtons = screen.getAllByText('Approve');
         const approveButton = approveButtons.find(el => el.tagName === 'BUTTON');
 

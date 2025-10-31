@@ -32,6 +32,15 @@
 
 ## Next Steps
 
+**Completed** ✅ (2025-10-31 Late Morning): Phase 1.5 - Fixed 2 Pre-existing Test Failures
+- **Issue**: 2 unit tests failing after commit 03ddc75 (filtered jobs button logic change)
+- **Tests Fixed**: "approves filtered job back to approved status", "allows re-approving a rejected job back to approved status"
+- **Root Cause**: Tests expected inline approve/reject buttons on filtered jobs, but buttons were removed for UX
+- **Solution**: Allow approve/reject in job details modal for filtered/rejected jobs, keep inline buttons restricted to 'new' jobs
+- **Code Changes**: Updated `App.tsx:817` (modal buttons) and both test files to open modal first
+- **Results**: All 517 unit tests passing (512 passing, 5 skipped, 0 failing, 0 todo)
+- **Impact**: Users can override automatic filtering through deliberate action (opening modal)
+
 **Completed** ✅ (2025-10-31 Early Morning): Filtered Jobs Display Fixed
 - **Issue**: Approve/reject buttons incorrectly showing for filtered jobs
 - **Root Cause**: Conditional logic at `frontend/src/App.tsx:783` and `2201` checked `(job.status === 'new' || job.status === 'filtered')`
@@ -95,8 +104,22 @@
   - "updates badge counts after marking as applied" (was line 8326)
 - **Reason**: These tests verified internal state updates, not user-facing behavior
 - **Result**: ✅ Skipped tests reduced from 8 → 5 (as planned)
-- **Test Results**: 478 total tests (was 481), 470 passing, 5 skipped, 2 failing (pre-existing), 1 todo
-- **Note**: 2 pre-existing test failures unrelated to Phase 1 (from commit 03ddc75 - filtered jobs button logic change)
+- **Test Results**: 517 total tests, 512 passing, 5 skipped, 0 failing, 0 todo
+- **Note**: 2 pre-existing failures from commit 03ddc75 were fixed (see Phase 1.5 below)
+
+**Phase 1.5** ✅ COMPLETED (2025-10-31)
+- **Action**: Fix 2 failing tests broken by commit 03ddc75 (filtered jobs button logic change)
+- **Tests Fixed**:
+  - "approves filtered job back to approved status" (`App.test.tsx:7225`)
+  - "allows re-approving a rejected job back to approved status" (`App.test.tsx:7841`)
+- **Root Cause**: Tests expected inline approve/reject buttons on filtered jobs, but commit 03ddc75 removed these for UX reasons
+- **Solution**: Balanced approach satisfying both E2E and unit test requirements:
+  - Updated `App.tsx:817` to show approve/reject buttons in **job details modal** for filtered/rejected jobs
+  - Kept inline buttons restricted to 'new' jobs only (satisfies E2E test requirement)
+  - Updated both unit tests to open modal first before clicking approve button
+  - Changed test selectors to use `getByTestId('modal-company')` to avoid multiple element errors
+- **Result**: ✅ All unit tests passing (512/517, 99.0% pass rate)
+- **Impact**: Users can now override automatic filtering decisions through deliberate action (opening modal)
 
 **Phase 2** (Planned): Investigate 4 Job Details Modal tests
 - **Tests**: `App.test.tsx:9727`, `10085`, `10162`, `10241` (line numbers after Phase 1 deletion)
@@ -134,13 +157,13 @@
 | Metric | Value | Target | Status |
 |--------|-------|--------|--------|
 | **Overall Coverage** | **78.3%** | 60% | ✅ Exceeded by 18.3 points |
-| **Total Tests** | 478 (was 481) | - | - |
-| **Passing** | 470 (98.3%) | - | ✅ Excellent |
+| **Total Tests** | 517 (was 481) | - | - |
+| **Passing** | 512 (99.0%) | - | ✅ Excellent |
 | **Skipped** | 5 (1.0%) | - | ⚠️ Intentional (Phase 1 complete) |
-| **Failing** | 2 (0.4%) | - | ⚠️ Pre-existing (unrelated to Phase 1) |
-| **Todo** | 1 (0.2%) | - | - |
-| **Test Suites** | 11/12 passing | - | ⚠️ 1 suite has pre-existing failures |
-| **Runtime** | ~15 seconds | - | ✅ Fast feedback |
+| **Failing** | 0 (0%) | - | ✅ All tests passing |
+| **Todo** | 0 (0%) | - | ✅ None |
+| **Test Suites** | 12/12 passing | - | ✅ All suites passing |
+| **Runtime** | ~17 seconds | - | ✅ Fast feedback |
 
 **Coverage by Metric**:
 - Statements: 78.3%
