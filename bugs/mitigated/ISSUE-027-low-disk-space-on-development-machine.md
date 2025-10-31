@@ -1,12 +1,13 @@
 ---
 id: ISSUE-027
 title: Low disk space on development machine
-status: open
+status: mitigated
 priority: low
 severity: low
 component: infrastructure
 created: 2025-10-31
 updated: 2025-10-31
+mitigated: 2025-10-31
 affects: [build-system, test-infrastructure, development-workflow]
 related: []
 ---
@@ -38,6 +39,10 @@ related: []
 ## Summary
 
 MacBook Pro development machine showing 137GB available out of 932GB total (15% free). Analysis reveals primary disk space consumers: Library/Caches (25GB), backend/target Rust artifacts (5.5GB), and Time Machine local snapshots. While not critical yet, proactive cleanup and automated maintenance recommended.
+
+## Follow-up
+
+User will investigate overall disk space usage on development machine, including Time Machine snapshots, as separate action outside this issue. Development-specific artifacts (cargo builds, test results) will not be cleaned due to workflow impact.
 
 ## Impact
 
@@ -244,38 +249,39 @@ tmutil listlocalsnapshots / | grep -v "Snapshots" | xargs -I {} sudo tmutil dele
 
 ## Decision
 
-**Recommended**: Option 4 (Hybrid Approach)
+**Decision**: No cleanup action at this time (2025-10-31)
 
 **Rationale:**
-- Provides immediate relief (Option 1) while building sustainable solution (Option 2)
-- Low-priority issue doesn't warrant heavy-handed Option 3 changes
-- Monitoring prevents surprises during critical builds/tests
-- Can always escalate to Option 3 if issue persists
+- **Cargo artifacts (5.5GB)**: Not worth the rebuild performance penalty - development velocity more valuable than disk space
+- **Playwright test results (73MB)**: Historical test artifacts valuable for retrospective debugging - trivial space vs. debugging time saved
+- **Time Machine snapshots**: To be handled separately with system tools if needed
+- **Current state**: 137GB available (15% free) provides adequate headroom - no immediate pressure
+
+**User objections to proposed solutions:**
+1. Option 1 (Manual cleanup): `cargo clean` would slow down subsequent builds unnecessarily
+2. Option 1 (Time Machine): User prefers to handle Time Machine snapshots separately
+3. Option 2 (Automated script): Would include same problematic cargo clean operations
+4. All options: Cost/benefit analysis favors keeping artifacts for development efficiency
 
 **Next Steps:**
-1. User approves immediate cleanup (Option 1)
-2. Implement automated cleanup script (Option 2)
-3. Add disk space monitoring to weekly workflow
-4. Review in 30-60 days to assess effectiveness
+1. Monitor disk space passively (no active cleanup)
+2. Revisit if available space drops below 10% (~93GB)
+3. User will handle Time Machine cleanup separately if needed
 
 ## Implementation
 
-**Status**: Pending user approval
+**Status**: No action - issue closed with decision not to implement cleanup (2025-10-31)
 
-**Phase 1 (Immediate)**: Ready to execute on user approval
-- Commands prepared and tested (safe operations)
-- Estimated time: 5 minutes
-- Expected space freed: 5.5GB+
+**Decision Summary**: All proposed cleanup options rejected due to negative impact on development workflow:
+- Cargo clean impacts build performance
+- Test artifact cleanup removes valuable debugging history
+- Automated scripts would include same problematic operations
+- Current 15% free space provides adequate headroom
 
-**Phase 2 (Automated Script)**: To be scheduled
-- Script location: `./scripts/cleanup-dev-artifacts.sh`
-- Features: Space checks, safe cleanup, logging
-- Cron schedule: Weekly (Sundays 2am)
-
-**Phase 3 (Monitoring)**: To be added to workflows
-- Weekly disk space report
-- Alert threshold: < 20% free (< 186GB)
-- Integration: Session start hook or weekly summary
+**If revisited in future** (only if space drops below 10% free):
+- Consider selective cleanup of only non-development artifacts (e.g., system caches)
+- Avoid touching cargo build artifacts or test results
+- Focus on true waste (duplicates, unused downloads, etc.)
 
 ## Testing
 
@@ -330,6 +336,13 @@ cd /Users/sam/Projects/JobHunterAI-Claude/backend && cargo build
   - Proposed 4 solution options with recommendations
   - Status: Pending user approval for cleanup approach
 
+- **2025-10-31**: Decision - No cleanup action to be taken
+  - User reviewed all proposed options (1-4)
+  - Rejected due to workflow impact: cargo rebuild performance hit, loss of test debugging history
+  - Current 15% free space (137GB) deemed adequate
+  - Issue remains open for monitoring only
+  - Will revisit if space drops below 10% (~93GB)
+
 ## Notes
 
 **Context**: This issue was identified during comprehensive test suite execution (backend + frontend + E2E tests running ~17 minutes). User noticed disk space at historic low of 177GB available out of 1TB.
@@ -338,7 +351,15 @@ cd /Users/sam/Projects/JobHunterAI-Claude/backend && cargo build
 - Actual available space (137GB per df) differs from user-reported (177GB) - may indicate different measurement tools or partition views
 - E2E test output is verbose (3,038 lines) but expected for 547 tests
 - Test duration (~17 min) is within normal range per TESTING_STATUS.md
-- No immediate crisis, but proactive cleanup recommended
+- No immediate crisis, but proactive cleanup recommended (later rejected by user)
+
+**User Decision Rationale (2025-10-31):**
+- **Development efficiency > disk space**: Cargo incremental builds save significant time daily
+- **Test history value**: Playwright test results enable retrospective debugging of regressions
+- **Adequate headroom**: 15% free (137GB) sufficient for current development needs
+- **False economy**: Trading time for trivial space savings (73MB test results) is poor ROI
+- **Selective approach**: User will handle Time Machine snapshots separately if needed
+- **Better investigation needed**: User will investigate overall disk space usage on development machine, including Time Machine snapshots, as separate action outside this issue
 
 **Disk Space Thresholds:**
 - **Comfortable**: > 20% free (> 186GB)
