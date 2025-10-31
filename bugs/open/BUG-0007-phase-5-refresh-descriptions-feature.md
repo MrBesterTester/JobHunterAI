@@ -33,30 +33,30 @@ related: []](#id-bug-0007%0Atitle-refresh-descriptions-button-not-working%0Astat
 
 ---
 id: BUG-0007
-title: Refresh Descriptions Button Not Working
+title: Phase 5 Feature - Refresh Descriptions Button Not Implemented
 status: open
-priority: medium
-severity: medium
+priority: low
+severity: low
 component: frontend
 created: 2025-10-30
-updated: 2025-10-30
-affects: [job-descriptions, refresh-functionality, debug-section]
-related: []
+updated: 2025-10-31
+affects: [job-descriptions, refresh-functionality, debug-section, phase-5]
+related: [PHASE_5]
 ---
 
-# BUG-0007: Refresh Descriptions Button Not Working
+# BUG-0007: Phase 5 Feature - Refresh Descriptions Button Not Implemented
 
 ## Summary
 
-Six E2E tests in `22-refresh-buttons.spec.ts` are failing. Tests expect a "Refresh Descriptions" button that regenerates job descriptions, but the functionality appears incomplete or non-functional.
+Eight E2E tests in `22-refresh-buttons.spec.ts` are failing because the "Refresh Descriptions" feature (job description regeneration) has not been implemented yet. This is a planned Phase 5 feature, not part of current development phases.
 
 ## Impact
 
-**Affected Tests**: 6 failing tests
+**Affected Tests**: 8 tests (currently disabled via test-config.ts)
 - All tests in `frontend/e2e/tests/22-refresh-buttons.spec.ts`
 
-**User Impact**: Medium - Users cannot refresh/regenerate job descriptions
-**Development Impact**: Medium - Feature may be partially implemented
+**User Impact**: None - Feature not implemented, tests disabled
+**Development Impact**: Low - This is a future Phase 5 feature
 
 ## Steps to Reproduce
 
@@ -84,11 +84,7 @@ Tests failing suggest:
 
 ## Root Cause
 
-**Needs Investigation**. Possible causes:
-1. Feature not fully implemented
-2. Button present but non-functional
-3. API endpoint missing or not connected
-4. Tests written before feature completion
+**Feature not implemented**: Tests were written proactively for a planned Phase 5 feature. The "Refresh Descriptions" button functionality is not part of any current phase implementation. This is similar to BUG-0008 but correctly identified as future work.
 
 ## Evidence
 
@@ -114,60 +110,59 @@ test-results/22-refresh-buttons-Refresh-20b38--button-should-be-clickable-chromi
 
 ## Proposed Solutions
 
-### Option 1: Implement Full Refresh Feature
+### Option 1: Keep Tests Disabled Until Phase 5 ✅ RECOMMENDED
 
-**Description**: Complete the implementation of description refresh functionality
-
-**Pros**:
-- Provides valuable user feature
-- Tests become meaningful
-- Improves user experience
-
-**Cons**:
-- Significant development effort
-- May require backend API changes
-- Needs LLM integration
-
-**Implementation Effort**: 6-8 hours
-
-### Option 2: Remove/Disable Button
-
-**Description**: Remove the button from UI if feature not planned
+**Description**: Tests are already disabled in test-config.ts. Keep them disabled until Phase 5 implementation begins.
 
 **Pros**:
-- Clean up incomplete feature
-- Removes user confusion
-- Tests can be deleted
+- Tests preserved for future use
+- No maintenance burden
+- Clean test suite (no false failures)
+- Tests provide specification for Phase 5 work
 
 **Cons**:
-- Loses potentially useful feature
-- May have been planned functionality
+- Tests sit unused until Phase 5
 
-**Implementation Effort**: 1 hour
+**Implementation Effort**: None - already done
 
-### Option 3: Disable Tests Until Feature Complete
+### Option 2: Delete Tests
 
-**Description**: Skip these tests until feature is implemented
+**Description**: Remove test files entirely
 
 **Pros**:
-- Quick fix
-- Preserves tests for future
-- No code changes needed
+- Cleaner codebase
+- No confusion about feature status
 
 **Cons**:
-- Defers the problem
-- Tests remain failing in suite
+- Loses planning work
+- Need to recreate when Phase 5 starts
 
 **Implementation Effort**: 15 minutes
 
+### Option 3: Implement Feature Now (Phase 5 Early)
+
+**Description**: Implement refresh descriptions feature ahead of Phase 5
+
+**Pros**:
+- Useful feature for users
+- Tests become meaningful
+
+**Cons**:
+- Significant effort (6-8 hours)
+- Out of scope for current phases
+- Requires LLM integration work
+
+**Implementation Effort**: 6-8 hours
+
 ## Decision
 
-**Selected**: TBD - Requires product decision
+**Selected**: Option 1 - Keep tests disabled until Phase 5
 
-**Questions**:
-1. Is this feature planned for implementation?
-2. Is the button visible in the UI currently?
-3. Should this be prioritized or deferred?
+**Rationale**:
+- Feature is not needed for Phase 2.4 completion
+- Tests already properly disabled (no impact on test suite)
+- Tests provide valuable Phase 5 specification
+- Can revisit when Phase 5 planning begins
 
 ## Implementation
 
@@ -194,12 +189,17 @@ test-results/22-refresh-buttons-Refresh-20b38--button-should-be-clickable-chromi
 ## Status History
 
 - 2025-10-30: Bug discovered during E2E test investigation
-- 2025-10-30: Initial analysis - requires product/design decision
+- 2025-10-30: Tests disabled in test-config.ts
+- 2025-10-31: Bug reclassified as Phase 5 feature (not Phase 2.4)
+- 2025-10-31: Priority lowered from medium → low (future work)
+- 2025-10-31: Title updated to clarify Phase 5 feature status
+- 2025-10-31: Removed from Phase 2.4 documentation, added to Phase 5
 
 ## Notes
 
-- **Recommend**: Option 3 (skip tests) until product decision made
-- Feature may have been planned but not implemented
-- Related to debug section and LLM description generation
-- Test file: `frontend/e2e/tests/22-refresh-buttons.spec.ts`
-- Could be valuable feature if prioritized for Phase 4 or 5
+- **Status**: Tests already disabled in test-config.ts (no action needed)
+- **Phase assignment**: Phase 5 (Advanced Features)
+- **Feature description**: Ability to regenerate job descriptions on demand using LLM
+- **Test file**: `frontend/e2e/tests/22-refresh-buttons.spec.ts` (8 tests)
+- **Related**: Phase 5 planning, LLM integration features
+- **Action**: Re-enable tests when Phase 5 implementation begins

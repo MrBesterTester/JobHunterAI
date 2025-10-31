@@ -52,8 +52,8 @@
 - ✅ Testing documentation split into TESTING_STATUS.md and TESTING_HISTORY.md
 
 **Open Issues**: 4 bugs/issues (all infrastructure testing issues resolved!)
-- BUG-0007: Refresh Descriptions button not working (medium) - **See Phase 2.4**
-- BUG-0008: E2E tests for unimplemented Phase 5 features (low) - **See Phases 2.4 & 5**
+- BUG-0008: E2E tests for Phase 2.4 features (medium) - **See Phase 2.4**
+- BUG-0007: Phase 5 feature - Refresh Descriptions button (low) - **See Phase 5**
 - ISSUE-010: CLAUDE.md token usage (low)
 - ISSUE-012: Zero-warning build policy (medium)
 
@@ -84,10 +84,9 @@ Phase 2.4 core implementation is 80% complete with all major backend systems ope
   - Frontend E2E tests (20+ tests for CalendarTab + FollowupsTab)
 - **Estimate**: 3-5 days to complete testing & validation
 
-**Alternative**: **Address Open Bugs BUG-0007 or BUG-0008**
-- BUG-0007: Implement or remove Refresh Descriptions button (depends on feature decision)
-- BUG-0008: Skip Phase 5 feature tests until implementation begins (15-30 min)
-- **Estimate**: 15 min - 6 hours depending on approach
+**Alternative**: **Address Open Bug BUG-0008**
+- BUG-0008: Re-enable Phase 2.4 E2E tests (calendar, follow-ups, timeline)
+- **Estimate**: 2-4 hours (enable tests, run suite, investigate failures)
 
 ### Short Term (Next 1-2 Weeks)
 
@@ -101,8 +100,7 @@ Phase 2.4 core implementation is 80% complete with all major backend systems ope
    - Completes end-to-end workflow: discover → review → generate → apply
 
 **Address Open Bugs**:
-- BUG-0007: Refresh Descriptions button (medium) - requires feature decision
-- BUG-0008: Skip Phase 5 feature tests (low) - quick fix available
+- BUG-0008: Re-enable Phase 2.4 E2E tests (medium) - validates Phase 2.4 features
 
 ### Medium Term (Next 2-3 Months)
 
@@ -131,7 +129,7 @@ Phase 2.4 core implementation is 80% complete with all major backend systems ope
 | **Phase 2** | 🔄 Partial | ~75% | Email integration & automation (multiple sub-phases) | See sub-phases below |
 | **Phase 3** | ✅ Complete | 100% | Resume/cover letter LLM generation | [PHASE_3.1](PHASE_3.1_claude-haiku-integration-plan.md) |
 | **Phase 4** | 🔄 Partial | ~25% | Job board integrations (Phase 4.1 complete) | [PHASE_4.1](PHASE_4.1_job-board-rapidAPI.md) |
-| **Phase 5** | ⏸️ Not Started | 0% | Advanced features (analytics, mobile) | TBD (Note: [BUG-0008](../bugs/open/BUG-0008-e2e-tests-for-unimplemented-phase-5-features.md) - tests exist, re-enable when implementing) |
+| **Phase 5** | ⏸️ Not Started | 0% | Advanced features (analytics, mobile) | TBD (Note: [BUG-0007](../bugs/open/BUG-0007-phase-5-refresh-descriptions-feature.md) - Refresh Descriptions tests exist, re-enable when implementing) |
 
 **Legend**: ✅ Complete | 🔄 In Progress | 📋 Planning | ⏸️ Not Started
 
@@ -185,8 +183,7 @@ All Phase 2 sub-phase documentation includes complete implementation details, te
     - Response tracking fields (response_received, offer_received, offer_amount)
     - Response rate statistics
 - ⚠️ **Open Issues**:
-  - [BUG-0007](../bugs/open/BUG-0007-refresh-descriptions-button-not-working.md): Refresh Descriptions button not functional (close when feature implemented)
-  - [BUG-0008](../bugs/open/BUG-0008-e2e-tests-for-unimplemented-phase-5-features.md): E2E tests written for Calendar/Follow-ups (re-enable when features complete)
+  - [BUG-0008](../bugs/open/BUG-0008-e2e-tests-phase-2.4-features.md): E2E tests for Calendar/Follow-ups/Timeline (re-enable to validate Phase 2.4 implementation)
 
 **Phase 2.6 Details** (LLM Job Extraction):
 - ✅ Core LLM integration complete (Claude 3.5 Haiku via Anthropic API)
