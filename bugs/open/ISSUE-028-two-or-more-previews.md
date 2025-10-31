@@ -110,16 +110,19 @@ This is an intentional design decision. The locked preview feature provides the 
 - Open any markdown preview
 - Run "Markdown: Toggle Preview Locking" to lock current preview
 
+**Note on Automation**: There is NO setting to automatically lock all markdown previews. VS Code/Cursor does not provide a way to automatically create locked previews - you MUST manually lock each preview using the commands above. This is by design to give users control over which previews remain visible.
+
 **Pros**:
 - Built-in feature, no installation required
 - Works immediately in Cursor
 - Stable and well-supported
 - Can have unlimited locked previews
+- Only way to achieve multiple simultaneous previews
 
 **Cons**:
-- Requires manual locking for each preview
+- Requires manual locking for each preview (cannot be automated)
 - Not obvious/discoverable feature
-- Need to remember keyboard shortcut
+- Need to remember keyboard shortcut or command palette command
 
 **Implementation Effort**: 0 minutes (already available)
 
@@ -142,17 +145,27 @@ This is an intentional design decision. The locked preview feature provides the 
    ```
 3. Save settings (`Cmd+S`)
 4. Markdown files will now open as previews by default
-5. Double-click preview content to enter edit mode when needed
+5. To edit: Double-click the preview content in the preview pane (not in file explorer)
+
+**IMPORTANT LIMITATION**: This option makes files open in preview mode by default, BUT you still only get ONE preview at a time. Opening a second markdown file will replace the first preview. To have multiple previews visible simultaneously, you MUST also use Option 1 to manually lock each preview.
+
+**Recommended Workflow**: Combine Option 2 with Option 1
+- Configure Option 2 so markdown files open as previews automatically
+- When you want to keep a preview visible, use Option 1 to lock it
+- Open next markdown file (opens as preview due to Option 2)
+- Lock that preview too if you want to keep it visible
+- Repeat for as many simultaneous previews as needed
 
 **Pros**:
-- Automatic behavior, no manual locking needed
-- All markdown files open as separate previews
-- Set once and forget
+- Files open directly in preview mode (convenient)
+- Set once and forget (for the preview default behavior)
+- Can still use Option 1 to lock previews when needed
 
 **Cons**:
 - Changes default markdown file opening behavior
 - May not want preview mode by default for all workflows
-- Need to double-click to edit
+- Still requires manual locking (Option 1) to have multiple previews simultaneously
+- Need to double-click in preview pane to edit
 
 **Implementation Effort**: 2 minutes
 
@@ -160,20 +173,27 @@ This is an intentional design decision. The locked preview feature provides the 
 
 ## Decision
 
-**Recommendation**: Option 1 - Use Locked Preview Feature
+**Recommendation**: Combine Option 1 + Option 2 for Best Workflow
 
 **Rationale:**
-- Built-in feature, no configuration required
-- Most straightforward solution
-- Zero setup time, works immediately
-- Provides maximum flexibility (unlimited locked previews)
-- Option 2 is available if user prefers automatic behavior
+- Option 2 alone does NOT give multiple previews (still only one at a time)
+- Option 1 is the ONLY way to have multiple previews simultaneously
+- Combining both provides the best user experience:
+  - Option 2: Markdown files open as previews automatically (convenience)
+  - Option 1: Manually lock previews you want to keep visible (control)
 
-**For Users Who Want Multiple Markdown Previews:**
-1. Use "Markdown: Open Locked Preview to the Side" command (Option 1 - Recommended)
-2. Or configure editor associations for automatic preview behavior (Option 2)
+**Optimal Workflow:**
+1. **One-time setup**: Configure Option 2 (editor associations in settings.json)
+   - Markdown files will open in preview mode by default
+2. **Daily workflow**: Use Option 1 as needed
+   - When you want to keep a preview visible, lock it with `Cmd+Shift+P` → "Markdown: Toggle Preview Locking"
+   - Open next markdown file (opens as preview automatically)
+   - Lock that one too if you want multiple visible
+   - Close unlocked previews when done
 
-**Result**: Cursor users can efficiently view and compare multiple markdown documentation files side-by-side
+**Important**: Option 1 cannot be automated. You must manually lock each preview you want to keep. This is by VS Code/Cursor design.
+
+**Result**: Efficient markdown review workflow with previews opening automatically and manual control over which previews stay visible
 
 ## Implementation
 
@@ -219,7 +239,13 @@ This is an intentional design decision. The locked preview feature provides the 
 
 - 2025-10-31 (initial): ISSUE created and documented with research findings for both multiple markdown previews and mermaid rendering
 - 2025-10-31 (split): VSCode mermaid rendering content moved to ISSUE-029, this issue now focuses solely on multiple markdown previews in Cursor
-- 2025-10-31: settings.json access instructions clarified for Cursor v2.0.43
+- 2025-10-31 (settings.json): settings.json access instructions clarified for Cursor v2.0.43
+- 2025-10-31 (user feedback): Updated based on real-world testing
+  - Clarified Option 2's limitation: still only one preview at a time without manual locking
+  - Added note that Option 1 cannot be automated
+  - Documented double-click editing requirement (must be in preview pane)
+  - Updated recommendation to combine both options for best workflow
+  - Added web research confirming no automatic locking setting exists
 
 ## Notes
 
@@ -230,16 +256,29 @@ This is an intentional design decision. The locked preview feature provides the 
    - Can also use "Markdown: Toggle Preview Locking" on existing previews
    - No installation or configuration required
    - Feature inherited from VS Code base
+   - **CRITICAL**: This is the ONLY way to have multiple previews simultaneously
+   - **Cannot be automated** - must manually lock each preview you want to keep
 
-2. **Alternative Configuration Method**: Editor associations
-   - Configure `workbench.editorAssociations` in settings.json
-   - Opens markdown files as previews by default
-   - Requires one-time configuration
+2. **Editor Associations Limitation Discovered**: Option 2 alone is insufficient
+   - Configure `workbench.editorAssociations` makes files open as previews automatically
+   - **BUT still only one preview at a time** - opening a new file replaces the previous preview
+   - Must combine with Option 1 (manual locking) to have multiple simultaneous previews
+   - Useful for convenience but doesn't solve the multiple preview problem by itself
 
 3. **Accessing settings.json in Cursor**: Not obvious in UI
    - Use Command Palette (`Cmd+Shift+P`)
    - Type "settings json"
    - Select "Preferences: Open User Settings (JSON)"
+
+4. **Double-Click Editing**: Must be done in preview pane
+   - When using Option 2, markdown files open in preview mode
+   - To edit: Double-click the preview content in the preview pane itself
+   - Don't double-click in file explorer - that just opens another preview
+
+5. **Recommended Combined Workflow**: Best user experience
+   - Configure Option 2 once (files open as previews automatically)
+   - Use Option 1 manually to lock each preview you want to keep visible
+   - Provides convenience + control over multiple simultaneous previews
 
 **Related Issues:**
 - ISSUE-029: VSCode mermaid diagram rendering (split from this issue)
