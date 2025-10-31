@@ -25,7 +25,7 @@
 
 # JobHunter Project Status
 
-**Last Updated**: 2025-10-31 10:48:23 PDT (Phase 2.4: Email Follow-up System complete, ~85% done, full email sending with template rendering)
+**Last Updated**: 2025-10-31 11:03:00 PDT (Phase 2.4: Core implementation complete, ~80% done, testing remains)
 
 ---
 
@@ -65,15 +65,19 @@
 
 **Primary Recommendation**: 🎯 **Complete Phase 2.4 Testing & Validation**
 
-Phase 2.4 backend is 85% complete with Calendar Service and Email Follow-up System both operational. Focus on testing, validation, and final polish before moving to next phase.
+Phase 2.4 core implementation is 80% complete with all major backend systems operational. Some application tracking features are deferred (require DB migrations). Focus on testing and validation of completed features.
 
 ### Immediate (This Week)
 
-**Primary Next**: **Complete Phase 2.4** (Calendar & Follow-ups) - Currently 85% done
+**Primary Next**: **Complete Phase 2.4** (Calendar & Follow-ups) - Currently 80% done
 - ✅ Google Calendar OAuth integration - **COMPLETE**
 - ✅ Calendar Service (create/update/delete events) - **COMPLETE**
 - ✅ Email follow-up system with template rendering - **COMPLETE**
-- ⏸️ **Remaining work** (~15%):
+- ✅ Follow-up Scheduler (date calculation, status management) - **COMPLETE**
+- ✅ Dashboard UI (CalendarTab, FollowupsTab with widgets) - **COMPLETE**
+- ⏸️ **Deferred** (require DB migrations, out of current scope):
+  - Extended status system, response tracking, communication linking
+- ⏸️ **Remaining work** (~20%):
   - Manual testing: Interview scheduling with calendar integration
   - Manual testing: Follow-up email sending workflow
   - Backend unit tests (25+ tests for calendar + email functionality)
@@ -139,7 +143,7 @@ All Phase 2 sub-phase documentation includes complete implementation details, te
 
 | Sub-Phase | Title | Status | Progress | Completion | Doc |
 |-----------|-------|--------|----------|------------|-----|
-| 2.4 | Calendar & Follow-ups | 🔄 In Progress | ~85% | Est. 3-5 days | [PHASE_2.4](PHASE_2.4_calendar-follow-ups.md) |
+| 2.4 | Calendar & Follow-ups | 🔄 In Progress | ~80% | Est. 3-5 days | [PHASE_2.4](PHASE_2.4_calendar-follow-ups.md) |
 | 2.5 | Email Composition & Sending | 📋 Planning | 0% | Est. 2-3 days | [PHASE_2.5](PHASE_2.5_email-composition.md) |
 | 2.6 | LLM Job Extraction | ✅ Complete | 100% | 2025-10-11 to 2025-10-14 | [PHASE_2.6](PHASE_2.6_llm-job-extraction.md) |
 | 2.7 | Microsoft Email Source | 📋 Planning | 0% | Pending ISSUE-007 | [PHASE_2.7](PHASE_2.7_samkirk-email-source-plan.md) |
@@ -165,10 +169,21 @@ All Phase 2 sub-phase documentation includes complete implementation details, te
   - `send_gmail_email` function for immediate email sending via Gmail API
   - `render_template` function for variable substitution
   - Enhanced `send_follow_up` handler with full workflow
+  - Follow-up Scheduler: date calculation, schedule creation, status management
   - Template variables: applicant_name, company, job_title, date_applied, attempt_number
   - MIME message format with RFC2822 headers
   - Communication logging and error handling
   - Automatic OAuth token refresh
+- 🔄 Application Tracking Enhancements **PARTIALLY COMPLETE** (2025-10-31)
+  - ✅ Timeline endpoint for application history
+  - ✅ Dashboard enhancements: CalendarTab & FollowupsTab navigation
+  - ✅ Upcoming interviews widget (in CalendarTab)
+  - ✅ Follow-up queue display (in FollowupsTab)
+  - ⏸️ **Deferred** (require DB migrations):
+    - Extended status system (responded, interview_scheduled, offered)
+    - Communication linking in DB schema
+    - Response tracking fields (response_received, offer_received, offer_amount)
+    - Response rate statistics
 - ⚠️ **Open Issues**:
   - [BUG-0007](../bugs/open/BUG-0007-refresh-descriptions-button-not-working.md): Refresh Descriptions button not functional (close when feature implemented)
   - [BUG-0008](../bugs/open/BUG-0008-e2e-tests-for-unimplemented-phase-5-features.md): E2E tests written for Calendar/Follow-ups (re-enable when features complete)
@@ -384,10 +399,24 @@ All Phase 2 sub-phase documentation includes complete implementation details, te
 
 ---
 
-**Last Updated**: 2025-10-31 10:48:23 PDT
-**Based on**: Phase 2.4 Email Follow-up System complete with template rendering and Gmail sending
+**Last Updated**: 2025-10-31 11:03:00 PDT
+**Based on**: Phase 2.4 scope clarification - core implementation complete, testing remains
 **Manual Updates**: This is a manually maintained document - update as needed
 **Major Updates**:
+- **2025-10-31 11:03:00 PDT**: 📋 **PHASE 2.4: SCOPE CLARIFICATION & STATUS UPDATE**
+  - **Progress adjusted**: 85% → 80% (testing is ~20% of work remaining)
+  - **Deferred items identified**: Application tracking features requiring DB migrations
+    - Extended status system (responded, interview_scheduled, offered)
+    - Communication linking in DB schema
+    - Response tracking fields (response_received, offer_received, offer_amount)
+    - Response rate statistics
+  - **Completed items clarified**:
+    - ✅ Follow-up Scheduler (implemented in Session 1)
+    - ✅ Dashboard UI with CalendarTab & FollowupsTab
+    - ✅ Upcoming interviews widget & follow-up queue display
+    - ✅ Timeline endpoint for application history
+  - **Phase 2.4 Details updated**: Added "Application Tracking Enhancements" section
+  - **Documentation**: Phase 2.4 roadmap now accurately reflects completion status
 - **2025-10-31 10:48:23 PDT**: ✅ **PHASE 2.4: EMAIL FOLLOW-UP SYSTEM COMPLETE**
   - **Email sending implemented**: Gmail API `messages.send` endpoint integration
   - **Functions added**: `send_gmail_email`, `render_template`
