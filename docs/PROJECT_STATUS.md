@@ -66,23 +66,34 @@
 
 ### Next Steps Brief Summary
 
-Phase 2.4 is 94% complete! You can either:
+**Recommended Order (Order B):**
 
-1. **Complete Phase 2.4** - Manual OAuth testing (~30-45 min, requires user interaction)
-   - Google Calendar OAuth flow and event creation
-   - Follow-up email sending via Gmail API
+Phase 2.4 is 94% complete! Recommended next steps in order:
 
-2. **Start Phase 2.5** - Email Composition (Gmail draft integration already implemented)
-   - Email composer frontend integration
-   - Estimated: 2-3 days
-
-3. **Address UX Issues** - Fix the 4 frontend bugs identified by E2E tests
+1. **Address UX Issues** - Fix the 4 frontend bugs identified by E2E tests ⭐ **START HERE**
    - Schedule Interview modal component
    - Error handling UI for Calendar/Follow-ups tabs
    - Timeline navigation button
-   - Estimated: 2-4 hours
+   - **Estimated**: 2-4 hours
+   - **Why first**: Completes Phase 2.4 to ~98%, fresh in memory, user-facing bugs
 
-4. **Other Feature Work** - See feature options below for additional work options
+2. **Fix Zero-Warning Build** (ISSUE-012) - Clean up build warnings
+   - Resolve all TypeScript/build warnings
+   - **Estimated**: 1-2 hours
+   - **Why second**: Quick win, clean slate before Phase 2.5, only medium-priority issue remaining
+
+3. **Complete Phase 2.4** - Manual OAuth testing (requires user interaction)
+   - Google Calendar OAuth flow and event creation
+   - Follow-up email sending via Gmail API
+   - **Estimated**: 30-45 min
+   - **Why third**: Final Phase 2.4 validation, one-time manual task
+
+4. **Start Phase 2.5** - Email Composition (Gmail draft integration already implemented)
+   - Email composer frontend integration
+   - **Estimated**: 2-3 days
+   - **Why fourth**: Clean start with Phase 2.4 complete and no technical debt
+
+**Total time before Phase 2.5**: 4.5-7.5 hours (~1 work session)
 
 ---
 
@@ -298,11 +309,11 @@ All Phase 2 sub-phase documentation includes complete implementation details, te
 - **Priority**: LOW - Phase 4.1 provides solid foundation, extensions are enhancements only
 
 ### Option 4: Fix High-Priority Bugs 🐛
-- BUG-0004 (high): "All" tab E2E issue
 - ISSUE-012 (medium): Zero-warning build policy
-- **Effort**: 15 min - 2 hours each
+- **Effort**: 1-2 hours
 - **Priority**: MEDIUM - clean up technical debt
-- **Note**: BUG-0003 (Modal reopen) was verified as fixed on 2025-10-30 (see Recent Fixes)
+- **Note**: BUG-0003 (Modal reopen) and BUG-0004 ("All" tab E2E) were verified as fixed and moved to bugs/fixed/
+- **Recommendation**: This is included in Order B (Next Steps Brief Summary) as step 2
 
 ### Option 5: RSBuild Migration ✅ COMPLETED (2025-10-29)
 - **Status**: ✅ **MIGRATION COMPLETE**
