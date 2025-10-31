@@ -30,6 +30,7 @@ interface ApproveRequest {
 const FollowupsTab: React.FC = () => {
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedFollowUp, setSelectedFollowUp] = useState<FollowUp | null>(null);
   const [editMode, setEditMode] = useState<boolean>(false);
   const [editedSubject, setEditedSubject] = useState<string>('');
@@ -37,13 +38,17 @@ const FollowupsTab: React.FC = () => {
 
   const fetchFollowUps = async (): Promise<void> => {
     try {
+      setError(null);
       const response = await fetch(`${API_URL}/follow-ups/pending`);
       if (response.ok) {
         const data: FollowUp[] = await response.json();
         setFollowUps(data);
+      } else {
+        setError('Failed to load follow-ups');
       }
     } catch (error) {
       console.error('Error fetching follow-ups:', error);
+      setError('Error loading follow-ups');
     } finally {
       setLoading(false);
     }
@@ -532,6 +537,30 @@ const FollowupsTab: React.FC = () => {
       <div style={{ textAlign: 'center', padding: '48px 0' }}>
         <Clock style={{ width: '48px', height: '48px', color: '#3b82f6', margin: '0 auto 16px' }} />
         <p style={{ color: '#6b7280' }}>Loading follow-ups...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ textAlign: 'center', padding: '48px 0' }}>
+        <p style={{ color: '#ef4444', fontSize: '16px' }}>{error}</p>
+        <button
+          onClick={fetchFollowUps}
+          style={{
+            marginTop: '16px',
+            padding: '8px 16px',
+            backgroundColor: '#3b82f6',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 500
+          }}
+        >
+          Retry
+        </button>
       </div>
     );
   }

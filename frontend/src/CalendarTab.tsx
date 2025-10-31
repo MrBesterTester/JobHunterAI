@@ -38,6 +38,7 @@ interface ScheduleInterviewRequest {
 const CalendarTab: React.FC = () => {
   const [interviews, setInterviews] = useState<Interview[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState<boolean>(false);
   const [scheduleForm, setScheduleForm] = useState<ScheduleInterviewRequest>({
@@ -54,13 +55,17 @@ const CalendarTab: React.FC = () => {
 
   const fetchInterviews = async (): Promise<void> => {
     try {
+      setError(null);
       const response = await fetch(`${API_URL}/interviews/upcoming`);
       if (response.ok) {
         const data: Interview[] = await response.json();
         setInterviews(data);
+      } else {
+        setError('Failed to load interviews');
       }
     } catch (error) {
       console.error('Error fetching interviews:', error);
+      setError('Error loading interviews');
     } finally {
       setLoading(false);
     }
@@ -392,7 +397,7 @@ const CalendarTab: React.FC = () => {
         onClick={(e) => e.stopPropagation()}
       >
         <div style={{ padding: '24px' }}>
-          <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px' }}>Schedule Interview</h2>
+          <h3 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px' }}>Schedule Interview</h3>
 
           <div style={{ display: 'grid', gap: '16px' }}>
             <div>
@@ -599,6 +604,30 @@ const CalendarTab: React.FC = () => {
       <div style={{ textAlign: 'center', padding: '48px 0' }}>
         <Clock style={{ width: '48px', height: '48px', color: '#3b82f6', margin: '0 auto 16px' }} />
         <p style={{ color: '#6b7280' }}>Loading interviews...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ textAlign: 'center', padding: '48px 0' }}>
+        <p style={{ color: '#ef4444', fontSize: '16px' }}>{error}</p>
+        <button
+          onClick={fetchInterviews}
+          style={{
+            marginTop: '16px',
+            padding: '8px 16px',
+            backgroundColor: '#3b82f6',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 500
+          }}
+        >
+          Retry
+        </button>
       </div>
     );
   }

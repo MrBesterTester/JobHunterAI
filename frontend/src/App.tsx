@@ -1493,6 +1493,7 @@ const JobHunterDashboard: React.FC = () => {
   const getTabLabel = (tab: TabType): string => {
     if (tab === 'ignored') return 'Non-Job Emails';
     if (tab === 'ranked') return 'Ranked Jobs';
+    if (tab === 'new') return 'New Jobs';
     return tab.charAt(0).toUpperCase() + tab.slice(1);
   };
 
