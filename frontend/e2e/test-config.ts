@@ -31,9 +31,9 @@ export const ENABLED_TEST_SUITES = {
   // ===================================================================
   // Valuable features but not on critical path
 
-  'calendar-management': false,          // 17 tests - Phase 5 feature (not implemented) - BUG-0008
-  'follow-ups-management': false,        // 19 tests - Phase 5 feature (not implemented) - BUG-0008
-  'timeline-view': false,                // 24 tests - Phase 5 feature (not implemented) - BUG-0008
+  'calendar-management': true,           // 17 tests - Phase 2.4 feature (testing in progress) - BUG-0008
+  'follow-ups-management': true,         // 19 tests - Phase 2.4 feature (testing in progress) - BUG-0008
+  'timeline-view': true,                 // 24 tests - Phase 2.4 feature (testing in progress) - BUG-0008
   'intake-tab': true,                    // 21 tests - Job intake sources (partially implemented)
   'gmail-sync-integration': true,        // 1 test - Gmail integration
   'job-card-summary': true,              // 13 tests - Trade-off info summary section (17-job-card-summary.spec.ts)
@@ -111,23 +111,24 @@ export function shouldRunTest(testSuite: string): boolean {
  */
 
 /**
- * Summary of Active Tests (Updated 2025-10-30 - After E2E Investigation):
+ * Summary of Active Tests (Updated 2025-10-31 - Phase 2.4 Tests Re-enabled):
  *
  * - Category 1 (Core Workflows): 153 tests ✅
- * - Category 2 (Features): 85 tests ✅ (-60 disabled: calendar, follow-ups, timeline = Phase 5)
+ * - Category 2 (Features): 145 tests ✅ (+60 re-enabled: calendar, follow-ups, timeline = Phase 2.4)
  * - Category 3 (Quality): 63 tests ✅
  * - Category 4 (Refinements): 48 tests ✅ (-8 disabled: refresh-buttons not implemented)
  * - UI/Styling (Disabled): 107 tests ❌
  *
- * Total Active: 349 tests (down from 417 after disabling unimplemented features)
- * Total Disabled: 175 tests (up from 107)
- * Total Tests: 524 tests (349 active + 175 disabled)
+ * Total Active: 409 tests (up from 349 after re-enabling Phase 2.4 features)
+ * Total Disabled: 115 tests (down from 175)
+ * Total Tests: 524 tests (409 active + 115 disabled)
  *
- * Changes (2025-10-30):
- * - BUG-0005 FIXED: debug-section import issue resolved (6 tests now passing)
- * - BUG-0008: Disabled Phase 5 features (calendar, follow-ups, timeline = 60 tests)
- * - BUG-0007: Disabled refresh-buttons (feature not implemented = 8 tests)
+ * Changes (2025-10-31):
+ * - BUG-0008 RESOLUTION: Re-enabled Phase 2.4 features (calendar, follow-ups, timeline = 60 tests)
+ *   - Phase 2.4 implementation complete: Calendar OAuth, Calendar Service, Email Follow-ups, Timeline
+ *   - Tests now ready for validation
+ * - BUG-0007: refresh-buttons still disabled (feature deferred to Phase 5 = 8 tests)
  *
- * Expected Pass Rate: ~75-80% (with unimplemented features disabled)
- * Expected Runtime: ~10-12 minutes (fewer tests running)
+ * Expected Pass Rate: ~60-70% (Phase 2.4 tests may need OAuth setup or have failures)
+ * Expected Runtime: ~13-15 minutes (60 additional tests)
  */
