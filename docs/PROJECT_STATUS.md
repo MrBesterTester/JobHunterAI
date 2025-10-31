@@ -25,7 +25,7 @@
 
 # JobHunter Project Status
 
-**Last Updated**: 2025-10-30 (ISSUE-006 completed, testing documentation reorganized)
+**Last Updated**: 2025-10-31 (Bug counts corrected, BUG-0004 moved to fixed, BUG-0007 & BUG-0008 added with phase references)
 
 ---
 
@@ -51,8 +51,9 @@
 - ✅ ISSUE-025: E2E test suite health restored (closed 2025-10-28)
 - ✅ Testing documentation split into TESTING_STATUS.md and TESTING_HISTORY.md
 
-**Open Issues**: 3 bugs/issues (all infrastructure testing issues resolved!)
-- BUG-0004: "All" tab E2E issue (high)
+**Open Issues**: 4 bugs/issues (all infrastructure testing issues resolved!)
+- BUG-0007: Refresh Descriptions button not working (medium) - **See Phase 2.4**
+- BUG-0008: E2E tests for unimplemented Phase 5 features (low) - **See Phases 2.4 & 5**
 - ISSUE-010: CLAUDE.md token usage (low)
 - ISSUE-012: Zero-warning build policy (medium)
 
@@ -70,7 +71,7 @@
 | **Phase 2** | 🔄 Partial | ~75% | Email integration & automation (multiple sub-phases) | See sub-phases below |
 | **Phase 3** | ✅ Complete | 100% | Resume/cover letter LLM generation | [PHASE_3.1](PHASE_3.1_claude-haiku-integration-plan.md) |
 | **Phase 4** | 🔄 Partial | ~25% | Job board integrations (Phase 4.1 complete) | [PHASE_4.1](PHASE_4.1_job-board-rapidAPI.md) |
-| **Phase 5** | ⏸️ Not Started | 0% | Advanced features (analytics, mobile) | TBD |
+| **Phase 5** | ⏸️ Not Started | 0% | Advanced features (analytics, mobile) | TBD (Note: [BUG-0008](../bugs/open/BUG-0008-e2e-tests-for-unimplemented-phase-5-features.md) - tests exist, re-enable when implementing) |
 
 **Legend**: ✅ Complete | 🔄 In Progress | 📋 Planning | ⏸️ Not Started
 
@@ -93,6 +94,9 @@ All Phase 2 sub-phase documentation includes complete implementation details, te
 - ✅ Frontend components (CalendarTab, FollowupsTab, TimelineView)
 - 🔄 Google Calendar OAuth integration (in progress)
 - ⏸️ Email follow-up system (pending)
+- ⚠️ **Open Issues**:
+  - [BUG-0007](../bugs/open/BUG-0007-refresh-descriptions-button-not-working.md): Refresh Descriptions button not functional (close when feature implemented)
+  - [BUG-0008](../bugs/open/BUG-0008-e2e-tests-for-unimplemented-phase-5-features.md): E2E tests written for Calendar/Follow-ups (re-enable when features complete)
 
 **Phase 2.6 Details** (LLM Job Extraction):
 - ✅ Core LLM integration complete (Claude 3.5 Haiku via Anthropic API)
@@ -222,16 +226,17 @@ All Phase 2 sub-phase documentation includes complete implementation details, te
 
 ## Bug Tracking
 
-**Total Bugs**: 31 (3 open, 3 mitigated, 25 fixed)
+**Total Bugs**: 36 (4 open, 4 mitigated, 28 fixed)
 
 **Priority Breakdown**:
 - Critical: 1
-- High: 6
-- Medium: 16
-- Low: 6
+- High: 7
+- Medium: 18
+- Low: 8
 - Unknown: 2
 
 **Recent Fixes** (Last 10 days):
+- BUG-0004: "All" tab E2E test failures (fixed 2025-10-30) - **Fixed by ISSUE-017**
 - BUG-0003: Modal reopen issue (verified fixed 2025-10-30) - **Fixed by ISSUE-023**
 - ISSUE-006: Brittle placeholder validation (closed 2025-10-30)
 - ISSUE-026: RSBuild migration (closed 2025-10-29) - **5x build speed improvement, migration validated**
@@ -264,9 +269,10 @@ Testing infrastructure is complete, stable, and exceeding all targets (78.3% cov
 - Delivers complete interview/follow-up management feature
 - **Estimate**: 2-3 weeks
 
-**Alternative**: **Address High-Priority Bug BUG-0004** ("All" tab E2E issue)
-- Investigate and fix "All" tab E2E test failures
-- **Estimate**: 1-2 hours
+**Alternative**: **Address Open Bugs BUG-0007 or BUG-0008**
+- BUG-0007: Implement or remove Refresh Descriptions button (depends on feature decision)
+- BUG-0008: Skip Phase 5 feature tests until implementation begins (15-30 min)
+- **Estimate**: 15 min - 6 hours depending on approach
 
 ### Short Term (Next 2-3 Weeks)
 
@@ -281,8 +287,9 @@ Testing infrastructure is complete, stable, and exceeding all targets (78.3% cov
    - Email composer integration
    - Completes end-to-end workflow: discover → review → generate → apply
 
-**Address High-Priority Bugs**:
-- BUG-0004: "All" tab E2E issue (high)
+**Address Open Bugs**:
+- BUG-0007: Refresh Descriptions button (medium) - requires feature decision
+- BUG-0008: Skip Phase 5 feature tests (low) - quick fix available
 
 ### Medium Term (Next 2-3 Months)
 
@@ -314,11 +321,11 @@ Testing infrastructure is complete, stable, and exceeding all targets (78.3% cov
 - E2E Core: 129/143 passing (90.2%)
 
 **Bug Tracking**:
-- Total Bugs Tracked: 31
-- Open: 3
-- Mitigated: 3
-- Fixed: 25
-- Fix Rate: 81% (25/31)
+- Total Bugs Tracked: 36
+- Open: 4
+- Mitigated: 4
+- Fixed: 28
+- Fix Rate: 78% (28/36)
 
 **Development Velocity** (Last 10 Days):
 - Commits: ~66 commits
@@ -361,10 +368,19 @@ Testing infrastructure is complete, stable, and exceeding all targets (78.3% cov
 
 ---
 
-**Last Updated**: 2025-10-30
-**Based on**: Recent git history, bug index, testing status, BUG-0003 verification, ISSUE-006 completion, testing documentation reorganization
+**Last Updated**: 2025-10-31
+**Based on**: Bug index synchronization, BUG-0004 fixed status, phase-bug dependency tracking
 **Manual Updates**: This is a manually maintained document - update as needed
 **Major Updates**:
+- **2025-10-31**: ✅ **BUG TRACKING SYNCHRONIZED & PHASE DEPENDENCIES ADDED**
+  - **Bug counts corrected**: 31 → 36 total bugs (4 open, 4 mitigated, 28 fixed)
+  - **BUG-0004 moved to fixed**: "All" tab E2E tests now passing (fixed 2025-10-30)
+  - **Open bugs updated**: Added BUG-0007 (Refresh Descriptions) and BUG-0008 (Phase 5 feature tests)
+  - **Phase dependencies documented**:
+    - Phase 2.4 now references BUG-0007 and BUG-0008 (close when features implemented)
+    - Phase 5 now references BUG-0008 (tests exist, re-enable when implementing)
+  - **Recommended Next Steps updated**: Removed completed BUG-0004, added BUG-0007/BUG-0008 context
+  - **Fix rate**: 81% → 78% (more accurate with full bug count)
 - **2025-10-30**: ✅ **BUG-0003 VERIFIED FIXED & ISSUE-006 COMPLETED**
   - **BUG-0003 Verification**: Modal reopen issue confirmed fixed by ISSUE-023
     - Both E2E tests now passing (8.8s and 9.0s)
