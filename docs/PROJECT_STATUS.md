@@ -4,6 +4,7 @@
 - [JobHunter Project Status](#jobhunter-project-status)
   - [Current State](#current-state)
   - [Recommended Next Steps](#recommended-next-steps)
+    - [Next Steps Brief Summary](#next-steps-brief-summary)
     - [Immediate (This Week)](#immediate-this-week)
     - [Short Term (Next 1-2 Weeks)](#short-term-next-1-2-weeks)
     - [Medium Term (Next 2-3 Months)](#medium-term-next-2-3-months)
@@ -63,9 +64,31 @@
 
 ## Recommended Next Steps
 
+### Next Steps Brief Summary
+
+Phase 2.4 is 94% complete! You can either:
+
+1. **Complete Phase 2.4** - Manual OAuth testing (~30-45 min, requires user interaction)
+   - Google Calendar OAuth flow and event creation
+   - Follow-up email sending via Gmail API
+
+2. **Start Phase 2.5** - Email Composition (Gmail draft integration already implemented)
+   - Email composer frontend integration
+   - Estimated: 2-3 days
+
+3. **Address UX Issues** - Fix the 4 frontend bugs identified by E2E tests
+   - Schedule Interview modal component
+   - Error handling UI for Calendar/Follow-ups tabs
+   - Timeline navigation button
+   - Estimated: 2-4 hours
+
+4. **Other Feature Work** - See feature options below for additional work options
+
+---
+
 **Primary Recommendation**: 🎯 **Complete Phase 2.4 Testing & Validation**
 
-Phase 2.4 core implementation is 80% complete with all major backend systems operational. Some application tracking features are deferred (require DB migrations). Focus on testing and validation of completed features.
+Phase 2.4 core implementation is 94% complete with all major backend systems operational. Some application tracking features are deferred (require DB migrations). Focus on final validation of completed features.
 
 ### Immediate (This Week)
 
