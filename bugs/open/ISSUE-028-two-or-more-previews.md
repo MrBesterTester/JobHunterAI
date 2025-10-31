@@ -97,20 +97,28 @@ This is an intentional design decision. The locked preview feature provides the 
 
 ### Option 1: Use Locked Preview Feature in Cursor
 
-**Description**: Use VS Code's built-in "Markdown: Open Locked Preview to the Side" command
+**Description**: Use VS Code's built-in locked preview feature to keep multiple markdown previews visible simultaneously
 
-**Implementation Steps:**
+**Implementation Steps (Easiest Method - UI Menu):**
 1. Open a markdown file
-2. Press `Cmd+Shift+P` (macOS) to open Command Palette
-3. Type "locked" and select "Markdown: Open Locked Preview to the Side"
-4. Preview will stay locked and won't be replaced when opening other markdown files
-5. Repeat for additional markdown files to have multiple previews open
+2. Open preview (if not already open)
+3. In the preview pane, click the **"..."** menu button on the preview's title bar
+4. Select **"Toggle Preview Locking"** from the menu
+5. Preview is now locked (title shows `[Preview]` with brackets)
+6. Open another markdown file and repeat to lock its preview
+7. Repeat for as many simultaneous previews as needed
 
-**Alternative Command:**
-- Open any markdown preview
-- Run "Markdown: Toggle Preview Locking" to lock current preview
+**Alternative Methods:**
+- **Command Palette Method 1**:
+  - Open markdown file
+  - Press `Cmd+Shift+P` → type "locked" → select "Markdown: Open Locked Preview to the Side"
+- **Command Palette Method 2**:
+  - Open any markdown preview
+  - Press `Cmd+Shift+P` → type "toggle preview" → select "Markdown: Toggle Preview Locking"
 
-**Note on Automation**: There is NO setting to automatically lock all markdown previews. VS Code/Cursor does not provide a way to automatically create locked previews - you MUST manually lock each preview using the commands above. This is by design to give users control over which previews remain visible.
+**Visual Indicator**: Locked previews show brackets in the title: `[Preview] filename.md`
+
+**Note on Automation**: There is NO setting to automatically lock all markdown previews. VS Code/Cursor does not provide a way to automatically create locked previews - you MUST manually lock each preview using one of the methods above. This is by design to give users control over which previews remain visible.
 
 **Pros**:
 - Built-in feature, no installation required
@@ -118,11 +126,11 @@ This is an intentional design decision. The locked preview feature provides the 
 - Stable and well-supported
 - Can have unlimited locked previews
 - Only way to achieve multiple simultaneous previews
+- **UI menu method is very discoverable and easy to use**
 
 **Cons**:
 - Requires manual locking for each preview (cannot be automated)
-- Not obvious/discoverable feature
-- Need to remember keyboard shortcut or command palette command
+- Must remember to lock previews you want to keep visible
 
 **Implementation Effort**: 0 minutes (already available)
 
@@ -186,9 +194,10 @@ This is an intentional design decision. The locked preview feature provides the 
 1. **One-time setup**: Configure Option 2 (editor associations in settings.json)
    - Markdown files will open in preview mode by default
 2. **Daily workflow**: Use Option 1 as needed
-   - When you want to keep a preview visible, lock it with `Cmd+Shift+P` → "Markdown: Toggle Preview Locking"
+   - When you want to keep a preview visible, click the **"..."** menu on the preview's title bar → select "Toggle Preview Locking"
    - Open next markdown file (opens as preview automatically)
-   - Lock that one too if you want multiple visible
+   - Lock that one too if you want multiple visible (click "..." menu → "Toggle Preview Locking")
+   - Locked previews show brackets in title: `[Preview] filename.md`
    - Close unlocked previews when done
 
 **Important**: Option 1 cannot be automated. You must manually lock each preview you want to keep. This is by VS Code/Cursor design.
@@ -246,14 +255,22 @@ This is an intentional design decision. The locked preview feature provides the 
   - Documented double-click editing requirement (must be in preview pane)
   - Updated recommendation to combine both options for best workflow
   - Added web research confirming no automatic locking setting exists
+- 2025-10-31 (UI menu discovery): User discovered "..." menu on preview title bar
+  - Updated Option 1 to feature UI menu method as easiest/primary approach
+  - Command Palette methods moved to "Alternative Methods" section
+  - Documented visual indicator: locked previews show brackets in title `[Preview]`
+  - Updated workflow instructions to use UI menu method
+  - Much more discoverable than Command Palette-only approach
 
 ## Notes
 
 **Key Findings:**
 
-1. **Cursor Multiple Markdown Previews**: Built-in feature exists but not widely known
-   - "Markdown: Open Locked Preview to the Side" command
-   - Can also use "Markdown: Toggle Preview Locking" on existing previews
+1. **Cursor Multiple Markdown Previews**: Built-in feature exists and is discoverable
+   - **Easiest method**: Click "..." menu on preview's title bar → "Toggle Preview Locking"
+   - **Alternative**: Command Palette → "Markdown: Open Locked Preview to the Side"
+   - **Alternative**: Command Palette → "Markdown: Toggle Preview Locking"
+   - **Visual indicator**: Locked previews show brackets in title: `[Preview] filename.md`
    - No installation or configuration required
    - Feature inherited from VS Code base
    - **CRITICAL**: This is the ONLY way to have multiple previews simultaneously
