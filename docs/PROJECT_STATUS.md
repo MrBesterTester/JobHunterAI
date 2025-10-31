@@ -3,6 +3,11 @@
 
 - [JobHunter Project Status](#jobhunter-project-status)
   - [Current State](#current-state)
+  - [Recommended Next Steps](#recommended-next-steps)
+    - [Immediate (This Week)](#immediate-this-week)
+    - [Short Term (Next 2-3 Weeks)](#short-term-next-2-3-weeks)
+    - [Medium Term (Next 2-3 Months)](#medium-term-next-2-3-months)
+    - [Long Term (Next 2-3 Months)](#long-term-next-2-3-months)
   - [Development Phases](#development-phases)
   - [Phase 2 Sub-Phases (Email Integration)](#phase-2-sub-phases-email-integration)
   - [Feature Work Options](#feature-work-options)
@@ -13,11 +18,6 @@
     - [Option 5: RSBuild Migration ✅ COMPLETED (2025-10-29)](#option-5-rsbuild-migration--completed-2025-10-29)
   - [Testing Status](#testing-status)
   - [Bug Tracking](#bug-tracking)
-  - [Recommended Next Steps](#recommended-next-steps)
-    - [Immediate (This Week)](#immediate-this-week)
-    - [Short Term (Next 2-3 Weeks)](#short-term-next-2-3-weeks)
-    - [Medium Term (Next 2-3 Months)](#medium-term-next-2-3-months)
-    - [Long Term (Next 2-3 Months)](#long-term-next-2-3-months)
   - [Project Metrics](#project-metrics)
   - [Related Documentation](#related-documentation)
 
@@ -25,7 +25,7 @@
 
 # JobHunter Project Status
 
-**Last Updated**: 2025-10-31 (Bug counts corrected, BUG-0004 moved to fixed, BUG-0007 & BUG-0008 added with phase references)
+**Last Updated**: 2025-10-31 09:52:20 PDT (Bug counts corrected, BUG-0004 moved to fixed, BUG-0007 & BUG-0008 added with phase references)
 
 ---
 
@@ -58,6 +58,65 @@
 - ISSUE-012: Zero-warning build policy (medium)
 
 **Note**: All testing infrastructure issues (ISSUE-018, 023, 024, 025, 026) are now closed. Remaining open issues are application features/quality improvements.
+
+---
+
+## Recommended Next Steps
+
+**Primary Recommendation**: ✅ **Resume Feature Development**
+
+Testing infrastructure is complete, stable, and exceeding all targets (78.3% coverage, 98.3% pass rate). Ready for Phase 3 features or new development.
+
+### Immediate (This Week)
+
+**✅ COMPLETED**: **Verify BUG-0003 Status** (2025-10-30)
+- ✅ Tested and confirmed ISSUE-023 resolved the modal reopen issue
+- ✅ Both E2E tests now passing (8.8s and 9.0s)
+- ✅ BUG-0003 moved to fixed status with verification details
+- ✅ Bug count updated: 4 open → 3 open, 24 fixed → 25 fixed (81% fix rate)
+
+**Primary Next**: **Complete Phase 2.4** (Calendar & Follow-ups) - Currently 60% done
+- OAuth integration for Google Calendar
+- Email follow-up system
+- Delivers complete interview/follow-up management feature
+- **Estimate**: 2-3 weeks
+
+**Alternative**: **Address Open Bugs BUG-0007 or BUG-0008**
+- BUG-0007: Implement or remove Refresh Descriptions button (depends on feature decision)
+- BUG-0008: Skip Phase 5 feature tests until implementation begins (15-30 min)
+- **Estimate**: 15 min - 6 hours depending on approach
+
+### Short Term (Next 2-3 Weeks)
+
+1. **Complete Phase 2.4** (Calendar & Follow-ups) - Currently 60% done
+   - OAuth integration for Google Calendar
+   - Email follow-up system
+   - Delivers complete interview/follow-up management feature
+   - **Estimate**: 2-3 weeks
+
+2. **Start Phase 2.5** (Email Composition) - 2-3 days
+   - Gmail draft creation
+   - Email composer integration
+   - Completes end-to-end workflow: discover → review → generate → apply
+
+**Address Open Bugs**:
+- BUG-0007: Refresh Descriptions button (medium) - requires feature decision
+- BUG-0008: Skip Phase 5 feature tests (low) - quick fix available
+
+### Medium Term (Next 2-3 Months)
+
+**Phase 4 Extensions** (Optional):
+- Phase 4.1 already complete (RapidAPI JSearch operational)
+- Phase 4.2: Automatic page tracking (4-6 hours)
+- Phase 4.3-4.6: Enhanced features (see PHASE_4.1 doc for details)
+- Current Phase 4.1 provides solid automated job discovery foundation
+
+### Long Term (Next 2-3 Months)
+
+**Phase Progression**:
+- Continue with Phase 2 sub-phases (2.7: Microsoft Email Source)
+- Extend Phase 4 (Job Board features) as needed
+- Plan Phase 5 (Advanced features - analytics, mobile)
 
 ---
 
@@ -249,65 +308,6 @@ All Phase 2 sub-phase documentation includes complete implementation details, te
 
 ---
 
-## Recommended Next Steps
-
-**Primary Recommendation**: ✅ **Resume Feature Development**
-
-Testing infrastructure is complete, stable, and exceeding all targets (78.3% coverage, 98.3% pass rate). Ready for Phase 3 features or new development.
-
-### Immediate (This Week)
-
-**✅ COMPLETED**: **Verify BUG-0003 Status** (2025-10-30)
-- ✅ Tested and confirmed ISSUE-023 resolved the modal reopen issue
-- ✅ Both E2E tests now passing (8.8s and 9.0s)
-- ✅ BUG-0003 moved to fixed status with verification details
-- ✅ Bug count updated: 4 open → 3 open, 24 fixed → 25 fixed (81% fix rate)
-
-**Primary Next**: **Complete Phase 2.4** (Calendar & Follow-ups) - Currently 60% done
-- OAuth integration for Google Calendar
-- Email follow-up system
-- Delivers complete interview/follow-up management feature
-- **Estimate**: 2-3 weeks
-
-**Alternative**: **Address Open Bugs BUG-0007 or BUG-0008**
-- BUG-0007: Implement or remove Refresh Descriptions button (depends on feature decision)
-- BUG-0008: Skip Phase 5 feature tests until implementation begins (15-30 min)
-- **Estimate**: 15 min - 6 hours depending on approach
-
-### Short Term (Next 2-3 Weeks)
-
-1. **Complete Phase 2.4** (Calendar & Follow-ups) - Currently 60% done
-   - OAuth integration for Google Calendar
-   - Email follow-up system
-   - Delivers complete interview/follow-up management feature
-   - **Estimate**: 2-3 weeks
-
-2. **Start Phase 2.5** (Email Composition) - 2-3 days
-   - Gmail draft creation
-   - Email composer integration
-   - Completes end-to-end workflow: discover → review → generate → apply
-
-**Address Open Bugs**:
-- BUG-0007: Refresh Descriptions button (medium) - requires feature decision
-- BUG-0008: Skip Phase 5 feature tests (low) - quick fix available
-
-### Medium Term (Next 2-3 Months)
-
-**Phase 4 Extensions** (Optional):
-- Phase 4.1 already complete (RapidAPI JSearch operational)
-- Phase 4.2: Automatic page tracking (4-6 hours)
-- Phase 4.3-4.6: Enhanced features (see PHASE_4.1 doc for details)
-- Current Phase 4.1 provides solid automated job discovery foundation
-
-### Long Term (Next 2-3 Months)
-
-**Phase Progression**:
-- Continue with Phase 2 sub-phases (2.7: Microsoft Email Source)
-- Extend Phase 4 (Job Board features) as needed
-- Plan Phase 5 (Advanced features - analytics, mobile)
-
----
-
 ## Project Metrics
 
 **Codebase Size**:
@@ -368,11 +368,11 @@ Testing infrastructure is complete, stable, and exceeding all targets (78.3% cov
 
 ---
 
-**Last Updated**: 2025-10-31
-**Based on**: Bug index synchronization, BUG-0004 fixed status, phase-bug dependency tracking
+**Last Updated**: 2025-10-31 09:52:20 PDT
+**Based on**: Bug index synchronization, BUG-0004 fixed status, phase-bug dependency tracking, Next Steps repositioned
 **Manual Updates**: This is a manually maintained document - update as needed
 **Major Updates**:
-- **2025-10-31**: ✅ **BUG TRACKING SYNCHRONIZED & PHASE DEPENDENCIES ADDED**
+- **2025-10-31 09:52:20 PDT**: ✅ **BUG TRACKING SYNCHRONIZED & PHASE DEPENDENCIES ADDED**
   - **Bug counts corrected**: 31 → 36 total bugs (4 open, 4 mitigated, 28 fixed)
   - **BUG-0004 moved to fixed**: "All" tab E2E tests now passing (fixed 2025-10-30)
   - **Open bugs updated**: Added BUG-0007 (Refresh Descriptions) and BUG-0008 (Phase 5 feature tests)
@@ -380,6 +380,8 @@ Testing infrastructure is complete, stable, and exceeding all targets (78.3% cov
     - Phase 2.4 now references BUG-0007 and BUG-0008 (close when features implemented)
     - Phase 5 now references BUG-0008 (tests exist, re-enable when implementing)
   - **Recommended Next Steps updated**: Removed completed BUG-0004, added BUG-0007/BUG-0008 context
+  - **Document reorganization**: Moved "Recommended Next Steps" to top (after Current State)
+  - **Timestamp format**: Updated to full format (YYYY-MM-DD HH:MM:SS TZ)
   - **Fix rate**: 81% → 78% (more accurate with full bug count)
 - **2025-10-30**: ✅ **BUG-0003 VERIFIED FIXED & ISSUE-006 COMPLETED**
   - **BUG-0003 Verification**: Modal reopen issue confirmed fixed by ISSUE-023

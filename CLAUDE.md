@@ -10,6 +10,8 @@
     - [File Path Conventions](#file-path-conventions)
     - [Work Session Tagging](#work-session-tagging)
   - [Workflow Standards (Summary)](#workflow-standards-summary)
+    - [Documentation Timestamp Standards](#documentation-timestamp-standards)
+    - [PROJECT_STATUS.md Organization](#project_statusmd-organization)
     - [Testing Status Update Requirements](#testing-status-update-requirements)
   - [Development Commands](#development-commands)
     - [Database Setup](#database-setup)
@@ -173,6 +175,57 @@ Claude Code follows comprehensive workflow standards for this project. **For det
 - Monitor token usage and suggest session restarts proactively
 - Run system health checks before intensive operations
 - Update TESTING_STATUS.md with full timestamps after every test run
+
+### Documentation Timestamp Standards
+
+**REQUIRED**: All status documents MUST use full timestamps in the format:
+
+**Format**: `YYYY-MM-DD HH:MM:SS TZ (optional description)`
+
+**Examples**:
+- `2025-10-31 09:52:20 PDT`
+- `2025-10-31 09:52:20 PDT (Bug tracking synchronized)`
+
+**Applies to**:
+- `docs/PROJECT_STATUS.md` - "Last Updated" field (top and bottom)
+- `docs/TESTING_STATUS.md` - All timestamp fields
+- `docs/TESTING_HISTORY.md` - All timestamp fields
+- Work summaries (`README_work-summary-*.md`) - Date headers
+- Bug tracking files - `created`, `updated`, `fixed` fields
+
+**Get current timestamp**:
+```bash
+date "+%Y-%m-%d %H:%M:%S %Z"  # Full timestamp with timezone
+```
+
+**Why this matters**:
+- Provides precise point-in-time references for all documentation
+- Enables exact correlation between doc updates and git commits
+- Tracks historical changes with minute-level precision
+- Prevents ambiguity when multiple updates happen same day
+
+### PROJECT_STATUS.md Organization
+
+**REQUIRED**: When updating `docs/PROJECT_STATUS.md`, maintain this structure:
+
+**Document Order**:
+1. **Last Updated** (at top) - Full timestamp format
+2. **Current State** - Brief overview with key metrics
+3. **Recommended Next Steps** ⭐ **MUST be here** - Immediate visibility of priorities
+4. **Development Phases** - Overview and detailed phase status
+5. **Phase 2 Sub-Phases** - Detailed sub-phase tracking
+6. **Feature Work Options** - Available work options
+7. **Testing Status** - Current test metrics summary
+8. **Bug Tracking** - Bug counts and recent fixes
+9. **Project Metrics** - Codebase and velocity metrics
+10. **Related Documentation** - Links to other docs
+11. **Last Updated** (at bottom) - Full timestamp with major updates history
+
+**Why "Recommended Next Steps" goes near the top**:
+- Provides immediate visibility of project priorities
+- User can see what to work on next without scrolling
+- Makes status document actionable, not just informational
+- Aligns with project management best practices
 
 ### Testing Status Update Requirements
 
