@@ -117,11 +117,11 @@
   - [x] Template rendering with simple variable substitution
   - [x] Variable substitution (company, job_title, date_applied, applicant_name, attempt_number)
 
-- [ ] Follow-up Scheduler (`backend/src/follow_up_scheduler.rs`)
-  - [ ] Calculate follow-up dates (Day 10-14, Day 21-28)
-  - [ ] Create follow-up schedule entries
-  - [ ] Status management (pending, approved, sent)
-  - [ ] Attempt number tracking
+- [x] Follow-up Scheduler (implemented in `backend/src/main.rs` handlers)
+  - [x] Calculate follow-up dates (Day 10-14 via `create_follow_up` handler)
+  - [x] Create follow-up schedule entries
+  - [x] Status management (pending, approved, sent, error)
+  - [x] Attempt number tracking
 
 ### ⏳ Week 2 - Days 4-5: Application Tracking Enhancements
 - [ ] Extended Status System
