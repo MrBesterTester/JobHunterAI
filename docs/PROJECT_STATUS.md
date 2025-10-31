@@ -5,7 +5,7 @@
   - [Current State](#current-state)
   - [Recommended Next Steps](#recommended-next-steps)
     - [Immediate (This Week)](#immediate-this-week)
-    - [Short Term (Next 2-3 Weeks)](#short-term-next-2-3-weeks)
+    - [Short Term (Next 1-2 Weeks)](#short-term-next-1-2-weeks)
     - [Medium Term (Next 2-3 Months)](#medium-term-next-2-3-months)
     - [Long Term (Next 2-3 Months)](#long-term-next-2-3-months)
   - [Development Phases](#development-phases)
@@ -63,40 +63,42 @@
 
 ## Recommended Next Steps
 
-**Primary Recommendation**: ✅ **Resume Feature Development**
+**Primary Recommendation**: 🎯 **Complete Phase 2.4 Testing & Validation**
 
-Testing infrastructure is complete, stable, and exceeding all targets (78.3% coverage, 98.3% pass rate). Ready for Phase 3 features or new development.
+Phase 2.4 backend is 85% complete with Calendar Service and Email Follow-up System both operational. Focus on testing, validation, and final polish before moving to next phase.
 
 ### Immediate (This Week)
 
-**✅ COMPLETED**: **Verify BUG-0003 Status** (2025-10-30)
-- ✅ Tested and confirmed ISSUE-023 resolved the modal reopen issue
-- ✅ Both E2E tests now passing (8.8s and 9.0s)
-- ✅ BUG-0003 moved to fixed status with verification details
-- ✅ Bug count updated: 4 open → 3 open, 24 fixed → 25 fixed (81% fix rate)
-
-**Primary Next**: **Complete Phase 2.4** (Calendar & Follow-ups) - Currently 60% done
-- OAuth integration for Google Calendar
-- Email follow-up system
-- Delivers complete interview/follow-up management feature
-- **Estimate**: 2-3 weeks
+**Primary Next**: **Complete Phase 2.4** (Calendar & Follow-ups) - Currently 85% done
+- ✅ Google Calendar OAuth integration - **COMPLETE**
+- ✅ Calendar Service (create/update/delete events) - **COMPLETE**
+- ✅ Email follow-up system with template rendering - **COMPLETE**
+- ⏸️ **Remaining work** (~15%):
+  - Manual testing: Interview scheduling with calendar integration
+  - Manual testing: Follow-up email sending workflow
+  - Backend unit tests (25+ tests for calendar + email functionality)
+  - Frontend E2E tests (20+ tests for CalendarTab + FollowupsTab)
+- **Estimate**: 3-5 days to complete testing & validation
 
 **Alternative**: **Address Open Bugs BUG-0007 or BUG-0008**
 - BUG-0007: Implement or remove Refresh Descriptions button (depends on feature decision)
 - BUG-0008: Skip Phase 5 feature tests until implementation begins (15-30 min)
 - **Estimate**: 15 min - 6 hours depending on approach
 
-### Short Term (Next 2-3 Weeks)
+### Short Term (Next 1-2 Weeks)
 
-1. **Complete Phase 2.4** (Calendar & Follow-ups) - Currently 60% done
-   - OAuth integration for Google Calendar
-   - Email follow-up system
+1. **Finish Phase 2.4** (Calendar & Follow-ups) - Currently 85% done
+   - Testing & validation (3-5 days)
    - Delivers complete interview/follow-up management feature
-   - **Estimate**: 2-3 weeks
+   - **Major accomplishments**:
+     - Google Calendar integration with OAuth
+     - Interview events automatically created/updated/deleted
+     - Follow-up emails sent via Gmail with template rendering
+     - Full workflow from application → interview → follow-up
 
 2. **Start Phase 2.5** (Email Composition) - 2-3 days
-   - Gmail draft creation
-   - Email composer integration
+   - Note: Gmail draft creation already implemented
+   - Email composer frontend integration
    - Completes end-to-end workflow: discover → review → generate → apply
 
 **Address Open Bugs**:
