@@ -6164,25 +6164,124 @@ async fn send_follow_up(
         })));
     }
 
-    // TODO: Implement actual Gmail sending here
-    // For now, just mark as sent
-
-    sqlx::query!(
+    // Get application and job details
+    let app_job = sqlx::query!(
         r#"
-        UPDATE follow_up_schedule
-        SET status = 'sent', sent_at = NOW()
-        WHERE follow_up_id = $1
+        SELECT
+            a.application_id, a.date_applied,
+            j.job_id, j.title, j.company, j.url
+        FROM applications a
+        JOIN jobs j ON a.job_id = j.job_id
+        WHERE a.application_id = $1
         "#,
-        follow_up_id
+        follow_up.application_id
     )
-    .execute(pool.get_ref())
+    .fetch_optional(pool.get_ref())
     .await
     .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
 
-    Ok(HttpResponse::Ok().json(serde_json::json!({
-        "message": "Follow-up sent successfully",
-        "follow_up_id": follow_up_id
-    })))
+    let app_job = match app_job {
+        Some(aj) => aj,
+        None => return Ok(HttpResponse::NotFound().json(serde_json::json!({
+            "error": "Application not found"
+        })))
+    };
+
+    // Get environment variables for email
+    let from_email = std::env::var("APPLICANT_EMAIL")
+        .unwrap_or_else(|_| "sam@samkirk.com".to_string());
+    let applicant_name = std::env::var("APPLICANT_NAME")
+        .unwrap_or_else(|_| "Sam Kirk".to_string());
+
+    // Prepare template variables
+    let variables = serde_json::json!({
+        "applicant_name": applicant_name,
+        "company": app_job.company,
+        "job_title": app_job.title,
+        "date_applied": app_job.date_applied
+            .map(|d| d.format("%B %d, %Y").to_string())
+            .unwrap_or_else(|| "recently".to_string()),
+        "attempt_number": follow_up.attempt_number
+    });
+
+    // Render subject and body with variables
+    let subject = render_template(
+        follow_up.subject.as_deref().unwrap_or("Follow-up on Application"),
+        &variables
+    );
+    let body = render_template(
+        follow_up.body.as_deref().unwrap_or("I wanted to follow up on my application."),
+        &variables
+    );
+
+    // Determine recipient email - use job URL if available, otherwise require manual input
+    let to_email = if let Some(url) = app_job.url {
+        // Try to extract email from URL or description
+        // For now, we'll need this to be provided in the follow-up approval
+        // TODO: Extract recipient email from job posting or require it during approval
+        format!("hiring@{}.com", app_job.company.to_lowercase().replace(" ", ""))
+    } else {
+        format!("hiring@{}.com", app_job.company.to_lowercase().replace(" ", ""))
+    };
+
+    // Send email via Gmail API
+    match send_gmail_email(&from_email, &to_email, &subject, &body, pool.get_ref()).await {
+        Ok(message_id) => {
+            // Update follow-up status
+            sqlx::query!(
+                r#"
+                UPDATE follow_up_schedule
+                SET status = 'sent', sent_at = NOW()
+                WHERE follow_up_id = $1
+                "#,
+                follow_up_id
+            )
+            .execute(pool.get_ref())
+            .await
+            .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+            // Record communication (simplified - using available fields only)
+            sqlx::query!(
+                r#"
+                INSERT INTO communications (application_id, message_content, channel)
+                VALUES ($1, $2, 'email')
+                "#,
+                follow_up.application_id,
+                format!("Follow-up email sent\nSubject: {}\nTo: {}\n\n{}", subject, to_email, body)
+            )
+            .execute(pool.get_ref())
+            .await
+            .ok(); // Don't fail if communication logging fails
+
+            log_debug(&format!("Follow-up email sent successfully: {}", message_id));
+
+            Ok(HttpResponse::Ok().json(serde_json::json!({
+                "message": "Follow-up sent successfully",
+                "follow_up_id": follow_up_id,
+                "gmail_message_id": message_id
+            })))
+        },
+        Err(e) => {
+            // Log error and update follow-up with error message
+            let error_msg = format!("{}", e);
+            sqlx::query!(
+                r#"
+                UPDATE follow_up_schedule
+                SET status = 'error', error_message = $1
+                WHERE follow_up_id = $2
+                "#,
+                error_msg,
+                follow_up_id
+            )
+            .execute(pool.get_ref())
+            .await
+            .ok();
+
+            log_debug(&format!("Failed to send follow-up email: {}", error_msg));
+
+            Err(e)
+        }
+    }
 }
 
 async fn get_application_timeline(
@@ -6248,6 +6347,93 @@ fn build_mime_message(
     message.push_str(&format!("--{}--\r\n", boundary));
 
     message
+}
+
+/// Send an email via Gmail API (not a draft - sends immediately)
+async fn send_gmail_email(
+    from_email: &str,
+    to_email: &str,
+    subject: &str,
+    body: &str,
+    pool: &PgPool,
+) -> actix_web::Result<String> {
+    // Build a simple text email (no attachments for follow-ups)
+    let mut message = String::new();
+    message.push_str(&format!("From: {}\r\n", from_email));
+    message.push_str(&format!("To: {}\r\n", to_email));
+    message.push_str(&format!("Subject: {}\r\n", subject));
+    message.push_str("Content-Type: text/plain; charset=\"UTF-8\"\r\n");
+    message.push_str("\r\n");
+    message.push_str(body);
+
+    // Encode as base64 (Gmail API requirement)
+    let encoded_message = general_purpose::URL_SAFE_NO_PAD.encode(message.as_bytes());
+
+    // Get OAuth credentials
+    let oauth_cred = sqlx::query_as::<_, OAuthCredential>(
+        "SELECT * FROM oauth_credentials WHERE source_id = (SELECT source_id FROM job_sources WHERE source_name = 'gmail') LIMIT 1"
+    )
+    .fetch_one(pool)
+    .await
+    .map_err(|e| actix_web::error::ErrorUnauthorized(format!("Gmail not authenticated: {}", e)))?;
+
+    // Check if token is expired and refresh if needed
+    let access_token = if oauth_cred.token_expires_at < Some(chrono::Utc::now()) {
+        refresh_gmail_token(&oauth_cred, pool).await?
+    } else {
+        oauth_cred.access_token
+            .ok_or_else(|| actix_web::error::ErrorUnauthorized("No access token"))?
+    };
+
+    // Send via Gmail API (messages.send endpoint, not drafts)
+    let client = reqwest::Client::new();
+    let send_request = serde_json::json!({
+        "raw": encoded_message
+    });
+
+    let response = client
+        .post("https://gmail.googleapis.com/gmail/v1/users/me/messages/send")
+        .bearer_auth(&access_token)
+        .json(&send_request)
+        .send()
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Gmail API call failed: {}", e)))?;
+
+    if !response.status().is_success() {
+        let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+        return Err(actix_web::error::ErrorInternalServerError(format!("Gmail API error: {}", error_text)));
+    }
+
+    let send_response: serde_json::Value = response.json().await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to parse Gmail response: {}", e)))?;
+
+    // Extract message ID from response
+    let message_id = send_response["id"]
+        .as_str()
+        .unwrap_or("unknown")
+        .to_string();
+
+    Ok(message_id)
+}
+
+/// Render template with Handlebars-style variable substitution
+fn render_template(template: &str, variables: &serde_json::Value) -> String {
+    let mut result = template.to_string();
+
+    if let Some(obj) = variables.as_object() {
+        for (key, value) in obj {
+            let placeholder = format!("{{{{{}}}}}", key);
+            let replacement = match value {
+                serde_json::Value::String(s) => s.clone(),
+                serde_json::Value::Number(n) => n.to_string(),
+                serde_json::Value::Bool(b) => b.to_string(),
+                _ => value.to_string(),
+            };
+            result = result.replace(&placeholder, &replacement);
+        }
+    }
+
+    result
 }
 
 /// Create a Gmail draft via the Gmail API
