@@ -2,30 +2,29 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
   - [id: BUG-0008
-title: E2E Tests for Unimplemented Phase 5 Features
+title: E2E Tests for Phase 2.4 Features (Calendar, Follow-ups, Timeline)
 status: open
-priority: low
+priority: medium
 severity: low
 component: frontend
 created: 2025-10-30
-updated: 2025-10-30
-affects: [e2e-tests, calendar-management, follow-ups, timeline-view, intake-integrations]
-related: []](#id-bug-0008%0Atitle-e2e-tests-for-unimplemented-phase-5-features%0Astatus-open%0Apriority-low%0Aseverity-low%0Acomponent-frontend%0Acreated-2025-10-30%0Aupdated-2025-10-30%0Aaffects-e2e-tests-calendar-management-follow-ups-timeline-view-intake-integrations%0Arelated-)
-- [BUG-0008: E2E Tests for Unimplemented Phase 5 Features](#bug-0008-e2e-tests-for-unimplemented-phase-5-features)
+updated: 2025-10-31
+affects: [e2e-tests, calendar-management, follow-ups, timeline-view, phase-2.4]
+related: [PHASE_2.4]](#id-bug-0008%0Atitle-e2e-tests-for-phase-24-features-calendar-follow-ups-timeline%0Astatus-open%0Apriority-medium%0Aseverity-low%0Acomponent-frontend%0Acreated-2025-10-30%0Aupdated-2025-10-31%0Aaffects-e2e-tests-calendar-management-follow-ups-timeline-view-phase-24%0Arelated-phase_24)
+- [BUG-0008: E2E Tests for Phase 2.4 Features (Calendar, Follow-ups, Timeline)](#bug-0008-e2e-tests-for-phase-24-features-calendar-follow-ups-timeline)
   - [Summary](#summary)
   - [Impact](#impact)
   - [Affected Features](#affected-features)
-    - [1. Calendar Management (4 tests)](#1-calendar-management-4-tests)
-    - [2. Follow-ups Management (6 tests)](#2-follow-ups-management-6-tests)
-    - [3. Timeline View (2 tests)](#3-timeline-view-2-tests)
-    - [4. Intake Integrations (5 tests)](#4-intake-integrations-5-tests)
+    - [1. Calendar Management (17 tests) - ✅ IMPLEMENTED](#1-calendar-management-17-tests----implemented)
+    - [2. Follow-ups Management (19 tests) - ✅ IMPLEMENTED](#2-follow-ups-management-19-tests----implemented)
+    - [3. Timeline View (24 tests) - ✅ IMPLEMENTED](#3-timeline-view-24-tests----implemented)
   - [Expected Behavior](#expected-behavior)
   - [Actual Behavior](#actual-behavior)
   - [Root Cause](#root-cause)
   - [Evidence](#evidence)
   - [Proposed Solutions](#proposed-solutions)
-    - [Option 1: Skip Tests Until Features Implemented](#option-1-skip-tests-until-features-implemented)
-    - [Option 2: Delete Tests](#option-2-delete-tests)
+    - [Option 1: Re-enable Tests and Run Full Validation ✅ RECOMMENDED](#option-1-re-enable-tests-and-run-full-validation--recommended)
+    - [Option 2: Incremental Test Enabling](#option-2-incremental-test-enabling)
   - [Decision](#decision)
   - [Implementation](#implementation)
   - [Testing](#testing)
@@ -36,187 +35,237 @@ related: []](#id-bug-0008%0Atitle-e2e-tests-for-unimplemented-phase-5-features%0
 
 ---
 id: BUG-0008
-title: E2E Tests for Unimplemented Phase 5 Features
+title: E2E Tests for Phase 2.4 Features (Calendar, Follow-ups, Timeline)
 status: open
-priority: low
+priority: medium
 severity: low
 component: frontend
 created: 2025-10-30
-updated: 2025-10-30
-affects: [e2e-tests, calendar-management, follow-ups, timeline-view, intake-integrations]
-related: []
+updated: 2025-10-31
+affects: [e2e-tests, calendar-management, follow-ups, timeline-view, phase-2.4]
+related: [PHASE_2.4]
 ---
 
-# BUG-0008: E2E Tests for Unimplemented Phase 5 Features
+# BUG-0008: E2E Tests for Phase 2.4 Features (Calendar, Follow-ups, Timeline)
 
 ## Summary
 
-Fifteen E2E tests are failing because they test Phase 5 features that haven't been implemented yet (Calendar Management, Follow-ups Management, Timeline View, and additional Intake integrations).
+Seventeen E2E tests for Phase 2.4 features (Calendar Management, Follow-ups Management, Timeline View) are currently disabled. These features have been implemented (2025-10-31) and tests should now be re-enabled for validation.
 
 ## Impact
 
-**Affected Tests**: 15 failing tests
-- Calendar Management: 4 tests
-- Follow-ups Management: 6 tests
-- Timeline View: 2 tests
-- Intake Tab - Indeed integration: 1 test
-- Intake Tab - other unimplemented features: 4 tests
+**Affected Tests**: 17 tests currently disabled
+- Calendar Management: 17 tests (`12-calendar-management.spec.ts`)
+- Follow-ups Management: 19 tests (`13-follow-ups-management.spec.ts`)
+- Timeline View: 24 tests (`14-timeline-view.spec.ts`)
 
-**User Impact**: None - features not implemented yet
-**Development Impact**: Low - these are future features, tests written ahead of implementation
+**User Impact**: None - tests are disabled, not blocking usage
+**Development Impact**: Medium - Phase 2.4 features implemented but not validated by E2E tests
 
 ## Affected Features
 
-### 1. Calendar Management (4 tests)
+### 1. Calendar Management (17 tests) - ✅ IMPLEMENTED
 **File**: `frontend/e2e/tests/12-calendar-management.spec.ts`
+**Component**: `frontend/src/CalendarTab.tsx`
+**Backend**: `backend/src/calendar_auth.rs`, `backend/src/calendar_service.rs`
 
-Tests expecting:
-- Schedule interview modal
-- Interview form fields
-- Calendar display
+**Implemented features** (2025-10-31):
+- Calendar tab navigation
+- Interview scheduling modal and form
+- Google Calendar OAuth integration
+- Calendar event CRUD operations (create, update, delete)
+- Upcoming interviews display
+- Interview status tracking
+
+**Tests check**:
+- Tab navigation and visibility
+- Schedule interview modal and form fields
+- Interview creation/editing/canceling
+- API integration (`/api/interviews/upcoming`, `/api/interviews`)
 - Error handling
 
-### 2. Follow-ups Management (6 tests)
+### 2. Follow-ups Management (19 tests) - ✅ IMPLEMENTED
 **File**: `frontend/e2e/tests/13-follow-ups-management.spec.ts`
+**Component**: `frontend/src/FollowupsTab.tsx`
+**Backend**: Email follow-up system in `backend/src/main.rs`
 
-Tests expecting:
+**Implemented features** (2025-10-31):
 - Follow-ups tab navigation
-- Pending follow-ups list
+- Pending follow-ups list display
 - Follow-up approval workflow
+- Email sending via Gmail API
+- Template rendering with variables
+- Status management
+
+**Tests check**:
+- Tab navigation
+- Follow-up list display
+- Approval/send workflow
+- API integration (`/api/follow-ups/pending`, `/api/follow-ups/{id}/send`)
+- Template preview
 - Error handling
-- API integration
 
-### 3. Timeline View (2 tests)
+### 3. Timeline View (24 tests) - ✅ IMPLEMENTED
 **File**: `frontend/e2e/tests/14-timeline-view.spec.ts`
+**Component**: `frontend/src/TimelineView.tsx`
+**Backend**: Timeline endpoint in `backend/src/main.rs`
 
-Tests expecting:
-- Timeline tab functionality
-- Empty timeline handling
+**Implemented features** (2025-10-01):
+- Timeline view component
+- Application event history display
+- Event type visualization (application, communication, interview, follow-up)
+- Color-coded event icons
 
-### 4. Intake Integrations (5 tests)
-**File**: `frontend/e2e/tests/15-intake-tab.spec.ts`
-
-Tests expecting:
-- Indeed integration card
-- LinkedIn mock implementation notice
-- Integration status displays
-- "Coming Soon" messages
-- "Request Implementation" buttons
+**Tests check**:
+- Timeline display and navigation
+- Event rendering
+- Empty state handling
+- API integration (`/api/applications/{id}/timeline`)
 
 ## Expected Behavior
 
-Features should be implemented before tests are written, OR tests should be marked as skipped until features are ready.
+Tests should be enabled and run to validate Phase 2.4 feature implementation.
 
 ## Actual Behavior
 
-Tests fail because UI elements and API endpoints don't exist yet.
+Tests are currently disabled in `frontend/e2e/test-config.ts`:
+```typescript
+'calendar-management': false,          // 17 tests - Phase 5 feature (not implemented) - BUG-0008
+'follow-ups-management': false,        // 19 tests - Phase 5 feature (not implemented) - BUG-0008
+'timeline-view': false,                // 24 tests - Phase 5 feature (not implemented) - BUG-0008
+```
 
 ## Root Cause
 
-Tests were written proactively for planned Phase 5 features. This is actually good practice for TDD (Test-Driven Development), but tests should be skipped until implementation begins.
+**Misclassification**: Tests were incorrectly labeled as "Phase 5 features" when they're actually Phase 2.4 features. Features have been implemented (2025-10-31) but tests remain disabled with outdated comments.
 
 ## Evidence
 
-**Test output** (from test run 2025-10-30):
+**Implementation Timeline**:
+- 2025-10-01: Phase 2.4 Session 1 - Database, backend API, frontend components (CalendarTab, FollowupsTab, TimelineView)
+- 2025-10-30: BUG-0008 created, tests incorrectly labeled as "Phase 5 features"
+- 2025-10-31: Phase 2.4 Sessions 2 & 3 - Google Calendar OAuth, Calendar Service, Email Follow-up System
+- 2025-10-31: Bug updated to reflect Phase 2.4 implementation complete
+
+**Current test-config.ts** (lines 34-36):
+```typescript
+'calendar-management': false,          // Comment says: Phase 5 feature (not implemented)
+'follow-ups-management': false,        // Comment says: Phase 5 feature (not implemented)
+'timeline-view': false,                // Comment says: Phase 5 feature (not implemented)
 ```
-Error: expect(locator).toBeVisible() failed
-test-results/12-calendar-management-Cal-eaeb0-en-schedule-interview-modal-chromium/test-failed-1.png
 
-Error: expect(locator).toBeVisible() failed
-test-results/13-follow-ups-management-F-e4df7--to-Follow-ups-tab-on-click-chromium/test-failed-1.png
-
-TimeoutError: page.click: Timeout 10000ms exceeded
-test-results/14-timeline-view-Timeline--982f9-e-empty-timeline-gracefully-chromium/test-failed-1.png
-
-Error: expect(locator).toBeVisible() failed
-test-results/15-intake-tab-Intake-Tab-I-19f3f-lay-Indeed-integration-card-chromium/test-failed-1.png
-```
+**Actual status**: All three feature sets are implemented in Phase 2.4
 
 ## Proposed Solutions
 
-### Option 1: Skip Tests Until Features Implemented
+### Option 1: Re-enable Tests and Run Full Validation ✅ RECOMMENDED
 
-**Description**: Add `.skip` or configuration flags to disable these tests
-
-**Pros**:
-- Preserves tests for future use
-- Clean test suite (no false failures)
-- Easy to re-enable when features ready
-- Maintains TDD approach
-
-**Cons**:
-- Tests sit unused until Phase 5
-- Need to remember to re-enable them
-
-**Implementation Effort**: 30 minutes
-
-### Option 2: Delete Tests
-
-**Description**: Remove test files entirely and recreate when building features
+**Description**: Enable tests in `test-config.ts` and run E2E suite to validate Phase 2.4 features
 
 **Pros**:
-- Cleaner codebase
-- No maintenance burden
-- Tests written with actual implementation
+- Validates Phase 2.4 implementation
+- Identifies any gaps or issues
+- Provides test coverage metrics
+- Completes Phase 2.4 testing requirements
 
 **Cons**:
-- Loses advance planning work
-- May forget edge cases captured in tests
-- Harder to estimate Phase 5 scope
+- Some tests may fail (need investigation/fixes)
+- OAuth-dependent tests may need mocking or manual validation
 
-**Implementation Effort**: 15 minutes
+**Implementation Effort**: 2-4 hours (enable tests, run suite, investigate failures, document results)
+
+### Option 2: Incremental Test Enabling
+
+**Description**: Enable one test suite at a time (calendar → follow-ups → timeline)
+
+**Pros**:
+- Lower risk approach
+- Easier to identify specific issues
+- Can fix issues incrementally
+
+**Cons**:
+- Takes longer overall
+- May miss integration issues
+
+**Implementation Effort**: 3-5 hours
 
 ## Decision
 
-**Selected**: Option 1 - Skip tests until features implemented
+**Selected**: Option 1 - Re-enable tests and run full validation
 
 **Rationale**:
-- Tests represent valuable planning and edge case thinking
-- Easy to re-enable when Phase 5 begins
-- Maintains TDD benefits
-- Minimal cost to preserve
+- Phase 2.4 implementation is complete
+- Tests were written ahead of time (TDD approach)
+- Need to validate features work as expected
+- Part of Phase 2.4 completion requirements (20% remaining work)
 
 ## Implementation
 
-**Files to modify**:
-1. `frontend/e2e/tests/12-calendar-management.spec.ts` - Add `.skip` to test suite
-2. `frontend/e2e/tests/13-follow-ups-management.spec.ts` - Add `.skip` to test suite
-3. `frontend/e2e/tests/14-timeline-view.spec.ts` - Add `.skip` to test suite
-4. `frontend/e2e/tests/15-intake-tab.spec.ts` - Add `.skip` to specific test cases (or entire unimplemented features section)
-
-**Alternatively**: Add to `frontend/e2e/test-config.ts`:
+**Step 1**: Update `frontend/e2e/test-config.ts` (lines 34-36):
 ```typescript
-export const DISABLED_SUITES = {
-  // ... existing
-  PHASE_5_FEATURES: true, // Calendar, Follow-ups, Timeline
-};
+// BEFORE:
+'calendar-management': false,          // 17 tests - Phase 5 feature (not implemented) - BUG-0008
+'follow-ups-management': false,        // 19 tests - Phase 5 feature (not implemented) - BUG-0008
+'timeline-view': false,                // 24 tests - Phase 5 feature (not implemented) - BUG-0008
+
+// AFTER:
+'calendar-management': true,           // 17 tests - Phase 2.4 feature (implemented) - BUG-0008
+'follow-ups-management': true,         // 19 tests - Phase 2.4 feature (implemented) - BUG-0008
+'timeline-view': true,                 // 24 tests - Phase 2.4 feature (implemented) - BUG-0008
 ```
+
+**Step 2**: Run E2E test suite:
+```bash
+cd frontend && npm run test:e2e
+```
+
+**Step 3**: Analyze results:
+- Document pass/fail counts for each suite
+- Identify failures requiring fixes vs. OAuth-dependent tests
+- Update TESTING_STATUS.md with results
+
+**Step 4**: Address failures:
+- Fix implementation issues if found
+- Mock OAuth flows for non-manual tests
+- Document OAuth-dependent tests for manual validation
 
 ## Testing
 
-1. Run E2E test suite
-2. Verify these 15 tests are now skipped (not failed)
-3. Confirm passing test count increases
-4. Document which tests are skipped and why
+**Phase 1: Enable and Run Tests**
+1. Enable test suites in `test-config.ts`
+2. Run full E2E suite: `cd frontend && npm run test:e2e`
+3. Document pass/fail rates for calendar/follow-ups/timeline tests
+4. Compare against baseline (current: 343/529 passing = 64.8%)
+
+**Phase 2: Investigate Failures**
+1. Categorize failures: implementation bugs vs. OAuth-dependent vs. test issues
+2. Fix implementation issues if found
+3. Update tests if expectations don't match implementation
+4. Document OAuth-dependent tests for manual validation
 
 **Success Criteria**:
-- 15 fewer failures
-- Tests preserved for Phase 5
-- Test suite cleaner
+- 60 additional tests enabled (calendar: 17, follow-ups: 19, timeline: 24)
+- >70% pass rate on newly enabled tests
+- Clear categorization of failures
+- Phase 2.4 testing documented in TESTING_STATUS.md
 
 ## Status History
 
-- 2025-10-30: Bug discovered during E2E test investigation
-- 2025-10-30: Decision made to skip tests until Phase 5
+- 2025-10-30: Bug created - tests incorrectly classified as "Phase 5 features"
+- 2025-10-30: Tests disabled in test-config.ts
+- 2025-10-31: Bug updated - discovered these are Phase 2.4 features (already implemented)
+- 2025-10-31: Priority raised from low → medium (blocks Phase 2.4 validation)
+- 2025-10-31: Title updated to reflect Phase 2.4 (not Phase 5)
+- 2025-10-31: Ready to re-enable tests and run validation
 
 ## Notes
 
-- **This is not really a bug** - it's proactive test planning
-- Tests should be re-enabled when Phase 5 implementation begins
-- Consider adding TODO comments in test files about when to re-enable
-- Document in Phase 5 planning docs that tests already exist
-- Test files affected:
-  - `frontend/e2e/tests/12-calendar-management.spec.ts` (4 tests)
-  - `frontend/e2e/tests/13-follow-ups-management.spec.ts` (6 tests)
-  - `frontend/e2e/tests/14-timeline-view.spec.ts` (2 tests)
-  - `frontend/e2e/tests/15-intake-tab.spec.ts` (5 tests - specific sections only)
+- **Misclassification discovery**: Tests were written for Phase 2.4 but labeled as Phase 5
+- **Timeline confusion**: Bug created 2025-10-30, but more Phase 2.4 work done 2025-10-31
+- **Current status**: All Phase 2.4 features implemented, tests ready to run
+- **Next action**: Re-enable tests and validate implementation
+- **Test files**:
+  - `frontend/e2e/tests/12-calendar-management.spec.ts` (17 tests)
+  - `frontend/e2e/tests/13-follow-ups-management.spec.ts` (19 tests)
+  - `frontend/e2e/tests/14-timeline-view.spec.ts` (24 tests)
+- **Related**: Phase 2.4 completion (testing is 20% of remaining work)
