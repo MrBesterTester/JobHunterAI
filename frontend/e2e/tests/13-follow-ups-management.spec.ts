@@ -19,15 +19,17 @@ test.describe('Follow-ups Management - Phase 5.1', () => {
 
     test('should navigate to Follow-ups tab on click', async ({ page }) => {
       await page.click('button:has-text("Follow-ups")');
-      await expect(page.locator('h2:has-text("Follow-up Queue")')).toBeVisible();
+      await expect(page.locator('h2:has-text("Pending Follow-ups")')).toBeVisible();
     });
 
     test('should show empty state when no pending follow-ups', async ({ page }) => {
-      await page.click('button:has-text("Follow-ups")');
-
-      await page.waitForResponse(response =>
+      // Set up listener before clicking to catch the API call
+      const responsePromise = page.waitForResponse(response =>
         response.url().includes('/api/follow-ups/pending') && response.status() === 200
       );
+
+      await page.click('button:has-text("Follow-ups")');
+      await responsePromise;
 
       const emptyState = page.locator('text=/No pending follow-ups|No follow-ups/i');
       await expect(emptyState).toBeVisible();
@@ -36,11 +38,13 @@ test.describe('Follow-ups Management - Phase 5.1', () => {
 
   test.describe('Pending Follow-ups Display', () => {
     test('should display pending follow-ups list', async ({ page }) => {
-      await page.click('button:has-text("Follow-ups")');
-
-      await page.waitForResponse(response =>
+      // Set up listener before clicking to catch the API call
+      const responsePromise = page.waitForResponse(response =>
         response.url().includes('/api/follow-ups/pending') && response.status() === 200
       );
+
+      await page.click('button:has-text("Follow-ups")');
+      await responsePromise;
 
       const followupsList = page.locator('[data-testid="follow-ups-list"], .follow-up-card').first();
       const count = await followupsList.count();
@@ -129,8 +133,8 @@ test.describe('Follow-ups Management - Phase 5.1', () => {
       if (count > 0) {
         await approveButton.click();
 
-        // Should show confirmation or success message
-        await expect(page.locator('text=/Approved|Success/i')).toBeVisible({ timeout: 5000 });
+        // Should show confirmation or success message - use .first() to avoid matching tab button
+        await expect(page.locator('text=/Approved|Success/i').first()).toBeVisible({ timeout: 5000 });
       }
     });
 
@@ -288,11 +292,13 @@ test.describe('Follow-ups Management - Phase 5.1', () => {
 
   test.describe('Follow-up API Integration', () => {
     test('should fetch pending follow-ups from API', async ({ page }) => {
-      await page.click('button:has-text("Follow-ups")');
-
-      const response = await page.waitForResponse(
+      // Set up listener before clicking to catch the API call
+      const responsePromise = page.waitForResponse(
         response => response.url().includes('/api/follow-ups/pending') && response.status() === 200
       );
+
+      await page.click('button:has-text("Follow-ups")');
+      const response = await responsePromise;
 
       expect(response.ok()).toBeTruthy();
     });

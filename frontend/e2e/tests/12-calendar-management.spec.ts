@@ -23,12 +23,13 @@ test.describe('Calendar Management - Phase 5.1', () => {
     });
 
     test('should show empty state when no interviews scheduled', async ({ page }) => {
-      await page.click('button:has-text("Calendar")');
-
-      // Wait for API call to complete
-      await page.waitForResponse(response =>
+      // Set up listener before clicking to catch the API call
+      const responsePromise = page.waitForResponse(response =>
         response.url().includes('/api/interviews/upcoming') && response.status() === 200
       );
+
+      await page.click('button:has-text("Calendar")');
+      await responsePromise;
 
       const emptyState = page.locator('text=/No interviews scheduled|No upcoming interviews/i');
       await expect(emptyState).toBeVisible();
@@ -69,8 +70,8 @@ test.describe('Calendar Management - Phase 5.1', () => {
       if (await scheduleButton.isVisible()) {
         await scheduleButton.click();
 
-        // Try to submit without filling fields
-        const submitButton = page.locator('button:has-text("Schedule")');
+        // Try to submit without filling fields - use .last() to get the submit button in the form
+        const submitButton = page.locator('button:has-text("Schedule")').last();
         await submitButton.click();
 
         // Should show validation errors or stay on form
@@ -250,11 +251,13 @@ test.describe('Calendar Management - Phase 5.1', () => {
 
   test.describe('Calendar API Integration', () => {
     test('should fetch upcoming interviews from API', async ({ page }) => {
-      await page.click('button:has-text("Calendar")');
-
-      const response = await page.waitForResponse(
+      // Set up listener before clicking to catch the API call
+      const responsePromise = page.waitForResponse(
         response => response.url().includes('/api/interviews/upcoming') && response.status() === 200
       );
+
+      await page.click('button:has-text("Calendar")');
+      const response = await responsePromise;
 
       expect(response.ok()).toBeTruthy();
     });
