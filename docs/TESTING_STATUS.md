@@ -8,10 +8,10 @@
   - [E2E Test Coverage](#e2e-test-coverage)
 - [Open Issues](#open-issues)
 - [Excluded Tests Summary](#excluded-tests-summary)
-  - [Unit Tests (8 excluded → 5 after Phase 1)](#unit-tests-8-excluded-%E2%86%92-5-after-phase-1)
-    - [1. Content Generation Modal (1 test)](#1-content-generation-modal-1-test)
-    - [2. Badge/Stats Update Tests (3 tests → **PLANNED FOR DELETION**)](#2-badgestats-update-tests-3-tests-%E2%86%92-planned-for-deletion)
-    - [3. Job Details Modal (4 tests → **PLANNED FOR INVESTIGATION**)](#3-job-details-modal-4-tests-%E2%86%92-planned-for-investigation)
+  - [Unit Tests (5 skipped after Phase 1 ✅)](#unit-tests-5-skipped-after-phase-1-)
+    - [1. Content Generation Modal (1 test - KEEPING SKIPPED)](#1-content-generation-modal-1-test---keeping-skipped)
+    - [2. Badge/Stats Update Tests (3 tests - ✅ DELETED IN PHASE 1)](#2-badgestats-update-tests-3-tests----deleted-in-phase-1)
+    - [3. Job Details Modal (4 tests - PLANNED FOR PHASE 2)](#3-job-details-modal-4-tests---planned-for-phase-2)
   - [E2E Tests (132 excluded)](#e2e-tests-132-excluded)
 - [Recent Activity (Last 2 Weeks)](#recent-activity-last-2-weeks)
 - [Testing Infrastructure Details](#testing-infrastructure-details)
@@ -86,20 +86,26 @@
 **Skipped Unit Test Investigation** ✅ COMPLETED (2025-10-31)
 - **Status**: Investigation complete, action plan defined
 - **Findings**: 8 skipped tests fall into 3 categories with different root causes
-- **Action Plan**:
-  - **Phase 1** (Planned): Delete 3 badge/stats update tests (testing implementation details - violates best practices)
-    - Tests: `App.test.tsx:6892`, `7593`, `8326`
-    - **Reason**: These tests verify internal state updates, not user-facing behavior
-    - **Effort**: 5 minutes
-    - **Result**: Will reduce skipped tests from 8 to 5
-  - **Phase 2** (Planned): Investigate 4 Job Details Modal tests
-    - Tests: `App.test.tsx:9727`, `10085`, `10162`, `10241`
-    - **Approach**: Option A first (quick investigation, 1-2 hours) - compare with passing modal tests
-    - **If Option A fails**: Option B (deep dive, 4-6 hours) - extensive debugging and refactoring
-    - **Goal**: Attempt to fix modal timing issues to bring pass rate to 477/481 (99.2%)
-  - **Content Generation Modal test** (line 4015): ✅ Keep skipped - React state batching limitation (documented in ISSUE-023)
 
-**Implementation**: Not started - awaiting user go-ahead
+**Phase 1** ✅ COMPLETED (2025-10-31)
+- **Action**: Delete 3 badge/stats update tests (testing implementation details - violates best practices)
+- **Tests Deleted**:
+  - "updates stats after approval via stats API call" (was line 6892)
+  - "updates badge counts after rejection" (was line 7593)
+  - "updates badge counts after marking as applied" (was line 8326)
+- **Reason**: These tests verified internal state updates, not user-facing behavior
+- **Result**: ✅ Skipped tests reduced from 8 → 5 (as planned)
+- **Test Results**: 478 total tests (was 481), 470 passing, 5 skipped, 2 failing (pre-existing), 1 todo
+- **Note**: 2 pre-existing test failures unrelated to Phase 1 (from commit 03ddc75 - filtered jobs button logic change)
+
+**Phase 2** (Planned): Investigate 4 Job Details Modal tests
+- **Tests**: `App.test.tsx:9727`, `10085`, `10162`, `10241` (line numbers after Phase 1 deletion)
+- **Approach**: Option A first (quick investigation, 1-2 hours) - compare with passing modal tests
+- **If Option A fails**: Option B (deep dive, 4-6 hours) - extensive debugging and refactoring
+- **Goal**: Attempt to fix modal timing issues to bring pass rate to 477/478 (99.8%)
+- **Status**: Not started - awaiting user go-ahead
+
+**Content Generation Modal test** (line 4015): ✅ Keep skipped - React state batching limitation (documented in ISSUE-023)
 
 ---
 
@@ -110,13 +116,13 @@
 **⚠️ IMPORTANT**: See **[EXCLUDED_TESTS.md](EXCLUDED_TESTS.md)** for comprehensive breakdown of 140 excluded tests.
 
 **Quick Summary**:
-- **Total Excluded**: 140 tests (13.9% of 1010 total tests) → **137 after Phase 1** (3 tests deleted)
-- **Unit Tests**: 8 excluded (1.7%) → **5 after Phase 1** (3 tests deleted as redundant)
-  - 1 test: Architectural limitation (React state batching) - will remain skipped
-  - 3 tests: Testing implementation details - **planned for deletion**
-  - 4 tests: Modal timing issues - **planned for investigation/fix**
+- **Total Excluded**: 140 tests (13.9% of 1010 total tests) → **137 after Phase 1** ✅ (3 tests deleted)
+- **Unit Tests**: 8 excluded (1.7%) → **5 after Phase 1** ✅ (3 tests deleted as redundant)
+  - 1 test: Architectural limitation (React state batching) - remaining skipped
+  - 3 tests: Testing implementation details - ✅ **DELETED** (Phase 1 complete)
+  - 4 tests: Modal timing issues - **planned for investigation/fix** (Phase 2)
 - **E2E Tests**: 132 excluded (25.0%) - Cosmetic styling (100), redundant coverage (32)
-- **Active Tests**: 870 tests (86.1% coverage) → **873 after Phase 1**
+- **Active Tests**: 870 tests (86.1% coverage) → **873 after Phase 1** ✅
 - **Categories**: 71.4% cosmetic/styling, 22.9% redundant, 5.7% testing limitations
 
 ---
@@ -128,11 +134,13 @@
 | Metric | Value | Target | Status |
 |--------|-------|--------|--------|
 | **Overall Coverage** | **78.3%** | 60% | ✅ Exceeded by 18.3 points |
-| **Total Tests** | 481 | - | - |
-| **Passing** | 473 (98.3%) | - | ✅ Excellent |
-| **Skipped** | 8 (1.7%) | - | ⚠️ Intentional (see below) |
-| **Test Suites** | 12/12 passing | - | ✅ All passing |
-| **Runtime** | <10 seconds | - | ✅ Fast feedback |
+| **Total Tests** | 478 (was 481) | - | - |
+| **Passing** | 470 (98.3%) | - | ✅ Excellent |
+| **Skipped** | 5 (1.0%) | - | ⚠️ Intentional (Phase 1 complete) |
+| **Failing** | 2 (0.4%) | - | ⚠️ Pre-existing (unrelated to Phase 1) |
+| **Todo** | 1 (0.2%) | - | - |
+| **Test Suites** | 11/12 passing | - | ⚠️ 1 suite has pre-existing failures |
+| **Runtime** | ~15 seconds | - | ✅ Fast feedback |
 
 **Coverage by Metric**:
 - Statements: 78.3%
@@ -234,11 +242,11 @@
 
 **📋 Complete Breakdown**: See **[EXCLUDED_TESTS.md](EXCLUDED_TESTS.md)** for comprehensive details on all 140 excluded tests.
 
-### Unit Tests (8 excluded → 5 after Phase 1)
+### Unit Tests (5 skipped after Phase 1 ✅)
 
-**IMPORTANT**: These 8 tests are intentionally excluded - **NOT app bugs**. Investigation completed 2025-10-31 with action plan defined.
+**IMPORTANT**: Investigation completed 2025-10-31. Phase 1 complete - 3 tests deleted.
 
-#### 1. Content Generation Modal (1 test)
+#### 1. Content Generation Modal (1 test - KEEPING SKIPPED)
 - **Test**: "shows loading state during generation" (`App.test.tsx:4015`)
 - **Reason**: React state batching architectural limitation
 - **Root Cause**: Loading states appear for microseconds (too fast to test with 100ms timeout)
@@ -246,37 +254,34 @@
 - **Action**: ✅ Keep skipped (properly documented)
 - **Details**: [ISSUE-023 Session 3](../bugs/fixed/ISSUE-023-frontend-test-failures---content-generation-state-propagation-issues.md)
 
-#### 2. Badge/Stats Update Tests (3 tests → **PLANNED FOR DELETION**)
-- **Tests**:
-  - "updates stats after approval via stats API call" (`App.test.tsx:6892`)
-  - "updates badge counts after rejection" (`App.test.tsx:7593`)
-  - "updates badge counts after marking as applied" (`App.test.tsx:8326`)
+#### 2. Badge/Stats Update Tests (3 tests - ✅ DELETED IN PHASE 1)
+- **Tests Deleted** (2025-10-31):
+  - "updates stats after approval via stats API call" (was `App.test.tsx:6892`)
+  - "updates badge counts after rejection" (was `App.test.tsx:7593`)
+  - "updates badge counts after marking as applied" (was `App.test.tsx:8326`)
 - **Reason**: Testing implementation details (internal state updates), not user-facing behavior
-- **Best Practice Violation**: These tests check internal state instead of observable behavior
+- **Best Practice Violation**: These tests checked internal state instead of observable behavior
 - **Coverage**: Functionality already tested via stats API tests and badge display tests
-- **Action**: 🗑️ **Delete these 3 test blocks** (reduces skipped from 8 → 5)
-- **Effort**: 5 minutes
-- **Status**: Planned, not yet implemented
+- **Action**: ✅ **DELETED** (Phase 1 complete)
+- **Result**: Skipped tests reduced from 8 → 5 ✅
 
-#### 3. Job Details Modal (4 tests → **PLANNED FOR INVESTIGATION**)
-- **Tests**:
-  - "shows action buttons for jobs in approved status" (`App.test.tsx:9727`)
-  - "displays all core job fields in modal" (`App.test.tsx:10085`)
-  - "shows Approve button for jobs in new status" (`App.test.tsx:10162`)
-  - "shows Reject button for new jobs that can be rejected" (`App.test.tsx:10241`)
+#### 3. Job Details Modal (4 tests - PLANNED FOR PHASE 2)
+- **Tests** (line numbers updated after Phase 1 deletions):
+  - "shows action buttons for jobs in approved status" (`App.test.tsx:~9640`)
+  - "displays all core job fields in modal" (`App.test.tsx:~9998`)
+  - "shows Approve button for jobs in new status" (`App.test.tsx:~10075`)
+  - "shows Reject button for new jobs that can be rejected" (`App.test.tsx:~10154`)
 - **Reason**: Test environment timing issues with React render cycles
 - **Root Cause**: Modal opening timing in specific test scenarios (timeout waiting for modal)
-- **Evidence Modal Works**: Other modal tests at lines 9870, 9940, 10017 DO pass successfully
+- **Evidence Modal Works**: Other modal tests at similar line numbers DO pass successfully
 - **Status**: Modal functionality verified working in Phase 4A tests and app
-- **Action**: 🔍 **Investigate and attempt to fix**
+- **Action**: 🔍 **Investigate and attempt to fix** (Phase 2)
   - **Option A** (1-2 hours): Compare with passing modal tests, check mock differences, adjust timeouts
   - **Option B** (4-6 hours): Deep dive with extensive logging and potential refactoring if Option A fails
-- **Goal**: Bring pass rate to 477/481 (99.2%)
-- **Status**: Planned, not yet implemented
+- **Goal**: Bring pass rate to 477/478 (99.8%)
+- **Status**: Not started - awaiting user go-ahead
 
-**Current Impact**: Skipped tests represent 1.7% of test suite (8/481). Core functionality is thoroughly tested through 473 passing tests.
-
-**After Phase 1**: Skipped tests will represent 1.0% of test suite (5/478). Deleted tests were redundant coverage.
+**Impact After Phase 1**: Skipped tests represent 1.0% of test suite (5/478). Core functionality is thoroughly tested through 470 passing tests.
 
 **After Phase 2** (if successful): Skipped tests will represent 0.2% of test suite (1/478). Only architectural limitation remains.
 
