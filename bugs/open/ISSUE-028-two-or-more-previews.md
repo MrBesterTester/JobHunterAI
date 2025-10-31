@@ -118,6 +118,15 @@ This is an intentional design decision. The locked preview feature provides the 
 - You'll only see one preview at a time and need to use back/forward arrows to switch
 - Opening "to the side" creates a new editor pane so both previews are visible simultaneously
 
+**Tip for Many Previews (Screen Real Estate):**
+- Splitting "to the side" multiple times creates many narrow vertical panes
+- After 2-3 splits, panes become too narrow to read comfortably
+- **Solution**: Move some previews to separate OS windows
+  - Drag the preview tab out of the main Cursor window to create a new window
+  - Or: Right-click the preview tab → "Move into New Window" (if available)
+  - This gives you unlimited screen space across multiple windows
+  - Especially useful with multiple monitors
+
 **Alternative Methods:**
 - **Command Palette Method 1** (handles "to the side" automatically):
   - Open markdown file
@@ -284,6 +293,13 @@ This is an intentional design decision. The locked preview feature provides the 
   - Updated implementation steps to include split editor methods
   - Added Key Finding #5 documenting this critical requirement
   - Updated optimal workflow to emphasize "open to the side" step
+- 2025-10-31 (screen real estate tip): User noted practical limitation with many splits
+  - Multiple splits create progressively narrower panes (hard to read after 2-3 splits)
+  - Added tip: Move previews to separate OS windows for unlimited space
+  - Method: Drag tab out of main window or right-click → "Move into New Window"
+  - Added "Tip for Many Previews" section in implementation steps
+  - Added Key Finding #6 documenting screen real estate limitation and solution
+  - Updated recommended workflow to suggest separate windows for 3+ previews
 
 ## Notes
 
@@ -324,10 +340,20 @@ This is an intentional design decision. The locked preview feature provides the 
      - `Cmd+\` (macOS) / `Ctrl+\` (Windows) to split, then open file
      - Command Palette: "Markdown: Open Locked Preview to the Side" (handles split automatically)
 
-6. **Recommended Combined Workflow**: Best user experience
+6. **Screen Real Estate Limitation with Multiple Splits**: Practical consideration
+   - Splitting "to the side" creates progressively narrower vertical panes
+   - After 2-3 splits, panes become too narrow to read markdown comfortably
+   - **Solution**: Move some previews to separate OS windows
+     - Drag preview tab out of main window to create new window
+     - Or right-click tab → "Move into New Window" (if available)
+     - Works great with multiple monitors
+     - Unlimited preview space without narrow panes
+
+7. **Recommended Combined Workflow**: Best user experience
    - Configure Option 2 once (files open as previews automatically)
    - Use Option 1 manually to lock each preview you want to keep visible
    - Always open subsequent files "to the side" for simultaneous visibility
+   - For 3+ previews: consider moving some to separate windows
    - Provides convenience + control over multiple visible previews
 
 **Related Issues:**
