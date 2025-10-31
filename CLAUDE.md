@@ -10,6 +10,7 @@
     - [File Path Conventions](#file-path-conventions)
     - [Work Session Tagging](#work-session-tagging)
   - [Workflow Standards (Summary)](#workflow-standards-summary)
+    - [Testing Status Update Requirements](#testing-status-update-requirements)
   - [Development Commands](#development-commands)
     - [Database Setup](#database-setup)
     - [Backend (Rust)](#backend-rust)
@@ -163,6 +164,7 @@ Claude Code follows comprehensive workflow standards for this project. **For det
 2. **Documentation Standards** - Git history review, status accuracy, iterative refinement
 3. **Testing Standards** - Investigation requirements, test result reporting, performance monitoring
 4. **System Health** - Proactive resource monitoring, health checks, orphaned process cleanup
+5. **Testing Status Updates** - Real-time status tracking with full timestamps (see below)
 
 **Critical rules (enforced automatically):**
 - Never mark work "✅ COMPLETED" until tests verify it works
@@ -170,6 +172,62 @@ Claude Code follows comprehensive workflow standards for this project. **For det
 - Review git history before updating documentation
 - Monitor token usage and suggest session restarts proactively
 - Run system health checks before intensive operations
+- Update TESTING_STATUS.md with full timestamps after every test run
+
+### Testing Status Update Requirements
+
+**REQUIRED**: When user requests testing status or after running comprehensive tests, ALWAYS update `docs/TESTING_STATUS.md` with:
+
+1. **Latest Test Run Results section** (at top of document):
+   - Full date/time stamp in format: `YYYY-MM-DD HH:MM:SS TZ` (e.g., "2025-10-31 09:11:27 PDT")
+   - Run type (Comprehensive, Backend only, E2E only, etc.)
+   - Total runtime
+   - Quick summary table with all test suites
+   - Detailed breakdown of results
+   - Comparison to previous run
+   - Key observations
+
+2. **Comprehensive Test Suite Runtime section**:
+   - Update "Latest Actual Runtime" with timestamp
+   - Update all tables with actual results (not estimates)
+   - Document variance from estimates with explanations
+   - Update "Last Runtime Verification" timestamp
+
+3. **"Last Updated" timestamp** (at top of file):
+   - Format: `YYYY-MM-DD HH:MM:SS TZ (description)`
+   - Example: `2025-10-31 09:11:27 PDT (Comprehensive test suite execution completed)`
+
+**Commands to get current timestamp:**
+```bash
+date "+%Y-%m-%d %H:%M:%S %Z"  # Full timestamp with timezone
+```
+
+**Example workflow when user asks "run tests":**
+```bash
+# 1. Run tests and capture results
+cargo test 2>&1 | tee /tmp/backend-test-results.log
+npm test 2>&1 | tee /tmp/frontend-test-results.log
+npm run test:e2e 2>&1 | tee /tmp/e2e-test-results.log
+
+# 2. Get timestamp
+TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S %Z")
+
+# 3. Update TESTING_STATUS.md with:
+#    - Latest Test Run Results section (with $TIMESTAMP)
+#    - Actual test counts from logs
+#    - Runtime data
+#    - Comparison to previous run
+
+# 4. Commit the update
+git add docs/TESTING_STATUS.md
+git commit -m "docs: Update TESTING_STATUS.md with test results ($TIMESTAMP)"
+```
+
+**Why this matters:**
+- User can see exact test results at any point in time
+- Historical tracking of test performance over time
+- Prevents confusion between estimates and actual results
+- Enables debugging of test regressions with precise timestamps
 
 ---
 
