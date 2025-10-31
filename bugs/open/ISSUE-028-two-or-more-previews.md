@@ -100,21 +100,34 @@ This is an intentional design decision. The locked preview feature provides the 
 **Description**: Use VS Code's built-in locked preview feature to keep multiple markdown previews visible simultaneously
 
 **Implementation Steps (Easiest Method - UI Menu):**
-1. Open a markdown file
+1. Open first markdown file
 2. Open preview (if not already open)
 3. In the preview pane, click the **"..."** menu button on the preview's title bar
 4. Select **"Toggle Preview Locking"** from the menu
 5. Preview is now locked (title shows `[Preview]` with brackets)
-6. Open another markdown file and repeat to lock its preview
-7. Repeat for as many simultaneous previews as needed
+6. **IMPORTANT**: Open second markdown file **to the side** (split editor):
+   - Right-click the file in file explorer → "Open to the Side"
+   - Or: `Cmd+\` (macOS) / `Ctrl+\` (Windows) to split editor, then open file
+   - Or: Click the split editor icon in the top right
+7. Open preview for second file (or it opens automatically if Option 2 is configured)
+8. Lock that preview too (click "..." → "Toggle Preview Locking")
+9. Repeat for as many simultaneous previews as needed
+
+**Why "Open to the Side" is Required:**
+- Without splitting the editor, the second file opens in the same pane
+- You'll only see one preview at a time and need to use back/forward arrows to switch
+- Opening "to the side" creates a new editor pane so both previews are visible simultaneously
 
 **Alternative Methods:**
-- **Command Palette Method 1**:
+- **Command Palette Method 1** (handles "to the side" automatically):
   - Open markdown file
   - Press `Cmd+Shift+P` → type "locked" → select "Markdown: Open Locked Preview to the Side"
-- **Command Palette Method 2**:
+  - This command automatically opens the preview in a split pane (to the side)
+  - Advantage: One command does both the split and the locking
+- **Command Palette Method 2** (requires manual split):
   - Open any markdown preview
   - Press `Cmd+Shift+P` → type "toggle preview" → select "Markdown: Toggle Preview Locking"
+  - Note: You still need to manually open files "to the side" for multiple visible previews
 
 **Visual Indicator**: Locked previews show brackets in the title: `[Preview] filename.md`
 
@@ -194,11 +207,14 @@ This is an intentional design decision. The locked preview feature provides the 
 1. **One-time setup**: Configure Option 2 (editor associations in settings.json)
    - Markdown files will open in preview mode by default
 2. **Daily workflow**: Use Option 1 as needed
-   - When you want to keep a preview visible, click the **"..."** menu on the preview's title bar → select "Toggle Preview Locking"
-   - Open next markdown file (opens as preview automatically)
-   - Lock that one too if you want multiple visible (click "..." menu → "Toggle Preview Locking")
+   - Open first markdown file (opens as preview automatically)
+   - Lock the preview: Click **"..."** menu on preview's title bar → "Toggle Preview Locking"
+   - **Open second file to the side**: Right-click file in explorer → "Open to the Side" (or use `Cmd+\`)
+   - Second file opens as preview automatically in new pane
+   - Lock that preview too: Click "..." menu → "Toggle Preview Locking"
    - Locked previews show brackets in title: `[Preview] filename.md`
-   - Close unlocked previews when done
+   - Repeat for additional files as needed
+   - Both/all previews are now visible simultaneously
 
 **Important**: Option 1 cannot be automated. You must manually lock each preview you want to keep. This is by VS Code/Cursor design.
 
@@ -261,6 +277,13 @@ This is an intentional design decision. The locked preview feature provides the 
   - Documented visual indicator: locked previews show brackets in title `[Preview]`
   - Updated workflow instructions to use UI menu method
   - Much more discoverable than Command Palette-only approach
+- 2025-10-31 (split editor requirement): User clarified need for "Open to the Side"
+  - Added critical step: must open files "to the side" for simultaneous visibility
+  - Without split: locked previews exist but aren't visible simultaneously
+  - With split: multiple previews visible in separate panes side-by-side
+  - Updated implementation steps to include split editor methods
+  - Added Key Finding #5 documenting this critical requirement
+  - Updated optimal workflow to emphasize "open to the side" step
 
 ## Notes
 
@@ -292,10 +315,20 @@ This is an intentional design decision. The locked preview feature provides the 
    - To edit: Double-click the preview content in the preview pane itself
    - Don't double-click in file explorer - that just opens another preview
 
-5. **Recommended Combined Workflow**: Best user experience
+5. **"Open to the Side" is Critical**: Must split editor for multiple visible previews
+   - **Without split**: Even locked previews just occupy one pane at a time
+   - You'd need to use back/forward navigation arrows to switch between locked previews
+   - **With split**: Multiple previews are visible simultaneously in separate panes
+   - Methods to split:
+     - Right-click file in file explorer → "Open to the Side"
+     - `Cmd+\` (macOS) / `Ctrl+\` (Windows) to split, then open file
+     - Command Palette: "Markdown: Open Locked Preview to the Side" (handles split automatically)
+
+6. **Recommended Combined Workflow**: Best user experience
    - Configure Option 2 once (files open as previews automatically)
    - Use Option 1 manually to lock each preview you want to keep visible
-   - Provides convenience + control over multiple simultaneous previews
+   - Always open subsequent files "to the side" for simultaneous visibility
+   - Provides convenience + control over multiple visible previews
 
 **Related Issues:**
 - ISSUE-029: VSCode mermaid diagram rendering (split from this issue)
