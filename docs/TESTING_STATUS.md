@@ -21,7 +21,7 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-**Last Updated**: 2025-10-30 11:55 PM
+**Last Updated**: 2025-10-31 12:45 AM
 
 **Purpose**: Current testing status and open issues requiring attention.
 
@@ -30,6 +30,13 @@
 ---
 
 ## Next Steps
+
+**Completed** ✅ (2025-10-31 Early Morning): Filtered Jobs Display Fixed
+- **Issue**: Approve/reject buttons incorrectly showing for filtered jobs
+- **Root Cause**: Conditional logic at `frontend/src/App.tsx:783` and `2201` checked `(job.status === 'new' || job.status === 'filtered')`
+- **Business Logic**: Filtered jobs have already been automatically rejected by the system based on criteria (salary < $130k, commute > 45 min, domain mismatch). They don't need manual approve/reject buttons. Only 'new' jobs awaiting review should have these action buttons.
+- **Fix**: Changed condition to only show buttons for 'new' jobs: `(job.status === 'new')`
+- **Results**: Test now passing (1 test fixed in ~10 minutes)
 
 **Completed** ✅ (2025-10-30 Evening): Statistics/Criteria API Issues Fixed
 - Database had `min_salary = 100000`, tests expected `130000`
@@ -57,9 +64,11 @@
   - ✅ **Result**: Test passing in 36.1s (well under 70s threshold)
 - **Status**: All 3 performance tests now passing in `frontend/e2e/tests/10-performance.spec.ts`
 
-**2. Filtered Jobs Display** (1 test, 30 min)
-- Approve/reject button visibility issue
-- Investigation needed
+**2. Filtered Jobs Display** ✅ COMPLETED (2025-10-31 Early Morning)
+- **Issue**: Approve/reject buttons incorrectly showing for filtered jobs
+- **Business Logic**: Filtered jobs are already system-rejected - no manual action needed
+- **Fix**: Changed button visibility condition from `(status === 'new' || status === 'filtered')` to `(status === 'new')`
+- **Results**: Test passing in 6.3s
 
 **3. Accessibility** (1 test, 1-2 hours)
 - Focus trap in modal when open
@@ -132,12 +141,12 @@
 |--------|-------|-------|
 | **Total Tests** | 547 | Full suite (grew from 529) |
 | **Active Tests** | 431 | 116 excluded |
-| **Passed** | 400 (73.1%) | ⬆ Improved from 399 (Performance test fix) |
-| **Failed** | 31 (5.7%) | ⬇ Down from 32 (1 fewer failure) |
+| **Passed** | 401 (73.3%) | ⬆ Improved from 400 (Filtered jobs display fix) |
+| **Failed** | 30 (5.5%) | ⬇ Down from 31 (1 fewer failure) |
 | **Flaky** | 0 | Previous flaky test now passing |
 | **Skipped** | 116 (21.2%) | Disabled unimplemented features |
 | **Runtime** | ~13 min | Performance tests now passing |
-| **Core Workflows** | ~144/153 (94.1%) | ✅ All critical paths passing |
+| **Core Workflows** | ~145/153 (94.8%) | ✅ All critical paths passing |
 
 **E2E Test Categories**:
 - Core Workflows: ~91.5% pass rate (primary focus)
@@ -145,11 +154,12 @@
 - Quality Tests: Active and mostly passing
 - Excluded Tests: 108 total (disabled unimplemented features)
 
-**Recent Changes (2025-10-30)**:
-- **✅ Performance Tests Fixed**: Content generation modal visibility (1 test, late evening)
-- **✅ Statistics/Criteria API Fixed**: Database min_salary corrected (2 tests, 100000→130000)
-- **✅ BUG-0005 Fixed**: Debug section tests now passing (6 tests)
-- **✅ BUG-0006 Fixed**: Description quality validation tests (7 tests, 100% passing)
+**Recent Changes (2025-10-30/31)**:
+- **✅ Filtered Jobs Display Fixed**: Approve/reject button visibility (1 test, 2025-10-31 early morning)
+- **✅ Performance Tests Fixed**: Content generation modal visibility (1 test, 2025-10-30 late evening)
+- **✅ Statistics/Criteria API Fixed**: Database min_salary corrected (2 tests, 2025-10-30 evening, 100000→130000)
+- **✅ BUG-0005 Fixed**: Debug section tests now passing (6 tests, 2025-10-30 afternoon)
+- **✅ BUG-0006 Fixed**: Description quality validation tests (7 tests, 2025-10-30 afternoon, 100% passing)
 - **✅ BUG-0008**: Disabled Phase 5 feature tests (60 tests) - calendar, follow-ups, timeline
 - **✅ BUG-0007**: Disabled refresh-buttons tests (8 tests) - feature not implemented
 
@@ -157,7 +167,10 @@
 
 ## Open Issues
 
-**Status**: ⚠️ 2 open bugs (31 failing tests, down from 32)
+**Status**: ⚠️ 2 open bugs (30 failing tests, down from 31)
+
+**Fixed (2025-10-31 Early Morning)**:
+- **Filtered Jobs Display** ✅ FIXED: Approve/reject button visibility (1 test) - Fixed conditional logic to only show buttons for 'new' jobs
 
 **Fixed (2025-10-30 Late Evening)**:
 - **Performance Tests** ✅ FIXED: Content generation modal visibility (1 test) - Modal timeout issue resolved
@@ -173,8 +186,7 @@
 3. **BUG-0007**: Refresh descriptions button not working (6 tests) - Tests disabled until feature implemented
 4. **BUG-0008**: E2E tests for unimplemented Phase 5 features (15 tests) - Tests disabled
 
-**Remaining Failures** (31 tests still failing):
-- Filtered jobs display (1 test) - Button visibility issue
+**Remaining Failures** (30 tests still failing):
 - Accessibility (1 test) - Focus trap enhancement
 - Phase 5 features (13 tests) - Calendar, Follow-ups, Timeline, Intake (not implemented)
 - Other (16 tests) - Requires investigation
@@ -182,6 +194,7 @@
 **See**: `bugs/open/` for detailed bug reports
 
 **Recently Resolved**:
+- **Filtered Jobs Display** (2025-10-31 Early Morning): Approve/reject button visibility - Fixed conditional logic at `App.tsx:783` and `2201` to only show buttons for 'new' jobs, not 'filtered' jobs (business logic: filtered jobs are already system-rejected)
 - **Performance Tests** (2025-10-30 Late Evening): Content generation modal visibility - Fixed async timing and timeout issues (test now passing in 36.1s)
 - **Statistics/Criteria API** (2025-10-30 Evening): Database configuration - Fixed min_salary value (100000→130000)
 - **ISSUE-006** (2025-10-30 Morning): Brittle Placeholder Validation - Implemented backend validation flag. See [TESTING_HISTORY.md](TESTING_HISTORY.md#issue-006-brittle-placeholder-validation) for details.

@@ -780,7 +780,7 @@ const JobDetails: React.FC<{
         </div>
 
         <div style={{ display: 'flex', gap: '8px' }}>
-          {(job.status === 'new' || job.status === 'filtered') && (
+          {(job.status === 'new') && (
             <>
               <button
                 onClick={() => { updateJobStatus(job.job_id, 'approved'); onClose(); }}
@@ -2198,7 +2198,7 @@ const JobHunterDashboard: React.FC = () => {
         return null;
       })()}
 
-      {(job.status === 'new' || job.status === 'filtered') && (
+      {(job.status === 'new') && (
         <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
           <button
             onClick={(e) => { e.stopPropagation(); updateJobStatus(job.job_id, 'approved'); }}
