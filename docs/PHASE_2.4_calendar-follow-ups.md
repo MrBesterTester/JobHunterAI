@@ -8,7 +8,7 @@
     - [✅ Frontend Implementation (Completed Ahead of Schedule)](#-frontend-implementation-completed-ahead-of-schedule)
     - [✅ Week 1 - Days 3-5: Google Calendar Integration (COMPLETED)](#-week-1---days-3-5-google-calendar-integration-completed)
     - [✅ Week 2 - Days 1-3: Email Follow-up System (COMPLETED)](#-week-2---days-1-3-email-follow-up-system-completed)
-    - [⏳ Week 2 - Days 4-5: Application Tracking Enhancements](#-week-2---days-4-5-application-tracking-enhancements)
+    - [🔄 Week 2 - Days 4-5: Application Tracking Enhancements (PARTIALLY COMPLETE)](#-week-2---days-4-5-application-tracking-enhancements-partially-complete)
     - [⏳ Week 3 - Days 4-5: Testing & Documentation](#-week-3---days-4-5-testing--documentation)
   - [Technical Architecture](#technical-architecture)
     - [Backend Structure](#backend-structure)
@@ -123,27 +123,27 @@
   - [x] Status management (pending, approved, sent, error)
   - [x] Attempt number tracking
 
-### ⏳ Week 2 - Days 4-5: Application Tracking Enhancements
-- [ ] Extended Status System
+### 🔄 Week 2 - Days 4-5: Application Tracking Enhancements (PARTIALLY COMPLETE)
+- [ ] Extended Status System (NOT IMPLEMENTED - deferred)
   - [ ] Add status: 'responded', 'interview_scheduled', 'offered'
   - [ ] Update status transition logic
   - [ ] Validate status changes
 
-- [ ] Communication History
-  - [x] GET /api/applications/{id}/timeline (completed)
-  - [ ] Link communications to interviews and follow-ups
-  - [ ] Track last_contact_date automatically
+- [x] Communication History (PARTIALLY COMPLETE)
+  - [x] GET /api/applications/{id}/timeline (completed in Session 1)
+  - [ ] Link communications to interviews and follow-ups (DB schema needed)
+  - [ ] Track last_contact_date automatically (DB schema needed)
 
-- [ ] Response Tracking
-  - [ ] response_received flag
-  - [ ] offer_received flag
-  - [ ] offer_amount field
+- [ ] Response Tracking (NOT IMPLEMENTED - deferred)
+  - [ ] response_received flag (requires DB migration)
+  - [ ] offer_received flag (requires DB migration)
+  - [ ] offer_amount field (requires DB migration)
 
-- [ ] Dashboard Enhancements
-  - [ ] Upcoming interviews widget (next 7 days)
-  - [ ] Follow-up queue counter
-  - [ ] Response rate statistics
-  - [ ] Add new tabs to navigation
+- [x] Dashboard Enhancements (MOSTLY COMPLETE)
+  - [x] Upcoming interviews widget (CalendarTab displays upcoming interviews)
+  - [x] Follow-up queue display (FollowupsTab shows pending follow-ups list)
+  - [ ] Response rate statistics (NOT IMPLEMENTED - deferred)
+  - [x] Add new tabs to navigation (CalendarTab & FollowupsTab added in Session 1)
 
 ### ⏳ Week 3 - Days 4-5: Testing & Documentation
 - [ ] Backend Unit Tests
