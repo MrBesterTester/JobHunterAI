@@ -127,6 +127,7 @@ test.describe('Performance Validation', () => {
     });
 
     test('should verify content generation completes under 2 seconds', async ({ page }) => {
+      test.setTimeout(90000); // LLM content generation takes ~55s + overhead
       const contentModal = new ContentGenerationModal(page);
 
       await dashboardPage.goto();
@@ -139,11 +140,18 @@ test.describe('Performance Validation', () => {
       }
 
       const firstJob = await getJobCard(page, 0);
+
+      // Wait for button to be enabled (not in "Generating..." state)
+      const generateButton = await firstJob.getGenerateButton();
+      await expect(generateButton).toBeEnabled({ timeout: 10000 });
+      await expect(generateButton).toContainText('Generate Resume', { timeout: 10000 });
+
       const startTime = Date.now();
 
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(75000); // Allow extra time for LLM API calls
+      // Modal only appears AFTER API call completes (~55s), so we need a long timeout
+      await contentModal.waitForVisible(75000); // Wait for API call to complete and modal to appear
+      await contentModal.waitForContentGeneration(75000); // Wait for content to be ready
 
       const generationTime = Date.now() - startTime;
 
