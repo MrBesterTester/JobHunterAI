@@ -16,6 +16,7 @@ use std::io::Write;
 // ============================================================================
 
 mod llm;
+mod calendar_auth;
 
 // ============================================================================
 // Debug Logging
@@ -2797,6 +2798,42 @@ async fn handle_gmail_oauth_callback(
     Ok(HttpResponse::Ok().json(serde_json::json!({
         "message": "Gmail integration configured successfully",
         "expires_at": expires_at
+    })))
+}
+
+// ============================================================================
+// Phase 2.4: Google Calendar OAuth Integration
+// ============================================================================
+
+async fn get_calendar_oauth_url(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    let calendar_auth = calendar_auth::CalendarAuth::from_env(pool.get_ref().clone())
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Calendar auth initialization failed: {}", e)))?;
+
+    let auth_url = calendar_auth.get_authorization_url()
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to generate auth URL: {}", e)))?;
+
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "auth_url": auth_url
+    })))
+}
+
+async fn handle_calendar_oauth_callback(
+    pool: web::Data<PgPool>,
+    query: web::Query<std::collections::HashMap<String, String>>
+) -> Result<HttpResponse> {
+    let code = query.get("code")
+        .ok_or_else(|| actix_web::error::ErrorBadRequest("Missing authorization code"))?
+        .to_string();
+
+    let calendar_auth = calendar_auth::CalendarAuth::from_env(pool.get_ref().clone())
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Calendar auth initialization failed: {}", e)))?;
+
+    let stored_token = calendar_auth.exchange_code(code).await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Token exchange failed: {}", e)))?;
+
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "message": "Google Calendar integration configured successfully",
+        "expires_at": stored_token.expires_at
     })))
 }
 
@@ -6466,6 +6503,8 @@ async fn main() -> std::io::Result<()> {
             // Phase 4: Automated Job Intake APIs
             .route("/api/auth/gmail/url", web::get().to(get_gmail_oauth_url))
             .route("/auth/gmail/callback", web::get().to(handle_gmail_oauth_callback))
+            .route("/api/auth/calendar/url", web::get().to(get_calendar_oauth_url))
+            .route("/auth/calendar/callback", web::get().to(handle_calendar_oauth_callback))
             .route("/api/intake/gmail/sync", web::post().to(sync_gmail_jobs))
             .route("/api/intake/rapidapi/sync", web::post().to(sync_jsearch_jobs))
             .route("/api/intake/linkedin/sync", web::post().to(sync_linkedin_jobs))
