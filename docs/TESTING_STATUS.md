@@ -21,7 +21,7 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-**Last Updated**: 2025-10-31 12:45 AM
+**Last Updated**: 2025-10-31 1:00 AM
 
 **Purpose**: Current testing status and open issues requiring attention.
 
@@ -70,9 +70,15 @@
 - **Fix**: Changed button visibility condition from `(status === 'new' || status === 'filtered')` to `(status === 'new')`
 - **Results**: Test passing in 6.3s
 
-**3. Accessibility** (1 test, 1-2 hours)
-- Focus trap in modal when open
-- Enhancement for keyboard-only users
+**3. Accessibility** ✅ COMPLETED (2025-10-31 1:00 AM)
+- **Issue**: Focus trap not working in modals
+- **Root Cause**: Conflicting effect was blurring all buttons on focus
+- **Implementation**:
+  - Added focus trap to JobDetails modal at `frontend/src/App.tsx:381-429`
+  - Added focus trap to Content Generation modal at `frontend/src/App.tsx:1558-1607`
+  - Removed conflicting "preventButtonFocus" effect that was breaking keyboard navigation
+  - Focus now cycles through modal elements with Tab/Shift+Tab
+- **Results**: Test passing in 7.3s, full accessibility suite: 18/18 passed (3 skipped)
 
 **Optional Future Work** (Lower Priority):
 
@@ -141,12 +147,12 @@
 |--------|-------|-------|
 | **Total Tests** | 547 | Full suite (grew from 529) |
 | **Active Tests** | 431 | 116 excluded |
-| **Passed** | 401 (73.3%) | ⬆ Improved from 400 (Filtered jobs display fix) |
-| **Failed** | 30 (5.5%) | ⬇ Down from 31 (1 fewer failure) |
+| **Passed** | 402 (73.5%) | ⬆ Improved from 401 (Accessibility fix) |
+| **Failed** | 29 (5.3%) | ⬇ Down from 30 (1 fewer failure) |
 | **Flaky** | 0 | Previous flaky test now passing |
 | **Skipped** | 116 (21.2%) | Disabled unimplemented features |
 | **Runtime** | ~13 min | Performance tests now passing |
-| **Core Workflows** | ~145/153 (94.8%) | ✅ All critical paths passing |
+| **Core Workflows** | ~146/153 (95.4%) | ✅ All critical paths passing |
 
 **E2E Test Categories**:
 - Core Workflows: ~91.5% pass rate (primary focus)
@@ -155,6 +161,7 @@
 - Excluded Tests: 108 total (disabled unimplemented features)
 
 **Recent Changes (2025-10-30/31)**:
+- **✅ Accessibility Fixed**: Focus trap in modals (1 test, 2025-10-31 1:00 AM)
 - **✅ Filtered Jobs Display Fixed**: Approve/reject button visibility (1 test, 2025-10-31 early morning)
 - **✅ Performance Tests Fixed**: Content generation modal visibility (1 test, 2025-10-30 late evening)
 - **✅ Statistics/Criteria API Fixed**: Database min_salary corrected (2 tests, 2025-10-30 evening, 100000→130000)
@@ -167,7 +174,10 @@
 
 ## Open Issues
 
-**Status**: ⚠️ 2 open bugs (30 failing tests, down from 31)
+**Status**: ⚠️ 2 open bugs (29 failing tests, down from 30)
+
+**Fixed (2025-10-31 1:00 AM)**:
+- **Accessibility** ✅ FIXED: Focus trap in modals (1 test) - Removed conflicting button blur effect, added focus cycle logic
 
 **Fixed (2025-10-31 Early Morning)**:
 - **Filtered Jobs Display** ✅ FIXED: Approve/reject button visibility (1 test) - Fixed conditional logic to only show buttons for 'new' jobs
@@ -186,14 +196,14 @@
 3. **BUG-0007**: Refresh descriptions button not working (6 tests) - Tests disabled until feature implemented
 4. **BUG-0008**: E2E tests for unimplemented Phase 5 features (15 tests) - Tests disabled
 
-**Remaining Failures** (30 tests still failing):
-- Accessibility (1 test) - Focus trap enhancement
+**Remaining Failures** (29 tests still failing):
 - Phase 5 features (13 tests) - Calendar, Follow-ups, Timeline, Intake (not implemented)
 - Other (16 tests) - Requires investigation
 
 **See**: `bugs/open/` for detailed bug reports
 
 **Recently Resolved**:
+- **Accessibility** (2025-10-31 1:00 AM): Focus trap in modals - Removed conflicting "preventButtonFocus" effect at `App.tsx:382-398` that was blurring buttons, added focus trap logic to both JobDetails and Content Generation modals (test passing in 7.3s)
 - **Filtered Jobs Display** (2025-10-31 Early Morning): Approve/reject button visibility - Fixed conditional logic at `App.tsx:783` and `2201` to only show buttons for 'new' jobs, not 'filtered' jobs (business logic: filtered jobs are already system-rejected)
 - **Performance Tests** (2025-10-30 Late Evening): Content generation modal visibility - Fixed async timing and timeout issues (test now passing in 36.1s)
 - **Statistics/Criteria API** (2025-10-30 Evening): Database configuration - Fixed min_salary value (100000→130000)
@@ -270,6 +280,11 @@
 - ✅ Statistics/Criteria API: Database min_salary fix (2 tests, evening)
 - ✅ Performance Tests: Content generation modal fix (1 test, late evening)
 - E2E metrics: 73.1% pass rate (400/547), 94.1% core workflows
+
+**October 31**: Accessibility improvements
+- ✅ Filtered Jobs Display: Button visibility fix (1 test, early morning)
+- ✅ Accessibility: Focus trap implementation (1 test, 1:00 AM)
+- E2E metrics: 73.5% pass rate (402/547), 95.4% core workflows
 
 ---
 

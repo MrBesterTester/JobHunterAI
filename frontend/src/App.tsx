@@ -341,6 +341,9 @@ const JobDetails: React.FC<{
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   const savedScrollPosition = React.useRef<number>(0);
 
+  // Ref for focus trap
+  const modalRef = React.useRef<HTMLDivElement>(null);
+
   // State for email body
   const [emailBody, setEmailBody] = React.useState<{
     body_text: string | null;
@@ -375,22 +378,52 @@ const JobDetails: React.FC<{
     };
   }, []);
 
-  // Prevent buttons from receiving focus and triggering auto-scroll
+  // Focus trap for accessibility
   React.useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
+    const modal = modalRef.current;
+    if (!modal) return;
 
-    const preventButtonFocus = (e: FocusEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'BUTTON') {
-        // Blur the button immediately to prevent scroll-into-view
-        target.blur();
+    // Get all focusable elements
+    const getFocusableElements = (): HTMLElement[] => {
+      const selectors = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+      return Array.from(modal.querySelectorAll(selectors)) as HTMLElement[];
+    };
+
+    // Focus first element when modal opens
+    const focusableElements = getFocusableElements();
+    if (focusableElements.length > 0) {
+      focusableElements[0].focus();
+    }
+
+    // Handle keyboard events for focus trap
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+
+      const focusableElements = getFocusableElements();
+      if (focusableElements.length === 0) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement as HTMLElement;
+
+      if (e.shiftKey) {
+        // Shift+Tab: if on first element, wrap to last
+        if (activeElement === firstElement) {
+          e.preventDefault();
+          lastElement.focus();
+        }
+      } else {
+        // Tab: if on last element, wrap to first
+        if (activeElement === lastElement) {
+          e.preventDefault();
+          firstElement.focus();
+        }
       }
     };
 
-    container.addEventListener('focus', preventButtonFocus, true);
+    modal.addEventListener('keydown', handleKeyDown);
     return () => {
-      container.removeEventListener('focus', preventButtonFocus, true);
+      modal.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
 
@@ -425,6 +458,7 @@ const JobDetails: React.FC<{
       onClick={onClose}
     >
       <div
+        ref={modalRef}
         role="dialog"
         style={{
           backgroundColor: 'white',
@@ -924,6 +958,9 @@ const JobHunterDashboard: React.FC = () => {
 
   // Ref to track setTimeout for cleanup (ISSUE-021 Option iii)
   const downloadTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  // Ref for content generation modal focus trap
+  const contentModalRef = React.useRef<HTMLDivElement>(null);
 
   const fetchJobs = async (): Promise<void> => {
     try {
@@ -1498,6 +1535,57 @@ const JobHunterDashboard: React.FC = () => {
       }
     };
   }, []);
+
+  // Focus trap for content generation modal
+  useEffect(() => {
+    if (!showContentGeneration) return;
+
+    const modal = contentModalRef.current;
+    if (!modal) return;
+
+    // Get all focusable elements
+    const getFocusableElements = (): HTMLElement[] => {
+      const selectors = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+      return Array.from(modal.querySelectorAll(selectors)) as HTMLElement[];
+    };
+
+    // Focus first element when modal opens
+    const focusableElements = getFocusableElements();
+    if (focusableElements.length > 0) {
+      focusableElements[0].focus();
+    }
+
+    // Handle keyboard events for focus trap
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+
+      const focusableElements = getFocusableElements();
+      if (focusableElements.length === 0) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement as HTMLElement;
+
+      if (e.shiftKey) {
+        // Shift+Tab: if on first element, wrap to last
+        if (activeElement === firstElement) {
+          e.preventDefault();
+          lastElement.focus();
+        }
+      } else {
+        // Tab: if on last element, wrap to first
+        if (activeElement === lastElement) {
+          e.preventDefault();
+          firstElement.focus();
+        }
+      }
+    };
+
+    modal.addEventListener('keydown', handleKeyDown);
+    return () => {
+      modal.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showContentGeneration]);
 
   const meetsMinSalary = (job: Job): boolean => job.salary ? job.salary >= 130000 : false;
   const isRemote = (job: Job): boolean => job.location?.toLowerCase().includes('remote') || false;
@@ -2658,6 +2746,7 @@ const JobHunterDashboard: React.FC = () => {
           onClick={() => setShowContentGeneration(false)}
         >
           <div
+            ref={contentModalRef}
             role="dialog"
             data-testid="content-generation-modal"
             style={{
