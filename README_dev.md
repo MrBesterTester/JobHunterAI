@@ -52,6 +52,7 @@
   - [Configuration, Setups and Development Helper Scripts](#configuration-setups-and-development-helper-scripts)
     - [Database Configuration](#database-configuration)
     - [Gmail Integration Setup](#gmail-integration-setup)
+    - [Google Calendar Integration Setup (Phase 2.4)](#google-calendar-integration-setup-phase-24)
     - [Claude Code Notification Setup](#claude-code-notification-setup)
     - [Quick Start: Database Setup](#quick-start-database-setup)
     - [Understanding Your Workflow: Setup vs. Daily Use](#understanding-your-workflow-setup-vs-daily-use)
@@ -1453,6 +1454,109 @@ GMAIL_REDIRECT_URI=http://localhost:8080/auth/gmail/callback
 - **OAuth error in popup** - Verify redirect URI matches exactly: `http://localhost:8080/auth/gmail/callback`
 - **"Unauthorized"** - Make sure your Gmail address is added as a test user in the OAuth consent screen
 - **Still not working** - Check backend logs for detailed error messages
+
+### Google Calendar Integration Setup (Phase 2.4)
+
+To use the Google Calendar integration for interview scheduling (Phase 2.4), you need to set up OAuth credentials. This can **reuse your existing Gmail OAuth credentials** or use separate Calendar-specific credentials.
+
+**Status**: ✅ OAuth infrastructure complete, Calendar Service pending implementation
+
+**Option 1: Reuse Gmail Credentials (Easiest)**
+
+If you already have Gmail OAuth set up, you can reuse those credentials - no additional setup required! The Calendar integration will automatically fall back to `GMAIL_CLIENT_ID` and `GMAIL_CLIENT_SECRET`.
+
+Just ensure Calendar API access:
+1. Go to [Google Cloud Console](https://console.cloud.google.com/) → Your Project
+2. Navigate to "APIs & Services" → "Library"
+3. Search for "Google Calendar API" and click "Enable"
+4. Update OAuth scopes (if needed):
+   - Go to "OAuth consent screen" → "EDIT APP" → "Scopes"
+   - Click "ADD OR REMOVE SCOPES"
+   - Add these Calendar scopes:
+     - `https://www.googleapis.com/auth/calendar` - Read/write calendar events
+     - `https://www.googleapis.com/auth/calendar.events` - Manage calendar events
+   - Click "UPDATE" and "SAVE AND CONTINUE"
+
+**Option 2: Separate Calendar Credentials (Optional)**
+
+If you prefer dedicated Calendar credentials:
+
+**1. Enable Google Calendar API:**
+- In your Google Cloud project, go to "APIs & Services" → "Library"
+- Search for "Google Calendar API"
+- Click "Enable"
+
+**2. Create OAuth 2.0 Credentials** (or update existing):
+- Go to "APIs & Services" → "Credentials"
+- Click "Create Credentials" → "OAuth client ID"
+- Application type: "Web application"
+- Name: "JobHunter Calendar Integration"
+- Authorized redirect URIs: `http://localhost:8080/auth/calendar/callback`
+- Click "Create" and copy the Client ID and Client Secret
+
+**3. Update `.env` file:**
+```bash
+# Edit backend/.env and add Calendar-specific credentials:
+GOOGLE_CALENDAR_CLIENT_ID=your-calendar-client-id.apps.googleusercontent.com
+GOOGLE_CALENDAR_CLIENT_SECRET=your-calendar-client-secret
+GOOGLE_CALENDAR_REDIRECT_URI=http://localhost:8080/auth/calendar/callback
+
+# OR reuse Gmail credentials (automatic fallback):
+# (No changes needed if GMAIL_CLIENT_ID/SECRET already set)
+```
+
+**4. Run Database Migration** (if not already done):
+```bash
+psql -U jobhunter_user -d jobhunter_personal -f database/migration_phase5.1.sql
+```
+
+This creates:
+- `interviews` table for storing scheduled interviews
+- `follow_up_schedule` table for automated follow-ups
+- `google_calendar` entry in `job_sources` table for OAuth token storage
+
+**5. Testing OAuth Flow** (when ready):
+```bash
+# 1. Start backend
+cargo run --manifest-path=backend/Cargo.toml
+
+# 2. Test OAuth URL generation
+curl http://localhost:8080/api/auth/calendar/url
+
+# 3. Visit the returned auth_url in your browser
+# 4. Authorize with your Google account
+# 5. You'll be redirected to /auth/calendar/callback
+# 6. Tokens are stored in oauth_credentials table
+```
+
+**6. Verify Setup:**
+```bash
+# Check that google_calendar source exists
+psql -U jobhunter_user -d jobhunter_personal -c \
+  "SELECT source_name, is_active FROM job_sources WHERE source_name = 'google_calendar';"
+
+# Check OAuth tokens were stored (after completing OAuth flow)
+psql -U jobhunter_user -d jobhunter_personal -c \
+  "SELECT c.access_token IS NOT NULL as has_token, c.token_expires_at
+   FROM oauth_credentials c
+   JOIN job_sources s ON c.source_id = s.source_id
+   WHERE s.source_name = 'google_calendar';"
+```
+
+**API Endpoints:**
+- `GET /api/auth/calendar/url` - Get OAuth authorization URL
+- `GET /auth/calendar/callback` - OAuth callback handler (stores tokens)
+
+**Next Phase 2.4 Features** (pending implementation):
+- Calendar Service module for creating/updating/deleting calendar events
+- Interview scheduling from Applications tab
+- Email follow-up system integration
+
+**Troubleshooting:**
+- **"google_calendar source not found"** - Run `migration_phase5.1.sql`
+- **OAuth errors** - Verify redirect URI: `http://localhost:8080/auth/calendar/callback`
+- **Token refresh issues** - Check that Calendar API is enabled in Google Cloud Console
+- **Reusing Gmail creds not working** - Ensure Gmail credentials include Calendar scopes
 
 ### Claude Code Notification Setup
 

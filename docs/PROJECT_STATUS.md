@@ -25,7 +25,7 @@
 
 # JobHunter Project Status
 
-**Last Updated**: 2025-10-31 09:52:20 PDT (Bug counts corrected, BUG-0004 moved to fixed, BUG-0007 & BUG-0008 added with phase references)
+**Last Updated**: 2025-10-31 10:24:59 PDT (Phase 2.4: Google Calendar OAuth infrastructure complete, ~65% done, calendar_auth module implemented)
 
 ---
 
@@ -142,7 +142,7 @@ All Phase 2 sub-phase documentation includes complete implementation details, te
 
 | Sub-Phase | Title | Status | Progress | Completion | Doc |
 |-----------|-------|--------|----------|------------|-----|
-| 2.4 | Calendar & Follow-ups | 🔄 In Progress | ~60% | Est. 2-3 weeks | [PHASE_2.4](PHASE_2.4_calendar-follow-ups.md) |
+| 2.4 | Calendar & Follow-ups | 🔄 In Progress | ~65% | Est. 2 weeks | [PHASE_2.4](PHASE_2.4_calendar-follow-ups.md) |
 | 2.5 | Email Composition & Sending | 📋 Planning | 0% | Est. 2-3 days | [PHASE_2.5](PHASE_2.5_email-composition.md) |
 | 2.6 | LLM Job Extraction | ✅ Complete | 100% | 2025-10-11 to 2025-10-14 | [PHASE_2.6](PHASE_2.6_llm-job-extraction.md) |
 | 2.7 | Microsoft Email Source | 📋 Planning | 0% | Pending ISSUE-007 | [PHASE_2.7](PHASE_2.7_samkirk-email-source-plan.md) |
@@ -151,8 +151,14 @@ All Phase 2 sub-phase documentation includes complete implementation details, te
 - ✅ Database schema migration applied
 - ✅ Backend API endpoints implemented
 - ✅ Frontend components (CalendarTab, FollowupsTab, TimelineView)
-- 🔄 Google Calendar OAuth integration (in progress)
-- ⏸️ Email follow-up system (pending)
+- ✅ Google Calendar OAuth integration **COMPLETE** (2025-10-31)
+  - `backend/src/calendar_auth.rs` module (373 lines)
+  - OAuth 2.0 flow with token exchange and refresh
+  - API endpoints: `/api/auth/calendar/url`, `/auth/calendar/callback`
+  - Token storage in `oauth_credentials` table
+  - Falls back to Gmail OAuth credentials if calendar-specific not set
+- ⏸️ Calendar Service module (pending - create/update/delete events)
+- ⏸️ Email follow-up system (pending - Gmail send integration)
 - ⚠️ **Open Issues**:
   - [BUG-0007](../bugs/open/BUG-0007-refresh-descriptions-button-not-working.md): Refresh Descriptions button not functional (close when feature implemented)
   - [BUG-0008](../bugs/open/BUG-0008-e2e-tests-for-unimplemented-phase-5-features.md): E2E tests written for Calendar/Follow-ups (re-enable when features complete)
@@ -368,10 +374,23 @@ All Phase 2 sub-phase documentation includes complete implementation details, te
 
 ---
 
-**Last Updated**: 2025-10-31 09:52:20 PDT
-**Based on**: Bug index synchronization, BUG-0004 fixed status, phase-bug dependency tracking, Next Steps repositioned
+**Last Updated**: 2025-10-31 10:24:59 PDT
+**Based on**: Phase 2.4 Google Calendar OAuth infrastructure complete
 **Manual Updates**: This is a manually maintained document - update as needed
 **Major Updates**:
+- **2025-10-31 10:24:59 PDT**: ✅ **PHASE 2.4: GOOGLE CALENDAR OAUTH COMPLETE**
+  - **OAuth infrastructure implemented**: `backend/src/calendar_auth.rs` module (373 lines)
+  - **OAuth endpoints added**: `/api/auth/calendar/url`, `/auth/calendar/callback`
+  - **Features**:
+    - OAuth 2.0 flow with authorization code exchange
+    - Automatic token refresh with 5-minute expiry buffer
+    - Token storage in `oauth_credentials` table via `job_sources`
+    - Falls back to Gmail OAuth credentials if calendar-specific not set
+    - Direct REST API approach (provides access token for calendar operations)
+  - **Documentation**: Setup guide added to README_dev.md (Google Calendar Integration Setup)
+  - **Phase 2.4 progress**: 60% → 65% complete
+  - **Next**: Calendar Service module for event CRUD operations
+  - **Git commit**: `e1fc9e4` - "feat: Implement Google Calendar OAuth integration for Phase 2.4"
 - **2025-10-31 09:52:20 PDT**: ✅ **BUG TRACKING SYNCHRONIZED & PHASE DEPENDENCIES ADDED**
   - **Bug counts corrected**: 31 → 36 total bugs (4 open, 4 mitigated, 28 fixed)
   - **BUG-0004 moved to fixed**: "All" tab E2E tests now passing (fixed 2025-10-30)
