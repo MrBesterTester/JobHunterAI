@@ -90,11 +90,6 @@ Phase 2.4 backend is 85% complete with Calendar Service and Email Follow-up Syst
 1. **Finish Phase 2.4** (Calendar & Follow-ups) - Currently 85% done
    - Testing & validation (3-5 days)
    - Delivers complete interview/follow-up management feature
-   - **Major accomplishments**:
-     - Google Calendar integration with OAuth
-     - Interview events automatically created/updated/deleted
-     - Follow-up emails sent via Gmail with template rendering
-     - Full workflow from application → interview → follow-up
 
 2. **Start Phase 2.5** (Email Composition) - 2-3 days
    - Note: Gmail draft creation already implemented
