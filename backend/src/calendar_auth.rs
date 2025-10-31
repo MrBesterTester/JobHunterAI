@@ -1,4 +1,3 @@
-use reqwest;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use thiserror::Error;
@@ -17,6 +16,7 @@ pub enum CalendarAuthError {
     DatabaseError(#[from] sqlx::Error),
 
     #[error("HTTP error: {0}")]
+    #[allow(dead_code)]
     HttpError(String),
 
     #[error("Token not found")]
@@ -304,11 +304,13 @@ impl CalendarAuth {
     //     .await?;
 
     /// Check if user has authorized calendar access
+    #[allow(dead_code)]
     pub async fn is_authorized(&self) -> bool {
         self.get_stored_token().await.is_ok()
     }
 
     /// Revoke authorization (delete stored tokens)
+    #[allow(dead_code)]
     pub async fn revoke_authorization(&self) -> Result<()> {
         let source_id = self.get_calendar_source_id().await?;
 

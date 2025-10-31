@@ -1020,7 +1020,7 @@ fn calculate_domain_fit_score(job: &Job) -> Option<f64> {
         score -= 20.0;
     }
 
-    Some(score.max(0.0).min(100.0))
+    Some(score.clamp(0.0, 100.0))
 }
 
 /// Calculate flexibility & perks score (0-100)
@@ -1064,12 +1064,10 @@ fn calculate_flexibility_score(job: &Job) -> Option<f64> {
         }
     }
 
-    if score == 0.0 {
-        if raw_data.get("employment")
+    if score == 0.0 && raw_data.get("employment")
             .and_then(|e| e.get("benefits"))
             .is_some() {
-            score = 20.0; // Standard benefits
-        }
+        score = 20.0; // Standard benefits
     }
 
     Some(score)
@@ -1433,28 +1431,28 @@ fn extract_relevant_resume_sections(master_resume: &str, job: &Job) -> String {
 
 fn highlight_testing_experience(resume: String) -> String {
     // Move testing-related experience to the front and emphasize
-    let highlighted = resume.replace("Test Automation", "**Test Automation**")
+    
+    resume.replace("Test Automation", "**Test Automation**")
         .replace("Quality Engineering", "**Quality Engineering**")
         .replace("testing frameworks", "**testing frameworks**")
-        .replace("CI/CD", "**CI/CD**");
-    highlighted
+        .replace("CI/CD", "**CI/CD**")
 }
 
 fn highlight_ai_experience(resume: String) -> String {
-    let highlighted = resume.replace("AI-powered", "**AI-powered**")
+    
+    resume.replace("AI-powered", "**AI-powered**")
         .replace("LLM", "**LLM**")
         .replace("Generative AI", "**Generative AI**")
         .replace("Prompt Engineering", "**Prompt Engineering**")
-        .replace("OpenAI", "**OpenAI**");
-    highlighted
+        .replace("OpenAI", "**OpenAI**")
 }
 
 fn highlight_firmware_experience(resume: String) -> String {
-    let highlighted = resume.replace("firmware", "**firmware**")
+    
+    resume.replace("firmware", "**firmware**")
         .replace("hardware", "**hardware**")
         .replace("embedded", "**embedded**")
-        .replace("validation", "**validation**");
-    highlighted
+        .replace("validation", "**validation**")
 }
 
 fn build_content_context(job: &Job) -> ContentContext {
@@ -1579,10 +1577,7 @@ fn generate_personalized_opening(job: &Job) -> String {
 // LLM-Based Content Generation
 // ============================================================================
 
-use llm::{
-    load_prompt_template, build_prompt, extract_primary_domain,
-    extract_technologies, extract_seniority, AnthropicClient,
-};
+use llm::AnthropicClient;
 use std::collections::HashMap;
 
 /// Generate content for job using LLM (NEW implementation)
@@ -1729,7 +1724,7 @@ async fn get_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     )
     .fetch_all(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().json(jobs))
 }
@@ -1744,7 +1739,7 @@ async fn get_job(
     .bind(*job_id)
     .fetch_optional(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     match job {
         Some(job) => Ok(HttpResponse::Ok().json(job)),
@@ -1803,7 +1798,7 @@ async fn create_job(
     .bind(&filter_reason)
     .fetch_one(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     // Create deduplication entry if job was created successfully
     if let Err(e) = create_deduplication_entry(job_id, &job_req, pool.get_ref()).await {
@@ -1826,7 +1821,7 @@ async fn update_job_status(
     .bind(*job_id)
     .fetch_optional(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     match job {
         Some(job) => Ok(HttpResponse::Ok().json(job)),
@@ -1844,7 +1839,7 @@ async fn get_jobs_by_status(
     .bind(status.as_str())
     .fetch_all(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().json(jobs))
 }
@@ -1873,7 +1868,7 @@ async fn create_application(
     .bind(&app_req.cover_letter_version)
     .fetch_one(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Created().json(application))
 }
@@ -1884,7 +1879,7 @@ async fn get_applications(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     )
     .fetch_all(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().json(applications))
 }
@@ -1899,7 +1894,7 @@ async fn get_criteria(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     )
     .fetch_optional(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     match criteria {
         Some(criteria) => Ok(HttpResponse::Ok().json(criteria)),
@@ -1929,7 +1924,7 @@ async fn update_criteria(
     .bind(&criteria_req.remote_preference)
     .fetch_one(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().json(criteria))
 }
@@ -1944,7 +1939,7 @@ async fn get_filtered_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     )
     .fetch_all(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().json(jobs))
 }
@@ -2027,7 +2022,7 @@ async fn get_ranked_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     )
     .fetch_all(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().json(jobs))
 }
@@ -2039,7 +2034,7 @@ async fn get_job_score_handler(
 ) -> Result<HttpResponse> {
     let score = get_job_score(pool.get_ref(), *job_id)
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
     match score {
         Some(s) => Ok(HttpResponse::Ok().json(s)),
@@ -2053,7 +2048,7 @@ async fn get_job_score_handler(
 async fn get_scoring_criteria_handler(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     let criteria = get_scoring_criteria(pool.get_ref())
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().json(criteria))
 }
@@ -2085,7 +2080,7 @@ async fn update_scoring_criteria_handler(
         .bind(criterion.criteria_id)
         .execute(pool.get_ref())
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+        .map_err(actix_web::error::ErrorInternalServerError)?;
     }
 
     Ok(HttpResponse::Ok().json(serde_json::json!({"success": true})))
@@ -2103,7 +2098,7 @@ async fn get_job_stats(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     )
     .fetch_all(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     let mut stats_map: std::collections::HashMap<String, i64> = stats
         .into_iter()
@@ -2145,7 +2140,7 @@ async fn get_job_stats(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     )
     .fetch_one(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     stats_map.insert("failed".to_string(), email_stats.total_failed.unwrap_or(0));
     stats_map.insert("duplicated".to_string(), email_stats.total_duplicated.unwrap_or(0));
@@ -2182,7 +2177,7 @@ async fn get_resumes(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     )
     .fetch_all(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().json(resumes))
 }
@@ -2207,7 +2202,7 @@ async fn create_resume(
         sqlx::query!("UPDATE resume_versions SET is_master = false WHERE is_master = true")
             .execute(pool.get_ref())
             .await
-            .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+            .map_err(actix_web::error::ErrorInternalServerError)?;
     }
 
     let resume = sqlx::query_as::<_, ResumeVersion>(
@@ -2219,7 +2214,7 @@ async fn create_resume(
     .bind(is_master)
     .fetch_one(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Created().json(resume))
 }
@@ -2234,7 +2229,7 @@ async fn set_master_resume(
     sqlx::query!("UPDATE resume_versions SET is_master = false WHERE is_master = true")
         .execute(pool.get_ref())
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
     // Set this resume as master
     let resume = sqlx::query_as::<_, ResumeVersion>(
@@ -2243,7 +2238,7 @@ async fn set_master_resume(
     .bind(version_id)
     .fetch_one(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().json(resume))
 }
@@ -2261,7 +2256,7 @@ async fn delete_resume(
     .bind(version_id)
     .fetch_optional(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     if is_master == Some(true) {
         return Err(actix_web::error::ErrorBadRequest("Cannot delete master resume. Set another resume as master first."));
@@ -2270,7 +2265,7 @@ async fn delete_resume(
     sqlx::query!("DELETE FROM resume_versions WHERE version_id = $1", version_id)
         .execute(pool.get_ref())
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::NoContent().finish())
 }
@@ -2287,7 +2282,7 @@ async fn load_master_resume_from_file(pool: web::Data<PgPool>) -> Result<HttpRes
     sqlx::query!("UPDATE resume_versions SET is_master = false WHERE is_master = true")
         .execute(pool.get_ref())
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
     // Check if a master resume already exists with this content
     let existing = sqlx::query_scalar::<_, Uuid>(
@@ -2296,7 +2291,7 @@ async fn load_master_resume_from_file(pool: web::Data<PgPool>) -> Result<HttpRes
     .bind(&content)
     .fetch_optional(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     let resume = if let Some(existing_id) = existing {
         // Update existing resume to be master
@@ -2306,7 +2301,7 @@ async fn load_master_resume_from_file(pool: web::Data<PgPool>) -> Result<HttpRes
         .bind(existing_id)
         .fetch_one(pool.get_ref())
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?
+        .map_err(actix_web::error::ErrorInternalServerError)?
     } else {
         // Create new master resume
         let version_name = format!("master_v{}", chrono::Utc::now().format("%Y%m%d_%H%M%S"));
@@ -2318,7 +2313,7 @@ async fn load_master_resume_from_file(pool: web::Data<PgPool>) -> Result<HttpRes
         .bind(file_path)
         .fetch_one(pool.get_ref())
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?
+        .map_err(actix_web::error::ErrorInternalServerError)?
     };
 
     Ok(HttpResponse::Ok().json(resume))
@@ -2330,7 +2325,7 @@ async fn get_cover_letter_templates_handler(pool: web::Data<PgPool>) -> Result<H
     )
     .fetch_all(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().json(templates))
 }
@@ -2357,7 +2352,7 @@ async fn generate_content_handler(
     .bind(job_id)
     .fetch_optional(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     // Create application if it doesn't exist
     let application_id = if let Some(app) = existing_application {
@@ -2423,7 +2418,7 @@ async fn generate_content_with_options_handler(
     .bind(job_id)
     .fetch_optional(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     // Create application if it doesn't exist
     let application_id = if let Some(app) = existing_application {
@@ -2674,7 +2669,7 @@ async fn get_job_email_body_handler(
     )
     .fetch_optional(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     match email_job {
         Some(email) => {
@@ -3179,6 +3174,9 @@ async fn process_gmail_messages(
 
     let list_response: GmailListResponse = response.json().await?;
 
+    // Compile regex once outside the loop for efficiency
+    let from_regex = regex::Regex::new(r"(.+?)\s*<(.+?)>").unwrap();
+
     if let Some(messages) = list_response.messages {
         for message_ref in messages.iter().take(50) { // Process up to 50 messages per sync
             metrics.discovered += 1;
@@ -3224,7 +3222,7 @@ async fn process_gmail_messages(
             for header in &message.payload.headers {
                 match header.name.as_str() {
                     "From" => {
-                        if let Some(captures) = regex::Regex::new(r"(.+?)\s*<(.+?)>").unwrap().captures(&header.value) {
+                        if let Some(captures) = from_regex.captures(&header.value) {
                             sender_name = Some(captures.get(1).unwrap().as_str().trim().to_string());
                             sender_email = captures.get(2).unwrap().as_str().to_string();
                         } else {
@@ -3238,7 +3236,7 @@ async fn process_gmail_messages(
 
             let received_date = chrono::DateTime::from_timestamp_millis(
                 message.internal_date.parse::<i64>().unwrap_or(0)
-            ).unwrap_or_else(|| chrono::Utc::now());
+            ).unwrap_or_else(chrono::Utc::now);
 
             // Extract email body
             let body_text = extract_email_body(&message.payload);
@@ -3463,7 +3461,7 @@ async fn fetch_jsearch_jobs_rapidapi(
         query, num_pages, page, date_posted, remote_jobs_only));
 
     let response = client
-        .get(&format!("https://{}/search", api_host))
+        .get(format!("https://{}/search", api_host))
         .header("X-RapidAPI-Key", api_key)
         .header("X-RapidAPI-Host", api_host)
         .query(&[
@@ -4266,9 +4264,7 @@ async fn create_job_from_extraction(
     // Generate better fallback title from description if available
     let fallback_title = if let Some(desc) = &extraction.description {
         // Try to extract first meaningful line from description as title
-        desc.lines()
-            .filter(|line| !line.trim().is_empty())
-            .next()
+        desc.lines().find(|line| !line.trim().is_empty())
             .map(|line| {
                 // Truncate to reasonable title length
                 let trimmed = line.trim();
@@ -4332,9 +4328,7 @@ async fn create_job_internal(
     let job_id = Uuid::new_v4();
 
     // Apply filtering
-    let filter_result = match filter_job(job_req, pool).await {
-        result => result,
-    };
+    let filter_result = filter_job(job_req, pool).await;
 
     // Check for duplicates
     if let Ok(Some(existing_job_id)) = check_duplicate(job_req, pool).await {
@@ -4385,7 +4379,7 @@ async fn get_job_sources(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     )
     .fetch_all(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     // Convert to JSON with has_credentials field
     let result: Vec<serde_json::Value> = sources_with_creds.iter().map(|row| {
@@ -4411,7 +4405,7 @@ async fn get_intake_logs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     )
     .fetch_all(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().json(logs))
 }
@@ -4445,7 +4439,7 @@ async fn get_ignored_emails(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     )
     .fetch_all(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     let result: Vec<serde_json::Value> = ignored.iter().map(|row| {
         serde_json::json!({
@@ -4489,7 +4483,7 @@ async fn get_failed_emails(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     )
     .fetch_all(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     let result: Vec<serde_json::Value> = failed.iter().map(|row| {
         serde_json::json!({
@@ -4539,7 +4533,7 @@ async fn get_duplicate_emails(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     )
     .fetch_all(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     let result: Vec<serde_json::Value> = duplicates.iter().map(|row| {
         serde_json::json!({
@@ -5236,13 +5230,11 @@ async fn process_linkedin_jobs(
     let salary = config["search_params"]["salary"].as_i64().unwrap_or(130000);
 
     // Build search query (this would need LinkedIn API key and proper authentication)
-    let _search_params = vec![
-        ("keywords", "software test automation qa engineer"),
+    let _search_params = [("keywords", "software test automation qa engineer"),
         ("location", _location),
         ("sortBy", "DD"), // Date descending
         ("start", "0"),
-        ("count", "50"),
-    ];
+        ("count", "50")];
 
     // For now, simulate LinkedIn API response with mock data
     // In real implementation, this would make actual LinkedIn API calls
@@ -5629,7 +5621,7 @@ async fn get_job_intake_summary(pool: web::Data<PgPool>) -> Result<HttpResponse>
     )
     .fetch_all(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     // Convert to a serializable format
     let summary = summary_data.into_iter().map(|record| {
@@ -5671,9 +5663,9 @@ async fn create_interview(
         RETURNING *
         "#
     )
-    .bind(&request.application_id)
+    .bind(request.application_id)
     .bind(&request.interview_type)
-    .bind(&request.scheduled_date)
+    .bind(request.scheduled_date)
     .bind(duration)
     .bind(&request.location)
     .bind(&request.interviewer_name)
@@ -5682,7 +5674,7 @@ async fn create_interview(
     .bind(&request.notes)
     .fetch_one(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     // Attempt to create Google Calendar event (optional - fail gracefully)
     // Get job information for the calendar event
@@ -5793,7 +5785,7 @@ async fn get_upcoming_interviews(pool: web::Data<PgPool>) -> Result<HttpResponse
     )
     .fetch_all(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().json(interviews))
 }
@@ -5810,7 +5802,7 @@ async fn get_interview(
     .bind(interview_id)
     .fetch_optional(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     match interview {
         Some(i) => Ok(HttpResponse::Ok().json(i)),
@@ -5835,7 +5827,7 @@ async fn update_interview(
     .bind(interview_id)
     .fetch_optional(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     let existing_interview = match existing_interview {
         Some(i) => i,
@@ -5856,7 +5848,7 @@ async fn update_interview(
         "#
     )
     .bind(&request.interview_type)
-    .bind(&request.scheduled_date)
+    .bind(request.scheduled_date)
     .bind(duration)
     .bind(&request.location)
     .bind(&request.interviewer_name)
@@ -5866,7 +5858,7 @@ async fn update_interview(
     .bind(interview_id)
     .fetch_one(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     // If there's a calendar_event_id, update the Google Calendar event
     if let Some(calendar_event_id) = &existing_interview.calendar_event_id {
@@ -5959,7 +5951,7 @@ async fn delete_interview(
     )
     .fetch_optional(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     let interview = match interview {
         Some(i) => i,
@@ -5989,7 +5981,7 @@ async fn delete_interview(
     )
     .execute(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     if result.rows_affected() > 0 {
         Ok(HttpResponse::NoContent().finish())
@@ -6011,9 +6003,9 @@ async fn create_follow_up(
     )
     .fetch_optional(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
-    let date_applied = app.and_then(|a| a.date_applied).unwrap_or_else(|| Utc::now());
+    let date_applied = app.and_then(|a| a.date_applied).unwrap_or_else(Utc::now);
 
     // Calculate default scheduled date (10-14 days after application)
     let scheduled_date = request.scheduled_date.unwrap_or_else(|| {
@@ -6030,7 +6022,7 @@ async fn create_follow_up(
     .bind(template_name)
     .fetch_optional(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     let (subject, body) = if let Some(t) = template {
         (Some(t.subject_template), Some(t.body_template))
@@ -6048,7 +6040,7 @@ async fn create_follow_up(
         RETURNING *
         "#
     )
-    .bind(&request.application_id)
+    .bind(request.application_id)
     .bind(scheduled_date)
     .bind(attempt_number)
     .bind(template_name)
@@ -6056,7 +6048,7 @@ async fn create_follow_up(
     .bind(body)
     .fetch_one(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Created().json(follow_up))
 }
@@ -6081,7 +6073,7 @@ async fn get_pending_follow_ups(pool: web::Data<PgPool>) -> Result<HttpResponse>
     )
     .fetch_all(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     let result = follow_ups.into_iter().map(|f| {
         serde_json::json!({
@@ -6126,7 +6118,7 @@ async fn approve_follow_up(
     .bind(follow_up_id)
     .fetch_optional(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     match follow_up {
         Some(f) => Ok(HttpResponse::Ok().json(f)),
@@ -6149,7 +6141,7 @@ async fn send_follow_up(
     .bind(follow_up_id)
     .fetch_optional(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     let follow_up = match follow_up {
         Some(f) => f,
@@ -6178,7 +6170,7 @@ async fn send_follow_up(
     )
     .fetch_optional(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     let app_job = match app_job {
         Some(aj) => aj,
@@ -6215,7 +6207,7 @@ async fn send_follow_up(
     );
 
     // Determine recipient email - use job URL if available, otherwise require manual input
-    let to_email = if let Some(url) = app_job.url {
+    let to_email = if let Some(_url) = app_job.url {
         // Try to extract email from URL or description
         // For now, we'll need this to be provided in the follow-up approval
         // TODO: Extract recipient email from job posting or require it during approval
@@ -6238,7 +6230,7 @@ async fn send_follow_up(
             )
             .execute(pool.get_ref())
             .await
-            .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+            .map_err(actix_web::error::ErrorInternalServerError)?;
 
             // Record communication (simplified - using available fields only)
             sqlx::query!(
@@ -6296,7 +6288,7 @@ async fn get_application_timeline(
     .bind(application_id)
     .fetch_all(pool.get_ref())
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().json(timeline))
 }
@@ -6641,7 +6633,7 @@ async fn check_draft_status(
     // Try to fetch the draft
     let client = reqwest::Client::new();
     let response = client
-        .get(&format!("https://gmail.googleapis.com/gmail/v1/users/me/drafts/{}", gmail_draft_id))
+        .get(format!("https://gmail.googleapis.com/gmail/v1/users/me/drafts/{}", gmail_draft_id))
         .bearer_auth(&access_token)
         .send()
         .await
@@ -6754,7 +6746,7 @@ async fn delete_draft_handler(
     // Delete draft from Gmail
     let client = reqwest::Client::new();
     let response = client
-        .delete(&format!("https://gmail.googleapis.com/gmail/v1/users/me/drafts/{}", gmail_draft_id))
+        .delete(format!("https://gmail.googleapis.com/gmail/v1/users/me/drafts/{}", gmail_draft_id))
         .bearer_auth(&access_token)
         .send()
         .await

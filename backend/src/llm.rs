@@ -17,6 +17,7 @@ pub enum AnthropicError {
     RateLimitExceeded(Option<Duration>),
 
     #[error("API timeout after {0:?}")]
+    #[allow(dead_code)]
     Timeout(Duration),
 
     #[error("Invalid API response: {0}")]
@@ -55,10 +56,10 @@ struct Message {
 /// Response structure from Anthropic API
 #[derive(Debug, Deserialize)]
 struct MessagesResponse {
-    id: String,
+    _id: String,
     #[serde(rename = "type")]
-    response_type: String,
-    role: String,
+    _response_type: String,
+    _role: String,
     content: Vec<ContentBlock>,
     model: String,
     usage: Usage,
@@ -84,6 +85,7 @@ pub struct Usage {
 pub struct GenerateResponse {
     pub content: String,
     pub usage: Usage,
+    #[allow(dead_code)]
     pub model: String,
 }
 
@@ -158,12 +160,7 @@ impl AnthropicClient {
                 Ok(response) => return Ok(response),
                 Err(e) => {
                     // Check if we should retry
-                    let should_retry = match &e {
-                        AnthropicError::RateLimitExceeded(_) => true,
-                        AnthropicError::NetworkError(_) => true,
-                        AnthropicError::Timeout(_) => true,
-                        _ => false,
-                    };
+                    let should_retry = matches!(&e, AnthropicError::RateLimitExceeded(_) | AnthropicError::NetworkError(_) | AnthropicError::Timeout(_));
 
                     if should_retry && attempt < self.max_retries {
                         // Exponential backoff: 1s, 2s, 4s...

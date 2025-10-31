@@ -1,11 +1,9 @@
 use chrono::{DateTime, Utc};
-use reqwest;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use thiserror::Error;
-use uuid::Uuid;
 
-use crate::calendar_auth::{self, CalendarAuth, CalendarAuthError};
+use crate::calendar_auth::{CalendarAuth, CalendarAuthError};
 
 #[derive(Error, Debug)]
 pub enum CalendarServiceError {
@@ -19,6 +17,7 @@ pub enum CalendarServiceError {
     ApiError { status: u16, message: String },
 
     #[error("Invalid event data: {0}")]
+    #[allow(dead_code)]
     ValidationError(String),
 
     #[error("Event not found: {0}")]
@@ -94,14 +93,22 @@ pub struct ReminderOverride {
 #[derive(Debug, Deserialize)]
 pub struct CalendarEvent {
     pub id: String,
+    #[allow(dead_code)]
     pub summary: String,
+    #[allow(dead_code)]
     pub description: Option<String>,
+    #[allow(dead_code)]
     pub location: Option<String>,
+    #[allow(dead_code)]
     pub start: EventDateTime,
+    #[allow(dead_code)]
     pub end: EventDateTime,
+    #[allow(dead_code)]
     pub attendees: Option<Vec<Attendee>>,
+    #[allow(dead_code)]
     pub status: Option<String>,
     #[serde(rename = "htmlLink")]
+    #[allow(dead_code)]
     pub html_link: Option<String>,
 }
 
@@ -232,6 +239,7 @@ impl CalendarService {
     }
 
     /// List upcoming events from a calendar
+    #[allow(dead_code)]
     pub async fn list_upcoming_events(
         &self,
         calendar_id: &str,
@@ -266,6 +274,7 @@ impl CalendarService {
 
         #[derive(Deserialize)]
         struct EventsList {
+            #[allow(dead_code)]
             items: Vec<CalendarEvent>,
         }
 
@@ -274,6 +283,7 @@ impl CalendarService {
     }
 
     /// Get a specific event by ID
+    #[allow(dead_code)]
     pub async fn get_event(
         &self,
         calendar_id: &str,
