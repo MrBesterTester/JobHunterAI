@@ -78,11 +78,36 @@ Phase 2.4 core implementation is 80% complete with all major backend systems ope
 - ⏸️ **Deferred** (require DB migrations, out of current scope):
   - Extended status system, response tracking, communication linking
 - ⏸️ **Remaining work** (~20%):
-  - Manual testing: Interview scheduling with calendar integration
-  - Manual testing: Follow-up email sending workflow
-  - Backend unit tests (25+ tests for calendar + email functionality)
-  - Frontend E2E tests (20+ tests for CalendarTab + FollowupsTab)
-- **Estimate**: 3-5 days to complete testing & validation
+
+  **Testing & Validation Tasks**:
+  - [ ] **E2E Tests**: Re-enable and run Calendar/Follow-ups/Timeline tests (BUG-0008)
+    - Update `test-config.ts` to enable 3 test suites (60 tests total)
+    - Run E2E suite and document results
+    - Analyze failures: implementation bugs vs. OAuth-dependent vs. test issues
+    - Expected: 40-50 tests pass without OAuth
+    - **Estimate**: 2-4 hours
+
+  - [ ] **Manual OAuth Testing** (requires user assistance):
+    - Google Calendar OAuth flow and event creation
+    - Follow-up email sending via Gmail API
+    - Document OAuth setup and validation results
+    - **Estimate**: 30-45 minutes (one-time setup)
+
+  - [ ] **Backend Unit Tests**: Write tests for Phase 2.4 modules
+    - Calendar OAuth token handling (mock Google responses)
+    - Calendar service CRUD operations (mock API calls)
+    - Email template rendering and variable substitution
+    - Email sending logic (mock Gmail API)
+    - **Target**: 25-30 new backend tests
+    - **Estimate**: 3-4 hours
+
+  - [ ] **Documentation Updates**:
+    - Update TESTING_STATUS.md with Phase 2.4 test results
+    - Update PROJECT_STATUS.md Phase 2.4 completion percentage
+    - Document OAuth setup in README_dev.md (already done)
+    - **Estimate**: 30 minutes
+
+- **Total Estimate**: 6-9 hours (can be completed in 1-2 work sessions)
 
 **Alternative**: **Address Open Bug BUG-0008**
 - BUG-0008: Re-enable Phase 2.4 E2E tests (calendar, follow-ups, timeline)
