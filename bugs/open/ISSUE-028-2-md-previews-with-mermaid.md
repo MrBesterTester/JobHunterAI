@@ -140,14 +140,17 @@ Research findings on how to view multiple markdown preview files simultaneously 
 **Description**: Configure Cursor to open markdown files as previews by default
 
 **Implementation Steps:**
-1. Open Cursor settings (JSON)
+1. Open Cursor settings JSON:
+   - Press `Cmd+Shift+P` (macOS) to open Command Palette
+   - Type "settings json"
+   - Select "Preferences: Open User Settings (JSON)"
 2. Add configuration:
    ```json
    "workbench.editorAssociations": {
        "*.md": "vscode.markdown.preview.editor"
    }
    ```
-3. Save settings
+3. Save settings (`Cmd+S`)
 4. Markdown files will now open as previews by default
 5. Double-click preview content to enter edit mode when needed
 
