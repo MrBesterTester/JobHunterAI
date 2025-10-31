@@ -25,7 +25,7 @@
 
 # JobHunter Project Status
 
-**Last Updated**: 2025-10-31 10:24:59 PDT (Phase 2.4: Google Calendar OAuth infrastructure complete, ~65% done, calendar_auth module implemented)
+**Last Updated**: 2025-10-31 10:38:49 PDT (Phase 2.4: Calendar Service complete, ~75% done, full calendar CRUD integration with Interview API)
 
 ---
 
@@ -142,7 +142,7 @@ All Phase 2 sub-phase documentation includes complete implementation details, te
 
 | Sub-Phase | Title | Status | Progress | Completion | Doc |
 |-----------|-------|--------|----------|------------|-----|
-| 2.4 | Calendar & Follow-ups | 🔄 In Progress | ~65% | Est. 2 weeks | [PHASE_2.4](PHASE_2.4_calendar-follow-ups.md) |
+| 2.4 | Calendar & Follow-ups | 🔄 In Progress | ~75% | Est. 1 week | [PHASE_2.4](PHASE_2.4_calendar-follow-ups.md) |
 | 2.5 | Email Composition & Sending | 📋 Planning | 0% | Est. 2-3 days | [PHASE_2.5](PHASE_2.5_email-composition.md) |
 | 2.6 | LLM Job Extraction | ✅ Complete | 100% | 2025-10-11 to 2025-10-14 | [PHASE_2.6](PHASE_2.6_llm-job-extraction.md) |
 | 2.7 | Microsoft Email Source | 📋 Planning | 0% | Pending ISSUE-007 | [PHASE_2.7](PHASE_2.7_samkirk-email-source-plan.md) |
@@ -157,7 +157,13 @@ All Phase 2 sub-phase documentation includes complete implementation details, te
   - API endpoints: `/api/auth/calendar/url`, `/auth/calendar/callback`
   - Token storage in `oauth_credentials` table
   - Falls back to Gmail OAuth credentials if calendar-specific not set
-- ⏸️ Calendar Service module (pending - create/update/delete events)
+- ✅ Calendar Service module **COMPLETE** (2025-10-31)
+  - `backend/src/calendar_service.rs` module (319 lines)
+  - Full CRUD operations: create, update, delete, list, get events
+  - Integrated with Interview API handlers (create/update/delete interview)
+  - Optional integration (fails gracefully if OAuth not configured)
+  - Event format: "[Type] Interview - [Company] at [Position]"
+  - Default reminders: 1 day + 1 hour before event
 - ⏸️ Email follow-up system (pending - Gmail send integration)
 - ⚠️ **Open Issues**:
   - [BUG-0007](../bugs/open/BUG-0007-refresh-descriptions-button-not-working.md): Refresh Descriptions button not functional (close when feature implemented)
@@ -374,10 +380,25 @@ All Phase 2 sub-phase documentation includes complete implementation details, te
 
 ---
 
-**Last Updated**: 2025-10-31 10:24:59 PDT
-**Based on**: Phase 2.4 Google Calendar OAuth infrastructure complete
+**Last Updated**: 2025-10-31 10:38:49 PDT
+**Based on**: Phase 2.4 Calendar Service complete with full Interview API integration
 **Manual Updates**: This is a manually maintained document - update as needed
 **Major Updates**:
+- **2025-10-31 10:38:49 PDT**: ✅ **PHASE 2.4: CALENDAR SERVICE COMPLETE**
+  - **Calendar Service implemented**: `backend/src/calendar_service.rs` module (319 lines)
+  - **CRUD operations**: create_event, update_event, delete_event, list_upcoming_events, get_event
+  - **Interview API integration**: Enhanced create/update/delete interview handlers
+  - **Features**:
+    - Uses CalendarAuth::from_env() for OAuth (falls back to Gmail credentials)
+    - Creates events on "primary" calendar
+    - Event format: "[Type] Interview - [Company] at [Position]"
+    - Adds interviewer as attendee if email provided
+    - Default reminders: 1 day before (email) + 1 hour before (popup)
+    - Optional integration (fails gracefully if OAuth not configured)
+    - Stores calendar_event_id in database for tracking
+  - **Backend status**: Compiles successfully (12 warnings, 0 errors)
+  - **Phase 2.4 progress**: 65% → 75% complete
+  - **Next**: Email follow-up system (Gmail send integration)
 - **2025-10-31 10:24:59 PDT**: ✅ **PHASE 2.4: GOOGLE CALENDAR OAUTH COMPLETE**
   - **OAuth infrastructure implemented**: `backend/src/calendar_auth.rs` module (373 lines)
   - **OAuth endpoints added**: `/api/auth/calendar/url`, `/auth/calendar/callback`

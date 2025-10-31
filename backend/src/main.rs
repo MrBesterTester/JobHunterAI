@@ -17,6 +17,7 @@ use std::io::Write;
 
 mod llm;
 mod calendar_auth;
+mod calendar_service;
 
 // ============================================================================
 // Debug Logging
@@ -5658,7 +5659,8 @@ async fn create_interview(
 ) -> Result<HttpResponse> {
     let duration = request.duration_minutes.unwrap_or(60);
 
-    let interview = sqlx::query_as::<_, Interview>(
+    // Create interview in database first
+    let mut interview = sqlx::query_as::<_, Interview>(
         r#"
         INSERT INTO interviews (
             application_id, interview_type, scheduled_date, duration_minutes,
@@ -5681,6 +5683,91 @@ async fn create_interview(
     .fetch_one(pool.get_ref())
     .await
     .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    // Attempt to create Google Calendar event (optional - fail gracefully)
+    // Get job information for the calendar event
+    let job_info_result = sqlx::query!(
+        r#"
+        SELECT j.title, j.company
+        FROM applications a
+        JOIN jobs j ON a.job_id = j.job_id
+        WHERE a.application_id = $1
+        "#,
+        request.application_id
+    )
+    .fetch_optional(pool.get_ref())
+    .await;
+
+    if let Ok(Some(job_info)) = job_info_result {
+        // Create calendar service
+        let calendar_service = calendar_service::CalendarService::new(pool.get_ref().clone());
+
+        // Prepare calendar event
+        let end_time = request.scheduled_date + chrono::Duration::minutes(duration as i64);
+
+        let event_summary = format!(
+            "{} Interview - {} at {}",
+            request.interview_type,
+            job_info.company,
+            job_info.title
+        );
+
+        let event_description = format!(
+            "Interview Type: {}\nCompany: {}\nPosition: {}\n\n{}",
+            request.interview_type,
+            job_info.company,
+            job_info.title,
+            request.notes.as_deref().unwrap_or("")
+        );
+
+        let mut attendees = Vec::new();
+        if let Some(ref email) = request.interviewer_email {
+            attendees.push(calendar_service::Attendee {
+                email: email.clone(),
+                display_name: request.interviewer_name.clone(),
+                optional: Some(false),
+            });
+        }
+
+        let create_event = calendar_service::CreateEventRequest {
+            summary: event_summary,
+            description: Some(event_description),
+            location: request.location.clone(),
+            start: calendar_service::EventDateTime {
+                date_time: request.scheduled_date.to_rfc3339(),
+                time_zone: "America/Los_Angeles".to_string(),
+            },
+            end: calendar_service::EventDateTime {
+                date_time: end_time.to_rfc3339(),
+                time_zone: "America/Los_Angeles".to_string(),
+            },
+            attendees: if attendees.is_empty() { None } else { Some(attendees) },
+            reminders: Some(calendar_service::default_interview_reminders()),
+        };
+
+        // Try to create the event (use "primary" calendar)
+        match calendar_service.create_event("primary", create_event).await {
+            Ok(calendar_event) => {
+                // Update interview with calendar_event_id
+                let updated = sqlx::query_as::<_, Interview>(
+                    "UPDATE interviews SET calendar_event_id = $1 WHERE interview_id = $2 RETURNING *"
+                )
+                .bind(&calendar_event.id)
+                .bind(interview.interview_id)
+                .fetch_one(pool.get_ref())
+                .await;
+
+                if let Ok(updated_interview) = updated {
+                    interview = updated_interview;
+                }
+                log_debug(&format!("Created Google Calendar event: {}", calendar_event.id));
+            },
+            Err(e) => {
+                // Log error but don't fail the request - calendar integration is optional
+                log_debug(&format!("Failed to create calendar event (non-fatal): {}", e));
+            }
+        }
+    }
 
     Ok(HttpResponse::Created().json(interview))
 }
@@ -5741,6 +5828,23 @@ async fn update_interview(
     let interview_id = path.into_inner();
     let duration = request.duration_minutes.unwrap_or(60);
 
+    // Get the existing interview to check for calendar_event_id
+    let existing_interview = sqlx::query_as::<_, Interview>(
+        "SELECT * FROM interviews WHERE interview_id = $1"
+    )
+    .bind(interview_id)
+    .fetch_optional(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    let existing_interview = match existing_interview {
+        Some(i) => i,
+        None => return Ok(HttpResponse::NotFound().json(serde_json::json!({
+            "error": "Interview not found"
+        })))
+    };
+
+    // Update interview in database
     let interview = sqlx::query_as::<_, Interview>(
         r#"
         UPDATE interviews
@@ -5760,16 +5864,82 @@ async fn update_interview(
     .bind(&request.interviewer_phone)
     .bind(&request.notes)
     .bind(interview_id)
-    .fetch_optional(pool.get_ref())
+    .fetch_one(pool.get_ref())
     .await
     .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
 
-    match interview {
-        Some(i) => Ok(HttpResponse::Ok().json(i)),
-        None => Ok(HttpResponse::NotFound().json(serde_json::json!({
-            "error": "Interview not found"
-        })))
+    // If there's a calendar_event_id, update the Google Calendar event
+    if let Some(calendar_event_id) = &existing_interview.calendar_event_id {
+        // Get job details
+        let job_info_result = sqlx::query!(
+            r#"
+            SELECT j.title, j.company
+            FROM applications a
+            JOIN jobs j ON a.job_id = j.job_id
+            WHERE a.application_id = $1
+            "#,
+            request.application_id
+        )
+        .fetch_optional(pool.get_ref())
+        .await;
+
+        if let Ok(Some(job_info)) = job_info_result {
+            let calendar_service = calendar_service::CalendarService::new(pool.get_ref().clone());
+
+            let end_time = request.scheduled_date + chrono::Duration::minutes(duration as i64);
+
+            let event_summary = format!(
+                "{} Interview - {} at {}",
+                request.interview_type,
+                job_info.company,
+                job_info.title
+            );
+
+            let event_description = format!(
+                "Interview Type: {}\nCompany: {}\nPosition: {}\n\n{}",
+                request.interview_type,
+                job_info.company,
+                job_info.title,
+                request.notes.as_deref().unwrap_or("")
+            );
+
+            let mut attendees = Vec::new();
+            if let Some(ref email) = request.interviewer_email {
+                attendees.push(calendar_service::Attendee {
+                    email: email.clone(),
+                    display_name: request.interviewer_name.clone(),
+                    optional: Some(false),
+                });
+            }
+
+            let update_event = calendar_service::UpdateEventRequest {
+                summary: event_summary,
+                description: Some(event_description),
+                location: request.location.clone(),
+                start: calendar_service::EventDateTime {
+                    date_time: request.scheduled_date.to_rfc3339(),
+                    time_zone: "America/Los_Angeles".to_string(),
+                },
+                end: calendar_service::EventDateTime {
+                    date_time: end_time.to_rfc3339(),
+                    time_zone: "America/Los_Angeles".to_string(),
+                },
+                attendees: if attendees.is_empty() { None } else { Some(attendees) },
+                reminders: Some(calendar_service::default_interview_reminders()),
+            };
+
+            match calendar_service.update_event("primary", calendar_event_id, update_event).await {
+                Ok(_) => {
+                    log_debug(&format!("Updated Google Calendar event: {}", calendar_event_id));
+                },
+                Err(e) => {
+                    log_debug(&format!("Failed to update calendar event (non-fatal): {}", e));
+                }
+            }
+        }
     }
+
+    Ok(HttpResponse::Ok().json(interview))
 }
 
 async fn delete_interview(
@@ -5778,6 +5948,41 @@ async fn delete_interview(
 ) -> Result<HttpResponse> {
     let interview_id = path.into_inner();
 
+    // Get interview details first to check for calendar_event_id and get job source
+    let interview = sqlx::query!(
+        r#"
+        SELECT i.calendar_event_id, i.application_id
+        FROM interviews i
+        WHERE i.interview_id = $1
+        "#,
+        interview_id
+    )
+    .fetch_optional(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+
+    let interview = match interview {
+        Some(i) => i,
+        None => return Ok(HttpResponse::NotFound().json(serde_json::json!({
+            "error": "Interview not found"
+        })))
+    };
+
+    // If there's a calendar_event_id, delete the Google Calendar event first
+    if let Some(calendar_event_id) = &interview.calendar_event_id {
+        let calendar_service = calendar_service::CalendarService::new(pool.get_ref().clone());
+
+        match calendar_service.delete_event("primary", calendar_event_id).await {
+            Ok(_) => {
+                log_debug(&format!("Deleted Google Calendar event: {}", calendar_event_id));
+            },
+            Err(e) => {
+                log_debug(&format!("Failed to delete calendar event (non-fatal): {}", e));
+            }
+        }
+    }
+
+    // Delete the interview from database
     let result = sqlx::query!(
         "DELETE FROM interviews WHERE interview_id = $1",
         interview_id
