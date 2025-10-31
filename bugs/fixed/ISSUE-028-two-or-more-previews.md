@@ -1,12 +1,13 @@
 ---
 id: ISSUE-028
 title: Multiple Markdown Previews in Cursor
-status: open
+status: fixed
 priority: low
 severity: low
 component: docs
 created: 2025-10-31
 updated: 2025-10-31
+fixed: 2025-10-31
 affects: []
 related: [ISSUE-029]
 ---
