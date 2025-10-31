@@ -6,6 +6,11 @@
   - [Test Exclusions](#test-exclusions)
   - [Unit Test Coverage](#unit-test-coverage)
   - [E2E Test Coverage](#e2e-test-coverage)
+- [Comprehensive Test Suite Runtime](#comprehensive-test-suite-runtime)
+  - [Runtime Breakdown by Test Type](#runtime-breakdown-by-test-type)
+  - [Detailed Breakdown](#detailed-breakdown)
+  - [Sequential Execution Time](#sequential-execution-time)
+  - [CI/CD Recommendations](#cicd-recommendations)
 - [Open Issues](#open-issues)
 - [Excluded Tests Summary](#excluded-tests-summary)
   - [Unit Tests (1 skipped after Phase 2 ✅)](#unit-tests-1-skipped-after-phase-2-)
@@ -116,6 +121,57 @@
 - Oct 30-31: Fixed 17+ tests across unit and E2E suites
 - Oct 31: Unit test pass rate improved 99.0% → 99.8%
 - Oct 31: Skipped tests reduced from 8 → 1
+
+---
+
+## Comprehensive Test Suite Runtime
+
+**Total Estimated Runtime: ~14-15 minutes**
+
+### Runtime Breakdown by Test Type
+
+| Test Suite | Tests | Runtime | Percentage |
+|------------|-------|---------|------------|
+| **Backend (Rust)** | 158 | ~30-40 seconds | ~4% |
+| **Frontend Unit** | 517 | ~17 seconds | ~2% |
+| **E2E (Playwright)** | 547 | ~13 minutes | ~94% |
+| **Total** | 1,222 | ~14-15 minutes | 100% |
+
+### Detailed Breakdown
+
+**Backend Tests (Rust/Cargo)**: ~30-40 seconds
+- 158 tests total (156 passing, 2 ignored)
+- Includes: unit tests, API tests, content generation, deduplication, filtering
+- Slowest module: LLM integration tests (22.75s for 6 tests)
+- Compilation time: ~10 seconds
+
+**Frontend Unit Tests (Jest)**: ~17 seconds
+- 517 tests total (516 passing, 1 skipped)
+- 78.3% code coverage
+- 12/12 test suites passing
+- Fast feedback loop for iterative development
+
+**E2E Tests (Playwright)**: ~13 minutes
+- 547 tests total (402 active, 116 skipped, 29 failing)
+- Runs with 4 parallel workers (chromium)
+- Core workflow tests: ~95.4% pass rate
+- Dominates overall runtime (>90% of total time)
+
+### Sequential Execution Time
+```
+Backend:     ~0.5-0.7 minutes (includes compilation)
+Frontend:    ~0.3 minutes
+E2E:         ~13 minutes
+──────────────────────────────────────
+Total:       ~14-15 minutes
+```
+
+### CI/CD Recommendations
+- **Recommended Timeout**: 20 minutes (with ~35% buffer for environment variability)
+- **Performance Status**: ✅ Acceptable for comprehensive coverage
+- **Optimization Note**: E2E tests are optimized with 4-worker parallel execution
+
+**Last Runtime Verification**: 2025-10-31
 
 ---
 
