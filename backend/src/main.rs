@@ -2768,6 +2768,13 @@ async fn handle_gmail_oauth_callback(
     // Store or update OAuth credentials
     let expires_at = chrono::Utc::now() + chrono::Duration::seconds(token_data.expires_in);
 
+    // Parse scope string into individual scopes (Google returns space-separated string)
+    let scopes: Vec<String> = token_data.scope
+        .unwrap_or_default()
+        .split_whitespace()
+        .map(|s| s.to_string())
+        .collect();
+
     sqlx::query!(
         r#"
         INSERT INTO oauth_credentials (credential_id, source_id, client_id, client_secret, access_token, refresh_token, token_expires_at, scope)
@@ -2776,6 +2783,7 @@ async fn handle_gmail_oauth_callback(
             access_token = EXCLUDED.access_token,
             refresh_token = EXCLUDED.refresh_token,
             token_expires_at = EXCLUDED.token_expires_at,
+            scope = EXCLUDED.scope,
             updated_at = NOW()
         "#,
         Uuid::new_v4(),
@@ -2785,7 +2793,7 @@ async fn handle_gmail_oauth_callback(
         token_data.access_token,
         token_data.refresh_token,
         expires_at,
-        &vec![token_data.scope.unwrap_or_default()]
+        &scopes
     )
     .execute(pool.get_ref())
     .await
@@ -6207,7 +6215,7 @@ async fn send_follow_up(
     );
 
     // Determine recipient email - use job URL if available, otherwise require manual input
-    let to_email = if let Some(_url) = app_job.url {
+    let mut to_email = if let Some(_url) = app_job.url {
         // Try to extract email from URL or description
         // For now, we'll need this to be provided in the follow-up approval
         // TODO: Extract recipient email from job posting or require it during approval
@@ -6215,6 +6223,12 @@ async fn send_follow_up(
     } else {
         format!("hiring@{}.com", app_job.company.to_lowercase().replace(" ", ""))
     };
+
+    // Test mode: Override recipient email for automated testing (per PRD safety requirements)
+    if std::env::var("TEST_MODE").unwrap_or_default() == "true" {
+        to_email = "MrBesterTester@gmail.com".to_string();
+        log_debug("TEST_MODE enabled: Overriding recipient email to MrBesterTester@gmail.com");
+    }
 
     // Send email via Gmail API
     match send_gmail_email(&from_email, &to_email, &subject, &body, pool.get_ref()).await {
