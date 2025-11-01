@@ -78,7 +78,7 @@ export const ENABLED_TEST_SUITES = {
   'new-job-badges': false,               // 58 tests - Badge display logic (cosmetic)
   'job-badge-styling': false,            // 32 tests - Badge styling (cosmetic)
   'job-tradeoff-display': true,          // 16 tests - Trade-off display (BUG-0004 FIXED, 1 cosmetic test skipped)
-  'email-composer': false,               // 32 tests - Email composer UI (covered by unit tests)
+  'email-composer': true,                // 32 tests - Email composer UI (Phase 2.5 feature)
   'condensed-description': false,        // 9 tests - Description display (cosmetic)
 };
 
