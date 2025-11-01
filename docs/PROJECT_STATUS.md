@@ -26,7 +26,7 @@
 
 # JobHunter Project Status
 
-**Last Updated**: 2025-10-31 16:32:37 PDT (ISSUE-012: Zero-warning build achieved - all 90 Rust warnings fixed)
+**Last Updated**: 2025-11-01 15:10:00 PDT (Phase 2.4 COMPLETE - Gmail send integration verified with TEST_MODE safety)
 
 ---
 
@@ -42,17 +42,16 @@
 - **RSBuild Migration Validated**: ✅ No regression, all core workflows pass
 - All 12 components now above 75% coverage (none below 60%)
 
-**Recent Work** (Last 10 days - since 2025-10-20):
-- ✅ ISSUE-012: Zero-warning build achieved (closed 2025-10-31) - **All 90 Rust warnings fixed**
-- ✅ BUG-0008: Phase 2.4 E2E tests + UX improvements (closed 2025-10-31) - **98.6% pass rate**
-- ✅ BUG-0003: Modal reopen issue verified fixed (closed 2025-10-30) - **Fixed by ISSUE-023**
-- ✅ ISSUE-006: Backend validation flag for placeholder detection (closed 2025-10-30)
-- ✅ ISSUE-026: RSBuild migration completed (closed 2025-10-29) - **5x build speed improvement**
-- ✅ ISSUE-018: Frontend unit test implementation (closed 2025-10-28)
-- ✅ ISSUE-023: Fixed 7/8 test failures (closed 2025-10-28)
-- ✅ ISSUE-024: All components now >75% coverage (closed 2025-10-28)
-- ✅ ISSUE-025: E2E test suite health restored (closed 2025-10-28)
-- ✅ Testing documentation split into TESTING_STATUS.md and TESTING_HISTORY.md
+**Recent Work** (Last 12 days - since 2025-10-20):
+- ✅ Phase 2.4 COMPLETE (2025-11-01) - Gmail send integration + TEST_MODE safety + E2E tests (9/9 passing)
+- ✅ ISSUE-012: Zero-warning build achieved (2025-10-31) - All 90 Rust warnings fixed
+- ✅ BUG-0008: Phase 2.4 E2E tests + UX improvements (2025-10-31) - 98.6% pass rate
+- ✅ BUG-0003: Modal reopen issue verified fixed (2025-10-30)
+- ✅ ISSUE-006: Backend validation flag for placeholder detection (2025-10-30)
+- ✅ ISSUE-026: RSBuild migration complete (2025-10-29) - 5x build speed improvement
+- ✅ ISSUE-018, 023, 024, 025: Testing infrastructure complete (2025-10-28)
+
+**See**: [PROJECT_HISTORY.md](PROJECT_HISTORY.md) for detailed historical records
 
 **Open Issues**: 2 bugs/issues (all infrastructure and quality issues resolved!)
 - BUG-0007: Phase 5 feature - Refresh Descriptions button (low) - **See Phase 5**
@@ -66,9 +65,9 @@
 
 ### Next Steps Brief Summary
 
-**Recommended Order (Order B):**
+**Recommended Order:**
 
-Phase 2.4 is 98% complete! All quality improvements done! Recommended next steps:
+Phase 2.4 is 100% complete! ✅ Gmail send integration verified with TEST_MODE safety for automated testing.
 
 1. ✅ **Address UX Issues** - Fix the 4 frontend bugs identified by E2E tests **COMPLETE** (2025-10-31)
    - ✅ Schedule Interview modal component (h2 → h3 fix)
@@ -83,36 +82,50 @@ Phase 2.4 is 98% complete! All quality improvements done! Recommended next steps
    - **Actual time**: 1.5 hours (as estimated!)
    - **Result**: Clean codebase ready for Phase 2.5
 
-3. **Complete Phase 2.4** - Manual OAuth testing (requires user interaction) ⭐ **START HERE**
-   - Google Calendar OAuth flow and event creation
-   - Follow-up email sending via Gmail API
-   - **Estimated**: 30-45 min
-   - **Why next**: Final Phase 2.4 validation, one-time manual task
+3. ✅ **OAuth Testing & Validation** **COMPLETE** (2025-11-01)
+   - ✅ E2E tests: 67/69 passing (97.1%)
+   - ✅ Google Calendar OAuth: Authorized and verified
+   - ✅ Calendar event creation: Event ID `f1shb2e0nqu59p1v2vejjkcn7g` created successfully
+   - ✅ OAuth HTML helper created and documented in README_dev.md
+   - ✅ Gmail send scope added and verified
+   - **Actual time**: 90 minutes
+   - **Result**: Phase 2.4 OAuth infrastructure validated and complete
+   - **Documentation**: See `docs/PHASE_2.4_OAUTH_TESTING_RESULTS.md`
 
-4. **Start Phase 2.5** - Email Composition (Gmail draft integration already implemented)
-   - Email composer frontend integration
+4. ✅ **Complete Phase 2.4** - Gmail send integration **COMPLETE** (2025-11-01)
+   - ✅ Fixed OAuth scope parsing (space-separated → array)
+   - ✅ Added TEST_MODE environment variable for email safety
+   - ✅ Gmail OAuth re-authorized with gmail.send scope
+   - ✅ Follow-up email sent successfully (Gmail message ID: 19a4173af2fbd34e)
+   - ✅ Created comprehensive E2E test suite (9/9 tests passing)
+   - ✅ Verified TEST_MODE overrides recipient to MrBesterTester@gmail.com
+   - **Actual time**: 60 minutes (double the estimate, but comprehensive)
+   - **Result**: Phase 2.4 100% COMPLETE ✅
+
+5. **Start Phase 2.5** - Email Composition ⭐ **START HERE**
+   - Implement email composer frontend integration
+   - Create Gmail drafts for job applications
+   - Add resume/cover letter attachment handling
    - **Estimated**: 2-3 days
-   - **Why fourth**: Clean start with Phase 2.4 complete and zero technical debt
-
-**Total time before Phase 2.5**: 30-45 minutes (Manual OAuth testing only)
+   - **Why next**: Natural continuation of OAuth work, email sending infrastructure ready
 
 ---
 
-**Primary Recommendation**: 🎯 **Complete Phase 2.4 Testing & Validation**
+**Primary Recommendation**: 🎯 **Start Phase 2.5 - Email Composition**
 
-Phase 2.4 core implementation is 94% complete with all major backend systems operational. Some application tracking features are deferred (require DB migrations). Focus on final validation of completed features.
+Phase 2.4 is 100% complete with all OAuth integrations verified and tested. Email sending infrastructure is ready with TEST_MODE safety for automated testing. Natural next step is Phase 2.5 email composition features.
 
 ### Immediate (This Week)
 
-**Primary Next**: **Complete Phase 2.4** (Calendar & Follow-ups) - Currently 80% done
+**Primary Next**: ✅ **Phase 2.4 COMPLETE** (Calendar & Follow-ups) - 100% done (2025-11-01)
 - ✅ Google Calendar OAuth integration - **COMPLETE**
 - ✅ Calendar Service (create/update/delete events) - **COMPLETE**
 - ✅ Email follow-up system with template rendering - **COMPLETE**
 - ✅ Follow-up Scheduler (date calculation, status management) - **COMPLETE**
 - ✅ Dashboard UI (CalendarTab, FollowupsTab with widgets) - **COMPLETE**
+- ✅ Gmail send integration with TEST_MODE safety - **COMPLETE**
 - ⏸️ **Deferred** (require DB migrations, out of current scope):
   - Extended status system, response tracking, communication linking
-- ⏸️ **Remaining work** (~6%):
 
   **Testing & Validation Tasks**:
   - [x] **E2E Tests**: Re-enable and run Calendar/Follow-ups/Timeline tests (BUG-0008) ✅ **COMPLETE**
@@ -123,11 +136,25 @@ Phase 2.4 core implementation is 94% complete with all major backend systems ope
     - ✅ Documented 4 remaining failures as frontend UX issues (not blockers)
     - **Status**: Testing complete - 2025-10-31 15:04:27 PDT
 
-  - [ ] **Manual OAuth Testing** (requires user assistance):
-    - Google Calendar OAuth flow and event creation
-    - Follow-up email sending via Gmail API
-    - Document OAuth setup and validation results
-    - **Estimate**: 30-45 minutes (one-time setup)
+  - [x] **Manual OAuth Testing** ✅ **COMPLETE** (2025-11-01):
+    - ✅ Google Calendar OAuth flow completed successfully
+    - ✅ Calendar event creation verified (Event ID: `f1shb2e0nqu59p1v2vejjkcn7g`)
+    - ✅ E2E tests: 67/69 passing (97.1% pass rate)
+    - ✅ OAuth HTML helper created for simplified authorization
+    - ✅ Gmail send scope added and verified
+    - ✅ Documentation: `docs/PHASE_2.4_OAUTH_TESTING_RESULTS.md` created
+    - **Actual time**: 90 minutes
+    - **Status**: OAuth infrastructure validated and complete
+
+  - [x] **Gmail Send Integration** ✅ **COMPLETE** (2025-11-01):
+    - ✅ Fixed OAuth scope parsing (space-separated → array)
+    - ✅ Added TEST_MODE environment variable for email safety
+    - ✅ Gmail OAuth re-authorized with gmail.send scope
+    - ✅ Follow-up email sent successfully (Gmail message ID: 19a4173af2fbd34e)
+    - ✅ Created comprehensive E2E test suite (9/9 tests passing)
+    - ✅ Verified TEST_MODE overrides recipient to MrBesterTester@gmail.com
+    - **Actual time**: 60 minutes
+    - **Status**: Complete - 2025-11-01 15:10:00 PDT
 
   - [x] **Backend Unit Tests**: Phase 2.4 coverage assessed ✅ **COMPLETE**
     - ✅ Found 23 existing backend tests in `phase5_1_tests.rs` (100% pass rate)
@@ -137,14 +164,14 @@ Phase 2.4 core implementation is 94% complete with all major backend systems ope
 
   - [x] **Documentation Updates**: ✅ **COMPLETE**
     - ✅ Updated TESTING_STATUS.md with Phase 2.4 test results
-    - ✅ Updated PROJECT_STATUS.md Phase 2.4 completion percentage (94%)
-    - ✅ Documented OAuth setup in README_dev.md (already done)
-    - **Status**: Complete - 2025-10-31 15:06:29 PDT
+    - ✅ Updated PROJECT_STATUS.md Phase 2.4 completion percentage (100%)
+    - ✅ Documented OAuth setup in README_dev.md
+    - ✅ Documented Gmail send integration and TEST_MODE safety
+    - **Status**: Complete - 2025-11-01 15:10:00 PDT
 
-- **Total Time Spent**: ~5 hours (E2E testing: 2.5 hours, Backend analysis: 1 hour, Documentation: 1.5 hours)
-- **Remaining**: ~30-45 minutes (Manual OAuth testing only)
+- **Total Time Spent**: ~7.5 hours (E2E testing: 2.5 hours, Backend analysis: 1 hour, Documentation: 1.5 hours, OAuth testing: 1.5 hours, Gmail send: 1 hour)
 
-**Status**: **Phase 2.4 is 98% complete!** Only manual OAuth testing remains (requires user interaction).
+**Status**: **Phase 2.4 is 100% COMPLETE!** ✅ All OAuth integrations verified, Gmail send working with TEST_MODE safety.
 
 **Outstanding UX Issues**: ✅ **ALL FIXED** (2025-10-31 16:05:49 PDT)
 - ✅ Calendar modal heading corrected (h2 → h3)
@@ -155,11 +182,12 @@ Phase 2.4 core implementation is 94% complete with all major backend systems ope
 
 ### Short Term (Next 1-2 Weeks)
 
-1. **Finish Phase 2.4** (Calendar & Follow-ups) - Currently 94% done ✅
+1. **Finish Phase 2.4** (Calendar & Follow-ups) - Currently 98% done ✅
    - ✅ Core implementation complete
-   - ✅ E2E testing complete (65/69 passing = 94.2%)
+   - ✅ E2E testing complete (67/69 passing = 97.1%)
    - ✅ Backend unit tests verified (23 tests passing)
-   - [ ] Manual OAuth testing only (30-45 minutes)
+   - ✅ Manual OAuth testing complete (Google Calendar verified)
+   - ⚠️ Gmail send scope update needed (30 minutes)
    - Delivers complete interview/follow-up management feature
 
 2. **Start Phase 2.5** (Email Composition) - 2-3 days
@@ -437,12 +465,14 @@ All Phase 2 sub-phase documentation includes complete implementation details, te
 
 **Primary Documents**:
 - [CLAUDE.md](../CLAUDE.md) - Developer preferences and project guidance
+- [PROJECT_HISTORY.md](PROJECT_HISTORY.md) - Historical record of milestones and implementations
 - [README.md](../README.md) - End-user getting started guide
 - [README_dev.md](../README_dev.md) - Developer workflows and scripts
 
 **Phase Plans**:
 - [PHASE_1: Core System](PHASE_1_core-system.md) ✅
 - [PHASE_2.4: Calendar & Follow-ups](PHASE_2.4_calendar-follow-ups.md) 🔄
+- [PHASE_2.4: OAuth Testing Results](PHASE_2.4_OAUTH_TESTING_RESULTS.md) ✅
 - [PHASE_2.5: Email Composition](PHASE_2.5_email-composition.md) 📋
 - [PHASE_2.6: LLM Job Extraction](PHASE_2.6_llm-job-extraction.md) ✅
 - [PHASE_2.7: Microsoft Email Source](PHASE_2.7_samkirk-email-source-plan.md) 📋
@@ -467,131 +497,8 @@ All Phase 2 sub-phase documentation includes complete implementation details, te
 
 ---
 
-**Last Updated**: 2025-10-31 16:32:37 PDT
-**Based on**: ISSUE-012: Zero-warning build achieved - all 90 Rust warnings fixed
+**Last Updated**: 2025-11-01 14:41:41 PDT
+
 **Manual Updates**: This is a manually maintained document - update as needed
-**Major Updates**:
-- **2025-10-31 16:32:37 PDT**: ✅ **ISSUE-012: ZERO-WARNING BUILD ACHIEVED**
-  - **All warnings eliminated**: Fixed 90 total warnings (87 Clippy + 3 compiler)
-  - **Auto-fixes**: 76 warnings fixed automatically
-    - cargo fix: 3 compiler warnings
-    - cargo clippy --fix: 73 Clippy warnings (needless borrows, redundant closures)
-  - **Manual fixes**: 14 warnings fixed
-    - Used `.clamp()` instead of `.max().min()` pattern
-    - Moved regex construction outside loop (performance improvement)
-    - Added `#[allow(dead_code)]` for intentional future-use code
-    - Simplified redundant match statements
-  - **Result**: Zero-warning builds across entire codebase
-    - ✅ cargo build: 0 warnings
-    - ✅ cargo clippy: 0 warnings
-    - ✅ tsc --noEmit: 0 warnings (already clean)
-    - ✅ npm run build: 0 warnings (already clean)
-  - **Implementation time**: 1.5 hours (as estimated)
-  - **Bug tracking**: ISSUE-012 moved to fixed (2 open, 32 fixed, 84% fix rate)
-  - **Git commits**: `cbf6394`, `20dc440`
-  - **Next**: Manual OAuth testing (30-45 min) then Phase 2.5
-- **2025-10-31 16:05:49 PDT**: ✅ **PHASE 2.4 UX IMPROVEMENTS COMPLETE**
-  - **4 frontend bugs fixed**: All UX issues from E2E tests resolved
-    - ✅ CalendarTab: Modal heading corrected (h2 → h3)
-    - ✅ CalendarTab: Error handling UI implemented (error state + retry button)
-    - ✅ FollowupsTab: Error handling UI implemented (error state + retry button)
-    - ✅ App.tsx: "New Jobs" button label corrected (was "New")
-  - **E2E test results**: 68/69 passing (98.6% pass rate) - up from 65/69 (94.2%)
-  - **Phase 2.4 progress**: 94% → 98% complete
-  - **Implementation time**: 1.5 hours (better than 2-4 hour estimate)
-  - **Next**: Fix Zero-Warning Build (ISSUE-012) or Manual OAuth testing
-- **2025-10-31 11:03:00 PDT**: 📋 **PHASE 2.4: SCOPE CLARIFICATION & STATUS UPDATE**
-  - **Progress adjusted**: 85% → 80% (testing is ~20% of work remaining)
-  - **Deferred items identified**: Application tracking features requiring DB migrations
-    - Extended status system (responded, interview_scheduled, offered)
-    - Communication linking in DB schema
-    - Response tracking fields (response_received, offer_received, offer_amount)
-    - Response rate statistics
-  - **Completed items clarified**:
-    - ✅ Follow-up Scheduler (implemented in Session 1)
-    - ✅ Dashboard UI with CalendarTab & FollowupsTab
-    - ✅ Upcoming interviews widget & follow-up queue display
-    - ✅ Timeline endpoint for application history
-  - **Phase 2.4 Details updated**: Added "Application Tracking Enhancements" section
-  - **Documentation**: Phase 2.4 roadmap now accurately reflects completion status
-- **2025-10-31 10:48:23 PDT**: ✅ **PHASE 2.4: EMAIL FOLLOW-UP SYSTEM COMPLETE**
-  - **Email sending implemented**: Gmail API `messages.send` endpoint integration
-  - **Functions added**: `send_gmail_email`, `render_template`
-  - **Handler enhanced**: `send_follow_up` now sends real emails via Gmail
-  - **Features**:
-    - Plain text email sending with MIME format
-    - Template variable substitution ({{applicant_name}}, {{company}}, etc.)
-    - Automatic OAuth token refresh
-    - Communication logging in database
-    - Error handling with status updates
-    - Falls back gracefully if OAuth not configured
-  - **Backend status**: Compiles successfully (13 warnings, 0 errors)
-  - **Phase 2.4 progress**: 75% → 85% complete
-  - **Next**: Application tracking enhancements, then testing
-- **2025-10-31 10:38:49 PDT**: ✅ **PHASE 2.4: CALENDAR SERVICE COMPLETE**
-  - **Calendar Service implemented**: `backend/src/calendar_service.rs` module (319 lines)
-  - **CRUD operations**: create_event, update_event, delete_event, list_upcoming_events, get_event
-  - **Interview API integration**: Enhanced create/update/delete interview handlers
-  - **Features**:
-    - Uses CalendarAuth::from_env() for OAuth (falls back to Gmail credentials)
-    - Creates events on "primary" calendar
-    - Event format: "[Type] Interview - [Company] at [Position]"
-    - Adds interviewer as attendee if email provided
-    - Default reminders: 1 day before (email) + 1 hour before (popup)
-    - Optional integration (fails gracefully if OAuth not configured)
-    - Stores calendar_event_id in database for tracking
-  - **Backend status**: Compiles successfully (12 warnings, 0 errors)
-  - **Phase 2.4 progress**: 65% → 75% complete
-  - **Next**: Email follow-up system (Gmail send integration)
-- **2025-10-31 10:24:59 PDT**: ✅ **PHASE 2.4: GOOGLE CALENDAR OAUTH COMPLETE**
-  - **OAuth infrastructure implemented**: `backend/src/calendar_auth.rs` module (373 lines)
-  - **OAuth endpoints added**: `/api/auth/calendar/url`, `/auth/calendar/callback`
-  - **Features**:
-    - OAuth 2.0 flow with authorization code exchange
-    - Automatic token refresh with 5-minute expiry buffer
-    - Token storage in `oauth_credentials` table via `job_sources`
-    - Falls back to Gmail OAuth credentials if calendar-specific not set
-    - Direct REST API approach (provides access token for calendar operations)
-  - **Documentation**: Setup guide added to README_dev.md (Google Calendar Integration Setup)
-  - **Phase 2.4 progress**: 60% → 65% complete
-  - **Next**: Calendar Service module for event CRUD operations
-  - **Git commit**: `e1fc9e4` - "feat: Implement Google Calendar OAuth integration for Phase 2.4"
-- **2025-10-31 09:52:20 PDT**: ✅ **BUG TRACKING SYNCHRONIZED & PHASE DEPENDENCIES ADDED**
-  - **Bug counts corrected**: 31 → 36 total bugs (4 open, 4 mitigated, 28 fixed)
-  - **BUG-0004 moved to fixed**: "All" tab E2E tests now passing (fixed 2025-10-30)
-  - **Open bugs updated**: Added BUG-0007 (Refresh Descriptions) and BUG-0008 (Phase 5 feature tests)
-  - **Phase dependencies documented**:
-    - Phase 2.4 now references BUG-0007 and BUG-0008 (close when features implemented)
-    - Phase 5 now references BUG-0008 (tests exist, re-enable when implementing)
-  - **Recommended Next Steps updated**: Removed completed BUG-0004, added BUG-0007/BUG-0008 context
-  - **Document reorganization**: Moved "Recommended Next Steps" to top (after Current State)
-  - **Timestamp format**: Updated to full format (YYYY-MM-DD HH:MM:SS TZ)
-  - **Fix rate**: 81% → 78% (more accurate with full bug count)
-- **2025-10-30**: ✅ **BUG-0003 VERIFIED FIXED & ISSUE-006 COMPLETED**
-  - **BUG-0003 Verification**: Modal reopen issue confirmed fixed by ISSUE-023
-    - Both E2E tests now passing (8.8s and 9.0s)
-    - Root cause: Nested setState anti-pattern (fixed in ISSUE-023)
-    - Bug moved to fixed status with verification details
-  - **ISSUE-006**: Backend validation flag for description placeholder detection
-    - Multi-criteria validation: exact match, regex pattern, length heuristic
-    - Frontend now uses backend `has_valid_description` flag as single source of truth
-    - System resilient to LLM output variations and prompt changes
-  - **Testing Documentation Reorganized**:
-    - Split into TESTING_STATUS.md (current) and TESTING_HISTORY.md (archive)
-    - Updated CLAUDE.md to reference split documentation structure
-  - **Bug counts**: 4 open → 3 open, 24 fixed → 25 fixed
-  - **Fix rate improved**: 77% → 81%
-  - See BUG-0003, ISSUE-006, and TESTING_HISTORY.md for details
-  - **Status**: All infrastructure testing issues now closed, ready for feature development
-- **2025-10-29**: ✅ **RSBuild Migration COMPLETED & VALIDATED**
-  - Migration from CRA to RSBuild successfully completed
-  - Build time: 5x faster (15.2s → 3.1s with typecheck)
-  - **E2E test validation complete**: 343/529 tests passing (64.8%)
-  - **Migration assessment**: ✅ No regression detected
-  - **User feedback**: *"This is the first really complete, very smooth test run of e2e tests that I can remember."*
-  - Runtime: 11 min wall clock / 15.9 min Playwright reported
-  - All 512 Jest tests passing at baseline rates
-  - Zero breaking changes to application code
-  - See ISSUE-026 for complete migration execution log
-  - See ISSUE-025 for detailed E2E test validation results
-- **2025-10-28**: Phase documentation alignment completed - all phase statuses now match their corresponding PHASE docs
+
+**For detailed historical records**, see: [PROJECT_HISTORY.md](PROJECT_HISTORY.md)
