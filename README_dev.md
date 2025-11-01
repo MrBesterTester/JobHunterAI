@@ -1459,7 +1459,7 @@ GMAIL_REDIRECT_URI=http://localhost:8080/auth/gmail/callback
 
 To use the Google Calendar integration for interview scheduling (Phase 2.4), you need to set up OAuth credentials. This can **reuse your existing Gmail OAuth credentials** or use separate Calendar-specific credentials.
 
-**Status**: ✅ OAuth infrastructure complete, Calendar Service pending implementation
+**Status**: ✅ OAuth infrastructure complete, Calendar Service complete, ready for testing
 
 **Option 1: Reuse Gmail Credentials (Easiest)**
 
@@ -1516,17 +1516,125 @@ This creates:
 - `google_calendar` entry in `job_sources` table for OAuth token storage
 
 **5. Testing OAuth Flow** (when ready):
+
+**Option A: Using HTML Helper (Easiest)**
 ```bash
 # 1. Start backend
 cargo run --manifest-path=backend/Cargo.toml
 
-# 2. Test OAuth URL generation
+# 2. Create a simple HTML redirect helper
+cat > oauth-redirect.html << 'EOF'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Calendar OAuth - JobHunter</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .container {
+            background: white;
+            padding: 3rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 500px;
+        }
+        h1 { color: #333; margin-bottom: 1rem; font-size: 1.8rem; }
+        p { color: #666; line-height: 1.6; margin-bottom: 2rem; }
+        .button {
+            display: inline-block;
+            background: #4285f4;
+            color: white;
+            padding: 12px 32px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background 0.3s ease;
+        }
+        .button:hover { background: #3367d6; }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4285f4;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error {
+            color: #d32f2f;
+            background: #ffebee;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="spinner" id="spinner"></div>
+        <h1>Connecting to Google Calendar</h1>
+        <p id="message">Fetching authorization URL...</p>
+        <a id="authLink" class="button" style="display: none;">Click here if not redirected</a>
+    </div>
+    <script>
+        async function redirectToOAuth() {
+            try {
+                const response = await fetch('http://localhost:8080/api/auth/calendar/url');
+                const data = await response.json();
+                if (data.auth_url) {
+                    document.getElementById('message').textContent = 'Redirecting to Google...';
+                    document.getElementById('authLink').href = data.auth_url;
+                    document.getElementById('authLink').style.display = 'inline-block';
+                    setTimeout(() => { window.location.href = data.auth_url; }, 1000);
+                } else {
+                    throw new Error('No auth URL received');
+                }
+            } catch (error) {
+                document.getElementById('spinner').style.display = 'none';
+                document.getElementById('message').innerHTML =
+                    '<div class="error">Error: ' + error.message + '<br><br>' +
+                    'Please make sure the backend is running on http://localhost:8080</div>';
+            }
+        }
+        redirectToOAuth();
+    </script>
+</body>
+</html>
+EOF
+
+# 3. Open the HTML page in your browser
+open oauth-redirect.html  # macOS
+# or: xdg-open oauth-redirect.html  # Linux
+# or: start oauth-redirect.html     # Windows
+
+# 4. The page will automatically redirect you to Google's OAuth page
+# 5. Authorize with your Google account
+# 6. You'll be redirected to /auth/calendar/callback with a success message
+# 7. Tokens are stored in oauth_credentials table
+```
+
+**Option B: Manual URL (if HTML helper doesn't work)**
+```bash
+# 1. Get OAuth URL
 curl http://localhost:8080/api/auth/calendar/url
 
-# 3. Visit the returned auth_url in your browser
-# 4. Authorize with your Google account
-# 5. You'll be redirected to /auth/calendar/callback
-# 6. Tokens are stored in oauth_credentials table
+# 2. Copy the "auth_url" value from the JSON response
+# 3. Paste it into your browser
+# 4. Complete the authorization flow
 ```
 
 **6. Verify Setup:**
@@ -1546,11 +1654,20 @@ psql -U jobhunter_user -d jobhunter_personal -c \
 **API Endpoints:**
 - `GET /api/auth/calendar/url` - Get OAuth authorization URL
 - `GET /auth/calendar/callback` - OAuth callback handler (stores tokens)
+- `POST /api/interviews` - Create interview (automatically creates Google Calendar event)
+- `GET /api/interviews/upcoming` - Get upcoming interviews
+- `PUT /api/interviews/{id}` - Update interview (updates Calendar event)
+- `DELETE /api/interviews/{id}` - Delete interview (removes from Calendar)
+- `POST /api/follow-ups` - Create follow-up schedule
+- `GET /api/follow-ups/pending` - Get pending follow-ups
+- `POST /api/follow-ups/{id}/send` - Send follow-up email via Gmail API
+- `GET /api/applications/{id}/timeline` - Get application timeline
 
-**Next Phase 2.4 Features** (pending implementation):
-- Calendar Service module for creating/updating/deleting calendar events
-- Interview scheduling from Applications tab
-- Email follow-up system integration
+**Phase 2.4 Features** (✅ Complete):
+- ✅ Calendar Service module for creating/updating/deleting calendar events
+- ✅ Interview scheduling from Applications tab
+- ✅ Email follow-up system with Gmail API integration
+- ✅ Timeline view for application history
 
 **Troubleshooting:**
 - **"google_calendar source not found"** - Run `migration_phase5.1.sql`

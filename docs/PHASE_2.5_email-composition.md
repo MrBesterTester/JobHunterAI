@@ -26,6 +26,7 @@
   - [Environment Variables](#environment-variables)
     - [Google OAuth Setup Update](#google-oauth-setup-update)
   - [Testing Strategy](#testing-strategy)
+    - [⚠️ Testing Safety Requirements](#-testing-safety-requirements)
     - [Backend Tests (cargo test)](#backend-tests-cargo-test)
     - [Frontend Tests (Playwright)](#frontend-tests-playwright)
     - [Manual Testing](#manual-testing)
@@ -320,20 +321,47 @@ GMAIL_SCOPES=https://www.googleapis.com/auth/gmail.readonly,https://www.googleap
 
 ## Testing Strategy
 
+### ⚠️ Testing Safety Requirements
+
+**CRITICAL**: All automated test scripts that send Gmail messages MUST use a test recipient address to prevent accidental emails to real recruiters.
+
+**Test Email Configuration**:
+- **Test Recipient**: `MrBesterTester@gmail.com`
+- **Usage**: ALL automated tests (backend unit tests, integration tests, E2E tests)
+- **Override Mechanism**: Test scripts should override the actual reply-to email from job offers
+
+**Production vs Test Separation**:
+| Mode | Recipient Address | Approval Required | Use Case |
+|------|------------------|-------------------|----------|
+| **Test** | `MrBesterTester@gmail.com` | No (automated) | Backend tests, E2E tests, development testing |
+| **Production** | Real recruiter email from job offer | Yes (manual) | Actual job applications |
+
+**Implementation Notes**:
+- Test fixtures should include `test_mode: true` flag
+- When `test_mode = true`, override recipient to `MrBesterTester@gmail.com`
+- When `test_mode = false`, use actual email from job offer (requires user approval)
+- Backend handler should check environment variable (e.g., `TEST_MODE=true`) or request parameter
+
+**Rationale**: Prevents embarrassing/unprofessional test emails from being sent to real companies during development and testing.
+
+---
+
 ### Backend Tests (cargo test)
 - **Unit Tests**:
   - MIME message construction
   - Base64 encoding/decoding
   - Draft request formatting
   - Status monitoring logic
+  - **Test email override mechanism** (verify `MrBesterTester@gmail.com` is used)
 
 - **Integration Tests**:
   - Gmail API draft creation (with mock)
   - Draft status checking
   - Communication recording
   - Status transitions
+  - **Test mode recipient override** (ensure production emails never sent in tests)
 
-- **Target**: 8+ new tests
+- **Target**: 8+ new tests (including test email safety verification)
 
 ### Frontend Tests (Playwright)
 - Email composer modal display
@@ -345,8 +373,12 @@ GMAIL_SCOPES=https://www.googleapis.com/auth/gmail.readonly,https://www.googleap
 - **Target**: 10+ new tests
 
 ### Manual Testing
-1. **Happy Path**:
-   - Generate content → Create draft → Open in Gmail → Send → Verify status
+
+**⚠️ IMPORTANT**: For manual testing, use test data with `MrBesterTester@gmail.com` as the recipient to avoid sending test emails to real recruiters.
+
+1. **Happy Path** (with test email):
+   - Generate content for test job (with `MrBesterTester@gmail.com` as contact)
+   - Create draft → Open in Gmail → Verify recipient is test email → Send → Verify status
 
 2. **Edge Cases**:
    - No content generated yet
@@ -354,11 +386,17 @@ GMAIL_SCOPES=https://www.googleapis.com/auth/gmail.readonly,https://www.googleap
    - Network failures
    - Large resume files
    - Special characters in subject/body
+   - **Test mode verification**: Ensure production emails never sent during testing
 
 3. **Status Monitoring**:
    - Draft created and not sent
    - Draft created and sent
    - Draft deleted before sending
+
+4. **Production Verification** (use with extreme caution):
+   - Only test with jobs you intend to actually apply to
+   - Verify recipient email is correct before creating draft
+   - Review draft thoroughly in Gmail before sending
 
 ---
 

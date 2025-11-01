@@ -464,6 +464,14 @@ Jobs are ranked by descending total_score.
   - Update application status to "sent" upon successful delivery.
 - Support different delivery methods based on application requirements (direct email, portal upload, etc.).
 
+**Testing Safety Requirements**:
+- **Test Email Override**: All automated test scripts that send Gmail messages MUST use `MrBesterTester@gmail.com` as the recipient address.
+- **Production Behavior**: The actual working code should use the real reply-to email address from the job offer, with user approval required before sending.
+- **Test vs Production Separation**:
+  - Automated tests: Always send to `MrBesterTester@gmail.com`
+  - Manual/production workflow: Use actual recruiter email addresses (requires user approval)
+- **Rationale**: Prevents test emails from accidentally being sent to real recruiters/companies during development and testing.
+
 ### 4.5 Application & Tracking
 - Track application status: Sent, Pending, Follow-up, Closed.
 - Store all communication history in database.
