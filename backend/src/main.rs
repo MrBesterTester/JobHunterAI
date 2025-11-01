@@ -2707,8 +2707,8 @@ async fn get_gmail_oauth_url() -> Result<HttpResponse> {
     let redirect_uri = std::env::var("GMAIL_REDIRECT_URI")
         .unwrap_or_else(|_| "http://localhost:8080/auth/gmail/callback".to_string());
 
-    // Request both readonly (to fetch emails) and modify (to mark as read) scopes
-    let scope = "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.modify";
+    // Request readonly (to fetch emails), modify (to mark as read), and send (to send emails) scopes
+    let scope = "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/gmail.send";
     let auth_url = format!(
         "https://accounts.google.com/o/oauth2/v2/auth?client_id={}&redirect_uri={}&scope={}&response_type=code&access_type=offline&prompt=consent",
         urlencoding::encode(&client_id),
