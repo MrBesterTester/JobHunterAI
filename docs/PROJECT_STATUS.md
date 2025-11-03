@@ -35,7 +35,7 @@
 
 # JobHunter Project Status
 
-**Last Updated**: 2025-11-03 14:03:36 PST (Phase 2.7 message fetching complete)
+**Last Updated**: 2025-11-03 14:07:33 PST (Phase 2.7 frontend UI complete)
 
 ---
 
@@ -86,7 +86,7 @@
 
 ### Option A: Phase 2.7 Continuation (Microsoft Email Source)
 
-**Status**: 🔄 **In Progress** (~55% complete - Message fetching complete as of 2025-11-03)
+**Status**: 🔄 **In Progress** (~70% complete - Frontend UI complete as of 2025-11-03)
 
 **Business Case**: Complete the professional relationship lifecycle tracking
 
@@ -121,19 +121,20 @@ The two email accounts serve different phases of the professional workflow:
   - MECE counter validation
 - ✅ **API endpoint**: `POST /api/intake/microsoft/sync`
 - ✅ **First sync test**: 10 emails discovered, 7 jobs created, 0 failures
+- ✅ **Frontend UI integration** (~161 lines)
+  - handleMicrosoftAuth() and handleMicrosoftSync() handlers
+  - Microsoft Email Integration Card
+  - Status indicators and sync buttons
+  - Microsoft branding (#0078d4 color)
+  - Consistent with Gmail card design
 
-**Next Steps to Complete Phase 2.7** (~4-5 hours remaining):
-1. **Add folder filtering** (~2 hours)
+**Next Steps to Complete Phase 2.7** (~2-3 hours remaining):
+1. **Add folder filtering** (~1-2 hours, optional)
    - List folders via `/me/mailFolders` API
    - Filter to "JobOps" folder for curated job emails
    - UI for folder selection
 
-2. **Frontend UI** (~2 hours)
-   - Add Microsoft account connection in IntakeTab
-   - Show sync status per email source
-   - Source badges (📧 Gmail vs 🟦 Microsoft)
-
-3. **Testing** (~1-2 hours)
+2. **Testing** (~1-2 hours)
    - Unit tests for Microsoft-specific functions
    - E2E tests for complete flow
 
@@ -292,7 +293,7 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 - 📋 Sub-phase 2.6.3: Gmail label filtering (proposed, not started)
 
 **Phase 2.7 Details** (Microsoft Email Source):
-- **Status**: 🔄 **In Progress** (~55% complete - Message fetching complete 2025-11-03)
+- **Status**: 🔄 **In Progress** (~70% complete - Frontend UI complete 2025-11-03)
 - **Feature**: sam@samkirk.com as job source via Microsoft Graph API
 - **Completed**:
   - ✅ Azure App Registration (multitenant + personal accounts)
@@ -309,9 +310,12 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
   - ✅ Email parsing and LLM extraction integration
   - ✅ API endpoint: `POST /api/intake/microsoft/sync`
   - ✅ First sync: 10 emails processed, 7 jobs created, 0 failures
-- **Next Steps** (~4-5 hours remaining):
-  - ⏭️ Add folder filtering (JobOps folder)
-  - ⏭️ Frontend UI for Microsoft account management
+  - ✅ Frontend UI integration (~161 lines)
+    - Microsoft Email Integration Card in IntakeTab
+    - handleMicrosoftAuth() and handleMicrosoftSync() handlers
+    - Status indicators, sync buttons, settings
+- **Next Steps** (~2-3 hours remaining):
+  - ⏭️ Add folder filtering (JobOps folder) - optional
   - ⏭️ Unit and E2E tests
 
 ### Phase 3: Content Generation
@@ -481,11 +485,13 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 
 ---
 
-**Last Updated**: 2025-11-03 14:03:36 PST (Phase 2.7 message fetching complete)
+**Last Updated**: 2025-11-03 14:07:33 PST (Phase 2.7 frontend UI complete)
 
 **Major Updates in This Revision**:
-- Phase 2.7: Microsoft message fetching complete (~450 lines backend code)
-- Added `email_jobs.source` column for multi-source tracking
+- Phase 2.7: Frontend UI integration complete (~161 lines)
+- Microsoft Email Integration Card in IntakeTab
+- Backend message fetching (~450 lines)
+- Database: Added `email_jobs.source` column
 - New endpoint: `POST /api/intake/microsoft/sync`
 - First sync test: 10 emails, 7 jobs created, 0 failures
 
