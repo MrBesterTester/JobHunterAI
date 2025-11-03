@@ -57,7 +57,7 @@
 - Backend Tests: 158/158 passing (100%)
 - Frontend Unit Tests: 473/481 passing (98.3%) - 8 intentionally skipped
 - Frontend Coverage: 78.3% overall (exceeded 60% goal by 18.3 points!)
-- E2E Tests: 343/529 passing (64.8%) - Core workflows validated
+- E2E Tests: 359/529 passing (67.9%) - Core workflows validated (+16 Phase 2.5 tests)
 - E2E Runtime: 11 min wall clock / 15.9 min Playwright reported
 - All 12 components above 75% coverage (none below 60%)
 
