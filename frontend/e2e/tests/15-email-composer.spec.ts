@@ -24,6 +24,27 @@ test.describe('Email Composer (Phase 5.2)', () => {
   let contentModal: ContentGenerationModal;
 
   test.beforeEach(async ({ page }) => {
+    // Mock the content generation API to avoid slow LLM calls
+    await page.route('**/api/jobs/*/generate-content', async (route) => {
+      const mockContent = {
+        resume: '# Sam Kirk\nSenior Test Engineer\n\n## Professional Summary\nHighly experienced test engineer with 10+ years of experience in software testing, test automation, and quality assurance...',
+        cover_letter: 'Dear Hiring Manager,\n\nI am writing to express my strong interest in the Test Engineer position at your company...\n\nSincerely,\nSam Kirk',
+        resume_format: 'markdown',
+        generated_at: new Date().toISOString(),
+        application_id: '00000000-0000-0000-0000-000000000001',
+        generation_method: 'llm',
+        llm_model: 'claude-3-5-haiku-20241022',
+        tokens_used: 1500,
+        cost_estimate: 0.0025,
+        generation_time_ms: 2000
+      };
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(mockContent)
+      });
+    });
+
     dashboardPage = new DashboardPage(page);
     contentModal = new ContentGenerationModal(page);
     await dashboardPage.goto();
@@ -42,8 +63,8 @@ test.describe('Email Composer (Phase 5.2)', () => {
       // Generate content
       const firstJob = await getJobCard(page, 0);
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(); // Mock response is instant
+      await contentModal.waitForContentGeneration();
 
       // Verify "Create Email Draft" button is visible
       const createDraftButton = page.getByTestId('create-draft-button');
@@ -62,8 +83,8 @@ test.describe('Email Composer (Phase 5.2)', () => {
 
       const firstJob = await getJobCard(page, 0);
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(); // Mock response is instant
+      await contentModal.waitForContentGeneration();
 
       const createDraftButton = page.getByTestId('create-draft-button');
       await expect(createDraftButton).toBeVisible();
@@ -86,8 +107,8 @@ test.describe('Email Composer (Phase 5.2)', () => {
 
       const firstJob = await getJobCard(page, 0);
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(); // Mock response is instant
+      await contentModal.waitForContentGeneration();
 
       // Click Create Email Draft
       const createDraftButton = page.getByTestId('create-draft-button');
@@ -109,8 +130,8 @@ test.describe('Email Composer (Phase 5.2)', () => {
 
       const firstJob = await getJobCard(page, 0);
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(); // Mock response is instant
+      await contentModal.waitForContentGeneration();
 
       const createDraftButton = page.getByTestId('create-draft-button');
       await createDraftButton.click();
@@ -134,8 +155,8 @@ test.describe('Email Composer (Phase 5.2)', () => {
       const jobTitle = await firstJob.getTitle();
 
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(); // Mock response is instant
+      await contentModal.waitForContentGeneration();
 
       const createDraftButton = page.getByTestId('create-draft-button');
       await createDraftButton.click();
@@ -161,8 +182,8 @@ test.describe('Email Composer (Phase 5.2)', () => {
 
       const firstJob = await getJobCard(page, 0);
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(); // Mock response is instant
+      await contentModal.waitForContentGeneration();
 
       const coverLetterContent = await contentModal.getCoverLetterContent();
 
@@ -190,8 +211,8 @@ test.describe('Email Composer (Phase 5.2)', () => {
       const company = await firstJob.getCompany();
 
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(); // Mock response is instant
+      await contentModal.waitForContentGeneration();
 
       const createDraftButton = page.getByTestId('create-draft-button');
       await createDraftButton.click();
@@ -217,8 +238,8 @@ test.describe('Email Composer (Phase 5.2)', () => {
 
       const firstJob = await getJobCard(page, 0);
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(); // Mock response is instant
+      await contentModal.waitForContentGeneration();
 
       const createDraftButton = page.getByTestId('create-draft-button');
       await createDraftButton.click();
@@ -238,8 +259,8 @@ test.describe('Email Composer (Phase 5.2)', () => {
 
       const firstJob = await getJobCard(page, 0);
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(); // Mock response is instant
+      await contentModal.waitForContentGeneration();
 
       const createDraftButton = page.getByTestId('create-draft-button');
       await createDraftButton.click();
@@ -266,8 +287,8 @@ test.describe('Email Composer (Phase 5.2)', () => {
 
       const firstJob = await getJobCard(page, 0);
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(); // Mock response is instant
+      await contentModal.waitForContentGeneration();
 
       const createDraftButton = page.getByTestId('create-draft-button');
       await createDraftButton.click();
@@ -292,8 +313,8 @@ test.describe('Email Composer (Phase 5.2)', () => {
 
       const firstJob = await getJobCard(page, 0);
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(); // Mock response is instant
+      await contentModal.waitForContentGeneration();
 
       const createDraftButton = page.getByTestId('create-draft-button');
       await createDraftButton.click();
@@ -317,8 +338,8 @@ test.describe('Email Composer (Phase 5.2)', () => {
 
       const firstJob = await getJobCard(page, 0);
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(); // Mock response is instant
+      await contentModal.waitForContentGeneration();
 
       const createDraftButton = page.getByTestId('create-draft-button');
       await createDraftButton.click();
@@ -352,8 +373,8 @@ test.describe('Email Composer (Phase 5.2)', () => {
 
       const firstJob = await getJobCard(page, 0);
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(); // Mock response is instant
+      await contentModal.waitForContentGeneration();
 
       const createDraftButton = page.getByTestId('create-draft-button');
       await createDraftButton.click();
@@ -382,8 +403,8 @@ test.describe('Email Composer (Phase 5.2)', () => {
 
       const firstJob = await getJobCard(page, 0);
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(); // Mock response is instant
+      await contentModal.waitForContentGeneration();
 
       const createDraftButton = page.getByTestId('create-draft-button');
       await createDraftButton.click();
@@ -424,8 +445,8 @@ test.describe('Email Composer (Phase 5.2)', () => {
 
       const firstJob = await getJobCard(page, 0);
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(); // Mock response is instant
+      await contentModal.waitForContentGeneration();
 
       const createDraftButton = page.getByTestId('create-draft-button');
       await createDraftButton.click();
@@ -477,8 +498,8 @@ test.describe('Email Composer (Phase 5.2)', () => {
 
       const firstJob = await getJobCard(page, 0);
       await firstJob.generateContent();
-      await contentModal.waitForVisible();
-      await contentModal.waitForContentGeneration(5000);
+      await contentModal.waitForVisible(); // Mock response is instant
+      await contentModal.waitForContentGeneration();
 
       const createDraftButton = page.getByTestId('create-draft-button');
       await createDraftButton.click();
