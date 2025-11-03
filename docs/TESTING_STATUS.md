@@ -1,6 +1,10 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
+- [Phase 2.7 Testing Status (Microsoft Email Integration)](#phase-27-testing-status-microsoft-email-integration)
+  - [Backend Unit Tests - Microsoft Email Integration](#backend-unit-tests---microsoft-email-integration)
+  - [E2E Tests - Microsoft Email Integration](#e2e-tests---microsoft-email-integration)
+  - [Phase 2.7 Summary](#phase-27-summary)
 - [Phase 2.5 E2E Test Results (Email Composition)](#phase-25-e2e-test-results-email-composition)
   - [Quick Summary](#quick-summary)
   - [Test Details](#test-details)
@@ -51,11 +55,110 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-**Last Updated**: 2025-11-03 11:04:52 PST (Phase 2.5 validation complete - all 16 E2E tests passing with API mocking)
+**Last Updated**: 2025-11-03 14:43:24 PST (Phase 2.7 backend tests complete - 8 Microsoft email integration tests added)
 
 **Purpose**: Current testing status and open issues requiring attention.
 
 **For completed work and detailed history**: See [TESTING_HISTORY.md](TESTING_HISTORY.md)
+
+---
+
+## Phase 2.7 Testing Status (Microsoft Email Integration)
+
+**Latest Test Run**: 2025-11-03 14:40:00 PST
+**Test Type**: Backend Unit Tests + E2E Test Framework
+**Total Runtime**: ~0.2 seconds (backend tests)
+
+### Backend Unit Tests - Microsoft Email Integration
+
+**Status**: ✅ **100% COMPLETE** - All 8 tests passing
+
+| Test Category | Tests | Passed | Failed | Pass Rate |
+|---------------|-------|--------|--------|-----------|
+| **OAuth Credentials** | 2 | 2 | 0 | 100% |
+| **Email Job Processing** | 3 | 3 | 0 | 100% |
+| **Database Schema** | 2 | 2 | 0 | 100% |
+| **Integration Health** | 1 | 1 | 0 | 100% |
+| **TOTAL** | **8** | **8** | **0** | **100%** |
+
+**Test Coverage:**
+1. ✅ `test_microsoft_oauth_credential_storage` - OAuth credential storage and retrieval
+2. ✅ `test_microsoft_token_expiration_check` - Token expiration detection
+3. ✅ `test_microsoft_email_job_insertion` - Email job insertion with `microsoft_email` source
+4. ✅ `test_microsoft_email_deduplication` - Duplicate message_id prevention
+5. ✅ `test_microsoft_job_extraction_linkage` - Email job to extracted job linking
+6. ✅ `test_microsoft_source_configuration` - microsoft_email source validation
+7. ✅ `test_oauth_credential_tenant_field` - OAuth scope array storage (TEXT[])
+8. ✅ `test_microsoft_integration_readiness` - Database schema readiness check
+
+**Test File**: `backend/tests/microsoft_email_tests.rs` (462 lines)
+
+**Key Accomplishments:**
+- ✅ Validated OAuth credential storage with unique source_id constraint
+- ✅ Verified email_jobs table accepts `source` column (gmail vs microsoft_email)
+- ✅ Tested message deduplication via unique message_id constraint
+- ✅ Confirmed job extraction linkage between email_jobs and jobs tables
+- ✅ Validated Microsoft Graph API configuration in job_sources table
+- ✅ Verified scope array storage (TEXT[]) for Mail.Read, Mail.ReadWrite permissions
+
+**Database Migrations Applied:**
+- ✅ `003_add_microsoft_email_source.sql` - Added microsoft_email job source
+- ✅ `004_add_email_jobs_source_column.sql` - Added source column to email_jobs
+
+**Issues Resolved During Testing:**
+- Fixed column name mismatches (received_at → received_date, body_plain → body_text)
+- Applied migrations to test databases
+- Resolved unique constraint conflicts with proper cleanup
+- Updated test database connection (jobhunter_personal)
+
+### E2E Tests - Microsoft Email Integration
+
+**Status**: ✅ **Test Framework Created** - Manual testing required
+
+**Test File**: `frontend/e2e/tests/16-microsoft-email-integration.spec.ts` (197 lines)
+
+**Test Coverage (13 tests total):**
+- ✅ **UI Display Tests** (3 tests) - Microsoft Email card, branding, authentication buttons
+- ✅ **Folder Status Tests** (2 tests) - JobOps folder status, unread count display
+- ✅ **Source Differentiation** (1 test) - Microsoft vs Gmail source badges
+- ⏸️ **OAuth Flow** (2 manual tests) - Requires live Microsoft authentication
+- ✅ **Error Handling** (1 test) - Authentication failure messages
+- ✅ **Integration Tests** (2 tests) - Job approval flow, source display in details
+- 🔄 **Job Source Badge Test** (1 test) - Soft assertion (requires Microsoft-sourced jobs)
+
+**Manual Testing Required:**
+- OAuth flow with sam@samkirk.com (requires live Microsoft 365 account)
+- Email sync from JobOps folder (requires configured mailbox)
+- End-to-end: OAuth → Sync → Extract → Approve workflow
+
+**Test Strategy:**
+- Automated tests cover UI components and error states
+- Manual tests document OAuth flow (requires user interaction)
+- Soft assertions for features requiring live data
+
+**Next Steps for Full E2E Validation:**
+1. Manual OAuth testing with sam@samkirk.com
+2. Create JobOps folder with test emails
+3. Run sync and verify job extraction
+4. Complete approval workflow with Microsoft-sourced job
+
+### Phase 2.7 Summary
+
+**Backend Testing**: ✅ **COMPLETE** (8/8 tests passing, 100%)
+**E2E Testing**: 🔄 **Framework Ready** (13 tests created, manual validation pending)
+
+**Total New Tests**: 21 tests (8 backend + 13 E2E)
+**Backend Test Runtime**: ~0.2 seconds
+**E2E Test Runtime**: TBD (requires manual OAuth flow)
+
+**Phase 2.7 Implementation Status**: ~95% complete
+- ✅ OAuth 2.0 integration
+- ✅ Message fetching via Microsoft Graph API
+- ✅ Folder filtering with automatic JobOps folder creation
+- ✅ Frontend UI integration
+- ✅ Backend unit tests
+- ✅ E2E test framework
+- ⏸️ Manual OAuth and sync testing (pending)
 
 ---
 
