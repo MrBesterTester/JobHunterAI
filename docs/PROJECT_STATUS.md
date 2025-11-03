@@ -5,7 +5,7 @@
   - [⚠️ Important: Phase Execution Order](#-important-phase-execution-order)
   - [Current State](#current-state)
   - [Recommended Next Steps](#recommended-next-steps)
-    - [Option A: Phase 2.7 Implementation (Microsoft Email Source)](#option-a-phase-27-implementation-microsoft-email-source)
+    - [Option A: Phase 2.7 Continuation (Microsoft Email Source)](#option-a-phase-27-continuation-microsoft-email-source)
     - [Option B: Phase 5 Planning](#option-b-phase-5-planning)
     - [Option C: Phase 4 Extensions](#option-c-phase-4-extensions)
   - [Development Progress by Execution Order](#development-progress-by-execution-order)
@@ -35,7 +35,7 @@
 
 # JobHunter Project Status
 
-**Last Updated**: 2025-11-03 10:55:53 PST (Phase 2.5 validation complete - all E2E tests passing)
+**Last Updated**: 2025-11-03 13:45:34 PST (Phase 2.7 OAuth foundation complete)
 
 ---
 
@@ -84,7 +84,9 @@
 
 **Current Status**: All 6 dependency layers complete and validated with E2E tests.
 
-### Option A: Phase 2.7 Implementation (Microsoft Email Source)
+### Option A: Phase 2.7 Continuation (Microsoft Email Source)
+
+**Status**: 🔄 **In Progress** (~35% complete - OAuth foundation complete as of 2025-11-03)
 
 **Business Case**: Complete the professional relationship lifecycle tracking
 
@@ -95,22 +97,48 @@ The two email accounts serve different phases of the professional workflow:
    - Initial discovery and qualification
    - Lower signal-to-noise ratio
 
-2. **sam@samkirk.com** (Microsoft) - **Professional Engagement Phase** (❌ **missing**)
+2. **sam@samkirk.com** (Microsoft) - **Professional Engagement Phase** (🔄 **OAuth complete, email fetching pending**)
    - Serious job negotiations and consulting retainers
    - Employee onboarding and professional follow-ups
    - Higher signal-to-noise ratio, business-critical communications
 
-**Workflow Gap**: Once opportunities "graduate" from prospecting (Gmail) to serious engagement (sam@samkirk.com), JobHunter loses visibility. This integration closes that gap.
+**Completed (2025-11-03)**:
+- ✅ Azure App Registration (multitenant + personal accounts)
+- ✅ OAuth 2.0 endpoints (`/api/email/microsoft/auth-url`, `/callback`)
+- ✅ Token storage with tenant-specific authentication
+- ✅ Database migration (`microsoft_email` source)
+- ✅ OAuth test page and setup documentation
+- ✅ Successfully authenticated with sam@samkirk.com (Microsoft 365 custom domain)
 
-**Implementation Details**:
-- **Feature**: Microsoft Graph API integration for sam@samkirk.com
-- **Prerequisites**: ✅ All met (can start immediately)
-- **Effort**: ~7 days (3 days API, 2 days folder filtering, 2 days testing)
-- **Value**: Unified tracking across complete lifecycle: prospecting → engagement → hiring
+**Next Steps to Complete Phase 2.7** (~8-10 hours remaining):
+1. **Implement message fetching** (~3-4 hours)
+   - Create `fetch_microsoft_messages()` function
+   - Fetch emails via Microsoft Graph `/me/messages` API
+   - Parse Microsoft message format, store in `email_jobs` table
+   - Handle token refresh logic
 
-**Why Now**: Workflow completeness - track the entire professional relationship from initial contact through hiring/engagement.
+2. **Add folder filtering** (~2 hours)
+   - List folders via `/me/mailFolders` API
+   - Filter to "JobOps" folder for curated job emails
+   - UI for folder selection
 
-**Documentation**: [PHASE_2.7](PHASE_2.7_samkirk-email-source-plan.md)
+3. **Integrate LLM extraction** (~1 hour)
+   - Reuse existing Phase 2.6 job extraction pipeline
+   - Add `POST /api/intake/microsoft/sync` endpoint
+
+4. **Frontend UI** (~2 hours)
+   - Add Microsoft account connection in IntakeTab
+   - Show sync status per email source
+   - Source badges (📧 Gmail vs 🟦 Microsoft)
+
+5. **Testing** (~2 hours)
+   - Unit tests for message fetching
+   - Integration tests with Microsoft account
+   - E2E tests for complete flow
+
+**Value**: Unified tracking across complete lifecycle: prospecting → engagement → hiring
+
+**Documentation**: [PHASE_2.7](PHASE_2.7_samkirk-email-source-plan.md) | **Commit**: `689d1df`
 
 ### Option B: Phase 5 Planning
 - **Prerequisites**: ✅ All core workflows complete
@@ -218,7 +246,7 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 | 2.4 | Calendar & Follow-ups | 6 | ✅ Complete | 100% | 2025-11-01 | [PHASE_2.4](PHASE_2.4_calendar-follow-ups.md) |
 | 2.5 | Email Composition | 5 | ✅ Complete | 100% | 2025-11-03 | [PHASE_2.5](PHASE_2.5_email-composition.md) |
 | 2.6 | LLM Job Extraction | 3 | ✅ Complete | 100% | 2025-10-11 | [PHASE_2.6](PHASE_2.6_llm-job-extraction.md) |
-| 2.7 | Microsoft Email Source | 2 | ⏸️ Deferred | 0% | N/A | [PHASE_2.7](PHASE_2.7_samkirk-email-source-plan.md) |
+| 2.7 | Microsoft Email Source | 2 | 🔄 In Progress | 35% | N/A | [PHASE_2.7](PHASE_2.7_samkirk-email-source-plan.md) |
 
 **Phase 2.4 Details** (Calendar & Follow-ups):
 - ✅ Google Calendar OAuth (373 lines): OAuth 2.0 flow, token refresh
@@ -262,11 +290,23 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 - ✅ Trade-off based evaluation display (completed 2025-10-14)
 - 📋 Sub-phase 2.6.3: Gmail label filtering (proposed, not started)
 
-**Phase 2.7 Status** (Microsoft Email Source):
-- **Prerequisites**: ✅ All met (can start anytime)
+**Phase 2.7 Details** (Microsoft Email Source):
+- **Status**: 🔄 **In Progress** (OAuth foundation complete - 2025-11-03)
 - **Feature**: sam@samkirk.com as job source via Microsoft Graph API
-- **Current Assessment**: Not needed - Gmail + RapidAPI provide sufficient job volume
-- **Recommendation**: Defer until job search scales up
+- **Completed**:
+  - ✅ Azure App Registration (multitenant + personal accounts)
+  - ✅ OAuth 2.0 endpoints (`/api/email/microsoft/auth-url`, `/callback`)
+  - ✅ Token storage with tenant-specific authentication
+  - ✅ Database migration (`microsoft_email` source)
+  - ✅ OAuth test page (`microsoft-oauth.html`) and documentation
+  - ✅ Successfully authenticated with sam@samkirk.com (Microsoft 365 custom domain)
+- **Next Steps** (~8-10 hours remaining):
+  - ⏭️ Implement message fetching via Microsoft Graph API
+  - ⏭️ Add folder filtering (JobOps folder)
+  - ⏭️ Integrate with Phase 2.6 LLM extraction
+  - ⏭️ Frontend UI for Microsoft account management
+  - ⏭️ Unit, integration, and E2E tests
+- **Commit**: `689d1df`
 
 ### Phase 3: Content Generation
 

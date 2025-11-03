@@ -92,7 +92,23 @@ This phase adds support for a **second email source** (`sam@samkirk.com`) using 
 - May require manual folder curation (JobOps folder) to separate job-related emails
 - Requires separate authentication flow and token management
 
-**Status**: Planning phase - implementation pending resolution of ISSUE-007 and completion of Phase 4.1.
+**Status**: 🔄 **In Progress** (~35% complete)
+
+**Completed (2025-11-03):**
+- ✅ Azure App Registration (multitenant + personal accounts)
+- ✅ OAuth 2.0 authentication endpoints (`/api/email/microsoft/auth-url`, `/callback`)
+- ✅ Token storage in `oauth_credentials` table
+- ✅ Database migration (`microsoft_email` job source)
+- ✅ OAuth test page (`microsoft-oauth.html`)
+- ✅ Setup documentation (`README_azure-setup-guide.md`)
+- ✅ Verified with sam@samkirk.com (Microsoft 365 custom domain)
+
+**Next Steps:**
+1. **Implement message fetching** (~3-4 hours) - Fetch emails via Microsoft Graph API
+2. **Add folder filtering** (~2 hours) - List folders, filter to "JobOps" folder
+3. **Integrate LLM extraction** (~1 hour) - Reuse Phase 2.6 job extraction pipeline
+4. **Frontend UI** (~2 hours) - Microsoft account management in IntakeTab
+5. **Testing** (~2 hours) - Unit, integration, and E2E tests
 
 ---
 
@@ -392,42 +408,51 @@ impl EmailService {
 
 ### Phase 1: Microsoft Graph API Integration (Days 1-3)
 
-**Tasks:**
-1. ✅ **Azure App Registration**
-   - Create Azure AD app registration
-   - Configure OAuth redirect URI
-   - Note Client ID and Client Secret
-   - Set required API permissions: `Mail.Read`, `Mail.ReadWrite`
+**Status**: ✅ **Partially Complete** (OAuth only - 2025-11-03)
 
-2. ✅ **Backend: Microsoft Graph Client**
-   - Create `backend/src/email_providers/microsoft.rs`
-   - Implement OAuth 2.0 authorization flow
-   - Implement token refresh logic
-   - Implement message listing and retrieval
-   - Add folder listing support
+**Completed Tasks:**
+1. ✅ **Azure App Registration** (2025-11-03)
+   - Created Azure AD app registration with multitenant + personal account support
+   - Configured OAuth redirect URI: `http://localhost:8080/api/email/microsoft/callback`
+   - Client ID: `f77f1dfb-d5b5-4b1c-94d9-40a3381bb674`
+   - Set required API permissions: `Mail.Read`, `Mail.ReadWrite`, `MailboxSettings.Read`
+   - **Note**: sam@samkirk.com is a Microsoft 365 custom domain (organizational account)
 
-3. ✅ **Database: Email Account Storage**
-   - Extend `email_accounts` table (or create new)
-   - Add `provider` enum column ('gmail', 'microsoft')
-   - Store separate tokens per provider
-   - Add migration script
+2. ✅ **Backend: OAuth Endpoints** (2025-11-03)
+   - Implemented in `backend/src/main.rs` (lines 2844-2959)
+   - `GET /api/email/microsoft/auth-url` - Generate OAuth authorization URL
+   - `GET /api/email/microsoft/callback` - Handle OAuth callback, exchange code for tokens
+   - Token storage in `oauth_credentials` table with tenant-specific auth
+   - **Not yet implemented**: Token refresh logic, message fetching, folder listing
 
-4. ✅ **Backend: API Endpoints**
-   - `GET /api/email/microsoft/auth-url` - Get OAuth URL
-   - `POST /api/email/microsoft/callback` - Handle OAuth callback
-   - `GET /api/email/microsoft/folders` - List folders
-   - `POST /api/email/microsoft/sync` - Trigger email sync
-   - `GET /api/email/microsoft/status` - Check connection status
+3. ✅ **Database: OAuth Storage** (2025-11-03)
+   - Added migration `003_add_microsoft_email_source.sql`
+   - Inserted `microsoft_email` job source with Graph API configuration
+   - OAuth credentials stored in existing `oauth_credentials` table
+   - Tokens verified in database with correct scopes
 
-5. ✅ **Testing**
-   - Unit tests for Microsoft Graph client
-   - Integration tests with test Microsoft account
-   - Token refresh flow testing
+4. ✅ **Testing Tools** (2025-11-03)
+   - Created `microsoft-oauth.html` - Simple OAuth test page
+   - Successfully authenticated with sam@samkirk.com
+   - Verified token storage and expiration (2-hour TTL)
+
+5. ✅ **Documentation** (2025-11-03)
+   - Created `README_azure-setup-guide.md` with complete Azure setup instructions
+   - Documented multitenant account type requirement
+   - Added troubleshooting for tenant endpoint issues
+
+**Remaining Tasks:**
+- ⏭️ **Backend: Message Fetching** - Implement `fetch_microsoft_messages()` function
+- ⏭️ **Backend: Token Refresh** - Add automatic token refresh before expiration
+- ⏭️ **Backend: Folder Listing** - `GET /api/email/microsoft/folders` endpoint
+- ⏭️ **Backend: Email Sync** - `POST /api/email/microsoft/sync` endpoint
+- ⏭️ **Backend: Status Check** - `GET /api/email/microsoft/status` endpoint
+- ⏭️ **Testing** - Unit tests for message fetching and token refresh
 
 **Deliverables:**
-- Working Microsoft Graph API integration
-- Separate authentication for sam@samkirk.com
-- Ability to list and retrieve messages
+- ✅ OAuth authentication for sam@samkirk.com
+- ⏭️ Message listing and retrieval (pending)
+- ⏭️ Folder listing (pending)
 
 ### Phase 2: JobOps Folder Strategy (Days 4-5)
 
@@ -848,11 +873,20 @@ mod tests {
 
 ---
 
-**Status**: ⏸️ **Planning Complete - Awaiting ISSUE-007 Resolution & Phase 4.1 Completion**
+**Status**: 🔄 **In Progress** (~35% Complete - OAuth Foundation Complete)
+
+**Completed (2025-11-03)**:
+- ✅ Azure App Registration with multitenant support
+- ✅ OAuth 2.0 endpoints (`/api/email/microsoft/auth-url`, `/callback`)
+- ✅ Token storage with tenant-specific authentication
+- ✅ Database migration for `microsoft_email` source
+- ✅ OAuth test page and documentation
 
 **Next Steps**:
-1. Resolve ISSUE-007 (phase documentation renaming)
-2. Complete Phase 4.1 (RapidAPI job boards)
-3. Review and approve this plan
-4. Create Azure app registration
-5. Begin Phase 2.7 implementation
+1. **Implement message fetching** (~3-4 hours) - Fetch emails via Microsoft Graph `/me/messages` API
+2. **Add folder filtering** (~2 hours) - List folders via `/me/mailFolders`, filter to "JobOps"
+3. **Integrate LLM extraction** (~1 hour) - Reuse Phase 2.6 pipeline for job parsing
+4. **Frontend UI** (~2 hours) - Microsoft account management in IntakeTab
+5. **Testing** (~2 hours) - Unit, integration, and E2E tests
+
+**Commit**: `689d1df` - Phase 2.7 OAuth foundation
