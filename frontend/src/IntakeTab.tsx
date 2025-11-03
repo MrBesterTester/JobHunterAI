@@ -112,6 +112,11 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
   const [refiltering, setRefiltering] = useState<boolean>(false);
   const [refilterScope, setRefilterScope] = useState<string>('last_sync');
   const [lastRefilterResult, setLastRefilterResult] = useState<RefilterResponse | null>(null);
+  const [microsoftFolderInfo, setMicrosoftFolderInfo] = useState<{
+    hasJobOps: boolean;
+    unreadCount?: number;
+    totalCount?: number;
+  } | null>(null);
 
   // Ref to track setTimeout for cleanup (ISSUE-021 Option iii)
   const gmailAuthTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -156,6 +161,40 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
       setSourceSummaries(data);
     } catch (err) {
       console.error('Error fetching summary:', err);
+    }
+  };
+
+  // Fetch Microsoft folder information
+  const fetchMicrosoftFolderInfo = async (): Promise<void> => {
+    const microsoftSource = sources.find(s => s.source_name === 'microsoft_email');
+    if (!microsoftSource) return;
+
+    try {
+      const response = await fetch(`${API_URL}/email/microsoft/folders`);
+      if (!response.ok) {
+        // If auth fails or endpoint not available, silently skip
+        if (response.status === 404 || response.status === 401) {
+          setMicrosoftFolderInfo(null);
+          return;
+        }
+        throw new Error(`Failed to fetch folders: ${response.status}`);
+      }
+      const data: {
+        has_jobops: boolean;
+        jobops_folder?: {
+          unread_item_count?: number;
+          total_item_count?: number;
+        };
+      } = await response.json();
+
+      setMicrosoftFolderInfo({
+        hasJobOps: data.has_jobops,
+        unreadCount: data.jobops_folder?.unread_item_count,
+        totalCount: data.jobops_folder?.total_item_count
+      });
+    } catch (err) {
+      console.error('Error fetching Microsoft folder info:', err);
+      setMicrosoftFolderInfo(null);
     }
   };
 
@@ -229,6 +268,14 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
       return () => clearInterval(interval);
     }
   }, [syncingSource, syncingAll]);
+
+  // Fetch Microsoft folder info when sources are loaded and Microsoft is connected
+  useEffect(() => {
+    const microsoftSource = sources.find(s => s.source_name === 'microsoft_email');
+    if (microsoftSource) {
+      fetchMicrosoftFolderInfo();
+    }
+  }, [sources]);
 
   // Cleanup setTimeout on unmount (ISSUE-021 Option iii)
   useEffect(() => {
@@ -345,7 +392,8 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
       await Promise.all([
         fetchSources(),
         fetchLogs(),
-        fetchSummary()
+        fetchSummary(),
+        fetchMicrosoftFolderInfo()
       ]);
 
       // Notify parent component to refresh jobs list
@@ -878,6 +926,21 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
               <p style={{ fontSize: '14px', color: '#6b7280', margin: '4px 0' }}>
                 Auto-sync: {microsoftSource.is_active ? `Every ${microsoftSource.sync_interval_minutes} minutes` : 'Disabled'}
               </p>
+            )}
+            {isMicrosoftConnected && microsoftFolderInfo && (
+              <div style={{ marginTop: '8px', padding: '8px', backgroundColor: '#f0f9ff', borderRadius: '4px', border: '1px solid #bfdbfe' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '500', color: '#1e40af' }}>
+                    JobOps Folder: {microsoftFolderInfo.hasJobOps ? '✓ Ready' : '⚠ Creating...'}
+                  </span>
+                </div>
+                {microsoftFolderInfo.hasJobOps && microsoftFolderInfo.unreadCount !== undefined && (
+                  <p style={{ fontSize: '13px', color: '#6b7280', margin: '4px 0 0 0' }}>
+                    {microsoftFolderInfo.unreadCount} unread message{microsoftFolderInfo.unreadCount !== 1 ? 's' : ''}
+                    {microsoftFolderInfo.totalCount !== undefined && ` (${microsoftFolderInfo.totalCount} total)`}
+                  </p>
+                )}
+              </div>
             )}
           </div>
 

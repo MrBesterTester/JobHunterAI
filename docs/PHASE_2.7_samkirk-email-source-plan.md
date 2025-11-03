@@ -28,6 +28,7 @@
     - [Phase 2: JobOps Folder Strategy (Days 4-5)](#phase-2-jobops-folder-strategy-days-4-5)
     - [Phase 3: Testing & Optimization (Days 6-7)](#phase-3-testing--optimization-days-6-7)
   - [JobOps Folder Strategy](#jobops-folder-strategy)
+    - [Automatic Folder Creation (✅ IMPLEMENTED)](#automatic-folder-creation--implemented)
     - [Manual Curation Workflow](#manual-curation-workflow)
     - [Folder-Based Filtering](#folder-based-filtering)
   - [Database Schema Considerations](#database-schema-considerations)
@@ -103,12 +104,14 @@ This phase adds support for a **second email source** (`sam@samkirk.com`) using 
 - ✅ Setup documentation (`README_azure-setup-guide.md`)
 - ✅ Verified with sam@samkirk.com (Microsoft 365 custom domain)
 
-**Next Steps:**
-1. **Implement message fetching** (~3-4 hours) - Fetch emails via Microsoft Graph API
-2. **Add folder filtering** (~2 hours) - List folders, filter to "JobOps" folder
-3. **Integrate LLM extraction** (~1 hour) - Reuse Phase 2.6 job extraction pipeline
-4. **Frontend UI** (~2 hours) - Microsoft account management in IntakeTab
-5. **Testing** (~2 hours) - Unit, integration, and E2E tests
+**Completed:**
+1. ✅ **Message fetching** - Fetch emails via Microsoft Graph API
+2. ✅ **Folder filtering with automatic JobOps folder creation** - System automatically checks for and creates "JobOps" folder
+3. ✅ **LLM extraction integration** - Reuses Phase 2.6 job extraction pipeline
+4. ✅ **Frontend UI** - Microsoft account management in IntakeTab with folder status display
+
+**Remaining:**
+5. **Testing** (~1-2 hours) - Unit, integration, and E2E tests
 
 ---
 
@@ -504,16 +507,25 @@ impl EmailService {
 
 ## JobOps Folder Strategy
 
+### Automatic Folder Creation (✅ IMPLEMENTED)
+
+**System Behavior:**
+- On first sync, JobHunter **automatically checks** if "JobOps" folder exists
+- If folder doesn't exist, system **automatically creates it** via Microsoft Graph API
+- Folder creation is transparent to the user (logged in backend)
+- Frontend displays folder status: "✓ Ready" with unread message count
+
 ### Manual Curation Workflow
 
 **User Process:**
 1. User reviews sam@samkirk.com inbox periodically (weekly/daily)
-2. User manually moves job-related emails to **JobOps** folder
+2. User manually moves job-related emails to **JobOps** folder (folder already exists!)
 3. JobHunter syncs only from JobOps folder
 4. LLM extracts job details from curated emails
 5. User approves/rejects jobs in JobHunter UI
 
 **Benefits:**
+- **No manual setup required** - folder created automatically
 - Higher precision (fewer false positives)
 - Lower LLM API costs (fewer emails to process)
 - User maintains control over what's processed
@@ -873,7 +885,7 @@ mod tests {
 
 ---
 
-**Status**: 🔄 **In Progress** (~35% Complete - OAuth Foundation Complete)
+**Status**: 🔄 **In Progress** (~90% Complete - Folder Filtering Complete)
 
 **Completed (2025-11-03)**:
 - ✅ Azure App Registration with multitenant support
@@ -881,12 +893,16 @@ mod tests {
 - ✅ Token storage with tenant-specific authentication
 - ✅ Database migration for `microsoft_email` source
 - ✅ OAuth test page and documentation
+- ✅ Message fetching via Microsoft Graph API
+- ✅ **Folder filtering with automatic JobOps folder creation**
+  - `list_microsoft_folders()` - Lists all mail folders
+  - `get_or_create_jobops_folder()` - Automatically checks and creates JobOps folder
+  - Folder-based message filtering (only syncs JobOps folder)
+  - API endpoint: `GET /api/email/microsoft/folders`
+- ✅ LLM extraction integration (reuses Phase 2.6 pipeline)
+- ✅ Frontend UI with folder status indicator
 
-**Next Steps**:
-1. **Implement message fetching** (~3-4 hours) - Fetch emails via Microsoft Graph `/me/messages` API
-2. **Add folder filtering** (~2 hours) - List folders via `/me/mailFolders`, filter to "JobOps"
-3. **Integrate LLM extraction** (~1 hour) - Reuse Phase 2.6 pipeline for job parsing
-4. **Frontend UI** (~2 hours) - Microsoft account management in IntakeTab
-5. **Testing** (~2 hours) - Unit, integration, and E2E tests
+**Next Steps** (~1-2 hours remaining):
+1. **Testing** - Unit, integration, and E2E tests
 
-**Commit**: `689d1df` - Phase 2.7 OAuth foundation
+**Commit**: `689d1df` - Phase 2.7 OAuth foundation (folder filtering added later)

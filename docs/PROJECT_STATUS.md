@@ -35,7 +35,7 @@
 
 # JobHunter Project Status
 
-**Last Updated**: 2025-11-03 14:07:33 PST (Phase 2.7 frontend UI complete)
+**Last Updated**: 2025-11-03 14:25:55 PST (Phase 2.7 folder filtering complete)
 
 ---
 
@@ -62,6 +62,7 @@
 - All 12 components above 75% coverage (none below 60%)
 
 **Recent Achievements** (Last 14 days - since 2025-10-20):
+- ✅ Phase 2.7 FOLDER FILTERING COMPLETE (2025-11-03) - Automatic JobOps folder creation and management
 - ✅ Phase 2.5 VALIDATION COMPLETE (2025-11-03) - All 16 E2E tests passing with API mocks
 - ✅ Phase 2.4 COMPLETE (2025-11-01) - Calendar, Follow-ups, Gmail send with TEST_MODE
 - ✅ Phase 2.5 Implementation COMPLETE (2025-11-01) - Email composition feature
@@ -86,7 +87,7 @@
 
 ### Option A: Phase 2.7 Continuation (Microsoft Email Source)
 
-**Status**: 🔄 **In Progress** (~70% complete - Frontend UI complete as of 2025-11-03)
+**Status**: 🔄 **In Progress** (~90% complete - Folder filtering complete as of 2025-11-03)
 
 **Business Case**: Complete the professional relationship lifecycle tracking
 
@@ -97,7 +98,7 @@ The two email accounts serve different phases of the professional workflow:
    - Initial discovery and qualification
    - Lower signal-to-noise ratio
 
-2. **sam@samkirk.com** (Microsoft) - **Professional Engagement Phase** (🔄 **OAuth + message fetching complete**)
+2. **sam@samkirk.com** (Microsoft) - **Professional Engagement Phase** (✅ **Implementation complete - Testing pending**)
    - Serious job negotiations and consulting retainers
    - Employee onboarding and professional follow-ups
    - Higher signal-to-noise ratio, business-critical communications
@@ -127,16 +128,19 @@ The two email accounts serve different phases of the professional workflow:
   - Status indicators and sync buttons
   - Microsoft branding (#0078d4 color)
   - Consistent with Gmail card design
+- ✅ **Folder filtering with automatic JobOps folder management** (~200 lines)
+  - `list_microsoft_folders()` - Lists all mail folders via Graph API
+  - `get_or_create_jobops_folder()` - **Automatically checks and creates JobOps folder**
+  - Folder-based message filtering (`/me/mailFolders/{id}/messages`)
+  - API endpoint: `GET /api/email/microsoft/folders`
+  - Frontend folder status indicator showing unread count
+  - Syncs only process emails in JobOps folder (reduces noise and LLM costs)
 
-**Next Steps to Complete Phase 2.7** (~2-3 hours remaining):
-1. **Add folder filtering** (~1-2 hours, optional)
-   - List folders via `/me/mailFolders` API
-   - Filter to "JobOps" folder for curated job emails
-   - UI for folder selection
-
-2. **Testing** (~1-2 hours)
-   - Unit tests for Microsoft-specific functions
-   - E2E tests for complete flow
+**Next Steps to Complete Phase 2.7** (~1-2 hours remaining):
+1. **Testing** (~1-2 hours)
+   - Unit tests for Microsoft-specific functions (folder management, token refresh)
+   - E2E tests for complete OAuth → Sync → Extract → Approve flow
+   - Test folder creation, folder filtering, error handling
 
 **Value**: Unified tracking across complete lifecycle: prospecting → engagement → hiring
 
@@ -293,7 +297,7 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 - 📋 Sub-phase 2.6.3: Gmail label filtering (proposed, not started)
 
 **Phase 2.7 Details** (Microsoft Email Source):
-- **Status**: 🔄 **In Progress** (~70% complete - Frontend UI complete 2025-11-03)
+- **Status**: 🔄 **In Progress** (~90% complete - Folder filtering complete 2025-11-03)
 - **Feature**: sam@samkirk.com as job source via Microsoft Graph API
 - **Completed**:
   - ✅ Azure App Registration (multitenant + personal accounts)
@@ -314,9 +318,14 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
     - Microsoft Email Integration Card in IntakeTab
     - handleMicrosoftAuth() and handleMicrosoftSync() handlers
     - Status indicators, sync buttons, settings
-- **Next Steps** (~2-3 hours remaining):
-  - ⏭️ Add folder filtering (JobOps folder) - optional
-  - ⏭️ Unit and E2E tests
+  - ✅ **Folder filtering with automatic JobOps folder management** (~200 lines)
+    - `list_microsoft_folders()` - Lists all mail folders
+    - `get_or_create_jobops_folder()` - Automatic folder creation
+    - Folder-based message filtering
+    - API endpoint: `GET /api/email/microsoft/folders`
+    - Frontend folder status display with unread count
+- **Next Steps** (~1-2 hours remaining):
+  - ⏭️ Unit and E2E tests for folder management and sync flow
 
 ### Phase 3: Content Generation
 
@@ -485,15 +494,17 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 
 ---
 
-**Last Updated**: 2025-11-03 14:07:33 PST (Phase 2.7 frontend UI complete)
+**Last Updated**: 2025-11-03 14:25:55 PST (Phase 2.7 folder filtering complete)
 
 **Major Updates in This Revision**:
-- Phase 2.7: Frontend UI integration complete (~161 lines)
-- Microsoft Email Integration Card in IntakeTab
-- Backend message fetching (~450 lines)
-- Database: Added `email_jobs.source` column
-- New endpoint: `POST /api/intake/microsoft/sync`
-- First sync test: 10 emails, 7 jobs created, 0 failures
+- Phase 2.7: Folder filtering with automatic JobOps folder creation (~200 lines)
+  - `list_microsoft_folders()` - Lists all mail folders
+  - `get_or_create_jobops_folder()` - Automatic folder creation
+  - `GET /api/email/microsoft/folders` - New API endpoint
+  - Frontend folder status display with unread count
+  - Zero manual setup required - folder created automatically on first sync
+- Updated README.md with detailed Intake tab feature descriptions
+- Updated PROJECT_STATUS.md to reflect 90% completion of Phase 2.7
 
 **Manual Updates**: This is a manually maintained document - update as needed
 

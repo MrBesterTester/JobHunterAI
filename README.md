@@ -13,6 +13,8 @@
   - [Job Criteria](#job-criteria)
   - [How It Works](#how-it-works)
   - [UI Overview](#ui-overview)
+    - [📥 Intake Tab - Job Source Management](#-intake-tab---job-source-management)
+    - [Other Tabs](#other-tabs)
   - [Configuration](#configuration)
   - [Testing](#testing)
   - [Bug Tracking](#bug-tracking)
@@ -35,10 +37,12 @@ A workflow-driven job application management system to streamline your job searc
 JobHunter automates and streamlines your entire job search workflow. The system intelligently filters opportunities, prevents duplicates, and generates personalized application materials tailored to each role.
 
 **Key Features:**
-- **Automated Job Intake**: Gmail integration with intelligent email processing
+- **Multi-Source Job Intake**: Gmail and Microsoft email integration with intelligent LLM-based email processing
+- **Automatic Folder Management**: JobOps folder automatically created for Microsoft email curation
 - **Smart Job Filtering**: Automatically filters based on salary, location, and domain preferences
 - **AI-Powered Content Generation**: Claude AI generates personalized resumes and cover letters
 - **Gmail Draft Creation**: One-click email draft creation with attachments
+- **Calendar Integration**: Google Calendar sync for interview scheduling and follow-ups
 - **Resume Management**: Upload and manage multiple resume versions
 - **Real-time Dashboard**: Track job statuses with 8-tab interface covering the complete workflow
 - **Deduplication**: Prevents processing duplicate job postings
@@ -179,7 +183,8 @@ flowchart TD
     Start([Job Sources]) --> Sources
 
     subgraph Sources [" 1. Automated Job Intake "]
-        Gmail[📧 Gmail] --> HTMLClean
+        Gmail[📧 Gmail<br/>MrBesterTester@gmail.com] --> HTMLClean
+        Microsoft[🟦 Microsoft Email<br/>sam@samkirk.com JobOps] --> HTMLClean
         LinkedIn[💼 LinkedIn] --> HTMLClean
         Indeed[🔍 Indeed] --> HTMLClean
         Manual[✍️ Manual Entry] --> Extract
@@ -269,14 +274,53 @@ flowchart TD
 
 The dashboard provides 8 tabs for complete workflow management:
 
-- **📥 Intake**: Manage Gmail/LinkedIn/Indeed integrations with one-click OAuth
+### 📥 Intake Tab - Job Source Management
+
+The Intake tab is your control center for all job sources. Each source has its own card with status indicators and action buttons:
+
+**Gmail Integration Card** (MrBesterTester@gmail.com):
+- **Status Indicator**: Green dot = Connected, Gray dot = Not connected
+- **Last Sync**: Shows time since last email sync
+- **Connect Gmail** button: Opens OAuth popup to authenticate Gmail account
+- **Sync Now** button: Manually trigger email sync (fetches unread emails, processes with LLM)
+- **Settings** ⚙️ button: Re-authenticate or update Gmail credentials
+- Auto-sync schedule displayed (e.g., "Every 60 minutes")
+
+**Microsoft Email Integration Card** (sam@samkirk.com):
+- **Status Indicator**: Green dot = Connected, Gray dot = Not connected
+- **Last Sync**: Shows time since last email sync
+- **JobOps Folder Status**: Blue info box showing "✓ Ready" with unread message count
+- **Connect Microsoft** button: Opens OAuth popup to authenticate Microsoft account
+- **Sync Now** button: Manually syncs emails from JobOps folder only
+- **Settings** ⚙️ button: Re-authenticate or update Microsoft credentials
+- **Automatic Folder Creation**: JobOps folder is automatically created on first sync
+- **Manual Curation**: Move job-related emails to JobOps folder for processing
+
+**RapidAPI JSearch Card** (LinkedIn/Indeed aggregator):
+- **Status Indicator**: Shows active/inactive status
+- **Sync Now** button: Fetches 10 jobs per sync from 30+ job boards
+- Displays sync results and rate limit usage
+
+**Intake Logs Section**:
+- Shows recent sync history for all sources
+- Displays metrics: jobs discovered, created, filtered, duplicated, failed
+- Color-coded status indicators (success/failed)
+- Expandable details for each sync operation
+
+**LLM Extraction Prompt Editor**:
+- Edit the Claude prompt used for job extraction
+- Add custom instructions and notes
+- Real-time prompt testing capability
+
+### Other Tabs
+
 - **📋 Inbox**: Review and approve new jobs (both auto-approved and filtered)
 - **✅ Approved**: Jobs approved for application
-- **📤 Applied**: Track submitted applications
-- **❌ Failed**: Jobs that couldn't be processed
-- **⊕ Duplicates**: Duplicate job postings (automatically detected)
-- **🔍 Filtered**: Jobs that didn't meet criteria (with reasons)
-- **📊 All**: Complete job list with search and filtering
+- **📤 Applied**: Track submitted applications with timeline view
+- **❌ Failed**: Jobs that couldn't be processed (with error details)
+- **⊕ Duplicates**: Duplicate job postings (automatically detected via content hash)
+- **🔍 Filtered**: Jobs that didn't meet criteria (with specific rejection reasons)
+- **📊 All**: Complete job list with search, filtering, and bulk actions
 
 ## Configuration
 

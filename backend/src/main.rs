@@ -2999,6 +2999,138 @@ struct MicrosoftMessageBody {
     content: Option<String>,
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+struct MicrosoftFolder {
+    id: String,
+    #[serde(rename = "displayName")]
+    display_name: String,
+    #[serde(rename = "parentFolderId")]
+    parent_folder_id: Option<String>,
+    #[serde(rename = "childFolderCount")]
+    child_folder_count: Option<i32>,
+    #[serde(rename = "unreadItemCount")]
+    unread_item_count: Option<i32>,
+    #[serde(rename = "totalItemCount")]
+    total_item_count: Option<i32>,
+}
+
+#[derive(Debug, Deserialize)]
+struct MicrosoftFoldersResponse {
+    value: Vec<MicrosoftFolder>,
+    #[serde(rename = "@odata.nextLink")]
+    next_link: Option<String>,
+}
+
+async fn list_microsoft_folders(access_token: &str) -> std::result::Result<Vec<MicrosoftFolder>, Box<dyn std::error::Error + Send + Sync>> {
+    let client = reqwest::Client::new();
+    let url = "https://graph.microsoft.com/v1.0/me/mailFolders?$select=id,displayName,parentFolderId,childFolderCount,unreadItemCount,totalItemCount&$top=100";
+
+    let response = client
+        .get(url)
+        .bearer_auth(access_token)
+        .header("Accept", "application/json")
+        .send()
+        .await?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_default();
+        return Err(format!("Failed to list folders: {} - {}", status, error_text).into());
+    }
+
+    let folders_response: MicrosoftFoldersResponse = response.json().await?;
+    Ok(folders_response.value)
+}
+
+async fn get_or_create_jobops_folder(access_token: &str) -> std::result::Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    // First, try to find existing JobOps folder
+    let folders = list_microsoft_folders(access_token).await?;
+
+    if let Some(folder) = folders.iter().find(|f| f.display_name == "JobOps") {
+        log_debug(&format!("✓ Found existing JobOps folder (ID: {})", folder.id));
+        return Ok(folder.id.clone());
+    }
+
+    // JobOps folder doesn't exist, create it
+    log_debug("JobOps folder not found, creating it...");
+
+    let client = reqwest::Client::new();
+    let create_url = "https://graph.microsoft.com/v1.0/me/mailFolders";
+
+    let create_body = serde_json::json!({
+        "displayName": "JobOps"
+    });
+
+    let response = client
+        .post(create_url)
+        .bearer_auth(access_token)
+        .header("Content-Type", "application/json")
+        .json(&create_body)
+        .send()
+        .await?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_default();
+        return Err(format!("Failed to create JobOps folder: {} - {}", status, error_text).into());
+    }
+
+    let new_folder: MicrosoftFolder = response.json().await?;
+    log_debug(&format!("✓ Created JobOps folder (ID: {})", new_folder.id));
+
+    Ok(new_folder.id)
+}
+
+async fn get_microsoft_folders(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    // Get Microsoft email source
+    let source = sqlx::query_as::<_, JobSource>(
+        "SELECT * FROM job_sources WHERE source_name = 'microsoft_email' AND is_active = true LIMIT 1"
+    )
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|_| actix_web::error::ErrorNotFound("Microsoft email source not found or inactive"))?;
+
+    // Get OAuth credentials
+    let credentials = sqlx::query_as::<_, OAuthCredential>(
+        "SELECT * FROM oauth_credentials WHERE source_id = $1 LIMIT 1"
+    )
+    .bind(source.source_id)
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|_| actix_web::error::ErrorNotFound("Microsoft credentials not found"))?;
+
+    let access_token = credentials.access_token.as_ref()
+        .ok_or_else(|| actix_web::error::ErrorUnauthorized("No access token available"))?.clone();
+
+    // Check if token is expired and refresh if needed
+    let token = if let Some(expires_at) = credentials.token_expires_at {
+        if chrono::Utc::now() > expires_at {
+            refresh_microsoft_token(&credentials, pool.get_ref()).await?
+        } else {
+            access_token
+        }
+    } else {
+        access_token
+    };
+
+    // List all folders
+    match list_microsoft_folders(&token).await {
+        Ok(folders) => {
+            // Check if JobOps folder exists
+            let jobops_folder = folders.iter().find(|f| f.display_name == "JobOps");
+
+            Ok(HttpResponse::Ok().json(serde_json::json!({
+                "folders": folders,
+                "jobops_folder": jobops_folder,
+                "has_jobops": jobops_folder.is_some()
+            })))
+        }
+        Err(e) => {
+            Err(actix_web::error::ErrorInternalServerError(format!("Failed to list folders: {}", e)))
+        }
+    }
+}
+
 async fn sync_microsoft_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     let log_id = Uuid::new_v4();
 
@@ -3043,7 +3175,33 @@ async fn sync_microsoft_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
         access_token
     };
 
-    match process_microsoft_messages(&token, &source, pool.get_ref(), log_id).await {
+    // Get or create JobOps folder
+    let folder_id = match get_or_create_jobops_folder(&token).await {
+        Ok(id) => id,
+        Err(e) => {
+            let error_msg = format!("Failed to access JobOps folder: {}", e);
+            log_debug(&error_msg);
+
+            // Update log as failed
+            sqlx::query!(
+                r#"
+                UPDATE job_intake_logs
+                SET sync_completed_at = NOW(), sync_status = 'failed', errors_count = 1,
+                    error_details = $1
+                WHERE log_id = $2
+                "#,
+                serde_json::json!({"error": error_msg}),
+                log_id
+            )
+            .execute(pool.get_ref())
+            .await
+            .ok();
+
+            return Err(actix_web::error::ErrorInternalServerError(error_msg));
+        }
+    };
+
+    match process_microsoft_messages(&token, &folder_id, &source, pool.get_ref(), log_id).await {
         Ok(metrics) => {
             // Validate counters (mutually exclusive and collectively exhaustive)
             let expected_total = metrics.failed_processing + metrics.filtered_out + metrics.duplicated + metrics.created;
@@ -3164,6 +3322,7 @@ async fn refresh_microsoft_token(credentials: &OAuthCredential, pool: &PgPool) -
 
 async fn process_microsoft_messages(
     access_token: &str,
+    folder_id: &str,
     source: &JobSource,
     pool: &PgPool,
     _log_id: Uuid,
@@ -3177,9 +3336,14 @@ async fn process_microsoft_messages(
         created: 0,
     };
 
-    // Fetch unread messages from Microsoft Graph API
+    // Fetch unread messages from JobOps folder via Microsoft Graph API
     // Limited to 10 messages per sync to match Gmail behavior
-    let url = "https://graph.microsoft.com/v1.0/me/messages?$filter=isRead eq false&$top=10&$orderby=receivedDateTime desc";
+    let url = format!(
+        "https://graph.microsoft.com/v1.0/me/mailFolders/{}/messages?$filter=isRead eq false&$top=10&$orderby=receivedDateTime desc",
+        folder_id
+    );
+
+    log_debug(&format!("Fetching unread messages from JobOps folder (ID: {})", folder_id));
 
     let response = client
         .get(url)
@@ -7500,6 +7664,7 @@ async fn main() -> std::io::Result<()> {
             // Phase 2.7: Microsoft Email Integration
             .route("/api/email/microsoft/auth-url", web::get().to(get_microsoft_oauth_url))
             .route("/api/email/microsoft/callback", web::get().to(handle_microsoft_oauth_callback))
+            .route("/api/email/microsoft/folders", web::get().to(get_microsoft_folders))
             .route("/api/intake/gmail/sync", web::post().to(sync_gmail_jobs))
             .route("/api/intake/microsoft/sync", web::post().to(sync_microsoft_jobs))
             .route("/api/intake/rapidapi/sync", web::post().to(sync_jsearch_jobs))
