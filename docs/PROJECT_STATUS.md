@@ -35,7 +35,7 @@
 
 # JobHunter Project Status
 
-**Last Updated**: 2025-11-03 13:45:34 PST (Phase 2.7 OAuth foundation complete)
+**Last Updated**: 2025-11-03 14:03:36 PST (Phase 2.7 message fetching complete)
 
 ---
 
@@ -86,7 +86,7 @@
 
 ### Option A: Phase 2.7 Continuation (Microsoft Email Source)
 
-**Status**: 🔄 **In Progress** (~35% complete - OAuth foundation complete as of 2025-11-03)
+**Status**: 🔄 **In Progress** (~55% complete - Message fetching complete as of 2025-11-03)
 
 **Business Case**: Complete the professional relationship lifecycle tracking
 
@@ -97,7 +97,7 @@ The two email accounts serve different phases of the professional workflow:
    - Initial discovery and qualification
    - Lower signal-to-noise ratio
 
-2. **sam@samkirk.com** (Microsoft) - **Professional Engagement Phase** (🔄 **OAuth complete, email fetching pending**)
+2. **sam@samkirk.com** (Microsoft) - **Professional Engagement Phase** (🔄 **OAuth + message fetching complete**)
    - Serious job negotiations and consulting retainers
    - Employee onboarding and professional follow-ups
    - Higher signal-to-noise ratio, business-critical communications
@@ -106,39 +106,40 @@ The two email accounts serve different phases of the professional workflow:
 - ✅ Azure App Registration (multitenant + personal accounts)
 - ✅ OAuth 2.0 endpoints (`/api/email/microsoft/auth-url`, `/callback`)
 - ✅ Token storage with tenant-specific authentication
-- ✅ Database migration (`microsoft_email` source)
+- ✅ Database migration (`microsoft_email` source, `email_jobs.source` column)
 - ✅ OAuth test page and setup documentation
 - ✅ Successfully authenticated with sam@samkirk.com (Microsoft 365 custom domain)
+- ✅ **Message fetching via Microsoft Graph API** (~450 lines)
+  - `sync_microsoft_jobs()` endpoint - Main sync orchestrator
+  - `process_microsoft_messages()` - Fetches and processes messages
+  - `refresh_microsoft_token()` - OAuth token refresh with tenant auth
+  - `mark_microsoft_message_as_read()` - Message status management
+  - Microsoft Graph API data structures (MicrosoftMessage, etc.)
+- ✅ **Email parsing and LLM integration**
+  - Reuses Phase 2.6 extraction pipeline
+  - Same filtering logic (confidence > 0.3)
+  - MECE counter validation
+- ✅ **API endpoint**: `POST /api/intake/microsoft/sync`
+- ✅ **First sync test**: 10 emails discovered, 7 jobs created, 0 failures
 
-**Next Steps to Complete Phase 2.7** (~8-10 hours remaining):
-1. **Implement message fetching** (~3-4 hours)
-   - Create `fetch_microsoft_messages()` function
-   - Fetch emails via Microsoft Graph `/me/messages` API
-   - Parse Microsoft message format, store in `email_jobs` table
-   - Handle token refresh logic
-
-2. **Add folder filtering** (~2 hours)
+**Next Steps to Complete Phase 2.7** (~4-5 hours remaining):
+1. **Add folder filtering** (~2 hours)
    - List folders via `/me/mailFolders` API
    - Filter to "JobOps" folder for curated job emails
    - UI for folder selection
 
-3. **Integrate LLM extraction** (~1 hour)
-   - Reuse existing Phase 2.6 job extraction pipeline
-   - Add `POST /api/intake/microsoft/sync` endpoint
-
-4. **Frontend UI** (~2 hours)
+2. **Frontend UI** (~2 hours)
    - Add Microsoft account connection in IntakeTab
    - Show sync status per email source
    - Source badges (📧 Gmail vs 🟦 Microsoft)
 
-5. **Testing** (~2 hours)
-   - Unit tests for message fetching
-   - Integration tests with Microsoft account
+3. **Testing** (~1-2 hours)
+   - Unit tests for Microsoft-specific functions
    - E2E tests for complete flow
 
 **Value**: Unified tracking across complete lifecycle: prospecting → engagement → hiring
 
-**Documentation**: [PHASE_2.7](PHASE_2.7_samkirk-email-source-plan.md) | **Commit**: `689d1df`
+**Documentation**: [PHASE_2.7](PHASE_2.7_samkirk-email-source-plan.md)
 
 ### Option B: Phase 5 Planning
 - **Prerequisites**: ✅ All core workflows complete
@@ -291,22 +292,27 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 - 📋 Sub-phase 2.6.3: Gmail label filtering (proposed, not started)
 
 **Phase 2.7 Details** (Microsoft Email Source):
-- **Status**: 🔄 **In Progress** (OAuth foundation complete - 2025-11-03)
+- **Status**: 🔄 **In Progress** (~55% complete - Message fetching complete 2025-11-03)
 - **Feature**: sam@samkirk.com as job source via Microsoft Graph API
 - **Completed**:
   - ✅ Azure App Registration (multitenant + personal accounts)
   - ✅ OAuth 2.0 endpoints (`/api/email/microsoft/auth-url`, `/callback`)
   - ✅ Token storage with tenant-specific authentication
-  - ✅ Database migration (`microsoft_email` source)
+  - ✅ Database migration (`microsoft_email` source, `email_jobs.source` column)
   - ✅ OAuth test page (`microsoft-oauth.html`) and documentation
   - ✅ Successfully authenticated with sam@samkirk.com (Microsoft 365 custom domain)
-- **Next Steps** (~8-10 hours remaining):
-  - ⏭️ Implement message fetching via Microsoft Graph API
+  - ✅ Message fetching implementation (~450 lines)
+    - `sync_microsoft_jobs()` - Main sync endpoint
+    - `process_microsoft_messages()` - Fetch & process via Graph API
+    - `refresh_microsoft_token()` - Token refresh with tenant auth
+    - `mark_microsoft_message_as_read()` - Message status updates
+  - ✅ Email parsing and LLM extraction integration
+  - ✅ API endpoint: `POST /api/intake/microsoft/sync`
+  - ✅ First sync: 10 emails processed, 7 jobs created, 0 failures
+- **Next Steps** (~4-5 hours remaining):
   - ⏭️ Add folder filtering (JobOps folder)
-  - ⏭️ Integrate with Phase 2.6 LLM extraction
   - ⏭️ Frontend UI for Microsoft account management
-  - ⏭️ Unit, integration, and E2E tests
-- **Commit**: `689d1df`
+  - ⏭️ Unit and E2E tests
 
 ### Phase 3: Content Generation
 
@@ -475,14 +481,13 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 
 ---
 
-**Last Updated**: 2025-11-01 16:00:00 PDT (Major revision: dependency-based organization)
+**Last Updated**: 2025-11-03 14:03:36 PST (Phase 2.7 message fetching complete)
 
 **Major Updates in This Revision**:
-- Reorganized by dependency layers instead of phase numbers
-- Added Phase 2.5 implementation complete status
-- Created PHASE_EXECUTION_ORDER.md for dependency tracking
-- Clarified that phase numbers are historical, not sequential
-- Updated recommended next steps to reflect actual dependencies
+- Phase 2.7: Microsoft message fetching complete (~450 lines backend code)
+- Added `email_jobs.source` column for multi-source tracking
+- New endpoint: `POST /api/intake/microsoft/sync`
+- First sync test: 10 emails, 7 jobs created, 0 failures
 
 **Manual Updates**: This is a manually maintained document - update as needed
 

@@ -2958,6 +2958,484 @@ async fn handle_microsoft_oauth_callback(
     })))
 }
 
+// Microsoft Graph API message structures
+#[derive(Debug, Deserialize)]
+struct MicrosoftMessagesResponse {
+    value: Vec<MicrosoftMessage>,
+    #[serde(rename = "@odata.nextLink")]
+    next_link: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct MicrosoftMessage {
+    id: String,
+    #[serde(rename = "conversationId")]
+    conversation_id: Option<String>,
+    subject: Option<String>,
+    #[serde(rename = "receivedDateTime")]
+    received_date_time: String,
+    #[serde(rename = "isRead")]
+    is_read: bool,
+    from: Option<MicrosoftEmailAddress>,
+    body: Option<MicrosoftMessageBody>,
+}
+
+#[derive(Debug, Deserialize)]
+struct MicrosoftEmailAddress {
+    #[serde(rename = "emailAddress")]
+    email_address: Option<MicrosoftEmailInfo>,
+}
+
+#[derive(Debug, Deserialize)]
+struct MicrosoftEmailInfo {
+    name: Option<String>,
+    address: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct MicrosoftMessageBody {
+    #[serde(rename = "contentType")]
+    content_type: Option<String>,
+    content: Option<String>,
+}
+
+async fn sync_microsoft_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    let log_id = Uuid::new_v4();
+
+    // Get Microsoft email source
+    let source = sqlx::query_as::<_, JobSource>(
+        "SELECT * FROM job_sources WHERE source_name = 'microsoft_email' AND is_active = true LIMIT 1"
+    )
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|_| actix_web::error::ErrorNotFound("Microsoft email source not found or inactive"))?;
+
+    // Create intake log
+    sqlx::query!(
+        "INSERT INTO job_intake_logs (log_id, source_id, sync_status) VALUES ($1, $2, 'running')",
+        log_id,
+        source.source_id
+    )
+    .execute(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to create log: {}", e)))?;
+
+    // Get OAuth credentials
+    let credentials = sqlx::query_as::<_, OAuthCredential>(
+        "SELECT * FROM oauth_credentials WHERE source_id = $1 LIMIT 1"
+    )
+    .bind(source.source_id)
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|_| actix_web::error::ErrorNotFound("Microsoft credentials not found"))?;
+
+    let access_token = credentials.access_token.as_ref()
+        .ok_or_else(|| actix_web::error::ErrorUnauthorized("No access token available"))?.clone();
+
+    // Check if token is expired and refresh if needed
+    let token = if let Some(expires_at) = credentials.token_expires_at {
+        if chrono::Utc::now() > expires_at {
+            refresh_microsoft_token(&credentials, pool.get_ref()).await?
+        } else {
+            access_token
+        }
+    } else {
+        access_token
+    };
+
+    match process_microsoft_messages(&token, &source, pool.get_ref(), log_id).await {
+        Ok(metrics) => {
+            // Validate counters (mutually exclusive and collectively exhaustive)
+            let expected_total = metrics.failed_processing + metrics.filtered_out + metrics.duplicated + metrics.created;
+            let validation_error = if expected_total != metrics.discovered {
+                Some(format!(
+                    "Counter mismatch: discovered={} but failed+filtered+duplicated+created={}+{}+{}+{}={}",
+                    metrics.discovered, metrics.failed_processing, metrics.filtered_out, metrics.duplicated,
+                    metrics.created, expected_total
+                ))
+            } else {
+                None
+            };
+
+            if let Some(ref error_msg) = validation_error {
+                log_debug(&format!("⚠️  VALIDATION ERROR: {}", error_msg));
+            }
+
+            // Update log as completed with all metrics
+            sqlx::query!(
+                r#"
+                UPDATE job_intake_logs
+                SET sync_completed_at = NOW(),
+                    jobs_discovered = $1,
+                    jobs_failed_processing = $2,
+                    jobs_filtered_out = $3,
+                    jobs_duplicated = $4,
+                    jobs_created = $5,
+                    validation_error = $6,
+                    sync_status = 'completed'
+                WHERE log_id = $7
+                "#,
+                metrics.discovered,
+                metrics.failed_processing,
+                metrics.filtered_out,
+                metrics.duplicated,
+                metrics.created,
+                validation_error,
+                log_id
+            )
+            .execute(pool.get_ref())
+            .await
+            .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to update log: {}", e)))?;
+
+            Ok(HttpResponse::Ok().json(serde_json::json!({
+                "message": "Microsoft email sync completed successfully",
+                "metrics": {
+                    "jobs_discovered": metrics.discovered,
+                    "jobs_failed_processing": metrics.failed_processing,
+                    "jobs_filtered_out": metrics.filtered_out,
+                    "jobs_duplicated": metrics.duplicated,
+                    "jobs_created": metrics.created
+                },
+                "validation_error": validation_error
+            })))
+        }
+        Err(e) => {
+            // Update log as failed
+            sqlx::query!(
+                r#"
+                UPDATE job_intake_logs
+                SET sync_completed_at = NOW(), sync_status = 'failed', errors_count = 1,
+                    error_details = $1
+                WHERE log_id = $2
+                "#,
+                serde_json::json!({"error": e.to_string()}),
+                log_id
+            )
+            .execute(pool.get_ref())
+            .await
+            .ok();
+
+            Err(actix_web::error::ErrorInternalServerError(format!("Microsoft email sync failed: {}", e)))
+        }
+    }
+}
+
+async fn refresh_microsoft_token(credentials: &OAuthCredential, pool: &PgPool) -> actix_web::Result<String> {
+    let refresh_token = credentials.refresh_token.as_ref()
+        .ok_or_else(|| actix_web::error::ErrorUnauthorized("No refresh token available"))?;
+
+    let tenant_id = std::env::var("MICROSOFT_TENANT_ID")
+        .unwrap_or_else(|_| "common".to_string());
+
+    let client = reqwest::Client::new();
+    let response = client
+        .post(format!("https://login.microsoftonline.com/{}/oauth2/v2.0/token", tenant_id))
+        .form(&[
+            ("refresh_token", refresh_token),
+            ("client_id", &credentials.client_id),
+            ("client_secret", &credentials.client_secret),
+            ("grant_type", &"refresh_token".to_string()),
+            ("scope", &"https://graph.microsoft.com/Mail.Read https://graph.microsoft.com/Mail.ReadWrite offline_access".to_string()),
+        ])
+        .send()
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Token refresh failed: {}", e)))?;
+
+    let token_data: OAuthTokenResponse = response
+        .json()
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to parse refresh response: {}", e)))?;
+
+    let expires_at = chrono::Utc::now() + chrono::Duration::seconds(token_data.expires_in);
+
+    // Update stored credentials
+    sqlx::query!(
+        "UPDATE oauth_credentials SET access_token = $1, token_expires_at = $2, updated_at = NOW() WHERE credential_id = $3",
+        token_data.access_token,
+        expires_at,
+        credentials.credential_id
+    )
+    .execute(pool)
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to update credentials: {}", e)))?;
+
+    Ok(token_data.access_token)
+}
+
+async fn process_microsoft_messages(
+    access_token: &str,
+    source: &JobSource,
+    pool: &PgPool,
+    _log_id: Uuid,
+) -> std::result::Result<SyncMetrics, Box<dyn std::error::Error + Send + Sync>> {
+    let client = reqwest::Client::new();
+    let mut metrics = SyncMetrics {
+        discovered: 0,
+        failed_processing: 0,
+        filtered_out: 0,
+        duplicated: 0,
+        created: 0,
+    };
+
+    // Fetch unread messages from Microsoft Graph API
+    // Limited to 10 messages per sync to match Gmail behavior
+    let url = "https://graph.microsoft.com/v1.0/me/messages?$filter=isRead eq false&$top=10&$orderby=receivedDateTime desc";
+
+    let response = client
+        .get(url)
+        .bearer_auth(access_token)
+        .header("Accept", "application/json")
+        .send()
+        .await?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_default();
+        return Err(format!("Failed to fetch messages: {} - {}", status, error_text).into());
+    }
+
+    let messages_response: MicrosoftMessagesResponse = response.json().await?;
+
+    for message in messages_response.value.iter().take(50) {
+        metrics.discovered += 1;
+
+        // Check if we've already processed this message
+        let existing = sqlx::query!(
+            "SELECT email_job_id FROM email_jobs WHERE message_id = $1",
+            message.id
+        )
+        .fetch_optional(pool)
+        .await?;
+
+        if existing.is_some() {
+            metrics.duplicated += 1;
+
+            // Still mark as read even if already processed
+            if let Err(e) = mark_microsoft_message_as_read(&client, access_token, &message.id).await {
+                log_debug(&format!("Warning: Failed to mark message {} as read: {}", message.id, e));
+            }
+
+            continue; // Skip already processed messages
+        }
+
+        // Extract email details
+        let sender_email = message.from
+            .as_ref()
+            .and_then(|f| f.email_address.as_ref())
+            .and_then(|e| e.address.clone())
+            .unwrap_or_default();
+
+        let sender_name = message.from
+            .as_ref()
+            .and_then(|f| f.email_address.as_ref())
+            .and_then(|e| e.name.clone());
+
+        let subject = message.subject.clone();
+
+        // Parse received date (ISO 8601 format)
+        let received_date = chrono::DateTime::parse_from_rfc3339(&message.received_date_time)
+            .map(|dt| dt.with_timezone(&chrono::Utc))
+            .unwrap_or_else(|_| chrono::Utc::now());
+
+        // Extract email body (convert HTML to plain text if needed)
+        let body_text = message.body
+            .as_ref()
+            .and_then(|b| b.content.clone())
+            .map(|content| {
+                // If content type is HTML, we might want to strip tags
+                // For now, just use the content as-is
+                content
+            });
+
+        // Store email job for processing
+        let email_job_id = Uuid::new_v4();
+        sqlx::query!(
+            r#"
+            INSERT INTO email_jobs (
+                email_job_id, message_id, thread_id, sender_email, sender_name,
+                subject, received_date, body_text, processed, source
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, false, $9)
+            "#,
+            email_job_id,
+            message.id,
+            message.conversation_id,
+            sender_email,
+            sender_name,
+            subject,
+            received_date,
+            body_text,
+            "microsoft_email"
+        )
+        .execute(pool)
+        .await?;
+
+        // Process each email with timeout and error handling
+        log_debug(&format!("Processing Microsoft email {}/{}: {:?}", metrics.discovered, messages_response.value.len(), subject));
+
+        let processing_result = tokio::time::timeout(
+            std::time::Duration::from_secs(45), // 45 second timeout per email
+            async {
+                // Extract job information
+                if let Some(mut job_data) = extract_job_from_email_async(&subject, &body_text, pool).await {
+                    log_debug(&format!("Extracted job data - Title: {:?}, Company: {:?}, Confidence: {:.2}, Method: {}",
+                        job_data.title, job_data.company, job_data.confidence, job_data.extraction_method.as_deref().unwrap_or("unknown")));
+
+                    // Replace LLM summary with full email body for better user visibility
+                    if let Some(full_body) = &body_text {
+                        job_data.description = Some(full_body.clone());
+                    } else if job_data.description.is_none() {
+                        job_data.description = subject.clone().or(Some("(No email content available)".to_string()));
+                    }
+
+                    if job_data.confidence > 0.3 { // Real job opportunity
+                        // Mark email as read in Microsoft
+                        if let Err(e) = mark_microsoft_message_as_read(&client, access_token, &message.id).await {
+                            log_debug(&format!("Warning: Failed to mark message {} as read: {}", message.id, e));
+                        }
+
+                        match create_job_from_extraction(&job_data, source, pool, Some(received_date)).await {
+                            Ok(JobCreationResult::Created(job_id)) => {
+                                // Mark email as processed and link to created job
+                                if let Err(e) = sqlx::query!(
+                                    "UPDATE email_jobs SET processed = true, processed_at = NOW(), job_id = $1, extraction_confidence = $2, extracted_data = $3 WHERE email_job_id = $4",
+                                    job_id,
+                                    BigDecimal::try_from(job_data.confidence).unwrap_or_default(),
+                                    serde_json::to_value(&job_data).unwrap(),
+                                    email_job_id
+                                )
+                                .execute(pool)
+                                .await {
+                                    log_debug(&format!("Warning: Failed to update email_jobs for created job: {}", e));
+                                }
+                                Ok(("created", None))
+                            }
+                            Ok(JobCreationResult::Duplicate(job_id)) => {
+                                // Mark email as processed and link to existing duplicate job
+                                if let Err(e) = sqlx::query!(
+                                    "UPDATE email_jobs SET processed = true, processed_at = NOW(), job_id = $1, extraction_confidence = $2, extracted_data = $3 WHERE email_job_id = $4",
+                                    job_id,
+                                    BigDecimal::try_from(job_data.confidence).unwrap_or_default(),
+                                    serde_json::to_value(&job_data).unwrap(),
+                                    email_job_id
+                                )
+                                .execute(pool)
+                                .await {
+                                    log_debug(&format!("Warning: Failed to update email_jobs for duplicate: {}", e));
+                                }
+                                Ok(("duplicated", None))
+                            }
+                            Err(e) => {
+                                log_debug(&format!("Failed to create job from email: {}", e));
+
+                                // Store processing error
+                                if let Err(db_err) = sqlx::query!(
+                                    "UPDATE email_jobs SET processing_errors = $1 WHERE email_job_id = $2",
+                                    serde_json::json!({"error": e.to_string()}),
+                                    email_job_id
+                                )
+                                .execute(pool)
+                                .await {
+                                    log_debug(&format!("Warning: Failed to store processing error: {}", db_err));
+                                }
+                                Ok(("failed", Some(e.to_string())))
+                            }
+                        }
+                    } else {
+                        // Low confidence - not a real job opportunity
+                        // Leave unread in Microsoft inbox for manual review
+                        log_debug(&format!("Email filtered out (confidence {:.2}) - leaving unread in Microsoft: {:?}",
+                            job_data.confidence, subject));
+
+                        // Mark email as processed (filtered)
+                        if let Err(e) = sqlx::query!(
+                            "UPDATE email_jobs SET processed = true, processed_at = NOW(), extraction_confidence = $1, extracted_data = $2 WHERE email_job_id = $3",
+                            BigDecimal::try_from(job_data.confidence).unwrap_or_default(),
+                            serde_json::to_value(&job_data).unwrap(),
+                            email_job_id
+                        )
+                        .execute(pool)
+                        .await {
+                            log_debug(&format!("Warning: Failed to update email_jobs for filtered email: {}", e));
+                        }
+                        Ok(("filtered", None))
+                    }
+                } else {
+                    log_debug(&format!("Failed to extract job data from Microsoft email - Subject: {:?}", subject));
+                    // Leave unread for manual review
+                    Ok::<(&str, Option<String>), Box<dyn std::error::Error + Send + Sync>>(("failed_extraction", None))
+                }
+            }
+        ).await;
+
+        // Handle timeout and processing result
+        match processing_result {
+            Ok(Ok((result_type, error_msg))) => {
+                match result_type {
+                    "created" => metrics.created += 1,
+                    "duplicated" => metrics.duplicated += 1,
+                    "filtered" => metrics.filtered_out += 1,
+                    "failed" | "failed_extraction" => {
+                        metrics.failed_processing += 1;
+                        if let Some(err) = error_msg {
+                            log_debug(&format!("Email processing failed: {}", err));
+                        }
+                    }
+                    _ => log_debug(&format!("Unknown result type: {}", result_type)),
+                }
+            }
+            Ok(Err(e)) => {
+                metrics.failed_processing += 1;
+                log_debug(&format!("Email processing error: {}", e));
+            }
+            Err(_) => {
+                metrics.failed_processing += 1;
+                log_debug(&format!("Email processing TIMEOUT after 45 seconds - Subject: {:?}", subject));
+
+                // Store timeout error
+                if let Err(e) = sqlx::query!(
+                    "UPDATE email_jobs SET processing_errors = $1 WHERE email_job_id = $2",
+                    serde_json::json!({"error": "Processing timeout after 45 seconds"}),
+                    email_job_id
+                )
+                .execute(pool)
+                .await {
+                    log_debug(&format!("Warning: Failed to store timeout error: {}", e));
+                }
+            }
+        }
+    }
+
+    log_debug(&format!("Microsoft sync complete - Discovered: {}, Failed: {}, Filtered: {}, Duplicated: {}, Created: {}",
+        metrics.discovered, metrics.failed_processing, metrics.filtered_out, metrics.duplicated, metrics.created));
+    Ok(metrics)
+}
+
+async fn mark_microsoft_message_as_read(
+    client: &reqwest::Client,
+    access_token: &str,
+    message_id: &str,
+) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let url = format!("https://graph.microsoft.com/v1.0/me/messages/{}", message_id);
+
+    let response = client
+        .patch(&url)
+        .bearer_auth(access_token)
+        .header("Content-Type", "application/json")
+        .json(&serde_json::json!({
+            "isRead": true
+        }))
+        .send()
+        .await?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_default();
+        return Err(format!("Failed to mark message as read: {} - {}", status, error_text).into());
+    }
+
+    Ok(())
+}
+
 async fn sync_gmail_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     let log_id = Uuid::new_v4();
 
@@ -7023,6 +7501,7 @@ async fn main() -> std::io::Result<()> {
             .route("/api/email/microsoft/auth-url", web::get().to(get_microsoft_oauth_url))
             .route("/api/email/microsoft/callback", web::get().to(handle_microsoft_oauth_callback))
             .route("/api/intake/gmail/sync", web::post().to(sync_gmail_jobs))
+            .route("/api/intake/microsoft/sync", web::post().to(sync_microsoft_jobs))
             .route("/api/intake/rapidapi/sync", web::post().to(sync_jsearch_jobs))
             .route("/api/intake/linkedin/sync", web::post().to(sync_linkedin_jobs))
             .route("/api/intake/sync-all", web::post().to(sync_all_sources))
