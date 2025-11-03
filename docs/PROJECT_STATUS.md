@@ -5,8 +5,8 @@
   - [⚠️ Important: Phase Execution Order](#-important-phase-execution-order)
   - [Current State](#current-state)
   - [Recommended Next Steps](#recommended-next-steps)
-    - [Option A: Phase 5 Planning](#option-a-phase-5-planning)
-    - [Option B: Phase 2.7 Implementation](#option-b-phase-27-implementation)
+    - [Option A: Phase 2.7 Implementation (Microsoft Email Source)](#option-a-phase-27-implementation-microsoft-email-source)
+    - [Option B: Phase 5 Planning](#option-b-phase-5-planning)
     - [Option C: Phase 4 Extensions](#option-c-phase-4-extensions)
   - [Development Progress by Execution Order](#development-progress-by-execution-order)
     - [✅ Layer 1: Foundation (Complete)](#-layer-1-foundation-complete)
@@ -84,22 +84,35 @@
 
 **Current Status**: All 6 dependency layers complete and validated with E2E tests.
 
-### Option A: Phase 5 Planning
+### Option A: Phase 2.7 Implementation (Microsoft Email Source)
+
+**Business Case**: Complete the professional workflow progression
+- **Prospecting**: MrBesterTester@gmail.com for initial job offers (✅ implemented)
+- **Transition**: Move serious opportunities to sam@samkirk.com (❌ **missing**)
+- **Engagement**: Track active consulting retainers and employee onboarding
+
+**Implementation Details**:
+- **Feature**: Microsoft Graph API integration for sam@samkirk.com
+- **Prerequisites**: ✅ All met (can start immediately)
+- **Effort**: ~3-5 days (similar to Gmail integration)
+- **Value**: Unified tracking across prospecting → professional engagement lifecycle
+
+**Why Now**: Not about volume - about workflow completeness. Once contacts graduate from prospecting to active engagement, they move to sam@samkirk.com and fall outside JobHunter's visibility.
+
+**Documentation**: [PHASE_2.7](PHASE_2.7_samkirk-email-source-plan.md)
+
+### Option B: Phase 5 Planning
 - **Prerequisites**: ✅ All core workflows complete
 - **Scope**: Define analytics, mobile support, advanced features
 - **Effort**: 1-2 days planning
-- **Value**: Roadmap for future enhancements
-
-### Option B: Phase 2.7 Implementation
-- **Feature**: Microsoft email source (sam@samkirk.com)
-- **Prerequisites**: ✅ All met
-- **Status**: Deferred (current sources sufficient)
-- **Recommendation**: Wait until job volume requires more sources
+- **Value**: Roadmap for future enhancements based on real usage patterns
+- **Timing**: After Phase 2.7 implementation
 
 ### Option C: Phase 4 Extensions
 - **Status**: Phase 4.1 complete (RapidAPI JSearch)
 - **Available**: Phase 4.2+ (automatic paging, enhanced filtering)
 - **Priority**: Low (current functionality sufficient)
+- **Timing**: Can be done anytime based on need
 
 ---
 
