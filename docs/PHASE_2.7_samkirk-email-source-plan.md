@@ -4,6 +4,12 @@
 - [Phase 2.7: Microsoft Email Source Integration (sam@samkirk.com)](#phase-27-microsoft-email-source-integration-samsamkirkcom)
   - [Phase Numbering Rationale](#phase-numbering-rationale)
   - [Executive Summary](#executive-summary)
+  - [What is Microsoft Graph API? (And Why "Graph"?)](#what-is-microsoft-graph-api-and-why-graph)
+    - [What It Is](#what-it-is)
+    - [Why "Graph"?](#why-graph)
+    - [What It Includes (Scope)](#what-it-includes-scope)
+    - [What We're Using (Narrow Scope)](#what-were-using-narrow-scope)
+    - [Comparison to Gmail API](#comparison-to-gmail-api)
   - [Background](#background)
   - [Objectives](#objectives)
   - [Challenges](#challenges)
@@ -33,6 +39,10 @@
     - [Environment Variables](#environment-variables)
     - [Microsoft Azure App Registration](#microsoft-azure-app-registration)
   - [Cost Considerations](#cost-considerations)
+    - [API Usage Costs (All FREE! 🎉)](#api-usage-costs-all-free-)
+    - [LLM Costs (The Only Real Cost!)](#llm-costs-the-only-real-cost)
+    - [Total Additional Cost for Phase 2.7](#total-additional-cost-for-phase-27)
+    - [Cost Comparison to Alternative Solutions](#cost-comparison-to-alternative-solutions)
   - [Timeline Estimate](#timeline-estimate)
   - [Testing Strategy](#testing-strategy)
     - [Unit Tests](#unit-tests)
@@ -69,15 +79,65 @@ This numbering ensures:
 
 ## Executive Summary
 
-This phase adds support for a **second email source** (`sam@samkirk.com`) using the **Microsoft Graph API**. This consulting inbox will be integrated as an additional job intake source alongside the existing Gmail integration.
+This phase adds support for a **second email source** (`sam@samkirk.com`) using the **Microsoft Graph API**. This professional consulting inbox serves a different phase of the job search workflow than the existing Gmail integration.
+
+**Business Purpose:**
+- **Gmail** (MrBesterTester@gmail.com): High-volume prospecting and initial discovery
+- **Microsoft** (sam@samkirk.com): Professional engagement once opportunities become serious
+- **Integration Goal**: Track the complete lifecycle from prospecting through hiring
 
 **Key Differences from Gmail Integration:**
 - Uses Microsoft Graph API (OAuth 2.0) instead of Gmail API
-- Job offers are more sparse in this inbox
-- May require manual folder curation (JobOps folder) to concentrate job offers
+- Lower volume but higher quality (business-critical communications)
+- May require manual folder curation (JobOps folder) to separate job-related emails
 - Requires separate authentication flow and token management
 
 **Status**: Planning phase - implementation pending resolution of ISSUE-007 and completion of Phase 4.1.
+
+---
+
+## What is Microsoft Graph API? (And Why "Graph"?)
+
+**TL;DR**: Microsoft Graph is just Microsoft's branding for their unified REST API gateway. We're only using the email portion—it's not more complex or "fancier" than Gmail API.
+
+### What It Is
+**Microsoft Graph** is Microsoft's unified REST API endpoint (`https://graph.microsoft.com`) that provides access to data across their entire Microsoft 365 cloud ecosystem. Think of it as a single gateway into all Microsoft cloud services.
+
+### Why "Graph"?
+The name comes from **graph theory** in mathematics—representing relationships between interconnected objects. Microsoft Graph treats your data as an **interconnected network**:
+- **Nodes**: Users, emails, calendar events, files, groups, teams
+- **Edges**: Relationships connecting them
+
+For example, you can navigate: Email → Sender → Sender's calendar → Sender's team members. Everything is interconnected like a graph data structure, and you can traverse these relationships through the API.
+
+### What It Includes (Scope)
+Microsoft Graph provides access to:
+- **Microsoft 365**: Outlook/Exchange (email), Calendar, Teams, SharePoint, OneDrive
+- **Azure Active Directory**: User management, authentication
+- **Enterprise Mobility + Security**: Intune, threat protection
+- **Windows**: Device info, notifications, activities
+- **Dynamics 365**, Partner Center, and more
+
+### What We're Using (Narrow Scope)
+**We only need the Mail API portion** (`/me/messages`, `/me/mailFolders`) to:
+- Read emails from sam@samkirk.com inbox
+- List folder structure
+- Filter by folder (e.g., "JobOps" folder)
+- Get message content (subject, sender, body)
+
+**Key Takeaway**: Despite the broad scope of Microsoft Graph, we're using it the same way we use Gmail API—just for reading email messages. The "Graph" name simply reflects Microsoft's design philosophy for their entire cloud platform, but we can use it narrowly for email access without touching any other services.
+
+### Comparison to Gmail API
+
+| Aspect | Gmail API | Microsoft Graph API |
+|--------|-----------|---------------------|
+| **Purpose for JobHunter** | Read emails from MrBesterTester@gmail.com | Read emails from sam@samkirk.com |
+| **Scope We Use** | Email only (`/gmail/v1/users/me/messages`) | Email only (`/me/messages`) |
+| **Authentication** | Google OAuth 2.0 | Microsoft OAuth 2.0 (Azure AD) |
+| **Full API Scope** | Gmail-specific features | Entire Microsoft 365 ecosystem |
+| **Complexity for Our Use Case** | Simple (email read-only) | Simple (email read-only) |
+
+Both APIs are straightforward for our email-reading use case. The difference is just authentication provider and message format.
 
 ---
 
@@ -92,6 +152,40 @@ This phase adds support for a **second email source** (`sam@samkirk.com`) using 
 - Secondary consulting inbox (`sam@samkirk.com`) also receives job opportunities
 - These opportunities are currently not captured by JobHunter
 - Manual processing is time-consuming and error-prone
+
+**Business Relationship Between Email Accounts:**
+
+The two email accounts serve different phases of the professional relationship lifecycle:
+
+1. **MrBesterTester@gmail.com** (Gmail) - **Prospecting Phase**
+   - Initial contact point for job opportunities
+   - Receives high-volume job listings from recruiters, job boards, newsletters
+   - Acts as the "public-facing" job search inbox
+   - Lower signal-to-noise ratio (many irrelevant opportunities)
+   - **Current Status**: ✅ Fully integrated with JobHunter
+
+2. **sam@samkirk.com** (Microsoft) - **Professional Engagement Phase**
+   - Used when opportunities become serious/qualified
+   - Receives communication during:
+     - Active consulting retainers
+     - Employee onboarding processes
+     - Serious job negotiations
+     - Professional follow-ups
+   - Higher signal-to-noise ratio (curated opportunities)
+   - More business-critical communications
+   - **Current Status**: ❌ Not integrated - requires manual tracking
+
+**Workflow Pattern:**
+- **Initial Discovery**: Jobs appear in MrBesterTester@gmail.com
+- **Qualification**: Promising opportunities are moved/replied-to using sam@samkirk.com
+- **Engagement**: Ongoing communication happens via sam@samkirk.com
+- **Gap**: Once communication moves to sam@samkirk.com, JobHunter loses visibility
+
+**Why This Integration Matters:**
+- **Continuity**: Track the complete lifecycle from prospecting → engagement → hiring
+- **Visibility**: Don't lose track of opportunities that "graduate" to sam@samkirk.com
+- **Professionalism**: Keep business-critical communications separate from high-volume prospecting
+- **Completeness**: Unified view of all active opportunities regardless of communication channel
 
 **Strategic Context:**
 - This is the **second and final** email source planned (per PRD Section 4.1)
@@ -590,16 +684,55 @@ MICROSOFT_TENANT_ID=common
 
 ## Cost Considerations
 
-**Microsoft Graph API:**
-- ✅ **Free tier**: 10,000 requests per 10 minutes per application
+### API Usage Costs (All FREE! 🎉)
+
+**Microsoft Graph API (Mail):**
+- ✅ **FREE**: Outlook mail REST API is currently free (confirmed by Microsoft)
+- ✅ **Rate Limit**: 10,000 requests per 10 minutes per application
 - ✅ **No per-request charges** for basic Mail API operations
-- ✅ **No additional Azure costs** for personal accounts
+- ✅ **No Azure subscription required** for personal Microsoft accounts
+- ✅ **No overage charges** - only rate-limited if exceeded
 
-**LLM Costs (Phase 2.6 - Claude Haiku):**
-- Same as Gmail integration (~$3-5/month for 100 emails)
-- Potentially lower if folder filtering reduces volume
+**Gmail API (Current Integration):**
+- ✅ **FREE**: Completely free within generous quotas
+- ✅ **Rate Limit**: 1.2M quota units/minute per project, 15K/minute per user
+- ✅ **No billing even if quotas exceeded** - only rate-limited temporarily
+- ✅ **Official**: "All use of Gmail API is available at no additional cost"
 
-**Total Additional Cost**: **$0-5/month** (LLM only if high volume)
+**Google Calendar API (Current Integration):**
+- ✅ **FREE**: Completely free, no charges
+- ✅ **Official**: "All use of the Google Calendar API is available at no additional cost"
+- ✅ **No overage charges** - rate-limited but never billed
+
+### LLM Costs (The Only Real Cost!)
+
+**Anthropic Claude Haiku (Phase 2.6 - Job Extraction):**
+- **Current cost**: ~$3-5/month for 100 emails (Gmail)
+- **Additional cost**: Similar for sam@samkirk.com emails
+- **Potential savings**: Lower volume expected in sam@samkirk.com (higher signal-to-noise)
+- **Folder filtering**: JobOps folder strategy further reduces LLM API calls
+- **Estimated additional cost**: **$1-3/month** (fewer emails to process)
+
+**Anthropic Claude Haiku (Phase 3.1 - Content Generation):**
+- **Per application**: ~$0.25 per resume/cover letter generation
+- **This cost exists regardless** of email source (Gmail or Microsoft)
+
+### Total Additional Cost for Phase 2.7
+
+**API costs**: **$0** (all email/calendar APIs are free)
+**LLM costs**: **$1-3/month** (job extraction from sam@samkirk.com emails)
+**Total**: **$1-3/month additional** (only if processing many emails)
+
+### Cost Comparison to Alternative Solutions
+
+| Solution | Monthly Cost | Notes |
+|----------|--------------|-------|
+| **JobHunter (Phase 2.7)** | **$1-3/month** | Only LLM costs, all APIs free |
+| Manual email processing | $0 | Time cost: ~2-5 hours/month |
+| Third-party job trackers | $10-50/month | Subscription fees |
+| Email parsing services | $20-100/month | Per-email processing fees |
+
+**Key Insight**: The real cost is LLM usage for intelligent job extraction, not API access. Phase 2.7 adds minimal additional cost (~$1-3/month) while providing complete lifecycle tracking from prospecting to professional engagement.
 
 ---
 

@@ -86,18 +86,29 @@
 
 ### Option A: Phase 2.7 Implementation (Microsoft Email Source)
 
-**Business Case**: Complete the professional workflow progression
-- **Prospecting**: MrBesterTester@gmail.com for initial job offers (✅ implemented)
-- **Transition**: Move serious opportunities to sam@samkirk.com (❌ **missing**)
-- **Engagement**: Track active consulting retainers and employee onboarding
+**Business Case**: Complete the professional relationship lifecycle tracking
+
+The two email accounts serve different phases of the professional workflow:
+
+1. **MrBesterTester@gmail.com** (Gmail) - **Prospecting Phase** (✅ implemented)
+   - High-volume job listings from recruiters, job boards, newsletters
+   - Initial discovery and qualification
+   - Lower signal-to-noise ratio
+
+2. **sam@samkirk.com** (Microsoft) - **Professional Engagement Phase** (❌ **missing**)
+   - Serious job negotiations and consulting retainers
+   - Employee onboarding and professional follow-ups
+   - Higher signal-to-noise ratio, business-critical communications
+
+**Workflow Gap**: Once opportunities "graduate" from prospecting (Gmail) to serious engagement (sam@samkirk.com), JobHunter loses visibility. This integration closes that gap.
 
 **Implementation Details**:
 - **Feature**: Microsoft Graph API integration for sam@samkirk.com
 - **Prerequisites**: ✅ All met (can start immediately)
-- **Effort**: ~3-5 days (similar to Gmail integration)
-- **Value**: Unified tracking across prospecting → professional engagement lifecycle
+- **Effort**: ~7 days (3 days API, 2 days folder filtering, 2 days testing)
+- **Value**: Unified tracking across complete lifecycle: prospecting → engagement → hiring
 
-**Why Now**: Not about volume - about workflow completeness. Once contacts graduate from prospecting to active engagement, they move to sam@samkirk.com and fall outside JobHunter's visibility.
+**Why Now**: Workflow completeness - track the entire professional relationship from initial contact through hiring/engagement.
 
 **Documentation**: [PHASE_2.7](PHASE_2.7_samkirk-email-source-plan.md)
 

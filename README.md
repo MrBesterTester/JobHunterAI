@@ -4,6 +4,9 @@
 - [JobHunter](#jobhunter)
   - [Overview](#overview)
   - [Tech Stack](#tech-stack)
+  - [Costs](#costs)
+    - [API Costs - Great News! 🎉](#api-costs---great-news-)
+    - [LLM Costs - The Only Real Cost](#llm-costs---the-only-real-cost)
   - [Quick Start](#quick-start)
     - [🚀 One-Command Startup (Easiest)](#-one-command-startup-easiest)
     - [📋 Initial Setup (First Time Only)](#-initial-setup-first-time-only)
@@ -46,6 +49,50 @@ JobHunter automates and streamlines your entire job search workflow. The system 
 - **Frontend**: TypeScript/React
 - **Database**: PostgreSQL
 - **AI**: Claude 3.5 Haiku (Anthropic)
+
+## Costs
+
+### API Costs - Great News! 🎉
+
+**All email and calendar APIs are completely FREE:**
+
+| Service | Usage | Cost | Rate Limits | Overage Charges |
+|---------|-------|------|-------------|-----------------|
+| **Gmail API** | Email reading/sending | **$0 FREE** | 1.2M requests/min per project | ❌ None (just rate-limited) |
+| **Google Calendar API** | Calendar events | **$0 FREE** | Generous per-project quotas | ❌ None (just rate-limited) |
+| **Microsoft Graph API** | Outlook email (future) | **$0 FREE** | 10K requests per 10 min | ❌ None (just rate-limited) |
+
+**Official confirmations:**
+- Gmail: "All use of Gmail API is available at no additional cost"
+- Google Calendar: "All use of the Google Calendar API is available at no additional cost"
+- Microsoft Graph: "Outlook mail REST API is currently free" (Microsoft official response)
+
+### LLM Costs - The Only Real Cost
+
+**Anthropic Claude API** is the only service that incurs charges:
+
+| Feature | Model | Cost | Usage |
+|---------|-------|------|-------|
+| **Job Extraction** | Claude 3.5 Haiku | ~$3-5/month | For 100 emails processed |
+| **Content Generation** | Claude 3.5 Haiku | ~$0.25 per application | Resume + cover letter generation |
+
+**Example monthly costs:**
+- **Light usage** (10 emails, 2 applications): ~$1-2/month
+- **Moderate usage** (50 emails, 10 applications): ~$3-5/month
+- **Heavy usage** (100 emails, 20 applications): ~$8-10/month
+
+**Cost comparison to alternatives:**
+
+| Solution | Monthly Cost | Notes |
+|----------|--------------|-------|
+| **JobHunter** | **$1-10/month** | Only LLM costs, all APIs free |
+| Manual email processing | $0 | Time cost: ~5-10 hours/month |
+| Third-party job trackers | $10-50/month | Subscription fees |
+| Email parsing services | $20-100/month | Per-email processing fees |
+
+**Key Takeaway**: You only pay for the AI intelligence that extracts job details and generates personalized content. All email, calendar, and job board API access is completely free.
+
+**Need an Anthropic API key?** Sign up at [console.anthropic.com](https://console.anthropic.com) and add it to your `.env` file as `ANTHROPIC_API_KEY`.
 
 ## Quick Start
 
