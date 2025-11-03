@@ -300,6 +300,66 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
     }
   };
 
+  // Microsoft authentication
+  const handleMicrosoftAuth = async (): Promise<void> => {
+    try {
+      const response = await fetch(`${API_URL}/email/microsoft/auth-url`);
+      if (!response.ok) {
+        throw new Error(`Failed to get auth URL: ${response.status}`);
+      }
+      const data: GmailAuthResponse = await response.json();
+      window.open(data.auth_url, '_blank', 'width=600,height=600');
+
+      // Refresh sources after a delay to check connection status
+      setTimeout(() => {
+        fetchSources();
+      }, 3000);
+    } catch (err) {
+      console.error('Error initiating Microsoft auth:', err);
+      setError('Failed to initiate Microsoft authentication');
+    }
+  };
+
+  // Microsoft sync
+  const handleMicrosoftSync = async (): Promise<void> => {
+    const microsoftSource = sources.find(s => s.source_name === 'microsoft_email');
+    if (!microsoftSource) return;
+
+    setSyncingSource(microsoftSource.source_id);
+    setError(null);
+
+    try {
+      const response = await fetch(`${API_URL}/intake/microsoft/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Sync failed: ${response.status}`);
+      }
+
+      const data: SyncResponse = await response.json();
+      setLastSyncResult(data);
+
+      // Refresh all data
+      await Promise.all([
+        fetchSources(),
+        fetchLogs(),
+        fetchSummary()
+      ]);
+
+      // Notify parent component to refresh jobs list
+      if (onJobsUpdated) {
+        onJobsUpdated();
+      }
+    } catch (err) {
+      console.error('Error syncing Microsoft:', err);
+      setError('Failed to sync Microsoft jobs');
+    } finally {
+      setSyncingSource(null);
+    }
+  };
+
   // LinkedIn sync
   const handleLinkedInSync = async (): Promise<void> => {
     const linkedinSource = sources.find(s => s.source_type === 'linkedin');
@@ -501,11 +561,14 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
   // Use source_name to identify specific sources, not source_type
   // This allows multiple sources of the same type (e.g., Gmail, Outlook, Yahoo all have type 'email')
   const gmailSource = getSourceByName('gmail');
+  const microsoftSource = getSourceByName('microsoft_email');
   const linkedinSource = getSourceByName('linkedin');
   const rapidapiSource = getSourceByName('rapidapi');
   // Check if OAuth credentials actually exist
   const isGmailConnected = gmailSource ? (gmailSource.has_credentials === true) : false;
+  const isMicrosoftConnected = microsoftSource ? (microsoftSource.has_credentials === true) : false;
   const isGmailSyncing = syncingSource === gmailSource?.source_id;
+  const isMicrosoftSyncing = syncingSource === microsoftSource?.source_id;
   const isLinkedInSyncing = syncingSource === linkedinSource?.source_id;
   const isRapidAPISyncing = syncingSource === rapidapiSource?.source_id;
   // RapidAPI is considered "connected" if the source exists and is active
@@ -766,6 +829,104 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
             <button
               onClick={handleGmailAuth}
               title="Re-authenticate Gmail"
+              style={{
+                padding: '10px 12px',
+                borderRadius: '6px',
+                border: '1px solid #d1d5db',
+                backgroundColor: 'white',
+                color: '#6b7280',
+                cursor: 'pointer',
+                fontSize: '14px'
+              }}
+            >
+              <Settings style={{ width: '16px', height: '16px' }} />
+            </button>
+          </div>
+        </div>
+
+        {/* Microsoft Email Integration Card */}
+        <div style={{
+          backgroundColor: 'white',
+          border: '1px solid #e5e7eb',
+          borderRadius: '8px',
+          padding: '20px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <Mail style={{ width: '32px', height: '32px', color: '#0078d4' }} />
+            <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Microsoft Email (sam@samkirk.com)</h3>
+          </div>
+
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <div style={{
+                width: '10px',
+                height: '10px',
+                borderRadius: '50%',
+                backgroundColor: isMicrosoftConnected ? '#10b981' : '#9ca3af'
+              }} />
+              <span style={{ fontSize: '14px', color: '#6b7280' }}>
+                Status: {isMicrosoftConnected ? 'Connected' : 'Not Connected'}
+              </span>
+            </div>
+            {microsoftSource?.last_sync && (
+              <p style={{ fontSize: '14px', color: '#6b7280', margin: '4px 0' }}>
+                Last Sync: {formatRelativeTime(microsoftSource.last_sync)}
+              </p>
+            )}
+            {microsoftSource && (
+              <p style={{ fontSize: '14px', color: '#6b7280', margin: '4px 0' }}>
+                Auto-sync: {microsoftSource.is_active ? `Every ${microsoftSource.sync_interval_minutes} minutes` : 'Disabled'}
+              </p>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {!isMicrosoftConnected ? (
+              <button
+                onClick={handleMicrosoftAuth}
+                style={{
+                  flex: 1,
+                  padding: '10px 16px',
+                  borderRadius: '6px',
+                  border: '1px solid #0078d4',
+                  backgroundColor: '#0078d4',
+                  color: 'white',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }}
+              >
+                Authenticate with Microsoft
+              </button>
+            ) : (
+              <button
+                onClick={handleMicrosoftSync}
+                disabled={isMicrosoftSyncing || syncingAll}
+                style={{
+                  flex: 1,
+                  padding: '10px 16px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  backgroundColor: isMicrosoftSyncing || syncingAll ? '#9ca3af' : '#10b981',
+                  color: 'white',
+                  fontWeight: '500',
+                  cursor: isMicrosoftSyncing || syncingAll ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  opacity: isMicrosoftSyncing || syncingAll ? 0.6 : 1
+                }}
+              >
+                <RefreshCw style={{ width: '16px', height: '16px', animation: isMicrosoftSyncing ? 'spin 1s linear infinite' : 'none' }} />
+                {isMicrosoftSyncing ? 'Syncing...' : 'Sync Now'}
+              </button>
+            )}
+            <button
+              onClick={handleMicrosoftAuth}
+              title="Re-authenticate Microsoft"
               style={{
                 padding: '10px 12px',
                 borderRadius: '6px',
