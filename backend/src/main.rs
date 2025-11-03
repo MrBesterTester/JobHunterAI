@@ -2841,6 +2841,123 @@ async fn handle_calendar_oauth_callback(
     })))
 }
 
+// ============================================================================
+// Phase 2.7: Microsoft Email Integration (sam@samkirk.com)
+// ============================================================================
+
+async fn get_microsoft_oauth_url() -> Result<HttpResponse> {
+    let client_id = std::env::var("MICROSOFT_CLIENT_ID")
+        .map_err(|_| actix_web::error::ErrorInternalServerError("MICROSOFT_CLIENT_ID not set"))?;
+
+    let redirect_uri = std::env::var("MICROSOFT_REDIRECT_URI")
+        .unwrap_or_else(|_| "http://localhost:8080/api/email/microsoft/callback".to_string());
+
+    let tenant_id = std::env::var("MICROSOFT_TENANT_ID")
+        .unwrap_or_else(|_| "common".to_string());
+
+    // Microsoft Graph API scopes (space-separated)
+    let scope = "https://graph.microsoft.com/Mail.Read https://graph.microsoft.com/Mail.ReadWrite https://graph.microsoft.com/MailboxSettings.Read offline_access";
+
+    let auth_url = format!(
+        "https://login.microsoftonline.com/{}/oauth2/v2.0/authorize?client_id={}&redirect_uri={}&scope={}&response_type=code&response_mode=query",
+        tenant_id,
+        urlencoding::encode(&client_id),
+        urlencoding::encode(&redirect_uri),
+        urlencoding::encode(scope)
+    );
+
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "auth_url": auth_url
+    })))
+}
+
+async fn handle_microsoft_oauth_callback(
+    pool: web::Data<PgPool>,
+    query: web::Query<std::collections::HashMap<String, String>>
+) -> Result<HttpResponse> {
+    let code = query.get("code")
+        .ok_or_else(|| actix_web::error::ErrorBadRequest("Missing authorization code"))?;
+
+    let client_id = std::env::var("MICROSOFT_CLIENT_ID")
+        .map_err(|_| actix_web::error::ErrorInternalServerError("MICROSOFT_CLIENT_ID not set"))?;
+
+    let client_secret = std::env::var("MICROSOFT_CLIENT_SECRET")
+        .map_err(|_| actix_web::error::ErrorInternalServerError("MICROSOFT_CLIENT_SECRET not set"))?;
+
+    let redirect_uri = std::env::var("MICROSOFT_REDIRECT_URI")
+        .unwrap_or_else(|_| "http://localhost:8080/api/email/microsoft/callback".to_string());
+
+    let tenant_id = std::env::var("MICROSOFT_TENANT_ID")
+        .unwrap_or_else(|_| "common".to_string());
+
+    // Exchange code for tokens
+    let client = reqwest::Client::new();
+    let token_response = client
+        .post(format!("https://login.microsoftonline.com/{}/oauth2/v2.0/token", tenant_id))
+        .form(&[
+            ("code", code),
+            ("client_id", &client_id),
+            ("client_secret", &client_secret),
+            ("redirect_uri", &redirect_uri),
+            ("grant_type", &"authorization_code".to_string()),
+        ])
+        .send()
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Token request failed: {}", e)))?;
+
+    let token_data: OAuthTokenResponse = token_response
+        .json()
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to parse token response: {}", e)))?;
+
+    // Get Microsoft email source ID
+    let source = sqlx::query_as::<_, JobSource>(
+        "SELECT * FROM job_sources WHERE source_name = 'microsoft_email' LIMIT 1"
+    )
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|_| actix_web::error::ErrorInternalServerError("Microsoft email source not found"))?;
+
+    // Store or update OAuth credentials
+    let expires_at = chrono::Utc::now() + chrono::Duration::seconds(token_data.expires_in);
+
+    // Parse scope string into individual scopes (Microsoft returns space-separated string)
+    let scopes: Vec<String> = token_data.scope
+        .unwrap_or_default()
+        .split_whitespace()
+        .map(|s| s.to_string())
+        .collect();
+
+    sqlx::query!(
+        r#"
+        INSERT INTO oauth_credentials (credential_id, source_id, client_id, client_secret, access_token, refresh_token, token_expires_at, scope)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        ON CONFLICT (source_id) DO UPDATE SET
+            access_token = EXCLUDED.access_token,
+            refresh_token = EXCLUDED.refresh_token,
+            token_expires_at = EXCLUDED.token_expires_at,
+            scope = EXCLUDED.scope,
+            updated_at = NOW()
+        "#,
+        Uuid::new_v4(),
+        source.source_id,
+        client_id,
+        client_secret,
+        token_data.access_token,
+        token_data.refresh_token,
+        expires_at,
+        &scopes
+    )
+    .execute(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to store credentials: {}", e)))?;
+
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "message": "Microsoft email integration configured successfully",
+        "expires_at": expires_at
+    })))
+}
+
 async fn sync_gmail_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     let log_id = Uuid::new_v4();
 
@@ -6902,6 +7019,9 @@ async fn main() -> std::io::Result<()> {
             .route("/auth/gmail/callback", web::get().to(handle_gmail_oauth_callback))
             .route("/api/auth/calendar/url", web::get().to(get_calendar_oauth_url))
             .route("/auth/calendar/callback", web::get().to(handle_calendar_oauth_callback))
+            // Phase 2.7: Microsoft Email Integration
+            .route("/api/email/microsoft/auth-url", web::get().to(get_microsoft_oauth_url))
+            .route("/api/email/microsoft/callback", web::get().to(handle_microsoft_oauth_callback))
             .route("/api/intake/gmail/sync", web::post().to(sync_gmail_jobs))
             .route("/api/intake/rapidapi/sync", web::post().to(sync_jsearch_jobs))
             .route("/api/intake/linkedin/sync", web::post().to(sync_linkedin_jobs))
