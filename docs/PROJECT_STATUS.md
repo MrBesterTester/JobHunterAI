@@ -5,9 +5,10 @@
   - [⚠️ Important: Phase Execution Order](#-important-phase-execution-order)
   - [Current State](#current-state)
   - [Recommended Next Steps](#recommended-next-steps)
-    - [Option A: Phase 2.7 Completion (Microsoft Email Source)](#option-a-phase-27-completion-microsoft-email-source)
-    - [Option B: Phase 5 Planning ✅ COMPLETE](#option-b-phase-5-planning--complete)
-    - [Option C: Phase 4 Extensions](#option-c-phase-4-extensions)
+    - [Option A: Phase 4.2 Automatic Pagination ⭐ **START HERE**](#option-a-phase-42-automatic-pagination--start-here)
+    - [Option B: Phase 2.7 Completion (Microsoft Email Source)](#option-b-phase-27-completion-microsoft-email-source)
+    - [Option C: Phase 5 Planning ✅ COMPLETE](#option-c-phase-5-planning--complete)
+    - [Option D: Phase 4 Extensions (Phase 4.3+)](#option-d-phase-4-extensions-phase-43)
   - [Development Progress by Execution Order](#development-progress-by-execution-order)
     - [✅ Layer 1: Foundation (Complete)](#-layer-1-foundation-complete)
     - [✅ Layer 2: Job Intake (Complete)](#-layer-2-job-intake-complete)
@@ -36,7 +37,7 @@
 
 # JobHunter Project Status
 
-**Last Updated**: 2025-11-03 19:16:22 PST (Phase 5 planning complete - comprehensive 6-week roadmap ready)
+**Last Updated**: 2025-11-03 19:40:02 PST (Phase 4.2 planning complete - new priority: 4.2 → 5.1 → 5.2)
 
 ---
 
@@ -86,7 +87,47 @@
 
 **Current Status**: All 6 dependency layers complete and validated with E2E tests.
 
-### Option A: Phase 2.7 Completion (Microsoft Email Source)
+**⭐ NEW HIGHEST PRIORITY**: Phase 4.2 (Automatic Pagination) - Quick win before Phase 5!
+
+### Option A: Phase 4.2 Automatic Pagination ⭐ **START HERE**
+
+**Status**: 📋 **Planning Complete** (2025-11-03), ready to implement
+**Document**: [PHASE_4.2_automatic-pagination.md](PHASE_4.2_automatic-pagination.md)
+**Timeline**: 4-6 hours (quick win!)
+**Priority**: ⭐ **HIGHEST** - Implement BEFORE Phase 5.1
+
+**The Problem**: Currently, fetching different pages from RapidAPI requires manual SQL:
+```sql
+-- Annoying! Have to do this every time you want the next page
+UPDATE job_sources
+SET configuration = jsonb_set(configuration, '{page}', '"2"')
+WHERE source_name = 'rapidapi';
+```
+
+**The Solution**: Automatic page tracking and increment
+- Just click "Sync RapidAPI" repeatedly
+- Automatically fetches page 1, then 2, then 3, etc.
+- UI shows: "Last page synced: 5 (50 jobs total)"
+- "Reset to Page 1" button (no more manual SQL!)
+
+**Why This First** (Before Phase 5.1):
+- ✅ **Quick win**: Only 4-6 hours vs 24-30 hours for Phase 5.1
+- ✅ **Removes major friction**: No more manual SQL for pagination
+- ✅ **Prevents wasted API quota**: Won't accidentally re-sync same page
+- ✅ **Better UX**: Seamless multi-page job syncing
+- ✅ **Already partially planned**: Implementation details ready
+
+**What's Included**:
+- Backend: Automatic page increment after each sync
+- Frontend: Display current page + "Reset to Page 1" button
+- Database: Add `last_page_fetched` column
+- Testing: 7 new tests (4 backend unit + 3 E2E)
+
+**Testing Plan**: 4 backend unit tests + 3 E2E tests + 10-item manual checklist
+
+**Recommended Order**: Phase 4.2 → Phase 5.1 → Phase 5.2
+
+### Option B: Phase 2.7 Completion (Microsoft Email Source)
 
 **Status**: ✅ **95% Complete - Production Ready** (2025-11-03)
 
@@ -130,7 +171,7 @@
 
 **Documentation**: [PHASE_2.7](PHASE_2.7_samkirk-email-source-plan.md)
 
-### Option B: Phase 5 Planning ✅ COMPLETE
+### Option C: Phase 5 Planning ✅ COMPLETE
 - **Status**: ✅ **Planning Complete** (2025-11-03)
 - **Prerequisites**: ✅ All core workflows complete
 - **Document**: [PHASE_5_advanced-features.md](PHASE_5_advanced-features.md) (comprehensive 6-week roadmap)
@@ -152,11 +193,11 @@
 
 **Priority**: Start with 5.1 (Content Refresh) - fixes annoying BUG-0007, 8 tests already written, faster win (24-30h)
 
-### Option C: Phase 4 Extensions
-- **Status**: Phase 4.1 complete (RapidAPI JSearch)
-- **Available**: Phase 4.2+ (automatic paging, enhanced filtering)
-- **Priority**: Low (current functionality sufficient)
-- **Timing**: Can be done anytime based on need
+### Option D: Phase 4 Extensions (Phase 4.3+)
+- **Status**: Phase 4.1 complete (RapidAPI JSearch), Phase 4.2 planned (automatic pagination)
+- **Available**: Phase 4.3+ (smart pagination, search query management, advanced rate limiting)
+- **Priority**: Low (Phase 4.2 covers immediate needs)
+- **Timing**: Can be done anytime after Phase 4.2 based on need
 
 ---
 
@@ -338,6 +379,7 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 | Feature | Phase # | Status | Progress | Completed | Doc |
 |---------|---------|--------|----------|-----------|-----|
 | RapidAPI JSearch | Phase 4.1 | ✅ Complete | 100% | 2025-10-23 | [PHASE_4.1](PHASE_4.1_job-board-rapidAPI.md) |
+| Automatic Pagination | Phase 4.2 | 📋 Planned | 0% | N/A | [PHASE_4.2](PHASE_4.2_automatic-pagination.md) ⭐ **NEXT** |
 
 **Phase 4.1 Details**:
 - ✅ RapidAPI JSearch integration (aggregates 30+ job boards)
@@ -345,11 +387,21 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 - ✅ Backend tests: 11/11 passing
 - ✅ E2E tests: 5/5 passing
 - ✅ Two independent job sources: Gmail + RapidAPI
+- ⚠️ Manual pagination (requires SQL to change page)
 
-**Phase 4.2+ Extensions** (Optional, Low Priority):
-- Automatic page tracking (4-6 hours)
+**Phase 4.2 Details** (⭐ **NEXT TASK** - 4-6 hours):
+- 📋 Automatic page tracking and increment
+- 📋 UI displays current page ("Last page synced: 5")
+- 📋 "Reset to Page 1" button (no manual SQL)
+- 📋 Backend: Add `last_page_fetched` column
+- 📋 Testing: 7 new tests (4 backend unit + 3 E2E)
+- **Why first**: Quick win, removes friction, prevents wasted API quota
+
+**Phase 4.3+ Extensions** (Optional, Low Priority):
+- Smart pagination (auto-detect end, "Fetch All" button)
+- Search query management (multiple saved searches)
 - Enhanced filtering
-- Increased sync limits (paid tier)
+- Advanced rate limiting
 - Additional specialized APIs
 
 ### Phase 5: Advanced Features
@@ -516,10 +568,16 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 
 ---
 
-**Last Updated**: 2025-11-03 19:16:22 PST (Phase 5 planning complete - comprehensive 6-week roadmap ready)
+**Last Updated**: 2025-11-03 19:40:02 PST (Phase 4.2 planning complete - new priority: 4.2 → 5.1 → 5.2)
 
 **Major Updates in This Revision**:
-- **Phase 5 Planning Complete** (2025-11-03 19:16:22 PST) ⭐ NEW
+- **Phase 4.2 Planning Complete** (2025-11-03 19:40:02 PST) ⭐⭐ **HIGHEST PRIORITY**
+  - ✅ Comprehensive planning document created: [PHASE_4.2_automatic-pagination.md](PHASE_4.2_automatic-pagination.md)
+  - ✅ Automatic pagination for RapidAPI (4-6 hours)
+  - ✅ Removes manual SQL friction from pagination
+  - ✅ **NEW PRIORITY ORDER**: Phase 4.2 → Phase 5.1 → Phase 5.2
+  - **Why first**: Quick win, removes annoying manual SQL, prevents wasted API quota
+- **Phase 5 Planning Complete** (2025-11-03 19:16:22 PST)
   - ✅ Comprehensive planning document created: [PHASE_5_advanced-features.md](PHASE_5_advanced-features.md)
   - ✅ 5 sub-phases defined: Analytics, Content Refresh, Automation, UX, Performance
   - ✅ Detailed specifications: 15 features across 5 categories

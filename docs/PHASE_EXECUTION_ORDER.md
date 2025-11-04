@@ -6,6 +6,7 @@
   - [📊 Visual Dependency Chain](#-visual-dependency-chain)
   - [✅ Completed Phases (In Execution Order)](#-completed-phases-in-execution-order)
   - [🚀 Ready to Start (All Prerequisites Met)](#-ready-to-start-all-prerequisites-met)
+    - [Phase 4.2: Automatic Pagination ⭐ **START HERE**](#phase-42-automatic-pagination--start-here)
     - [Phase 5: Advanced Features](#phase-5-advanced-features)
   - [⏸️ Nearly Complete but Deferred](#-nearly-complete-but-deferred)
     - [Phase 2.7: Microsoft Email Source](#phase-27-microsoft-email-source)
@@ -21,7 +22,7 @@
     - [ADVANCED: Nice-to-Have Features](#advanced-nice-to-have-features)
   - [🎯 Recommended Next Steps](#-recommended-next-steps)
     - [Immediate (This Week)](#immediate-this-week)
-    - [Short Term (Next 1-2 Weeks)](#short-term-next-1-2-weeks)
+    - [Short Term (Next 1-2 Weeks) - NEW PRIORITY ORDER](#short-term-next-1-2-weeks---new-priority-order)
     - [Long Term (2-3 Months)](#long-term-2-3-months)
   - [📚 Related Documentation](#-related-documentation)
   - [🔄 Maintenance](#-maintenance)
@@ -30,7 +31,7 @@
 
 # Phase Execution Order - JobHunter Project
 
-**Last Updated**: 2025-11-03 (Phase 5 planning complete, ready to implement)
+**Last Updated**: 2025-11-03 19:40:02 PST (Phase 4.2 planning complete, new priority: 4.2 → 5.1 → 5.2)
 
 ---
 
@@ -54,6 +55,7 @@ This document shows the **correct execution sequence** based on actual feature d
 │  Layer 2: Job Intake (Get jobs into system)                │
 │  • Gmail Integration ✅ (base Phase 2)                      │
 │  • Phase 4.1: RapidAPI JSearch ✅                           │
+│  • Phase 4.2: Automatic Pagination 📋 (planned) ⭐ NEXT    │
 │  └─> Phase 2.7: Microsoft Email Source 🟡 (95% complete)   │
 └──────────────────────┬──────────────────────────────────────┘
                        │
@@ -99,20 +101,39 @@ This document shows the **correct execution sequence** based on actual feature d
 | 6 | Phase 2.4 | Calendar & Follow-ups | ✅ 2025-11-01 | Interview scheduling, email follow-ups |
 | 7 | Phase 2.5 | Email Composition | ✅ 2025-11-03 | Gmail draft creation (16/16 E2E tests passing) |
 | 8 | Phase 2.7 | Microsoft Email Source (Layer 2) | 🟡 95% | Implementation complete, manual testing passed 4/4, intentionally deferred |
+| 9 | Phase 4.2 | Automatic Pagination (Layer 2) | 📋 Planned | ⭐ NEXT TASK (4-6 hours) - Removes pagination friction |
 
 **Total Completed: 7 phases**
 **Nearly Complete (Deferred): 1 phase (Phase 2.7 at 95%)**
+**Ready to Start: 1 phase (Phase 4.2) ⭐**
 
 ---
 
 ## 🚀 Ready to Start (All Prerequisites Met)
+
+### Phase 4.2: Automatic Pagination ⭐ **START HERE**
+- **Prerequisites**: ✅ Phase 4.1 Complete
+- **Status**: 📋 Planning complete, ready for implementation
+- **Document**: [PHASE_4.2_automatic-pagination.md](PHASE_4.2_automatic-pagination.md)
+- **Timeline**: 4-6 hours (quick win!)
+- **Priority**: ⭐ **HIGHEST** - Quick win before Phase 5
+
+**The Problem**: Manual SQL required to change page numbers for RapidAPI sync
+**The Solution**: Automatic page tracking and increment after each sync
+**Why First**: Removes major friction from RapidAPI workflow, prevents wasted API quota
+
+**What's Included**:
+- Backend: Automatic page increment, auto-reset on empty results
+- Frontend: Display current page + "Reset to Page 1" button
+- Database: Add `last_page_fetched` column
+- Testing: 7 new tests (4 backend + 3 E2E)
 
 ### Phase 5: Advanced Features
 - **Prerequisites**: ✅ All core workflows complete (Layers 1-6)
 - **Status**: 📋 Planning complete, ready for implementation
 - **Document**: [PHASE_5_advanced-features.md](PHASE_5_advanced-features.md)
 - **Timeline**: 6-8 weeks (154-188 hours estimated)
-- **Priority**: Medium (core workflows complete, enhancement phase)
+- **Priority**: High (after Phase 4.2, core enhancements)
 
 **Feature Categories**:
 1. **5.1: Content Refresh** ⭐ START HERE - Regenerate descriptions/content on-demand (BUG-0007 with 8 E2E tests ready!)
@@ -192,7 +213,8 @@ If we were to reorganize by feature group instead of historical phase numbers:
 ### INTAKE: Get Jobs Into System
 - ✅ INTAKE-1: Gmail (base Phase 2)
 - ✅ INTAKE-2: RapidAPI JSearch (Phase 4.1)
-- 📋 INTAKE-3: Microsoft Email (Phase 2.7) - deferred
+- ⭐ INTAKE-3: RapidAPI Pagination (Phase 4.2) - NEXT
+- 📋 INTAKE-4: Microsoft Email (Phase 2.7) - deferred
 
 ### PROCESSING: Evaluate & Filter Jobs
 - ✅ PROC-1: LLM Extraction (Phase 2.6)
@@ -228,14 +250,21 @@ If we were to reorganize by feature group instead of historical phase numbers:
    - Calendar integration for interview scheduling
    - Follow-up email system
 
-### Short Term (Next 1-2 Weeks)
-2. **Phase 5 Implementation - Start with Content Refresh** ⭐ RECOMMENDED
-   - Begin with Phase 5.1 (Content Refresh)
-   - Fixes BUG-0007 (actively annoying users)
-   - 8 E2E tests already written (huge head start!)
-   - Faster win: 24-30 hours vs 40-50 hours for analytics
-   - Immediate practical value
+### Short Term (Next 1-2 Weeks) - NEW PRIORITY ORDER
+2. **Phase 4.2 Implementation** ⭐⭐ **HIGHEST PRIORITY - START HERE**
+   - Automatic pagination for RapidAPI
+   - Only 4-6 hours (quick win!)
+   - Removes major friction from RapidAPI workflow
+   - No more manual SQL to change page numbers
+   - See [PHASE_4.2_automatic-pagination.md](PHASE_4.2_automatic-pagination.md) for full plan
+
+3. **Phase 5.1 Implementation** ⭐ **AFTER 4.2**
+   - Content Refresh (fixes BUG-0007)
+   - 24-30 hours effort
+   - 8 E2E tests already written
    - See [PHASE_5_advanced-features.md](PHASE_5_advanced-features.md) for full plan
+
+**Recommended Order**: Phase 4.2 → Phase 5.1 → Phase 5.2
 
 3. **Phase 2.7 Re-evaluation**: Decide if Microsoft email source is needed
    - Monitor job volume from current sources
@@ -266,4 +295,4 @@ This document should be updated whenever:
 - Dependencies change (update dependency chain)
 - New dependencies are discovered (document here)
 
-**Last Reviewed**: 2025-11-03 by Claude Code (Phase 5 planning complete)
+**Last Reviewed**: 2025-11-03 by Claude Code (Phase 4.2 planning complete, new priority order)
