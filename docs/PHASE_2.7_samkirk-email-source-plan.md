@@ -59,6 +59,14 @@
   - [Rollback Plan](#rollback-plan)
   - [Future Enhancements](#future-enhancements)
   - [References](#references)
+  - [Implementation Status (2025-11-03)](#implementation-status-2025-11-03)
+    - [✅ Completed Components (85%)](#-completed-components-85%25)
+    - [⏸️ Incomplete/Blocked Components (15%)](#-incompleteblocked-components-15%25)
+    - [🔧 Known Issues](#-known-issues)
+  - [Recommendations](#recommendations)
+    - [Immediate Actions (This Session - Pick One)](#immediate-actions-this-session---pick-one)
+    - [Next Session Actions](#next-session-actions)
+  - [Testing Artifacts Created (2025-11-03)](#testing-artifacts-created-2025-11-03)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -961,43 +969,129 @@ MICROSOFT_TENANT_ID=common
 
 ---
 
-**Status**: 🔄 **In Progress** (~95% Complete - Testing Framework Complete, Manual Validation Pending)
+**Status**: ⏸️ **Paused at 85% Complete** - Core Implementation Done, Testing/Validation Incomplete (2025-11-03)
 
-**Completed (2025-11-03)**:
+## Implementation Status (2025-11-03)
+
+### ✅ Completed Components (85%)
+
+**Backend Implementation**:
 - ✅ Azure App Registration with multitenant support
 - ✅ OAuth 2.0 endpoints (`/api/email/microsoft/auth-url`, `/callback`)
-- ✅ **Backend Unit Tests** - 8/8 tests passing (100%)
-- ✅ **E2E Test Framework** - 13 tests created
 - ✅ Token storage with tenant-specific authentication
 - ✅ Database migration for `microsoft_email` source
-- ✅ OAuth test page and documentation
-- ✅ Message fetching via Microsoft Graph API
-- ✅ **Folder filtering with automatic JobOps folder creation**
+- ✅ Message fetching via Microsoft Graph API (~450 lines)
+- ✅ **Folder filtering with automatic JobOps folder creation** (~200 lines)
   - `list_microsoft_folders()` - Lists all mail folders
   - `get_or_create_jobops_folder()` - Automatically checks and creates JobOps folder
   - Folder-based message filtering (only syncs JobOps folder)
   - API endpoint: `GET /api/email/microsoft/folders`
-- ✅ LLM extraction integration (reuses Phase 2.6 pipeline)
-- ✅ Frontend UI with folder status indicator
+- ✅ Frontend UI with folder status indicator (~161 lines)
+- ✅ **Backend Unit Tests** - 8/8 tests passing (100%) - `backend/tests/microsoft_email_tests.rs` (462 lines)
 
-**Remaining Tasks** (~50 minutes - Manual Testing Only):
-1. ⏸️ **Manual OAuth Testing** (~15 min)
-   - Authenticate with sam@samkirk.com
-   - Verify token storage and OAuth flow
-2. ⏸️ **Manual Sync Testing** (~20 min)
-   - Add test emails to JobOps folder
-   - Run sync and verify job extraction
-   - Test folder creation and status display
-3. ⏸️ **End-to-End Validation** (~10 min)
-   - Complete OAuth → Sync → Extract → Approve → Draft workflow
-   - Verify Microsoft-sourced jobs work identically to Gmail jobs
-4. ⏸️ **Error Handling** (~5 min)
-   - Test expired token scenario
-   - Verify error messages and retry flow
+**Testing Infrastructure**:
+- ✅ **E2E Test Framework** - 15 tests created - `frontend/e2e/tests/16-microsoft-email-integration.spec.ts` (351 lines)
+  - 13 UI/integration tests
+  - 2 comprehensive sync tests added (2025-11-03)
+- ✅ **Test Helper Script** - `./mark-microsoft-emails-unread.sh` (marks emails unread via Microsoft Graph API)
+- ✅ **Global Teardown Fix** - E2E tests no longer kill running services
 
-**See "Testing Strategy" section above for detailed manual testing checklist.**
+### ⏸️ Incomplete/Blocked Components (15%)
 
-**Latest Commits**:
-- `19d2409` - Phase 2.7 testing framework complete (backend + E2E tests)
-- `deef82a` - Phase 2.7 folder filtering with automatic JobOps folder creation
-- `689d1df` - Phase 2.7 OAuth foundation
+**LLM Extraction Validation** (Critical - Blocking completion):
+- ❌ **Extraction Prompt Loading** - Discovered during testing that `extraction_prompts` table had placeholder content
+  - Fixed: Ran `./sync-extraction-prompt-to-db.sh` to load actual 24KB prompt
+  - Issue: Multiple database resets during testing revealed schema inconsistencies
+- ❌ **Extraction Quality Verification** - No successful end-to-end test with LLM extraction
+  - Observed: Regex fallback was being used (poor quality: $130/hour parsed as $13,000)
+  - Root cause: Missing extraction prompt in database
+  - Status: Prompt now loaded, but not yet validated with actual sync
+- ⚠️ **Database Schema Issues** - `jobhunter_dev` database missing critical tables/columns
+  - Missing: `extraction_prompts` table
+  - Missing: `extraction_method` column in jobs table
+  - Resolution: Switched back to `jobhunter_personal` database
+  - Recommendation: Deprecate or rebuild `jobhunter_dev` database
+
+**E2E Test Execution** (Non-critical - Can defer):
+- ❌ **Sync Integration Test** - Test fails to find Intake tab element
+  - Issue: Page object model selector not matching rendered tabs
+  - Error: `TimeoutError: locator.click: Timeout 10000ms exceeded` on `.getByRole('tab', { name: /intake/i })`
+  - Status: Test infrastructure in place, needs selector debugging
+- ⚠️ **Score Calculation Pre-requisite** - Global setup fails on `calculate-all-scores` endpoint (500 error)
+  - Non-blocking: Test continues with warning
+
+**Manual Testing** (Partially completed):
+- ✅ OAuth flow tested successfully (tokens stored, expires at correct time)
+- ✅ JobOps folder creation verified (visible in Outlook and Apple Mail)
+- ⚠️ Sync tested multiple times but extraction quality issues prevented validation
+- ❌ End-to-end workflow not validated (OAuth → Sync → Extract → Approve → Draft)
+
+### 🔧 Known Issues
+
+1. **Database Schema Drift** (High Priority)
+   - `jobhunter_dev` and `jobhunter_personal` databases are not in sync
+   - `jobhunter_dev` missing multiple migrations (Phase 5.1, 5.2, 5.3)
+   - Recommendation: Use only `jobhunter_personal` for development, deprecate `jobhunter_dev`
+
+2. **LLM Extraction Prompt Bootstrap** (Medium Priority)
+   - Fresh database installations need `./sync-extraction-prompt-to-db.sh` run manually
+   - Prompt not included in schema.sql or migrations
+   - Could cause "regex fallback" behavior on new installations
+
+3. **E2E Test Reliability** (Low Priority)
+   - Tab selectors need better waiting/loading logic
+   - Tests assume services not running (now fixed with teardown improvement)
+   - Score calculation endpoint failure acceptable but noisy
+
+## Recommendations
+
+### Immediate Actions (This Session - Pick One)
+
+**Option A: Document and Defer** (Recommended - 10 minutes)
+- Mark Phase 2.7 as "85% complete - deferred for polish"
+- Update PROJECT_STATUS.md with current state
+- File bugs/issues for:
+  - Database schema drift (jobhunter_dev vs jobhunter_personal)
+  - E2E test selector issue
+  - LLM extraction validation needed
+- **Outcome**: Clean project state, clear next steps, move forward
+
+**Option B: Complete Manual Testing** (30-45 minutes)
+- Mark 3 test emails as unread in JobOps folder (manual in Outlook)
+- Verify database has proper extraction prompt (already done)
+- Run sync via UI, observe backend logs for LLM extraction
+- Verify job quality (title, company, salary correct)
+- Document results (pass/fail) in this file
+- **Risk**: May discover more issues, time uncertain
+
+**Option C: Debug E2E Test** (60-90 minutes, uncertain)
+- Investigate tab selector issue (page object model debugging)
+- Fix score calculation 500 error
+- Run full automated test suite
+- **Risk**: High time investment, may not complete in session
+
+### Next Session Actions
+
+1. **Before Resuming Phase 2.7**:
+   - Decide on database strategy (deprecate `jobhunter_dev` or sync schemas)
+   - Review and address filed bugs/issues from this session
+   - Ensure `jobhunter_personal` has all migrations applied
+
+2. **To Complete Phase 2.7** (~1-2 hours):
+   - Run one clean manual test: OAuth → Sync → Extract → Approve
+   - Verify LLM extraction quality with 3 test emails
+   - Document results in TESTING_STATUS.md
+   - Optional: Fix E2E test selector issue for automation
+
+3. **Alternative: Move Forward** (If Phase 2.7 is "good enough"):
+   - Mark Phase 2.7 as "MVP complete - polish deferred"
+   - Core functionality works (OAuth, folder creation, sync endpoint)
+   - Missing only: validated end-to-end test with quality verification
+   - Begin Phase 5 planning or other work
+
+## Testing Artifacts Created (2025-11-03)
+
+- `./mark-microsoft-emails-unread.sh` - Helper script to mark emails unread via Graph API
+- `frontend/e2e/tests/16-microsoft-email-integration.spec.ts` - 15 E2E tests (2 sync integration tests added)
+- `frontend/e2e/global-teardown.ts` - Fixed to preserve running services
+- `backend/tests/microsoft_email_tests.rs` - 8 unit tests (100% passing)

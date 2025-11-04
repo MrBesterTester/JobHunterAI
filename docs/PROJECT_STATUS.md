@@ -5,7 +5,7 @@
   - [⚠️ Important: Phase Execution Order](#-important-phase-execution-order)
   - [Current State](#current-state)
   - [Recommended Next Steps](#recommended-next-steps)
-    - [Option A: Phase 2.7 Continuation (Microsoft Email Source)](#option-a-phase-27-continuation-microsoft-email-source)
+    - [Option A: Phase 2.7 Completion (Microsoft Email Source)](#option-a-phase-27-completion-microsoft-email-source)
     - [Option B: Phase 5 Planning](#option-b-phase-5-planning)
     - [Option C: Phase 4 Extensions](#option-c-phase-4-extensions)
   - [Development Progress by Execution Order](#development-progress-by-execution-order)
@@ -35,7 +35,7 @@
 
 # JobHunter Project Status
 
-**Last Updated**: 2025-11-03 15:04:17 PST (Phase 2.7 testing framework complete - manual validation pending)
+**Last Updated**: 2025-11-03 17:37:32 PST (Phase 2.7 paused at 85% - validation incomplete, known issues documented)
 
 ---
 
@@ -62,7 +62,7 @@
 - All 12 components above 75% coverage (none below 60%)
 
 **Recent Achievements** (Last 14 days - since 2025-10-20):
-- ✅ Phase 2.7 FOLDER FILTERING COMPLETE (2025-11-03) - Automatic JobOps folder creation and management
+- ⏸️ Phase 2.7 PAUSED AT 85% (2025-11-03) - Core implementation and tests complete, validation incomplete
 - ✅ Phase 2.5 VALIDATION COMPLETE (2025-11-03) - All 16 E2E tests passing with API mocks
 - ✅ Phase 2.4 COMPLETE (2025-11-01) - Calendar, Follow-ups, Gmail send with TEST_MODE
 - ✅ Phase 2.5 Implementation COMPLETE (2025-11-01) - Email composition feature
@@ -85,82 +85,57 @@
 
 **Current Status**: All 6 dependency layers complete and validated with E2E tests.
 
-### Option A: Phase 2.7 Continuation (Microsoft Email Source)
+### Option A: Phase 2.7 Completion (Microsoft Email Source)
 
-**Status**: 🔄 **In Progress** (~95% complete - Testing framework complete, manual validation pending as of 2025-11-03)
+**Status**: ⏸️ **Paused at 85%** - Core implementation and testing framework complete, validation incomplete
 
-**Business Case**: Complete the professional relationship lifecycle tracking
+**What's Complete**:
+- ✅ All backend implementation (OAuth, folder filtering, message fetching, LLM extraction)
+- ✅ All frontend UI (Microsoft Email card, sync buttons, status indicators)
+- ✅ Backend unit tests: 8/8 passing (100%)
+- ✅ E2E test framework: 15 tests created in `16-microsoft-email-integration.spec.ts`
+- ✅ Automation scripts: `./mark-microsoft-emails-unread.sh` for test setup
+- ✅ Global teardown fix: E2E tests now preserve running services
 
-The two email accounts serve different phases of the professional workflow:
+**What's Incomplete** (15%):
+- ⏸️ LLM extraction validation (prompt now loaded, needs end-to-end validation)
+- ⏸️ E2E test execution (tab selector issue: can't find Intake tab)
+- ⏸️ Full manual testing (partially completed, interrupted by issues)
 
-1. **MrBesterTester@gmail.com** (Gmail) - **Prospecting Phase** (✅ implemented)
-   - High-volume job listings from recruiters, job boards, newsletters
-   - Initial discovery and qualification
-   - Lower signal-to-noise ratio
+**Known Issues**:
+1. **Database Schema Drift**: `jobhunter_dev` missing tables compared to `jobhunter_personal`
+2. **LLM Extraction Prompt Bootstrap**: `extraction_prompts` table had placeholder content (fixed)
+3. **E2E Test Reliability**: Tab selector timing issue causing test failures
+4. **OAuth Frontend State**: Browser refresh required after OAuth callback
 
-2. **sam@samkirk.com** (Microsoft) - **Professional Engagement Phase** (✅ **Implementation complete - Testing pending**)
-   - Serious job negotiations and consulting retainers
-   - Employee onboarding and professional follow-ups
-   - Higher signal-to-noise ratio, business-critical communications
+**Immediate Options** (choose one):
 
-**Completed (2025-11-03)**:
-- ✅ Azure App Registration (multitenant + personal accounts)
-- ✅ OAuth 2.0 endpoints (`/api/email/microsoft/auth-url`, `/callback`)
-- ✅ Token storage with tenant-specific authentication
-- ✅ Database migration (`microsoft_email` source, `email_jobs.source` column)
-- ✅ OAuth test page and setup documentation
-- ✅ Successfully authenticated with sam@samkirk.com (Microsoft 365 custom domain)
-- ✅ **Message fetching via Microsoft Graph API** (~450 lines)
-  - `sync_microsoft_jobs()` endpoint - Main sync orchestrator
-  - `process_microsoft_messages()` - Fetches and processes messages
-  - `refresh_microsoft_token()` - OAuth token refresh with tenant auth
-  - `mark_microsoft_message_as_read()` - Message status management
-  - Microsoft Graph API data structures (MicrosoftMessage, etc.)
-- ✅ **Email parsing and LLM integration**
-  - Reuses Phase 2.6 extraction pipeline
-  - Same filtering logic (confidence > 0.3)
-  - MECE counter validation
-- ✅ **API endpoint**: `POST /api/intake/microsoft/sync`
-- ✅ **First sync test**: 10 emails discovered, 7 jobs created, 0 failures
-- ✅ **Frontend UI integration** (~161 lines)
-  - handleMicrosoftAuth() and handleMicrosoftSync() handlers
-  - Microsoft Email Integration Card
-  - Status indicators and sync buttons
-  - Microsoft branding (#0078d4 color)
-  - Consistent with Gmail card design
-- ✅ **Folder filtering with automatic JobOps folder management** (~200 lines)
-  - `list_microsoft_folders()` - Lists all mail folders via Graph API
-  - `get_or_create_jobops_folder()` - **Automatically checks and creates JobOps folder**
-  - Folder-based message filtering (`/me/mailFolders/{id}/messages`)
-  - API endpoint: `GET /api/email/microsoft/folders`
-  - Frontend folder status indicator showing unread count
-  - Syncs only process emails in JobOps folder (reduces noise and LLM costs)
-- ✅ **Backend Unit Tests** (2025-11-03) - 8/8 tests passing (100%)
-  - OAuth credential storage and token expiration
-  - Email job processing with microsoft_email source
-  - Message deduplication and job linkage
-  - Database schema validation
-  - Test file: `backend/tests/microsoft_email_tests.rs` (462 lines)
-- ✅ **E2E Test Framework** (2025-11-03) - 13 tests created
-  - UI display, branding, authentication
-  - Folder status and source differentiation
-  - Error handling and integration tests
-  - Test file: `frontend/e2e/tests/16-microsoft-email-integration.spec.ts` (197 lines)
+**A1. Document & Defer** (~10 min)
+- Mark Phase 2.7 as "85% complete - deferred for polish"
+- Update PROJECT_STATUS.md (this file) with current state
+- Move to Phase 5 planning or other priorities
+- Resume Phase 2.7 validation in future session
 
-**Remaining Tasks to Complete Phase 2.7** (~50 minutes - Manual Testing Only):
-1. ⏸️ **Manual OAuth Testing** (~15 min)
-   - Authenticate with sam@samkirk.com and verify OAuth flow
-2. ⏸️ **Manual Sync Testing** (~20 min)
-   - Add test emails to JobOps folder and run sync
-   - Verify job extraction and folder management
-3. ⏸️ **End-to-End Validation** (~10 min)
-   - Complete OAuth → Sync → Extract → Approve → Draft workflow
-4. ⏸️ **Error Handling** (~5 min)
-   - Test expired token and error scenarios
+**A2. Complete Manual Testing** (~45 min)
+- Run clean manual test: OAuth → Sync → Jobs → Approve
+- Validate LLM extraction quality with real emails
+- Document results and update Phase 2.7 status
+- Skip E2E test debugging for now
 
-**See detailed manual testing checklist in** [PHASE_2.7 Testing Strategy](PHASE_2.7_samkirk-email-source-plan.md#testing-strategy)
+**A3. Debug E2E Test** (~60-90 min)
+- Fix tab selector issue in `16-microsoft-email-integration.spec.ts:236`
+- Add timing/synchronization improvements
+- Validate full sync integration test passes
+- Complete all E2E test validation
 
-**Value**: Unified tracking across complete lifecycle: prospecting → engagement → hiring
+**Recommended for next session**:
+- Decide database strategy (deprecate `jobhunter_dev` or sync schemas)
+- Run clean manual test with validated LLM extraction
+- Optional: Debug E2E test if automation is priority
+
+**Business Case**: Complete professional relationship lifecycle tracking
+- **Gmail** (MrBesterTester@gmail.com): High-volume prospecting
+- **Microsoft** (sam@samkirk.com): Business-critical engagements
 
 **Documentation**: [PHASE_2.7](PHASE_2.7_samkirk-email-source-plan.md)
 
@@ -270,7 +245,7 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 | 2.4 | Calendar & Follow-ups | 6 | ✅ Complete | 100% | 2025-11-01 | [PHASE_2.4](PHASE_2.4_calendar-follow-ups.md) |
 | 2.5 | Email Composition | 5 | ✅ Complete | 100% | 2025-11-03 | [PHASE_2.5](PHASE_2.5_email-composition.md) |
 | 2.6 | LLM Job Extraction | 3 | ✅ Complete | 100% | 2025-10-11 | [PHASE_2.6](PHASE_2.6_llm-job-extraction.md) |
-| 2.7 | Microsoft Email Source | 2 | 🔄 In Progress | 35% | N/A | [PHASE_2.7](PHASE_2.7_samkirk-email-source-plan.md) |
+| 2.7 | Microsoft Email Source | 2 | ⏸️ Paused | 85% | N/A | [PHASE_2.7](PHASE_2.7_samkirk-email-source-plan.md) |
 
 **Phase 2.4 Details** (Calendar & Follow-ups):
 - ✅ Google Calendar OAuth (373 lines): OAuth 2.0 flow, token refresh
@@ -315,35 +290,29 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 - 📋 Sub-phase 2.6.3: Gmail label filtering (proposed, not started)
 
 **Phase 2.7 Details** (Microsoft Email Source):
-- **Status**: 🔄 **In Progress** (~90% complete - Folder filtering complete 2025-11-03)
+- **Status**: ⏸️ **Paused at 85%** (2025-11-03) - Core implementation complete, validation incomplete
 - **Feature**: sam@samkirk.com as job source via Microsoft Graph API
-- **Completed**:
-  - ✅ Azure App Registration (multitenant + personal accounts)
-  - ✅ OAuth 2.0 endpoints (`/api/email/microsoft/auth-url`, `/callback`)
-  - ✅ Token storage with tenant-specific authentication
-  - ✅ Database migration (`microsoft_email` source, `email_jobs.source` column)
-  - ✅ OAuth test page (`microsoft-oauth.html`) and documentation
-  - ✅ Successfully authenticated with sam@samkirk.com (Microsoft 365 custom domain)
-  - ✅ Message fetching implementation (~450 lines)
-    - `sync_microsoft_jobs()` - Main sync endpoint
-    - `process_microsoft_messages()` - Fetch & process via Graph API
-    - `refresh_microsoft_token()` - Token refresh with tenant auth
-    - `mark_microsoft_message_as_read()` - Message status updates
-  - ✅ Email parsing and LLM extraction integration
-  - ✅ API endpoint: `POST /api/intake/microsoft/sync`
-  - ✅ First sync: 10 emails processed, 7 jobs created, 0 failures
-  - ✅ Frontend UI integration (~161 lines)
-    - Microsoft Email Integration Card in IntakeTab
-    - handleMicrosoftAuth() and handleMicrosoftSync() handlers
-    - Status indicators, sync buttons, settings
-  - ✅ **Folder filtering with automatic JobOps folder management** (~200 lines)
-    - `list_microsoft_folders()` - Lists all mail folders
-    - `get_or_create_jobops_folder()` - Automatic folder creation
-    - Folder-based message filtering
-    - API endpoint: `GET /api/email/microsoft/folders`
-    - Frontend folder status display with unread count
-- **Next Steps** (~1-2 hours remaining):
-  - ⏭️ Unit and E2E tests for folder management and sync flow
+- **Completed Components**:
+  - ✅ Backend Implementation: OAuth, folder filtering, message fetching, LLM extraction (~650 lines)
+  - ✅ Frontend UI: Microsoft Email card, sync buttons, status indicators (~161 lines)
+  - ✅ Backend Unit Tests: 8/8 passing (100%) - `backend/tests/microsoft_email_tests.rs` (462 lines)
+  - ✅ E2E Test Framework: 15 tests created - `frontend/e2e/tests/16-microsoft-email-integration.spec.ts` (360 lines)
+  - ✅ Automation Scripts: `./mark-microsoft-emails-unread.sh` for test setup
+  - ✅ Global Teardown Fix: E2E tests now preserve running services
+- **Incomplete Components** (15%):
+  - ⏸️ LLM extraction validation (prompt loaded, needs end-to-end test)
+  - ⏸️ E2E test execution (tab selector timing issue)
+  - ⏸️ Full manual testing (partially completed)
+- **Known Issues**:
+  - Database schema drift between jobhunter_dev and jobhunter_personal
+  - E2E test reliability (tab selector issue)
+  - OAuth frontend state (browser refresh required)
+- **Testing Artifacts Created**:
+  - `./mark-microsoft-emails-unread.sh` - Graph API automation
+  - `backend/tests/microsoft_email_tests.rs` - 8 passing unit tests
+  - `frontend/e2e/tests/16-microsoft-email-integration.spec.ts` - 15 E2E tests
+  - `frontend/e2e/global-teardown.ts` - Fixed to preserve services
+- **Next Steps**: See Option A in "Recommended Next Steps" above
 
 ### Phase 3: Content Generation
 
@@ -512,16 +481,17 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 
 ---
 
-**Last Updated**: 2025-11-03 15:04:17 PST (Phase 2.7 testing framework complete - manual validation pending)
+**Last Updated**: 2025-11-03 17:37:32 PST (Phase 2.7 paused at 85% - validation incomplete, known issues documented)
 
 **Major Updates in This Revision**:
-- Phase 2.7: Testing framework complete (~95% complete)
-  - Backend unit tests: 8/8 passing (100%) - `backend/tests/microsoft_email_tests.rs` (462 lines)
-  - E2E test framework: 13 tests created - `frontend/e2e/tests/16-microsoft-email-integration.spec.ts` (197 lines)
-  - Manual testing checklist documented in PHASE_2.7 doc
-  - Remaining: ~50 minutes of manual OAuth and sync validation
-- Updated PROJECT_STATUS.md with Phase 2.7 testing status and next steps
-- Updated PHASE_2.7 doc with comprehensive testing strategy
+- Phase 2.7: Paused at 85% complete (validation incomplete)
+  - Status changed from "95% complete" to "85% paused"
+  - Comprehensive status documentation in PHASE_2.7 doc
+  - Known issues documented: database drift, E2E test reliability, OAuth state
+  - Testing artifacts: automation scripts, unit tests (8/8 passing), E2E framework (15 tests)
+  - 3 immediate options provided: Document & Defer, Manual Testing, Debug E2E
+- Updated "Recommended Next Steps" with Phase 2.7 completion options
+- Documented incomplete components and testing blockers
 
 **Manual Updates**: This is a manually maintained document - update as needed
 
