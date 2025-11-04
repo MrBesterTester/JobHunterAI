@@ -6,9 +6,21 @@ const execAsync = promisify(exec);
 /**
  * Global teardown for Playwright tests
  * Cleans up backend server and other test resources
+ * ONLY if global-setup started them
  */
 async function globalTeardown() {
   console.log('🧹 Cleaning up test environment...');
+
+  // Check if we started the services (if not, leave them running!)
+  const shouldCleanup = process.env.E2E_STARTED_SERVICES === 'true';
+
+  if (!shouldCleanup) {
+    console.log('✅ Services were already running - leaving them active');
+    console.log('   (Backend and frontend will continue running after tests)');
+    return;
+  }
+
+  console.log('🛑 Stopping services that were started by tests...');
 
   try {
     // Kill backend server by port

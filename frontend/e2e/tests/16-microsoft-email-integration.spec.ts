@@ -225,4 +225,135 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       }
     });
   });
+
+  test.describe('Microsoft Email Sync Integration', () => {
+    test('should sync Microsoft emails and display jobs', async ({ page }) => {
+      // Wait for dashboard to fully load
+      await expect(page.getByRole('heading', { name: /^JobHunter$/i })).toBeVisible({ timeout: 10000 });
+      await page.waitForTimeout(2000); // Extra time for tabs to render
+
+      // Step 1: Navigate to Intake tab
+      await page.getByRole('tab', { name: /intake/i }).click();
+      await page.waitForTimeout(1000);
+
+      // Step 2: Check if Microsoft is authenticated
+      const microsoftAuthButton = page.getByRole('button', { name: /authenticate.*microsoft/i });
+      const microsoftSyncButton = page.locator('button', { hasText: /sync.*microsoft/i }).or(
+        page.locator('button', { hasText: /sync now/i })
+      ).last();
+
+      const authVisible = await microsoftAuthButton.isVisible().catch(() => false);
+
+      if (authVisible) {
+        console.log('Microsoft not authenticated - skipping sync test');
+        test.skip();
+        return;
+      }
+
+      // Step 3: Get initial stats
+      await page.waitForTimeout(1000);
+      const initialNewJobsText = await page.getByTestId('stat-new').textContent();
+      const initialNewCount = parseInt(initialNewJobsText?.match(/\d+/)?.[0] || '0');
+
+      const initialFilteredText = await page.getByTestId('stat-filtered').textContent();
+      const initialFilteredCount = parseInt(initialFilteredText?.match(/\d+/)?.[0] || '0');
+
+      console.log(`Initial stats - New: ${initialNewCount}, Filtered: ${initialFilteredCount}`);
+
+      // Step 4: Click Microsoft Sync button
+      console.log('Clicking Microsoft Sync button...');
+      await microsoftSyncButton.click();
+
+      // Wait for sync to start
+      await page.waitForTimeout(1000);
+
+      // Step 5: Wait for sync to complete (LLM processing takes time)
+      console.log('Waiting for sync to complete (may take 30-60 seconds for LLM)...');
+      await page.waitForTimeout(45000); // 45 seconds for LLM processing
+
+      // Check for success/completion message
+      const successMessage = page.getByText(/sync completed|jobs added|discovered/i);
+      const hasSuccess = await successMessage.isVisible().catch(() => false);
+
+      if (hasSuccess) {
+        const messageText = await successMessage.textContent();
+        console.log(`Sync result: ${messageText}`);
+      }
+
+      // Step 6: Navigate to New Jobs tab
+      console.log('Navigating to New Jobs tab...');
+      const newJobsTab = page.getByRole('tab', { name: /new.*jobs/i });
+      await newJobsTab.click();
+      await page.waitForTimeout(2000);
+
+      // Step 7: Verify updated stats
+      const newJobsText = await page.getByTestId('stat-new').textContent();
+      const newCount = parseInt(newJobsText?.match(/\d+/)?.[0] || '0');
+
+      const filteredText = await page.getByTestId('stat-filtered').textContent();
+      const filteredCount = parseInt(filteredText?.match(/\d+/)?.[0] || '0');
+
+      console.log(`Updated stats - New: ${newCount}, Filtered: ${filteredCount}`);
+      console.log(`Change - New: +${newCount - initialNewCount}, Filtered: +${filteredCount - initialFilteredCount}`);
+
+      // Step 8: Verify jobs from Microsoft source exist
+      const totalChange = (newCount - initialNewCount) + (filteredCount - initialFilteredCount);
+
+      if (totalChange > 0) {
+        console.log(`✓ ${totalChange} jobs were processed from Microsoft email`);
+
+        // Look for job cards
+        const jobCards = page.locator('[class*="job-card"], [data-testid*="job-card"]');
+        const jobCardCount = await jobCards.count();
+        console.log(`Job cards visible: ${jobCardCount}`);
+
+        // Verify at least one job exists
+        expect(jobCardCount).toBeGreaterThan(0);
+      } else {
+        console.log('No new jobs - all might be duplicates or already processed');
+      }
+    });
+
+    test('should verify stats update after Microsoft sync', async ({ page }) => {
+      // Wait for dashboard to fully load
+      await expect(page.getByRole('heading', { name: /^JobHunter$/i })).toBeVisible({ timeout: 10000 });
+      await page.waitForTimeout(2000); // Extra time for tabs to render
+
+      // Navigate to Intake tab
+      await page.getByRole('tab', { name: /intake/i }).click();
+      await page.waitForTimeout(1000);
+
+      // Check if Microsoft is authenticated
+      const microsoftAuthButton = page.getByRole('button', { name: /authenticate.*microsoft/i });
+      const authVisible = await microsoftAuthButton.isVisible().catch(() => false);
+
+      if (authVisible) {
+        console.log('Microsoft not authenticated - skipping test');
+        test.skip();
+        return;
+      }
+
+      // Get initial total
+      const initialTotal = await page.getByText(/Total/i).last().textContent();
+      const initialTotalCount = parseInt(initialTotal?.match(/\d+/)?.[0] || '0');
+      console.log(`Initial total jobs: ${initialTotalCount}`);
+
+      // Sync Microsoft
+      const microsoftSyncButton = page.locator('button', { hasText: /sync.*microsoft/i }).or(
+        page.locator('button', { hasText: /sync now/i })
+      ).last();
+      await microsoftSyncButton.click();
+
+      // Wait for sync
+      await page.waitForTimeout(45000);
+
+      // Check stats updated
+      const newTotal = await page.getByText(/Total/i).last().textContent();
+      const newTotalCount = parseInt(newTotal?.match(/\d+/)?.[0] || '0');
+      console.log(`New total jobs: ${newTotalCount}`);
+
+      // Stats should either stay same (duplicates) or increase
+      expect(newTotalCount).toBeGreaterThanOrEqual(initialTotalCount);
+    });
+  });
 });

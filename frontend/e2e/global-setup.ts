@@ -50,6 +50,9 @@ async function globalSetup() {
     if (response.ok) {
       console.log('✅ Backend already running on port 8080');
 
+      // Mark that we did NOT start the backend (so teardown won't kill it)
+      process.env.E2E_STARTED_SERVICES = 'false';
+
       // Calculate scores for all jobs to prevent 404 errors in E2E tests
       await calculateAllJobScores();
       return;
@@ -57,6 +60,9 @@ async function globalSetup() {
   } catch (error) {
     // Backend not running, need to start it
   }
+
+  // Mark that we ARE starting the backend (so teardown will kill it)
+  process.env.E2E_STARTED_SERVICES = 'true';
 
   console.log('🦀 Starting backend server...');
 

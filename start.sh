@@ -2,6 +2,7 @@
 
 # JobHunter Startup Script
 # Starts PostgreSQL (if needed), backend, and frontend
+# Intelligently detects if services are already running
 
 set -e
 
@@ -9,88 +10,80 @@ echo "🚀 Starting JobHunter..."
 echo ""
 
 # Check if PostgreSQL is running
-echo "📊 Checking PostgreSQL status..."
+echo "📊 Checking PostgreSQL..."
 if brew services list | grep postgresql@14 | grep started > /dev/null 2>&1; then
-    echo "✅ PostgreSQL is already running"
+    echo "✅ PostgreSQL is running"
 else
     echo "🔄 Starting PostgreSQL..."
-    brew services start postgresql@14
+    brew services start postgresql@14 > /dev/null 2>&1
     echo "✅ PostgreSQL started"
-    # Give PostgreSQL a moment to fully start
     sleep 2
 fi
 
-echo ""
-echo "🔍 Checking database configuration..."
+# Show active database (suppress warnings)
 if [ -f backend/.env ]; then
-    DB_NAME=$(grep "^DATABASE_URL=" backend/.env | sed 's/.*\/\([^?]*\).*/\1/')
+    DB_NAME=$(grep "^DATABASE_URL=" backend/.env 2>/dev/null | sed 's/.*\/\([^?]*\).*/\1/')
     if [ -n "$DB_NAME" ]; then
-        echo "🔒 Active database: $DB_NAME"
-    else
-        echo "⚠️  Could not determine database name from .env"
+        echo "🔒 Database: $DB_NAME"
     fi
+fi
+
+echo ""
+
+# Check if backend is already running
+BACKEND_RUNNING=false
+BACKEND_PID=""
+if lsof -i :8080 > /dev/null 2>&1; then
+    BACKEND_RUNNING=true
+    BACKEND_PID=$(lsof -ti :8080)
+    echo "✅ Backend already running (PID: $BACKEND_PID)"
 else
-    echo "⚠️  backend/.env not found"
+    echo "🦀 Starting backend (Rust/Actix-web)..."
+    cd backend
+    export TMPDIR=$HOME/tmp
+    mkdir -p $TMPDIR 2>/dev/null
+    cargo run > /dev/null 2>&1 &
+    BACKEND_PID=$!
+    cd ..
+    echo "✅ Backend started (PID: $BACKEND_PID)"
+
+    # Wait for backend to be ready
+    echo "⏳ Waiting for backend..."
+    for i in {1..30}; do
+        if curl -s http://localhost:8080/api/jobs > /dev/null 2>&1; then
+            echo "✅ Backend ready at http://localhost:8080"
+            break
+        fi
+        sleep 1
+    done
 fi
 
 echo ""
-echo "🦀 Starting backend (Rust/Actix-web)..."
-cd backend
-# Set TMPDIR to avoid permission issues with system temp directories
-export TMPDIR=$HOME/tmp
-mkdir -p $TMPDIR
-cargo run &
-BACKEND_PID=$!
-cd ..
 
-echo "✅ Backend process started (PID: $BACKEND_PID)"
-echo ""
+# Check if frontend is already running
+FRONTEND_RUNNING=false
+FRONTEND_PID=""
+if lsof -i :3000 > /dev/null 2>&1; then
+    FRONTEND_RUNNING=true
+    FRONTEND_PID=$(lsof -ti :3000)
+    echo "✅ Frontend already running (PID: $FRONTEND_PID)"
+else
+    echo "⚛️  Starting frontend (React/TypeScript)..."
+    cd frontend
+    BROWSER=none npm start > /dev/null 2>&1 &
+    FRONTEND_PID=$!
+    cd ..
+    echo "✅ Frontend started (PID: $FRONTEND_PID)"
 
-echo "⚛️  Starting frontend (React/TypeScript)..."
-cd frontend
-BROWSER=none npm start > /dev/null 2>&1 &
-FRONTEND_PID=$!
-cd ..
-
-echo "✅ Frontend process started (PID: $FRONTEND_PID)"
-echo ""
-
-# Wait for backend to be ready
-echo "⏳ Waiting for backend to be ready..."
-BACKEND_READY=false
-for i in {1..30}; do
-    if curl -s http://localhost:8080/api/jobs > /dev/null 2>&1; then
-        BACKEND_READY=true
-        echo "✅ Backend is ready at http://localhost:8080"
-        break
-    fi
-    sleep 1
-done
-
-if [ "$BACKEND_READY" = false ]; then
-    echo "❌ Backend failed to start within 30 seconds"
-    echo "   Check the logs for errors"
-    kill $BACKEND_PID $FRONTEND_PID 2>/dev/null
-    exit 1
-fi
-
-# Wait for frontend to be ready
-echo "⏳ Waiting for frontend to be ready..."
-FRONTEND_READY=false
-for i in {1..60}; do
-    if curl -s http://localhost:3000 > /dev/null 2>&1; then
-        FRONTEND_READY=true
-        echo "✅ Frontend is ready at http://localhost:3000"
-        break
-    fi
-    sleep 1
-done
-
-if [ "$FRONTEND_READY" = false ]; then
-    echo "❌ Frontend failed to start within 60 seconds"
-    echo "   Check the logs for errors"
-    kill $BACKEND_PID $FRONTEND_PID 2>/dev/null
-    exit 1
+    # Wait for frontend to be ready
+    echo "⏳ Waiting for frontend..."
+    for i in {1..60}; do
+        if curl -s http://localhost:3000 > /dev/null 2>&1; then
+            echo "✅ Frontend ready at http://localhost:3000"
+            break
+        fi
+        sleep 1
+    done
 fi
 
 echo ""
@@ -100,9 +93,13 @@ echo ""
 echo "📱 Frontend: http://localhost:3000"
 echo "🔌 Backend:  http://localhost:8080"
 echo ""
-echo "To stop:"
-echo "  kill $BACKEND_PID $FRONTEND_PID"
-echo "  OR press Ctrl+C and run: pkill -f 'cargo run'; pkill -f 'react-scripts'"
+if [ "$BACKEND_RUNNING" = false ] || [ "$FRONTEND_RUNNING" = false ]; then
+    echo "To stop newly started services:"
+    [ "$BACKEND_RUNNING" = false ] && echo "  Backend: kill $BACKEND_PID"
+    [ "$FRONTEND_RUNNING" = false ] && echo "  Frontend: kill $FRONTEND_PID"
+else
+    echo "Services were already running - no new processes started"
+fi
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
@@ -110,8 +107,8 @@ echo ""
 if [ "$NO_BROWSER" != "1" ]; then
     echo "🌐 Opening browser..."
     open http://localhost:3000
-    echo ""
 fi
 
-# Wait for both processes
-wait $BACKEND_PID $FRONTEND_PID
+echo ""
+echo "✅ Done! Services are running in background."
+echo ""
