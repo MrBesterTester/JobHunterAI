@@ -1,11 +1,20 @@
 #!/bin/bash
 
 # create-bug.sh - Create a new bug or issue with automated ID assignment
-# Usage: ./create-bug.sh [--type bug|issue]
+# Usage: ./create-bug.sh --type TYPE --title "TITLE" [OPTIONS]
 # Examples:
-#   ./create-bug.sh                    # Interactive mode (prompts for type)
-#   ./create-bug.sh --type bug         # Create a BUG
-#   ./create-bug.sh --type issue       # Create an ISSUE
+#   ./create-bug.sh --type bug --title "Login broken" --priority high --component backend
+#   ./create-bug.sh --type issue --title "Add feature X" --summary "Implement X for Y"
+#
+# Required:
+#   --type TYPE             Type: bug or issue
+#   --title "TITLE"         Brief title for the bug/issue
+#
+# Optional:
+#   --priority LEVEL        Priority: low|medium|high|critical (default: medium)
+#   --severity LEVEL        Severity: low|medium|high|critical (default: medium)
+#   --component NAME        Component: frontend|backend|database|infrastructure|docs (default: frontend)
+#   --summary "TEXT"        Summary description (1-2 sentences, default: title)
 
 set -e
 
@@ -22,29 +31,62 @@ NC='\033[0m' # No Color
 
 # Parse arguments
 TYPE=""
-if [ "$1" = "--type" ]; then
-    TYPE="$2"
-fi
+TITLE=""
+PRIORITY="medium"
+SEVERITY="medium"
+COMPONENT="frontend"
+SUMMARY=""
 
-# Prompt for type if not provided
-if [ -z "$TYPE" ]; then
-    echo -e "${BLUE}📋 Bug Tracking System${NC}"
-    echo ""
-    echo "What type of item would you like to create?"
-    echo ""
-    echo "  1) BUG   - Software defect that needs fixing"
-    echo "  2) ISSUE - Enhancement, task, or improvement"
-    echo ""
-    read -p "Enter choice (1 or 2): " choice
-
-    case $choice in
-        1) TYPE="bug" ;;
-        2) TYPE="issue" ;;
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --type)
+            TYPE="$2"
+            shift 2
+            ;;
+        --title)
+            TITLE="$2"
+            shift 2
+            ;;
+        --priority)
+            PRIORITY="$2"
+            shift 2
+            ;;
+        --severity)
+            SEVERITY="$2"
+            shift 2
+            ;;
+        --component)
+            COMPONENT="$2"
+            shift 2
+            ;;
+        --summary)
+            SUMMARY="$2"
+            shift 2
+            ;;
         *)
-            echo -e "${RED}❌ Invalid choice. Please enter 1 or 2.${NC}"
+            echo -e "${RED}❌ Unknown option: $1${NC}"
+            echo "Usage: $0 --type TYPE --title \"TITLE\" [OPTIONS]"
             exit 1
             ;;
     esac
+done
+
+# Check required parameters
+if [ -z "$TYPE" ]; then
+    echo -e "${RED}❌ Error: --type is required${NC}"
+    echo "Usage: $0 --type bug|issue --title \"TITLE\" [OPTIONS]"
+    exit 1
+fi
+
+if [ -z "$TITLE" ]; then
+    echo -e "${RED}❌ Error: --title is required${NC}"
+    echo "Usage: $0 --type TYPE --title \"TITLE\" [OPTIONS]"
+    exit 1
+fi
+
+# Use title as summary if not provided
+if [ -z "$SUMMARY" ]; then
+    SUMMARY="$TITLE"
 fi
 
 # Validate type
@@ -99,15 +141,6 @@ fi
 echo -e "${GREEN}✅ Next ID: $NEXT_ID${NC}"
 echo ""
 
-# Prompt for title
-echo -e "${BLUE}📝 Enter a brief title:${NC}"
-read -p "Title: " TITLE
-
-if [ -z "$TITLE" ]; then
-    echo -e "${RED}❌ Error: Title cannot be empty${NC}"
-    exit 1
-fi
-
 # Create kebab-case filename
 KEBAB_TITLE=$(echo "$TITLE" | tr '[:upper:]' '[:lower:]' | sed 's/ /-/g' | sed 's/[^a-z0-9-]//g')
 FILENAME="${NEXT_ID}-${KEBAB_TITLE}.md"
@@ -116,22 +149,6 @@ FILEPATH="bugs/open/${FILENAME}"
 echo ""
 echo -e "${YELLOW}Creating: $FILEPATH${NC}"
 echo ""
-
-# Prompt for required fields
-echo -e "${BLUE}Priority (low/medium/high/critical):${NC}"
-read -p "Priority [medium]: " PRIORITY
-PRIORITY=${PRIORITY:-medium}
-
-echo -e "${BLUE}Severity (low/medium/high/critical):${NC}"
-read -p "Severity [medium]: " SEVERITY
-SEVERITY=${SEVERITY:-medium}
-
-echo -e "${BLUE}Component (frontend/backend/database/infrastructure/docs):${NC}"
-read -p "Component [frontend]: " COMPONENT
-COMPONENT=${COMPONENT:-frontend}
-
-echo -e "${BLUE}Summary (1-2 sentences):${NC}"
-read -p "Summary: " SUMMARY
 
 # Get current date
 DATE=$(date +%Y-%m-%d)
