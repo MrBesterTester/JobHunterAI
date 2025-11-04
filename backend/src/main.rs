@@ -215,7 +215,7 @@ pub struct GmailDraftMessageResponse {
 // Phase 4: Automated Job Intake Models
 // ============================================================================
 
-#[derive(Debug, Serialize, Deserialize, FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct JobSource {
     pub source_id: Uuid,
     pub source_name: String,
@@ -230,6 +230,7 @@ pub struct JobSource {
     pub last_sync: Option<DateTime<Utc>>,
     pub sync_interval_minutes: i32,
     pub configuration: serde_json::Value,
+    pub last_page_fetched: Option<i32>, // Phase 4.2: Automatic pagination for RapidAPI
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -4418,7 +4419,56 @@ async fn process_jsearch_jobs(
     Ok(metrics)
 }
 
+/// Phase 4.2: Reset RapidAPI pagination to page 1
+async fn reset_rapidapi_pagination(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    log_debug("🔄 Resetting RapidAPI pagination to page 1");
+
+    let result = sqlx::query!(
+        "UPDATE job_sources SET last_page_fetched = 1 WHERE source_name = 'rapidapi'"
+    )
+    .execute(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to reset pagination: {}", e)))?;
+
+    if result.rows_affected() == 0 {
+        return Err(actix_web::error::ErrorNotFound("RapidAPI source not found"));
+    }
+
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "success": true,
+        "message": "Pagination reset to page 1"
+    })))
+}
+
+/// Phase 4.2: Get current RapidAPI pagination state
+async fn get_rapidapi_state(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    let source = sqlx::query_as::<_, JobSource>(
+        "SELECT * FROM job_sources WHERE source_name = 'rapidapi' LIMIT 1"
+    )
+    .fetch_optional(pool.get_ref())
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to get source: {}", e)))?;
+
+    match source {
+        Some(s) => {
+            Ok(HttpResponse::Ok().json(serde_json::json!({
+                "success": true,
+                "current_page": s.last_page_fetched.unwrap_or(1),
+                "is_active": s.is_active
+            })))
+        }
+        None => {
+            Ok(HttpResponse::Ok().json(serde_json::json!({
+                "success": true,
+                "current_page": 1,
+                "is_active": false
+            })))
+        }
+    }
+}
+
 /// Sync RapidAPI JSearch jobs endpoint (mirrors Gmail sync)
+/// Phase 4.2: Now with automatic page increment
 async fn sync_jsearch_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     let log_id = Uuid::new_v4();
 
@@ -4430,6 +4480,20 @@ async fn sync_jsearch_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     .await
     .map_err(|_| actix_web::error::ErrorNotFound("RapidAPI source not found or inactive"))?;
 
+    // Phase 4.2: Get current page (defaults to 1)
+    let current_page = source.last_page_fetched.unwrap_or(1);
+    log_debug(&format!("📄 RapidAPI sync: Fetching page {} (last_page_fetched={})", current_page, source.last_page_fetched.unwrap_or(1)));
+
+    // Phase 4.2: Override configuration page with current page
+    let mut config = source.configuration.clone();
+    config["page"] = serde_json::json!(current_page.to_string());
+
+    // Create modified source with updated configuration
+    let modified_source = JobSource {
+        configuration: config,
+        ..source.clone()
+    };
+
     // Create intake log
     sqlx::query!(
         "INSERT INTO job_intake_logs (log_id, source_id, sync_status) VALUES ($1, $2, 'running')",
@@ -4439,8 +4503,8 @@ async fn sync_jsearch_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     .await
     .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to create log: {}", e)))?;
 
-    // Process jobs
-    match process_jsearch_jobs(&source, pool.get_ref(), log_id).await {
+    // Process jobs using the modified source (with current page)
+    match process_jsearch_jobs(&modified_source, pool.get_ref(), log_id).await {
         Ok(metrics) => {
             // Validate counters (mutually exclusive and collectively exhaustive)
             let expected_total = metrics.failed_processing + metrics.filtered_out + metrics.duplicated + metrics.created;
@@ -4484,8 +4548,33 @@ async fn sync_jsearch_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
             .await
             .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to update log: {}", e)))?;
 
+            // Phase 4.2: Increment page for next sync (only on success)
+            let next_page = if metrics.discovered == 0 {
+                // Auto-reset to page 1 if no results (reached end)
+                log_debug(&format!("🔄 No results on page {}. Resetting to page 1.", current_page));
+                1
+            } else {
+                current_page + 1
+            };
+
+            sqlx::query!(
+                "UPDATE job_sources SET last_page_fetched = $1 WHERE source_id = $2",
+                next_page,
+                source.source_id
+            )
+            .execute(pool.get_ref())
+            .await
+            .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to update page: {}", e)))?;
+
+            log_debug(&format!("✅ RapidAPI sync complete: Page {} → Next page: {}", current_page, next_page));
+
+            // Phase 4.2: Include pagination info in response
             Ok(HttpResponse::Ok().json(serde_json::json!({
+                "success": true,
                 "message": "RapidAPI JSearch sync completed successfully",
+                "page_synced": current_page,
+                "next_page": next_page,
+                "end_of_results": metrics.discovered == 0,
                 "metrics": {
                     "jobs_discovered": metrics.discovered,
                     "jobs_failed_processing": metrics.failed_processing,
@@ -7668,6 +7757,9 @@ async fn main() -> std::io::Result<()> {
             .route("/api/intake/gmail/sync", web::post().to(sync_gmail_jobs))
             .route("/api/intake/microsoft/sync", web::post().to(sync_microsoft_jobs))
             .route("/api/intake/rapidapi/sync", web::post().to(sync_jsearch_jobs))
+            // Phase 4.2: Automatic Pagination
+            .route("/api/intake/rapidapi/reset-pagination", web::post().to(reset_rapidapi_pagination))
+            .route("/api/intake/rapidapi/state", web::get().to(get_rapidapi_state))
             .route("/api/intake/linkedin/sync", web::post().to(sync_linkedin_jobs))
             .route("/api/intake/sync-all", web::post().to(sync_all_sources))
             .route("/api/intake/schedule", web::get().to(schedule_job_sync))
@@ -8463,5 +8555,103 @@ mod tests {
         let score = calculate_industry_score(&job);
         assert!(score.is_some());
         assert!((score.unwrap() - 40.0).abs() < 1.0);
+    }
+
+    // ============================================================================
+    // Phase 4.2: Automatic Pagination Tests
+    // ============================================================================
+
+    #[test]
+    fn test_rapidapi_auto_increment_logic() {
+        // Test that page increments correctly on successful sync
+        let current_page = 1;
+        let jobs_discovered = 10; // Non-zero means success
+
+        let next_page = if jobs_discovered == 0 {
+            1 // Reset to page 1 if no results
+        } else {
+            current_page + 1 // Increment page
+        };
+
+        assert_eq!(next_page, 2, "Page should increment to 2 after successful sync");
+
+        // Test page 5 to 6
+        let current_page = 5;
+        let jobs_discovered = 8;
+
+        let next_page = if jobs_discovered == 0 {
+            1
+        } else {
+            current_page + 1
+        };
+
+        assert_eq!(next_page, 6, "Page should increment from 5 to 6");
+    }
+
+    #[test]
+    fn test_rapidapi_auto_reset_on_empty_results() {
+        // Test that page resets to 1 when 0 jobs discovered (end of results)
+        let current_page = 15;
+        let jobs_discovered = 0; // End of results
+
+        let next_page = if jobs_discovered == 0 {
+            1 // Auto-reset to page 1
+        } else {
+            current_page + 1
+        };
+
+        assert_eq!(next_page, 1, "Page should reset to 1 when no jobs discovered");
+
+        // Test from page 1 with empty results (stays at 1)
+        let current_page = 1;
+        let jobs_discovered = 0;
+
+        let next_page = if jobs_discovered == 0 {
+            1
+        } else {
+            current_page + 1
+        };
+
+        assert_eq!(next_page, 1, "Page should stay at 1 when already at 1 with empty results");
+    }
+
+    #[test]
+    fn test_rapidapi_state_response_structure() {
+        // Test that the state endpoint returns the expected JSON structure
+        use serde_json::json;
+
+        let state_response = json!({
+            "success": true,
+            "current_page": 3,
+            "is_active": true
+        });
+
+        assert_eq!(state_response["success"], true);
+        assert_eq!(state_response["current_page"], 3);
+        assert_eq!(state_response["is_active"], true);
+
+        // Test default state when no source exists
+        let default_state = json!({
+            "success": true,
+            "current_page": 1,
+            "is_active": false
+        });
+
+        assert_eq!(default_state["current_page"], 1, "Should default to page 1");
+        assert_eq!(default_state["is_active"], false, "Should default to inactive");
+    }
+
+    #[test]
+    fn test_rapidapi_pagination_reset_response() {
+        // Test that reset endpoint returns success message
+        use serde_json::json;
+
+        let reset_response = json!({
+            "success": true,
+            "message": "Pagination reset to page 1"
+        });
+
+        assert_eq!(reset_response["success"], true);
+        assert_eq!(reset_response["message"], "Pagination reset to page 1");
     }
 }

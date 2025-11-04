@@ -117,6 +117,10 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
     unreadCount?: number;
     totalCount?: number;
   } | null>(null);
+  // Phase 4.2: RapidAPI pagination state
+  const [rapidapiPage, setRapidapiPage] = useState<number>(1);
+  const [rapidapiEndOfResults, setRapidapiEndOfResults] = useState<boolean>(false);
+  const [resettingPagination, setResettingPagination] = useState<boolean>(false);
 
   // Ref to track setTimeout for cleanup (ISSUE-021 Option iii)
   const gmailAuthTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -214,6 +218,45 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
     }
   };
 
+  // Phase 4.2: Fetch RapidAPI pagination state
+  const fetchRapidAPIPaginationState = async (): Promise<void> => {
+    try {
+      const response = await fetch(`${API_URL}/intake/rapidapi/state`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch RapidAPI state: ${response.status}`);
+      }
+      const data: { current_page: number; is_active: boolean } = await response.json();
+      setRapidapiPage(data.current_page);
+    } catch (err) {
+      console.error('Error fetching RapidAPI pagination state:', err);
+    }
+  };
+
+  // Phase 4.2: Reset RapidAPI pagination to page 1
+  const handleResetRapidAPIPagination = async (): Promise<void> => {
+    setResettingPagination(true);
+    setError(null);
+    try {
+      const response = await fetch(`${API_URL}/intake/rapidapi/reset-pagination`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Reset failed: ${response.status}`);
+      }
+
+      await fetchRapidAPIPaginationState();
+      setRapidapiEndOfResults(false);
+      alert('RapidAPI pagination reset to page 1');
+    } catch (err) {
+      console.error('Error resetting RapidAPI pagination:', err);
+      setError('Failed to reset RapidAPI pagination');
+    } finally {
+      setResettingPagination(false);
+    }
+  };
+
   // Update extraction prompt
   const updateExtractionPrompt = async (): Promise<void> => {
     setSavingPrompt(true);
@@ -251,7 +294,8 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
         fetchSources(),
         fetchLogs(),
         fetchSummary(),
-        fetchExtractionPrompt()
+        fetchExtractionPrompt(),
+        fetchRapidAPIPaginationState() // Phase 4.2
       ]);
       setLoading(false);
     };
@@ -466,14 +510,23 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
         throw new Error(`Sync failed: ${response.status}`);
       }
 
-      const data: SyncResponse = await response.json();
+      const data: any = await response.json();
       setLastSyncResult(data);
+
+      // Phase 4.2: Update pagination state from response
+      if (data.page_synced !== undefined) {
+        setRapidapiPage(data.next_page || 1);
+      }
+      if (data.end_of_results !== undefined) {
+        setRapidapiEndOfResults(data.end_of_results);
+      }
 
       // Refresh all data
       await Promise.all([
         fetchSources(),
         fetchLogs(),
-        fetchSummary()
+        fetchSummary(),
+        fetchRapidAPIPaginationState() // Phase 4.2: Get latest page state
       ]);
 
       // Notify parent component to refresh jobs list
@@ -1137,6 +1190,11 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
             <p style={{ fontSize: '14px', color: '#6b7280', margin: '4px 0' }}>
               Limit: 10 jobs per sync
             </p>
+            {/* Phase 4.2: Display current page */}
+            <p data-testid="rapidapi-current-page" style={{ fontSize: '14px', color: '#6b7280', margin: '4px 0' }}>
+              Current Page: {rapidapiPage}
+              {rapidapiEndOfResults && <span style={{ color: '#f97316', marginLeft: '8px' }}>⚠ End of results</span>}
+            </p>
             {rapidapiSource && (
               <p style={{ fontSize: '14px', color: '#6b7280', margin: '4px 0' }}>
                 Auto-sync: {rapidapiSource.is_active ? `Every ${rapidapiSource.sync_interval_minutes} minutes` : 'Disabled'}
@@ -1144,7 +1202,8 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
             )}
           </div>
 
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
             <button
               data-testid="rapidapi-sync-button"
               onClick={handleRapidAPISync}
@@ -1169,6 +1228,33 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
               <RefreshCw style={{ width: '16px', height: '16px', animation: isRapidAPISyncing ? 'spin 1s linear infinite' : 'none' }} />
               {isRapidAPISyncing ? 'Syncing...' : 'Sync Now'}
             </button>
+            </div>
+
+            {/* Phase 4.2: Reset pagination button */}
+            {isRapidAPIConnected && rapidapiPage > 1 && (
+              <button
+                data-testid="rapidapi-reset-button"
+                onClick={handleResetRapidAPIPagination}
+                disabled={resettingPagination || isRapidAPISyncing || syncingAll}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  border: '1px solid #8b5cf6',
+                  backgroundColor: 'white',
+                  color: '#8b5cf6',
+                  fontWeight: '500',
+                  cursor: resettingPagination || isRapidAPISyncing || syncingAll ? 'not-allowed' : 'pointer',
+                  fontSize: '13px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  opacity: resettingPagination || isRapidAPISyncing || syncingAll ? 0.6 : 1
+                }}
+              >
+                {resettingPagination ? 'Resetting...' : 'Reset to Page 1'}
+              </button>
+            )}
           </div>
 
           {!isRapidAPIConnected && (

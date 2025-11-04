@@ -298,7 +298,12 @@ The Intake tab is your control center for all job sources. Each source has its o
 
 **RapidAPI JSearch Card** (LinkedIn/Indeed aggregator):
 - **Status Indicator**: Shows active/inactive status
+- **Current Page Display**: Shows which page you're on (e.g., "Current Page: 3")
 - **Sync Now** button: Fetches 10 jobs per sync from 30+ job boards
+- **Automatic Pagination**: Page automatically increments after each sync (1→2→3→4...)
+- **Auto-Reset**: When no jobs found (end of results), automatically resets to page 1
+- **Reset to Page 1** button: Manually reset pagination anytime (only visible when page > 1)
+- **End of Results Indicator**: Orange warning when you've reached the last page
 - Displays sync results and rate limit usage
 
 **Intake Logs Section**:

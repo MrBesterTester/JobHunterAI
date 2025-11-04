@@ -334,4 +334,201 @@ test.describe('RapidAPI JSearch Sync Integration', () => {
     // We've verified the button is disabled, which is the point of this test
     // No need to wait for full sync completion - test is complete
   });
+
+  // ============================================================================
+  // Phase 4.2: Automatic Pagination Tests
+  // ============================================================================
+
+  test('should display current page number in RapidAPI card', async () => {
+    // Navigate to Intake tab
+    const intakeTab = page.getByRole('button', { name: /^intake$/i });
+    await intakeTab.click();
+    await page.waitForTimeout(1000);
+
+    // Find RapidAPI card using data-testid
+    const rapidapiCard = page.getByTestId('rapidapi-card');
+    await expect(rapidapiCard).toBeVisible();
+
+    // Check for current page display using data-testid
+    const currentPageElement = page.getByTestId('rapidapi-current-page');
+    await expect(currentPageElement).toBeVisible();
+
+    const pageText = await currentPageElement.textContent();
+    console.log(`Current page text: ${pageText}`);
+
+    // Verify it shows "Current Page: X"
+    const pagePattern = /Current Page:\s+\d+/i;
+    expect(pageText).toMatch(pagePattern);
+
+    console.log('✓ RapidAPI card displays current page number');
+  });
+
+  test('should auto-increment page after successful sync', async () => {
+    test.setTimeout(120000); // Increase timeout to 120s
+
+    // Navigate to Intake tab
+    const intakeTab = page.getByRole('button', { name: /^intake$/i });
+    await intakeTab.click();
+    await page.waitForTimeout(1000);
+
+    // Find RapidAPI card and current page element
+    const rapidapiCard = page.getByTestId('rapidapi-card');
+    await expect(rapidapiCard).toBeVisible();
+
+    const currentPageElement = page.getByTestId('rapidapi-current-page');
+    await expect(currentPageElement).toBeVisible();
+
+    // Get initial page number
+    const initialPageText = await currentPageElement.textContent();
+    const initialPageMatch = initialPageText?.match(/Current Page:\s+(\d+)/i);
+    const initialPage = initialPageMatch ? parseInt(initialPageMatch[1]) : 1;
+    console.log(`Initial page: ${initialPage}`);
+
+    // Find and click RapidAPI Sync button
+    const rapidapiSyncButton = page.getByTestId('rapidapi-sync-button');
+    const isDisabled = await rapidapiSyncButton.isDisabled();
+
+    if (isDisabled) {
+      console.log('RapidAPI not configured - skipping test');
+      test.skip();
+      return;
+    }
+
+    // Click sync button
+    console.log('Clicking RapidAPI Sync Now button...');
+    await rapidapiSyncButton.click();
+
+    // Wait for sync to complete by polling button state
+    console.log('Waiting for sync to complete...');
+    let syncComplete = false;
+    let attempts = 0;
+    const maxAttempts = 90;
+
+    while (!syncComplete && attempts < maxAttempts) {
+      const buttonText = await rapidapiSyncButton.textContent();
+      if (buttonText && !buttonText.includes('Syncing')) {
+        syncComplete = true;
+        console.log('Sync complete');
+      } else {
+        await page.waitForTimeout(1000);
+        attempts++;
+      }
+    }
+
+    await page.waitForTimeout(2000); // Wait for page number to update
+
+    // Get updated page number
+    const updatedPageText = await currentPageElement.textContent();
+    const updatedPageMatch = updatedPageText?.match(/Current Page:\s+(\d+)/i);
+    const updatedPage = updatedPageMatch ? parseInt(updatedPageMatch[1]) : 1;
+    console.log(`Updated page: ${updatedPage}`);
+
+    // Verify page incremented (unless we hit end of results)
+    const hasEndOfResultsIndicator = updatedPageText?.includes('End of results');
+    if (hasEndOfResultsIndicator) {
+      console.log('End of results reached - page should have reset to 1');
+      expect(updatedPage).toBe(1);
+    } else {
+      console.log('Page should have incremented by 1');
+      expect(updatedPage).toBe(initialPage + 1);
+    }
+
+    console.log('✓ RapidAPI page auto-incremented after sync');
+  });
+
+  test('should reset pagination to page 1 when reset button clicked', async () => {
+    test.setTimeout(120000); // Increase timeout to 120s
+
+    // Navigate to Intake tab
+    const intakeTab = page.getByRole('button', { name: /^intake$/i });
+    await intakeTab.click();
+    await page.waitForTimeout(1000);
+
+    // Find RapidAPI card
+    const rapidapiCard = page.getByTestId('rapidapi-card');
+    await expect(rapidapiCard).toBeVisible();
+
+    const rapidapiSyncButton = page.getByTestId('rapidapi-sync-button');
+    const isSyncDisabled = await rapidapiSyncButton.isDisabled();
+
+    if (isSyncDisabled) {
+      console.log('RapidAPI not configured - skipping test');
+      test.skip();
+      return;
+    }
+
+    // First, ensure we're not on page 1 by syncing if needed
+    const currentPageElement = page.getByTestId('rapidapi-current-page');
+    const initialPageText = await currentPageElement.textContent();
+    const initialPageMatch = initialPageText?.match(/Current Page:\s+(\d+)/i);
+    const initialPage = initialPageMatch ? parseInt(initialPageMatch[1]) : 1;
+
+    console.log(`Initial page before test: ${initialPage}`);
+
+    // If we're on page 1, sync once to get to page 2
+    if (initialPage === 1) {
+      console.log('Syncing once to get to page 2...');
+      await rapidapiSyncButton.click();
+
+      // Wait for sync to complete
+      let syncComplete = false;
+      let attempts = 0;
+      const maxAttempts = 90;
+
+      while (!syncComplete && attempts < maxAttempts) {
+        const buttonText = await rapidapiSyncButton.textContent();
+        if (buttonText && !buttonText.includes('Syncing')) {
+          syncComplete = true;
+        } else {
+          await page.waitForTimeout(1000);
+          attempts++;
+        }
+      }
+
+      await page.waitForTimeout(2000);
+    }
+
+    // Verify we're now on a page > 1
+    const beforeResetPageText = await currentPageElement.textContent();
+    const beforeResetMatch = beforeResetPageText?.match(/Current Page:\s+(\d+)/i);
+    const beforeResetPage = beforeResetMatch ? parseInt(beforeResetMatch[1]) : 1;
+
+    console.log(`Page before reset: ${beforeResetPage}`);
+
+    if (beforeResetPage === 1) {
+      console.log('Still on page 1 (might have hit end of results) - test cannot verify reset');
+      test.skip();
+      return;
+    }
+
+    // Find reset button (only visible when page > 1)
+    const resetButton = page.getByTestId('rapidapi-reset-button');
+    await expect(resetButton).toBeVisible();
+
+    // Click reset button
+    console.log('Clicking Reset to Page 1 button...');
+    await resetButton.click();
+
+    // Wait for alert to appear and dismiss it
+    page.on('dialog', async dialog => {
+      console.log(`Alert message: ${dialog.message()}`);
+      await dialog.accept();
+    });
+
+    await page.waitForTimeout(2000);
+
+    // Verify page is now 1
+    const afterResetPageText = await currentPageElement.textContent();
+    const afterResetMatch = afterResetPageText?.match(/Current Page:\s+(\d+)/i);
+    const afterResetPage = afterResetMatch ? parseInt(afterResetMatch[1]) : 1;
+
+    console.log(`Page after reset: ${afterResetPage}`);
+    expect(afterResetPage).toBe(1);
+
+    // Verify reset button is no longer visible (hidden when page === 1)
+    const isResetButtonVisible = await resetButton.isVisible().catch(() => false);
+    expect(isResetButtonVisible).toBe(false);
+
+    console.log('✓ RapidAPI pagination reset to page 1 successfully');
+  });
 });
