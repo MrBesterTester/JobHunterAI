@@ -22,7 +22,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
   test.describe('Microsoft Email Account UI', () => {
     test('should display Microsoft Email Integration card in Intake tab', async ({ page }) => {
       // Navigate to Intake tab
-      await page.getByRole('tab', { name: /intake/i }).click();
+      await page.getByRole('button', { name: /^intake$/i }).click();
 
       // Wait for Intake tab content to load
       await page.waitForTimeout(500);
@@ -34,15 +34,20 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
 
     test('should show Microsoft branding color (#0078d4)', async ({ page }) => {
       // Navigate to Intake tab
-      await page.getByRole('tab', { name: /intake/i }).click();
+      await page.getByRole('button', { name: /^intake$/i }).click();
       await page.waitForTimeout(500);
 
-      // Find Microsoft Email heading
+      // Find Microsoft Email heading to locate the card
       const microsoftHeading = page.locator('h3', { hasText: /microsoft email/i }).first();
       await expect(microsoftHeading).toBeVisible();
 
-      // Check for Microsoft blue color
-      const color = await microsoftHeading.evaluate((el) =>
+      // Find the parent container of the heading, then find the Mail icon within it
+      const microsoftCard = microsoftHeading.locator('..').locator('..'); // Go up to the card container
+      const mailIcon = microsoftCard.locator('svg').first();
+      await expect(mailIcon).toBeVisible();
+
+      // Check for Microsoft blue color on the icon
+      const color = await mailIcon.evaluate((el) =>
         window.getComputedStyle(el).color
       );
       // Microsoft blue is rgb(0, 120, 212) or #0078d4
@@ -51,7 +56,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
 
     test('should display Authenticate button when not authenticated', async ({ page }) => {
       // Navigate to Intake tab
-      await page.getByRole('tab', { name: /intake/i }).click();
+      await page.getByRole('button', { name: /^intake$/i }).click();
       await page.waitForTimeout(500);
 
       // Look for Authenticate button (or status showing not authenticated)
@@ -71,7 +76,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
   test.describe('Folder Status Display', () => {
     test('should show folder status indicator', async ({ page }) => {
       // Navigate to Intake tab
-      await page.getByRole('tab', { name: /intake/i }).click();
+      await page.getByRole('button', { name: /^intake$/i }).click();
       await page.waitForTimeout(500);
 
       // Look for folder status text (e.g., "JobOps folder: 5 unread")
@@ -88,7 +93,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
 
     test('should display unread count in folder status', async ({ page }) => {
       // Navigate to Intake tab
-      await page.getByRole('tab', { name: /intake/i }).click();
+      await page.getByRole('button', { name: /^intake$/i }).click();
       await page.waitForTimeout(500);
 
       // Look for unread count pattern (e.g., "5 unread")
@@ -107,7 +112,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
   test.describe('Microsoft vs Gmail Source Differentiation', () => {
     test('should show source badge on jobs from Microsoft email', async ({ page }) => {
       // Navigate to New Jobs tab
-      await page.getByRole('tab', { name: /new.*jobs/i }).click();
+      await page.getByRole('button', { name: /^new jobs$/i }).click();
       await page.waitForTimeout(1000);
 
       // Look for any jobs with microsoft_email source badge
@@ -154,7 +159,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
   test.describe('Error Handling', () => {
     test('should show helpful message if authentication fails', async ({ page }) => {
       // Navigate to Intake tab
-      await page.getByRole('tab', { name: /intake/i }).click();
+      await page.getByRole('button', { name: /^intake$/i }).click();
       await page.waitForTimeout(500);
 
       // Check that error messages are handled gracefully
@@ -178,7 +183,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       // This test validates that Microsoft-sourced jobs work with existing approval flow
 
       // Navigate to New Jobs tab
-      await page.getByRole('tab', { name: /new.*jobs/i }).click();
+      await page.getByRole('button', { name: /^new jobs$/i }).click();
       await page.waitForTimeout(1000);
 
       // Find any job card (regardless of source)
@@ -201,7 +206,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
 
     test('should show job source in job details', async ({ page }) => {
       // Navigate to New Jobs tab
-      await page.getByRole('tab', { name: /new.*jobs/i }).click();
+      await page.getByRole('button', { name: /^new jobs$/i }).click();
       await page.waitForTimeout(1000);
 
       // Find any job card
@@ -233,7 +238,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       await page.waitForTimeout(2000); // Extra time for tabs to render
 
       // Step 1: Navigate to Intake tab
-      await page.getByRole('tab', { name: /intake/i }).click();
+      await page.getByRole('button', { name: /^intake$/i }).click();
       await page.waitForTimeout(1000);
 
       // Step 2: Check if Microsoft is authenticated
@@ -282,7 +287,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
 
       // Step 6: Navigate to New Jobs tab
       console.log('Navigating to New Jobs tab...');
-      const newJobsTab = page.getByRole('tab', { name: /new.*jobs/i });
+      const newJobsTab = page.getByRole('button', { name: /^new jobs$/i });
       await newJobsTab.click();
       await page.waitForTimeout(2000);
 
@@ -320,7 +325,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       await page.waitForTimeout(2000); // Extra time for tabs to render
 
       // Navigate to Intake tab
-      await page.getByRole('tab', { name: /intake/i }).click();
+      await page.getByRole('button', { name: /^intake$/i }).click();
       await page.waitForTimeout(1000);
 
       // Check if Microsoft is authenticated
