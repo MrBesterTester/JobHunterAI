@@ -49,3 +49,6 @@ Thumbs.db
 test-results/
 backend/test-results/
 node_modules/
+
+# Temporary development artifacts
+microsoft-oauth-url.txt
