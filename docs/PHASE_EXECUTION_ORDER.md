@@ -7,7 +7,7 @@
   - [✅ Completed Phases (In Execution Order)](#-completed-phases-in-execution-order)
   - [🚀 Ready to Start (All Prerequisites Met)](#-ready-to-start-all-prerequisites-met)
     - [Phase 5: Advanced Features](#phase-5-advanced-features)
-  - [⏸️ Deferred (Low Priority or Not Needed Yet)](#-deferred-low-priority-or-not-needed-yet)
+  - [⏸️ Nearly Complete but Deferred](#-nearly-complete-but-deferred)
     - [Phase 2.7: Microsoft Email Source](#phase-27-microsoft-email-source)
   - [🔍 Key Insights](#-key-insights)
     - [1. **Phase 2.5 Depends on Phase 3.1**](#1-phase-25-depends-on-phase-31)
@@ -30,7 +30,7 @@
 
 # Phase Execution Order - JobHunter Project
 
-**Last Updated**: 2025-11-03 11:04:52 PST (Phase 2.5 validation complete)
+**Last Updated**: 2025-11-03 (Phase 5 planning complete, ready to implement)
 
 ---
 
@@ -54,7 +54,7 @@ This document shows the **correct execution sequence** based on actual feature d
 │  Layer 2: Job Intake (Get jobs into system)                │
 │  • Gmail Integration ✅ (base Phase 2)                      │
 │  • Phase 4.1: RapidAPI JSearch ✅                           │
-│  └─> Phase 2.7: Microsoft Email Source 📋 (deferred)       │
+│  └─> Phase 2.7: Microsoft Email Source 🟡 (95% complete)   │
 └──────────────────────┬──────────────────────────────────────┘
                        │
 ┌──────────────────────▼──────────────────────────────────────┐
@@ -77,6 +77,11 @@ This document shows the **correct execution sequence** based on actual feature d
 ┌──────────────────────▼──────────────────────────────────────┐
 │  Layer 6: Follow-up Management (Track responses)           │
 │  • Phase 2.4: Calendar & Follow-ups ✅                      │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+┌──────────────────────▼──────────────────────────────────────┐
+│  Layer 7: Enhancement & Optimization (Analytics, UX)       │
+│  • Phase 5: Advanced Features 📋 (planned)                  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -93,31 +98,69 @@ This document shows the **correct execution sequence** based on actual feature d
 | 5 | Phase 3.1 | Content Generation | ✅ | Resume & cover letter with LLM |
 | 6 | Phase 2.4 | Calendar & Follow-ups | ✅ 2025-11-01 | Interview scheduling, email follow-ups |
 | 7 | Phase 2.5 | Email Composition | ✅ 2025-11-03 | Gmail draft creation (16/16 E2E tests passing) |
+| 8 | Phase 2.7 | Microsoft Email Source (Layer 2) | 🟡 95% | Implementation complete, manual testing passed 4/4, intentionally deferred |
 
 **Total Completed: 7 phases**
+**Nearly Complete (Deferred): 1 phase (Phase 2.7 at 95%)**
 
 ---
 
 ## 🚀 Ready to Start (All Prerequisites Met)
 
 ### Phase 5: Advanced Features
-- **Prerequisites**: ✅ All core workflows complete
-- **Features**: Analytics, mobile support, advanced scheduling
-- **Priority**: Low (no blockers, nice-to-have)
+- **Prerequisites**: ✅ All core workflows complete (Layers 1-6)
+- **Status**: 📋 Planning complete, ready for implementation
+- **Document**: [PHASE_5_advanced-features.md](PHASE_5_advanced-features.md)
+- **Timeline**: 6-8 weeks (154-188 hours estimated)
+- **Priority**: Medium (core workflows complete, enhancement phase)
+
+**Feature Categories**:
+1. **5.1: Content Refresh** ⭐ START HERE - Regenerate descriptions/content on-demand (BUG-0007 with 8 E2E tests ready!)
+2. **5.2: Analytics** - Application success tracking, response time analysis, funnel metrics
+3. **5.3: Workflow Automation** - Smart follow-ups, email response detection, auto-status updates
+4. **5.4: UX Enhancements** - Mobile responsive, advanced search, keyboard shortcuts
+5. **5.5: Performance** - Database optimization, caching, background jobs
+
+**Value Proposition**:
+- **Visibility**: Understand which job sources/strategies work best
+- **Efficiency**: 50% reduction in manual status updates
+- **Quality**: Iterative content improvement
+- **Scale**: Support 500+ jobs with sub-second response times
+
+**Implementation Approach**: 5 sub-phases, each can be released independently
+**Testing**: 308 new tests (213 unit + 75 E2E + 20 performance)
 
 ---
 
-## ⏸️ Deferred (Low Priority or Not Needed Yet)
+## ⏸️ Nearly Complete but Deferred
 
 ### Phase 2.7: Microsoft Email Source
-- **Status**: Not started
-- **Prerequisites**: ✅ All met (can start anytime)
+- **Status**: 🟡 **95% Complete - Production Ready** (intentionally paused)
+- **Completion Date**: 2025-11-03 (manual testing passed 4/4)
+- **Prerequisites**: ✅ All met
 - **Feature**: sam@samkirk.com as job source (Microsoft Graph API)
-- **Why Deferred**:
+- **What's Complete**:
+  - ✅ All backend implementation (OAuth, folder filtering, message fetching, LLM extraction)
+  - ✅ All frontend UI (Microsoft Email card, sync buttons, status indicators)
+  - ✅ Backend unit tests: 8/8 passing (100%)
+  - ✅ E2E tests: 9/9 passing (100%)
+  - ✅ Manual testing: 4/4 tests passed
+  - ✅ LLM extraction validated: 100% accuracy for real job emails
+  - ✅ Full workflow tested: OAuth → Sync → LLM Extract → Approve
+- **What's Incomplete** (5%):
+  - Minor bugs filed (non-blocking):
+    - ISSUE-030: Low-confidence email status logic (medium priority)
+    - BUG-0009: Condensed description placeholder (medium/low priority)
+- **Why Deferred Despite Completion**:
+  - Core functionality is fully working and production-ready
   - Already have 2 job sources working (Gmail + RapidAPI)
-  - Limited job volume doesn't require more sources yet
-  - Can add when scaling up job search
-- **Recommendation**: Revisit when job volume increases or sam@samkirk.com becomes primary email
+  - Not required for core workflow completion
+  - Minor issues are non-blocking and documented
+  - Can deploy anytime when additional email source is needed
+- **Recommendation**:
+  - Deploy when job volume requires third email source
+  - Or deploy when sam@samkirk.com becomes primary business email
+  - Remaining 5% (bug fixes) can be done post-deployment
 
 ---
 
@@ -163,8 +206,11 @@ If we were to reorganize by feature group instead of historical phase numbers:
 - ✅ TRACK-1: Calendar & Follow-ups (Phase 2.4)
 
 ### ADVANCED: Nice-to-Have Features
-- 📋 ADV-1: Analytics (Phase 5)
-- 📋 ADV-2: Mobile Support (Phase 5)
+- ⭐ ADV-1: Content Refresh (Phase 5.1) - START HERE (fixes BUG-0007)
+- 📋 ADV-2: Analytics (Phase 5.2)
+- 📋 ADV-3: Workflow Automation (Phase 5.3)
+- 📋 ADV-4: UX Enhancements (Phase 5.4)
+- 📋 ADV-5: Performance (Phase 5.5)
 
 ---
 
@@ -183,14 +229,18 @@ If we were to reorganize by feature group instead of historical phase numbers:
    - Follow-up email system
 
 ### Short Term (Next 1-2 Weeks)
-2. **Phase 5 Planning**: Define analytics and advanced features
-   - Application success rate tracking
-   - Response time analytics
-   - Interview conversion metrics
+2. **Phase 5 Implementation - Start with Content Refresh** ⭐ RECOMMENDED
+   - Begin with Phase 5.1 (Content Refresh)
+   - Fixes BUG-0007 (actively annoying users)
+   - 8 E2E tests already written (huge head start!)
+   - Faster win: 24-30 hours vs 40-50 hours for analytics
+   - Immediate practical value
+   - See [PHASE_5_advanced-features.md](PHASE_5_advanced-features.md) for full plan
 
 3. **Phase 2.7 Re-evaluation**: Decide if Microsoft email source is needed
    - Monitor job volume from current sources
    - Defer if current sources sufficient
+   - Currently at 95% complete but not required for core workflow
 
 ### Long Term (2-3 Months)
 4. **Optimization**: Improve existing features
@@ -216,4 +266,4 @@ This document should be updated whenever:
 - Dependencies change (update dependency chain)
 - New dependencies are discovered (document here)
 
-**Last Reviewed**: 2025-11-03 by Claude Code (Phase 2.5 validation complete)
+**Last Reviewed**: 2025-11-03 by Claude Code (Phase 5 planning complete)

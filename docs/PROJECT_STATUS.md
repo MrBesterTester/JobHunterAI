@@ -6,7 +6,7 @@
   - [Current State](#current-state)
   - [Recommended Next Steps](#recommended-next-steps)
     - [Option A: Phase 2.7 Completion (Microsoft Email Source)](#option-a-phase-27-completion-microsoft-email-source)
-    - [Option B: Phase 5 Planning](#option-b-phase-5-planning)
+    - [Option B: Phase 5 Planning ✅ COMPLETE](#option-b-phase-5-planning--complete)
     - [Option C: Phase 4 Extensions](#option-c-phase-4-extensions)
   - [Development Progress by Execution Order](#development-progress-by-execution-order)
     - [✅ Layer 1: Foundation (Complete)](#-layer-1-foundation-complete)
@@ -27,6 +27,7 @@
     - [Primary Documents](#primary-documents)
     - [Phase Plans (By Execution Order)](#phase-plans-by-execution-order)
     - [Deferred/Future](#deferredfuture)
+    - [Planning Complete, Ready to Implement](#planning-complete-ready-to-implement)
     - [Testing Documentation](#testing-documentation)
     - [Bug Tracking](#bug-tracking-1)
     - [Helper Scripts](#helper-scripts)
@@ -35,7 +36,7 @@
 
 # JobHunter Project Status
 
-**Last Updated**: 2025-11-03 19:04:37 PST (Phase 2.7 complete at 95% - manual testing passed 4/4, production ready)
+**Last Updated**: 2025-11-03 19:16:22 PST (Phase 5 planning complete - comprehensive 6-week roadmap ready)
 
 ---
 
@@ -129,12 +130,27 @@
 
 **Documentation**: [PHASE_2.7](PHASE_2.7_samkirk-email-source-plan.md)
 
-### Option B: Phase 5 Planning
+### Option B: Phase 5 Planning ✅ COMPLETE
+- **Status**: ✅ **Planning Complete** (2025-11-03)
 - **Prerequisites**: ✅ All core workflows complete
-- **Scope**: Define analytics, mobile support, advanced features
-- **Effort**: 1-2 days planning
-- **Value**: Roadmap for future enhancements based on real usage patterns
-- **Timing**: After Phase 2.7 implementation
+- **Document**: [PHASE_5_advanced-features.md](PHASE_5_advanced-features.md) (comprehensive 6-week roadmap)
+- **Scope**: Analytics, content refresh, workflow automation, UX enhancements, performance
+- **Timeline**: 6-8 weeks (154-188 hours estimated)
+- **Value**: Data-driven insights, 50% reduction in manual work, improved UX
+- **Next Step**: Begin implementation with Phase 5.1 (Content Refresh) ⭐ RECOMMENDED - fixes BUG-0007!
+
+**What's Planned**:
+- ⭐ 5.1: Content Refresh (regenerate descriptions/content - BUG-0007 with 8 E2E tests ready) **START HERE**
+- ✅ 5.2: Application Analytics (success rates, response times, funnel metrics)
+- ✅ 5.3: Workflow Automation (smart follow-ups, email response detection)
+- ✅ 5.4: UX Enhancements (mobile responsive, advanced search, keyboard shortcuts)
+- ✅ 5.5: Performance (database optimization, caching, background jobs)
+
+**Testing Plan**: 308 new tests (213 unit + 75 E2E + 20 performance)
+
+**Implementation Approach**: 5 independent sub-phases, can be released incrementally
+
+**Priority**: Start with 5.1 (Content Refresh) - fixes annoying BUG-0007, 8 tests already written, faster win (24-30h)
 
 ### Option C: Phase 4 Extensions
 - **Status**: Phase 4.1 complete (RapidAPI JSearch)
@@ -338,13 +354,36 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 
 ### Phase 5: Advanced Features
 
-| Feature | Status | Priority | Notes |
-|---------|--------|----------|-------|
-| Analytics | ⏸️ Not Started | Low | Application success rates, response time tracking |
-| Mobile Support | ⏸️ Not Started | Low | Responsive design enhancements |
-| Advanced Scheduling | ⏸️ Not Started | Low | Automated follow-up management |
+**Status**: 📋 **Planning Complete** (2025-11-03), ready for implementation
+**Document**: [PHASE_5_advanced-features.md](PHASE_5_advanced-features.md)
+**Timeline**: 6-8 weeks (154-188 hours estimated)
 
-**Note**: BUG-0007 (Refresh Descriptions feature) has E2E tests ready - re-enable when implementing
+| Sub-Phase | Feature | Status | Priority | Effort | Tests | Notes |
+|-----------|---------|--------|----------|--------|-------|-------|
+| 5.1 | Content Refresh | 📋 Planned | ⭐ HIGHEST | 24-30h | 35 unit + 16 E2E | BUG-0007 (8 E2E tests ready) - START HERE |
+| 5.2 | Application Analytics | 📋 Planned | High | 40-50h | 50 unit + 20 E2E | Success rates, response times, funnel |
+| 5.3 | Workflow Automation | 📋 Planned | High | 32-38h | 43 unit + 22 E2E | Smart follow-ups, email detection |
+| 5.4 | UX Enhancements | 📋 Planned | Medium | 32-38h | 35 unit + 20 E2E | Mobile, search, keyboard shortcuts |
+| 5.5 | Performance | 📋 Planned | Medium | 26-32h | 35 unit + 20 perf | DB optimization, caching |
+
+**Total**: 154-188 hours, 308 tests (213 unit + 75 E2E + 20 performance)
+
+**Key Features**:
+- **5.1**: Refresh job descriptions (BUG-0007), regenerate resume/cover letter, version history ⭐ START HERE
+- **5.2**: Analytics dashboard with funnel visualization, source comparison, trend analysis
+- **5.3**: Auto-schedule follow-ups, detect email responses, auto-update application status
+- **5.4**: Mobile responsive design, advanced search, saved searches, keyboard shortcuts
+- **5.5**: Database indexes, React Query caching, background job processing
+
+**Value Proposition**:
+- **Visibility**: Understand which job sources/strategies work best (analytics)
+- **Efficiency**: 50% reduction in manual status updates (automation)
+- **Quality**: Iterative content improvement (refresh/regenerate)
+- **Scale**: Support 500+ jobs with sub-second response times (performance)
+
+**Implementation Approach**: 5 independent sub-phases, can be released incrementally
+
+**Recommended Start**: Phase 5.1 (Content Refresh) - fixes BUG-0007, 8 tests ready, faster win (24-30h vs 40-50h)
 
 ---
 
@@ -455,7 +494,9 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 
 ### Deferred/Future
 - [PHASE_2.7: Microsoft Email Source](PHASE_2.7_samkirk-email-source-plan.md) 📋
-- Phase 5: Advanced Features (TBD)
+
+### Planning Complete, Ready to Implement
+- [PHASE_5: Advanced Features](PHASE_5_advanced-features.md) ✅ PLANNED
 
 ### Testing Documentation
 - [TESTING_STATUS.md](TESTING_STATUS.md) - Comprehensive test progress
@@ -475,18 +516,23 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 
 ---
 
-**Last Updated**: 2025-11-03 19:04:37 PST (Phase 2.7 complete at 95% - manual testing passed 4/4, production ready)
+**Last Updated**: 2025-11-03 19:16:22 PST (Phase 5 planning complete - comprehensive 6-week roadmap ready)
 
 **Major Updates in This Revision**:
+- **Phase 5 Planning Complete** (2025-11-03 19:16:22 PST) ⭐ NEW
+  - ✅ Comprehensive planning document created: [PHASE_5_advanced-features.md](PHASE_5_advanced-features.md)
+  - ✅ 5 sub-phases defined: Analytics, Content Refresh, Automation, UX, Performance
+  - ✅ Detailed specifications: 15 features across 5 categories
+  - ✅ Complete testing strategy: 308 new tests planned
+  - ✅ Effort estimates: 154-188 hours (6-8 weeks)
+  - ✅ Implementation phases with clear deliverables and success metrics
+  - ✅ Risk mitigation strategies for LLM costs, classification accuracy, performance
+  - **Next Step**: Begin Phase 5.1 (Analytics Foundation) - 40-50 hours, 70 tests
+  - Updated PHASE_EXECUTION_ORDER.md with Layer 7 (Enhancement & Optimization)
 - Phase 2.7: **95% Complete - Production Ready** (2025-11-03)
-  - ✅ E2E tests fixed: 9/9 passing (tab selector + branding color)
-  - ✅ Manual testing complete: 4/4 tests passed
-  - ✅ LLM extraction validated: 100% accuracy for real job emails
-  - ✅ Full workflow tested: OAuth → Sync → LLM Extract → Approve
-  - Issues filed: ISSUE-030 (status logic), BUG-0009 (condensed description)
-  - create-bug.sh enhanced: now fully non-interactive with command line params
-- Testing results documented in PHASE_2.7 doc (not separate test report)
-- Bugs filed for follow-up (non-blocking)
+  - Manual testing complete: 4/4 tests passed
+  - LLM extraction validated: 100% accuracy for real job emails
+  - Currently deferred (not needed for core workflow)
 
 **Manual Updates**: This is a manually maintained document - update as needed
 
