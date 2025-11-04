@@ -383,16 +383,20 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 
 ## Bug Tracking
 
-**Total Bugs**: 38 (2 open, 4 mitigated, 32 fixed)
+**Total Bugs**: 40 (5 open, 4 mitigated, 31 fixed)
 
 **Priority Breakdown**:
 - Critical: 1
 - High: 7
-- Medium: 17
+- Medium: 19
 - Low: 11
 - Unknown: 2
 
-**Recent Fixes** (Last 12 days):
+**Recent Activity** (Last 7 days):
+- **NEW** [ISSUE-030](../bugs/open/ISSUE-030-low-confidence-emails-appear-in-filtered-tab-instead-of-non-job-emails.md): Low-confidence email status logic (2025-11-03) - Phase 2.7
+- **NEW** [BUG-0009](../bugs/open/BUG-0009-condensed-description-api-returns-placeholder-for-short-job-descriptions.md): Condensed description placeholder (2025-11-03) - Phase 2.7
+
+**Recent Fixes** (Last 14 days):
 - ISSUE-012: Zero-warning builds (2025-10-31) - All 90 Rust warnings fixed
 - BUG-0008: Phase 2.4 E2E tests (2025-10-31) - 98.6% pass rate
 - BUG-0004: "All" tab E2E failures (2025-10-30) - Fixed by ISSUE-017
