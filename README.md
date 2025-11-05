@@ -332,8 +332,10 @@ The Intake tab is your control center for all job sources. Each source has its o
 See [README_dev.md](README_dev.md) for:
 - Gmail OAuth setup instructions
 - Environment variable configuration
-- Database management scripts
+- Database management scripts (located in `./helper-scripts/`)
 - API endpoint documentation
+
+**Note**: Helper scripts like `start.sh` and `stop.sh` can be run from the project root (via symlinks) or from `./helper-scripts/` directly.
 
 ## Testing
 

@@ -66,25 +66,25 @@
       - [When You SHOULD Stop PostgreSQL](#when-you-should-stop-postgresql)
       - [Quick Reference](#quick-reference)
     - [Helper Scripts](#helper-scripts)
-      - [`start.sh`](#startsh)
-      - [`stop.sh`](#stopsh)
-      - [`clear-job-data.sh`](#clear-job-datash)
+      - [`helper-scripts/start.sh`](#helper-scriptsstartsh)
+      - [`helper-scripts/stop.sh`](#helper-scriptsstopsh)
+      - [`helper-scripts/clear-job-data.sh`](#helper-scriptsclear-job-datash)
       - [`backend/tests/test_mece_counters.sh`](#backendteststest_mece_counterssh)
-      - [`switch-to-personal.sh`](#switch-to-personalsh)
-      - [`switch-to-dev.sh`](#switch-to-devsh)
-      - [`restart-db.sh`](#restart-dbsh)
-      - [`reset-dev-db.sh`](#reset-dev-dbsh)
-      - [`backup-personal-db.sh`](#backup-personal-dbsh)
-      - [`restore-personal-db.sh`](#restore-personal-dbsh)
-      - [`sync-extraction-prompt-to-db.sh`](#sync-extraction-prompt-to-dbsh)
-      - [`bulk-re-extraction.sh`](#bulk-re-extractionsh)
-      - [`tag-session.sh`](#tag-sessionsh)
-      - [`list-sessions.sh`](#list-sessionssh)
-      - [`create-bug.sh`](#create-bugsh)
-      - [`move-bug.sh`](#move-bugsh)
-      - [`regenerate-bug-index.sh`](#regenerate-bug-indexsh)
+      - [`helper-scripts/switch-to-personal.sh`](#helper-scriptsswitch-to-personalsh)
+      - [`helper-scripts/switch-to-dev.sh`](#helper-scriptsswitch-to-devsh)
+      - [`helper-scripts/restart-db.sh`](#helper-scriptsrestart-dbsh)
+      - [`helper-scripts/reset-dev-db.sh`](#helper-scriptsreset-dev-dbsh)
+      - [`helper-scripts/backup-personal-db.sh`](#helper-scriptsbackup-personal-dbsh)
+      - [`helper-scripts/restore-personal-db.sh`](#helper-scriptsrestore-personal-dbsh)
+      - [`helper-scripts/sync-extraction-prompt-to-db.sh`](#helper-scriptssync-extraction-prompt-to-dbsh)
+      - [`helper-scripts/bulk-re-extraction.sh`](#helper-scriptsbulk-re-extractionsh)
+      - [`helper-scripts/tag-session.sh`](#helper-scriptstag-sessionsh)
+      - [`helper-scripts/list-sessions.sh`](#helper-scriptslist-sessionssh)
+      - [`helper-scripts/create-bug.sh`](#helper-scriptscreate-bugsh)
+      - [`helper-scripts/move-bug.sh`](#helper-scriptsmove-bugsh)
+      - [`helper-scripts/regenerate-bug-index.sh`](#helper-scriptsregenerate-bug-indexsh)
       - [`scripts/update-project-status.sh`](#scriptsupdate-project-statussh)
-      - [`system-health-check.sh`](#system-health-checksh)
+      - [`helper-scripts/system-health-check.sh`](#helper-scriptssystem-health-checksh)
     - [Security Notes](#security-notes)
   - [API Endpoints](#api-endpoints)
     - [Jobs](#jobs)
@@ -225,7 +225,7 @@ npm start
 
 Frontend will open at http://localhost:3000
 
-**4. Done! Use `./start.sh` for subsequent runs**
+**4. Done! Use `./start.sh` (or `./helper-scripts/start.sh`) for subsequent runs**
 
 ## Job Criteria
 
@@ -2005,23 +2005,31 @@ brew services start postgresql@14     # Manual start
 
 ### Helper Scripts
 
-#### [`start.sh`](start.sh)
+**Location**: All helper scripts are located in the `./helper-scripts/` directory.
+
+**Convenience Symlinks**: For frequently used scripts, symbolic links exist in the project root:
+- `./start.sh` → `./helper-scripts/start.sh`
+- `./stop.sh` → `./helper-scripts/stop.sh`
+
+This allows you to use either `./start.sh` or `./helper-scripts/start.sh` interchangeably. For all other scripts, use the full `./helper-scripts/` path.
+
+#### [`helper-scripts/start.sh`](helper-scripts/start.sh)
 One-command startup for the entire application.
 
 **Usage:**
 ```bash
-./start.sh
+./helper-scripts/start.sh
 ```
 
 Automatically starts PostgreSQL (if needed), the backend server, and the frontend. See [Daily Use](#daily-use-every-time-you-start-the-app) for details.
 
-#### [`stop.sh`](stop.sh)
+#### [`helper-scripts/stop.sh`](helper-scripts/stop.sh)
 Safely stops the backend and frontend processes, optionally including PostgreSQL.
 
 **Usage:**
 ```bash
-./stop.sh          # Stop app only (PostgreSQL keeps running)
-./stop.sh --full   # Stop app AND PostgreSQL
+./helper-scripts/stop.sh          # Stop app only (PostgreSQL keeps running)
+./helper-scripts/stop.sh --full   # Stop app AND PostgreSQL
 ```
 
 This script:
@@ -2034,12 +2042,12 @@ This script:
 
 The script is robust and handles edge cases like processes that don't respond to graceful shutdown. See [Properly Managing Your PostgreSQL Database](#understanding-your-workflow-properly-managing-your-postgresql-database) for guidance on when to use `--full`.
 
-#### [`clear-job-data.sh`](clear-job-data.sh)
+#### [`helper-scripts/clear-job-data.sh`](helper-scripts/clear-job-data.sh)
 Clears all job-related data while preserving configuration settings.
 
 **Usage:**
 ```bash
-./clear-job-data.sh
+./helper-scripts/clear-job-data.sh
 ```
 
 This script:
@@ -2116,32 +2124,32 @@ Validation:
 - At least one sync log must exist in the database
 - Python 3 installed for JSON parsing
 
-#### [`switch-to-personal.sh`](switch-to-personal.sh)
+#### [`helper-scripts/switch-to-personal.sh`](helper-scripts/switch-to-personal.sh)
 Switches your environment to use the personal database for real job hunting.
 
 **Usage:**
 ```bash
-./switch-to-personal.sh
+./helper-scripts/switch-to-personal.sh
 ```
 
 Updates `backend/.env` to point to `jobhunter_personal`. Restart the backend server after switching.
 
-#### [`switch-to-dev.sh`](switch-to-dev.sh)
+#### [`helper-scripts/switch-to-dev.sh`](helper-scripts/switch-to-dev.sh)
 Switches your environment to use the development database for testing with test data.
 
 **Usage:**
 ```bash
-./switch-to-dev.sh
+./helper-scripts/switch-to-dev.sh
 ```
 
 Updates `backend/.env` to point to `jobhunter_dev`. Restart the backend server after switching.
 
-#### [`restart-db.sh`](restart-db.sh)
+#### [`helper-scripts/restart-db.sh`](helper-scripts/restart-db.sh)
 Restarts the PostgreSQL database service.
 
 **Usage:**
 ```bash
-./restart-db.sh
+./helper-scripts/restart-db.sh
 ```
 
 Use this script to restart the PostgreSQL@14 service via Homebrew. This is useful when:
@@ -2151,12 +2159,12 @@ Use this script to restart the PostgreSQL@14 service via Homebrew. This is usefu
 
 The script will verify that PostgreSQL started successfully after restarting.
 
-#### [`reset-dev-db.sh`](reset-dev-db.sh)
+#### [`helper-scripts/reset-dev-db.sh`](helper-scripts/reset-dev-db.sh)
 Resets the development database to a clean state with fresh test data. **WARNING**: This will delete all data in `jobhunter_dev`!
 
 **Usage:**
 ```bash
-./reset-dev-db.sh
+./helper-scripts/reset-dev-db.sh
 ```
 
 This script will:
@@ -2166,28 +2174,28 @@ This script will:
 
 Perfect for when you want to start fresh with clean test data.
 
-#### [`backup-personal-db.sh`](backup-personal-db.sh)
+#### [`helper-scripts/backup-personal-db.sh`](helper-scripts/backup-personal-db.sh)
 Creates a timestamped, compressed backup of your personal database.
 
 **Usage:**
 ```bash
-./backup-personal-db.sh
+./helper-scripts/backup-personal-db.sh
 ```
 
 **Parameters:** None (timestamp is automatically generated)
 
 Backups are saved to `database/backups/` (excluded from Git) with filenames like `jobhunter_personal_20251001_143022.sql.gz`.
 
-#### [`restore-personal-db.sh`](restore-personal-db.sh)
+#### [`helper-scripts/restore-personal-db.sh`](helper-scripts/restore-personal-db.sh)
 Restores your personal database from a backup file. **WARNING**: This will delete all current data in `jobhunter_personal`!
 
 **Usage:**
 ```bash
 # Interactive mode - select from available backups
-./restore-personal-db.sh
+./helper-scripts/restore-personal-db.sh
 
 # Direct mode - restore specific backup file
-./restore-personal-db.sh database/backups/jobhunter_personal_20251001_143022.sql.gz
+./helper-scripts/restore-personal-db.sh database/backups/jobhunter_personal_20251001_143022.sql.gz
 ```
 
 **Parameters:**
@@ -2201,12 +2209,12 @@ The script will:
 - Restore data from the selected backup
 - Confirm successful restoration
 
-#### [`sync-extraction-prompt-to-db.sh`](sync-extraction-prompt-to-db.sh)
+#### [`helper-scripts/sync-extraction-prompt-to-db.sh`](helper-scripts/sync-extraction-prompt-to-db.sh)
 Syncs the LLM job extraction prompt from the markdown file to the database, automatically incrementing the version number.
 
 **Usage:**
 ```bash
-./sync-extraction-prompt-to-db.sh
+./helper-scripts/sync-extraction-prompt-to-db.sh
 ```
 
 This script will:
@@ -2228,12 +2236,12 @@ This script will:
    Size: 26,418 → 25,891 bytes (527 bytes saved by removing TOC)
 ```
 
-#### [`bulk-re-extraction.sh`](bulk-re-extraction.sh)
+#### [`helper-scripts/bulk-re-extraction.sh`](helper-scripts/bulk-re-extraction.sh)
 Bulk re-extracts all Gmail jobs with the updated LLM prompt and fixed backend code. This updates structured fields like `company_industry`, `employment_type_source`, and other enhanced data fields.
 
 **Usage:**
 ```bash
-./bulk-re-extraction.sh
+./helper-scripts/bulk-re-extraction.sh
 ```
 
 This script will:
@@ -2272,20 +2280,20 @@ This script will:
 💡 Refresh your browser to see the updated job cards!
 ```
 
-#### [`tag-session.sh`](tag-session.sh)
+#### [`helper-scripts/tag-session.sh`](helper-scripts/tag-session.sh)
 Creates dated session tags to mark daily work milestones in git.
 
 **Usage:**
 ```bash
 # Tag current session (defaults to end-of-pm)
-./tag-session.sh end-of-pm
-./tag-session.sh end-of-pm "Completed Phase 2.4 pagination"
+./helper-scripts/tag-session.sh end-of-pm
+./helper-scripts/tag-session.sh end-of-pm "Completed Phase 2.4 pagination"
 
 # Tag morning session
-./tag-session.sh end-of-am
+./helper-scripts/tag-session.sh end-of-am
 
 # Tag evening session
-./tag-session.sh end-of-evening "Fixed bugs and updated docs"
+./helper-scripts/tag-session.sh end-of-evening "Fixed bugs and updated docs"
 ```
 
 This script will:
@@ -2309,22 +2317,22 @@ This script will:
 
 **See also:** [ISSUE-014](bugs/fixed/ISSUE-014-work-session-tagging-convention.md) for detailed rationale and design decisions
 
-#### [`list-sessions.sh`](list-sessions.sh)
+#### [`helper-scripts/list-sessions.sh`](helper-scripts/list-sessions.sh)
 Lists and filters work session tags with multiple view options.
 
 **Usage:**
 ```bash
 # List all session tags
-./list-sessions.sh
+./helper-scripts/list-sessions.sh
 
 # Today's sessions only
-./list-sessions.sh --today
+./helper-scripts/list-sessions.sh --today
 
 # This week's sessions
-./list-sessions.sh --week
+./helper-scripts/list-sessions.sh --week
 
 # Show detailed commit info
-./list-sessions.sh --detailed
+./helper-scripts/list-sessions.sh --detailed
 ```
 
 This script will:
@@ -2358,19 +2366,19 @@ Options:
 
 **See also:** [ISSUE-014](bugs/fixed/ISSUE-014-work-session-tagging-convention.md) for detailed rationale and design decisions
 
-#### [`create-bug.sh`](create-bug.sh)
+#### [`helper-scripts/create-bug.sh`](helper-scripts/create-bug.sh)
 Creates a new bug or issue with automated ID assignment and index regeneration.
 
 **Usage:**
 ```bash
 # Interactive mode (prompts for type)
-./create-bug.sh
+./helper-scripts/create-bug.sh
 
 # Create a BUG directly
-./create-bug.sh --type bug
+./helper-scripts/create-bug.sh --type bug
 
 # Create an ISSUE directly
-./create-bug.sh --type issue
+./helper-scripts/create-bug.sh --type issue
 ```
 
 This script will:
@@ -2407,26 +2415,26 @@ Next steps:
      git commit -m "docs: Create ISSUE-020 - Add dark mode support"
 
 To move to another status later:
-  ./move-bug.sh ISSUE-020 fixed
-  ./move-bug.sh ISSUE-020 mitigated
+  ./helper-scripts/move-bug.sh ISSUE-020 fixed
+  ./helper-scripts/move-bug.sh ISSUE-020 mitigated
 ```
 
 **See also:** [Bug Tracking Workflow](CLAUDE.md#bug-tracking-workflow) in CLAUDE.md for complete workflow documentation
 
-#### [`move-bug.sh`](move-bug.sh)
+#### [`helper-scripts/move-bug.sh`](helper-scripts/move-bug.sh)
 Moves bugs/issues between states (open/mitigated/fixed) with automatic index regeneration.
 
 **Usage:**
 ```bash
 # Move to fixed status
-./move-bug.sh BUG-001 fixed
-./move-bug.sh ISSUE-019 fixed
+./helper-scripts/move-bug.sh BUG-001 fixed
+./helper-scripts/move-bug.sh ISSUE-019 fixed
 
 # Move to mitigated status
-./move-bug.sh BUG-002 mitigated
+./helper-scripts/move-bug.sh BUG-002 mitigated
 
 # Move back to open status
-./move-bug.sh ISSUE-015 open
+./helper-scripts/move-bug.sh ISSUE-015 open
 ```
 
 This script will:
@@ -2482,12 +2490,12 @@ git commit -m "docs: Move ISSUE-019 to fixed status"
 
 **See also:** [Bug Tracking Workflow](CLAUDE.md#bug-tracking-workflow) in CLAUDE.md for complete workflow documentation
 
-#### [`regenerate-bug-index.sh`](regenerate-bug-index.sh)
+#### [`helper-scripts/regenerate-bug-index.sh`](helper-scripts/regenerate-bug-index.sh)
 Regenerates the bug tracking index from any directory.
 
 **Usage:**
 ```bash
-./regenerate-bug-index.sh
+./helper-scripts/regenerate-bug-index.sh
 ```
 
 This script will:
@@ -2512,10 +2520,10 @@ The underlying Python script (`scripts/generate-bug-index.py`) is directory-depe
 ```bash
 # Works from any directory
 cd backend
-../regenerate-bug-index.sh  # ✅ Success
+../helper-scripts/regenerate-bug-index.sh  # ✅ Success
 
 # Also works from project root
-./regenerate-bug-index.sh   # ✅ Success
+./helper-scripts/regenerate-bug-index.sh   # ✅ Success
 ```
 
 #### [`scripts/update-project-status.sh`](scripts/update-project-status.sh)
@@ -2576,7 +2584,7 @@ Total LOC: ~29028
 
 **See also:** [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for the current project status
 
-#### [`system-health-check.sh`](system-health-check.sh)
+#### [`helper-scripts/system-health-check.sh`](helper-scripts/system-health-check.sh)
 Monitors system resources and detects issues during Claude Code sessions to prevent system overload.
 
 **Context:** Created for [ISSUE-019](bugs/open/ISSUE-019-macos-nearly-chokes-to-death-during-test-runs.md) after a system freeze during intensive test debugging. Helps prevent resource exhaustion from Claude Code memory leaks, Jest parallel workers, and orphaned processes.
@@ -2584,19 +2592,19 @@ Monitors system resources and detects issues during Claude Code sessions to prev
 **Usage:**
 ```bash
 # Quick health check (default) - run before/after sessions
-./system-health-check.sh
+./helper-scripts/system-health-check.sh
 
 # Show help information
-./system-health-check.sh --help
+./helper-scripts/system-health-check.sh --help
 
 # Full diagnostic with hardware checks (thermal, SSD)
-./system-health-check.sh --full
+./helper-scripts/system-health-check.sh --full
 
 # Cleanup orphaned processes (with confirmation prompts)
-./system-health-check.sh --cleanup
+./helper-scripts/system-health-check.sh --cleanup
 
 # Monitor during long sessions (runs every 30 seconds)
-./system-health-check.sh --monitor
+./helper-scripts/system-health-check.sh --monitor
 ```
 
 **Division of Responsibility:**
