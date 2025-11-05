@@ -40,11 +40,10 @@ test.describe('Refresh Buttons', () => {
     await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
-    const debugSection = jobCard.locator('div:has-text("🔧 Debug Info")').first();
 
-    // Look for the refresh button next to "Condensed Description:"
-    const descriptionHeader = debugSection.locator('div:has-text("Condensed Description:")').first();
-    const refreshButton = descriptionHeader.locator('button');
+    // Look for the refresh button in the Condensed Description section (no Debug Info wrapper)
+    const descriptionSection = jobCard.locator('div:has-text("Condensed Description")').first();
+    const refreshButton = descriptionSection.locator('button').first();
 
     await expect(refreshButton).toBeVisible();
 
@@ -58,18 +57,17 @@ test.describe('Refresh Buttons', () => {
     await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
-    const debugSection = jobCard.locator('div:has-text("🔧 Debug Info")').first();
+    const descriptionSection = jobCard.locator('div:has-text("Condensed Description")').first();
 
     // Wait for initial description to load
-    const descriptionContainer = debugSection.locator('div').filter({ hasText: 'Condensed Description:' }).locator('div').last();
+    const descriptionContainer = descriptionSection.locator('div').nth(1); // Second div is the content div
     await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
 
     // Get initial description text
     const initialDescription = await descriptionContainer.textContent();
 
     // Find and click the refresh button
-    const descriptionHeader = debugSection.locator('div:has-text("Condensed Description:")').first();
-    const refreshButton = descriptionHeader.locator('button');
+    const refreshButton = descriptionSection.locator('button').first();
     await refreshButton.click();
 
     // Should briefly show "Loading description..."
@@ -94,10 +92,10 @@ test.describe('Refresh Buttons', () => {
     const jobIdBadge = jobCard.locator('[data-testid="job-id-badge"]');
     const jobId = await jobIdBadge.textContent();
 
-    const debugSection = jobCard.locator('div:has-text("🔧 Debug Info")').first();
+    const descriptionSection = jobCard.locator('div:has-text("Condensed Description")').first();
 
     // Wait for initial description to load
-    const descriptionContainer = debugSection.locator('div').filter({ hasText: 'Condensed Description:' }).locator('div').last();
+    const descriptionContainer = descriptionSection.locator('div').nth(1);
     await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
 
     // Set up network request monitoring
@@ -113,8 +111,7 @@ test.describe('Refresh Buttons', () => {
     apiCalls.length = 0;
 
     // Click refresh button
-    const descriptionHeader = debugSection.locator('div:has-text("Condensed Description:")').first();
-    const refreshButton = descriptionHeader.locator('button');
+    const refreshButton = descriptionSection.locator('button').first();
     await refreshButton.click();
 
     // Wait for the description to load
@@ -139,15 +136,14 @@ test.describe('Refresh Buttons', () => {
     const jobIdBadge = jobCard.locator('[data-testid="job-id-badge"]');
     const jobId = await jobIdBadge.textContent();
 
-    const debugSection = jobCard.locator('div:has-text("🔧 Debug Info")').first();
-    const descriptionContainer = debugSection.locator('div').filter({ hasText: 'Condensed Description:' }).locator('div').last();
+    const descriptionSection = jobCard.locator('div:has-text("Condensed Description")').first();
+    const descriptionContainer = descriptionSection.locator('div').nth(1);
 
     // Wait for initial load
     await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
 
     // Click refresh
-    const descriptionHeader = debugSection.locator('div:has-text("Condensed Description:")').first();
-    const refreshButton = descriptionHeader.locator('button');
+    const refreshButton = descriptionSection.locator('button').first();
     await refreshButton.click();
 
     // Wait for refresh to complete
@@ -183,8 +179,8 @@ test.describe('Refresh Buttons', () => {
 
     for (let i = 0; i < count; i++) {
       const card = jobCards.nth(i);
-      const debugSection = card.locator('div:has-text("🔧 Debug Info")').first();
-      const descriptionContainer = debugSection.locator('div').filter({ hasText: 'Condensed Description:' }).locator('div').last();
+      const descriptionSection = card.locator('div:has-text("Condensed Description")').first();
+      const descriptionContainer = descriptionSection.locator('div').nth(1);
       await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
     }
 
@@ -195,8 +191,8 @@ test.describe('Refresh Buttons', () => {
     // All visible cards should show "Loading description..." briefly
     for (let i = 0; i < count; i++) {
       const card = jobCards.nth(i);
-      const debugSection = card.locator('div:has-text("🔧 Debug Info")').first();
-      const descriptionContainer = debugSection.locator('div').filter({ hasText: 'Condensed Description:' }).locator('div').last();
+      const descriptionSection = card.locator('div:has-text("Condensed Description")').first();
+      const descriptionContainer = descriptionSection.locator('div').nth(1);
 
       // Should be loading or already loaded (but definitely not error)
       const text = await descriptionContainer.textContent();
@@ -209,8 +205,8 @@ test.describe('Refresh Buttons', () => {
     // Verify all have loaded descriptions
     for (let i = 0; i < count; i++) {
       const card = jobCards.nth(i);
-      const debugSection = card.locator('div:has-text("🔧 Debug Info")').first();
-      const descriptionContainer = debugSection.locator('div').filter({ hasText: 'Condensed Description:' }).locator('div').last();
+      const descriptionSection = card.locator('div:has-text("Condensed Description")').first();
+      const descriptionContainer = descriptionSection.locator('div').nth(1);
       await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
     }
   });
@@ -220,11 +216,10 @@ test.describe('Refresh Buttons', () => {
     await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
-    const debugSection = jobCard.locator('div:has-text("🔧 Debug Info")').first();
+    const descriptionSection = jobCard.locator('div:has-text("Condensed Description")').first();
 
     // Find the refresh button
-    const descriptionHeader = debugSection.locator('div:has-text("Condensed Description:")').first();
-    const refreshButton = descriptionHeader.locator('button');
+    const refreshButton = descriptionSection.locator('button').first();
 
     // Button should be clickable (enabled)
     await expect(refreshButton).toBeEnabled();

@@ -33,15 +33,16 @@ related: []](#id-bug-0007%0Atitle-refresh-descriptions-button-not-working%0Astat
 
 ---
 id: BUG-0007
-title: Phase 5 Feature - Refresh Descriptions Button Not Implemented
-status: open
+title: Phase 5.1.1 Feature - Refresh Descriptions Feature COMPLETE
+status: fixed
 priority: low
 severity: low
 component: frontend
 created: 2025-10-30
-updated: 2025-10-31
-affects: [job-descriptions, refresh-functionality, debug-section, phase-5]
-related: [PHASE_5]
+updated: 2025-11-04
+fixed: 2025-11-04
+affects: [job-descriptions, refresh-functionality, phase-5]
+related: [PHASE_5, PHASE_5.1]
 ---
 
 # BUG-0007: Phase 5 Feature - Refresh Descriptions Button Not Implemented
@@ -186,6 +187,33 @@ test-results/22-refresh-buttons-Refresh-20b38--button-should-be-clickable-chromi
 1. Add `.skip` to test suite in `22-refresh-buttons.spec.ts`
 2. Add comment explaining why skipped
 
+## Resolution
+
+**Fixed**: 2025-11-04 - Phase 5.1.1 Implementation Complete
+
+**What Was Discovered**:
+- Refresh functionality was already fully implemented!
+- Per-job refresh button existed at `App.tsx:2185`
+- Global refresh button existed at `App.tsx:2510`
+- Backend API endpoint `/jobs/{id}/condense-description` was working
+- The issue was the E2E tests were looking for wrong DOM selectors
+
+**What Was Fixed**:
+1. Updated test selectors in `22-refresh-buttons.spec.ts` to match actual DOM structure
+   - Changed from looking for `🔧 Debug Info` wrapper to direct `Condensed Description` section
+   - Updated all 8 tests with correct element selectors
+2. Re-enabled tests in `test-config.ts` (refresh-buttons: false → true)
+3. All 8 tests now passing (23.0s runtime)
+
+**Test Results**:
+- ✅ 8/8 tests passing
+- Runtime: 23.0s
+- All refresh functionality validated end-to-end
+
+**Files Changed**:
+- `frontend/e2e/tests/22-refresh-buttons.spec.ts` - Fixed test selectors
+- `frontend/e2e/test-config.ts` - Re-enabled test suite
+
 ## Status History
 
 - 2025-10-30: Bug discovered during E2E test investigation
@@ -194,12 +222,15 @@ test-results/22-refresh-buttons-Refresh-20b38--button-should-be-clickable-chromi
 - 2025-10-31: Priority lowered from medium → low (future work)
 - 2025-10-31: Title updated to clarify Phase 5 feature status
 - 2025-10-31: Removed from Phase 2.4 documentation, added to Phase 5
+- **2025-11-04: Feature discovered to be already implemented!**
+- **2025-11-04: Tests fixed and re-enabled - all 8 passing**
+- **2025-11-04: Bug closed - Phase 5.1.1 complete**
 
 ## Notes
 
-- **Status**: Tests already disabled in test-config.ts (no action needed)
-- **Phase assignment**: Phase 5 (Advanced Features)
-- **Feature description**: Ability to regenerate job descriptions on demand using LLM
-- **Test file**: `frontend/e2e/tests/22-refresh-buttons.spec.ts` (8 tests)
-- **Related**: Phase 5 planning, LLM integration features
-- **Action**: Re-enable tests when Phase 5 implementation begins
+- **Status**: ✅ FIXED - Feature was already implemented, tests just needed selector fixes
+- **Phase assignment**: Phase 5.1.1 (Content Refresh - first sub-phase)
+- **Feature description**: Per-job and global refresh buttons for regenerating condensed descriptions
+- **Test file**: `frontend/e2e/tests/22-refresh-buttons.spec.ts` (8 tests, all passing)
+- **Actual effort**: ~2 hours (investigation + test fixes)
+- **Estimated effort**: Was 6-8 hours for implementation (not needed!)

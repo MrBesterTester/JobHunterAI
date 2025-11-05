@@ -63,7 +63,7 @@ export const ENABLED_TEST_SUITES = {
   'filtered-jobs': true,                 // 8 tests - Filtered job display logic
   'failed-duplicates-tabs': true,        // 6 tests - Edge case tabs
   'debug-section': true,                 // 8 tests - Debug info display (18-debug-section.spec.ts) - BUG-0005 FIXED
-  'refresh-buttons': false,              // 8 tests - Feature not implemented - BUG-0007
+  'refresh-buttons': true,               // 8 tests - Phase 5.1.1 feature - BUG-0007 FIXED
   'refresh-data-button': true,           // 7 tests - Global refresh button (24-refresh-data-button.spec.ts, BUG-0001 fix)
   'extraction-method-badge-test': true,  // 2 tests - ISSUE-001 verification (99-extraction-method-badge-test.spec.ts)
   'filtered-tab-test': true,             // 2 tests - Filtered tab verification (99b-filtered-tab-test.spec.ts)
@@ -116,18 +116,20 @@ export function shouldRunTest(testSuite: string): boolean {
  * - Category 1 (Core Workflows): 153 tests ✅
  * - Category 2 (Features): 145 tests ✅ (+60 re-enabled: calendar, follow-ups, timeline = Phase 2.4)
  * - Category 3 (Quality): 63 tests ✅
- * - Category 4 (Refinements): 48 tests ✅ (-8 disabled: refresh-buttons not implemented)
+ * - Category 4 (Refinements): 56 tests ✅ (+8 re-enabled: refresh-buttons = Phase 5.1.1)
  * - UI/Styling (Disabled): 107 tests ❌
  *
- * Total Active: 409 tests (up from 349 after re-enabling Phase 2.4 features)
- * Total Disabled: 115 tests (down from 175)
- * Total Tests: 524 tests (409 active + 115 disabled)
+ * Total Active: 417 tests (up from 409 after enabling Phase 5.1.1 refresh-buttons)
+ * Total Disabled: 107 tests (down from 115)
+ * Total Tests: 524 tests (417 active + 107 disabled)
  *
- * Changes (2025-10-31):
- * - BUG-0008 RESOLUTION: Re-enabled Phase 2.4 features (calendar, follow-ups, timeline = 60 tests)
- *   - Phase 2.4 implementation complete: Calendar OAuth, Calendar Service, Email Follow-ups, Timeline
+ * Changes (2025-11-04):
+ * - BUG-0007 RESOLUTION: Re-enabled refresh-buttons tests (Phase 5.1.1 = 8 tests)
+ *   - Phase 5.1.1 implementation complete: Per-job and global refresh buttons for condensed descriptions
  *   - Tests now ready for validation
- * - BUG-0007: refresh-buttons still disabled (feature deferred to Phase 5 = 8 tests)
+ * - Previous (2025-10-31):
+ *   - BUG-0008 RESOLUTION: Re-enabled Phase 2.4 features (calendar, follow-ups, timeline = 60 tests)
+ *   - Phase 2.4 implementation complete: Calendar OAuth, Calendar Service, Email Follow-ups, Timeline
  *
  * Expected Pass Rate: ~60-70% (Phase 2.4 tests may need OAuth setup or have failures)
  * Expected Runtime: ~13-15 minutes (60 additional tests)
