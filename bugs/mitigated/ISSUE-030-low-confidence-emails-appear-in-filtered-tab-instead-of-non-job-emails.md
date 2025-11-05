@@ -6,7 +6,7 @@ priority: medium
 severity: medium
 component: backend
 created: 2025-11-03
-updated: 2025-11-04
+updated: 2025-11-04 18:18:49 PST
 mitigated: 2025-11-04
 affects: []
 related: []
@@ -247,6 +247,7 @@ curl http://localhost:8080/api/intake/ignored-emails | jq
 - 2025-11-04 14:45: Fix applied - changed extraction thresholds from >= 0.3 to > 0.3
 - 2025-11-04 14:50: Code compiles successfully, backend tests pass (30/30 core tests)
 - 2025-11-04 18:45: Investigation completed - documented regex fallback behavior as appendix
+- 2025-11-04 18:18:49 PST: Updated appendix recommendation - replaced simple regex logging with comprehensive Phase 2 debug mode proposal
 
 ## Why "Mitigated" (Not "Fixed")
 
@@ -538,7 +539,61 @@ LIMIT 20;"
 
 2. **Review "Failed Extraction" Emails**: Periodically check emails marked as "failed_extraction" using the SQL query above.
 
-3. **Consider Adding Regex Confidence Logging**: Currently, regex extraction logs the final confidence but not the breakdown. Consider adding detailed logging to understand which patterns are matching.
+3. **Implement Comprehensive Debug Mode (Phase 2)**: Add environment variable-controlled debugging mode for tough extraction problems. This would provide detailed visibility into both LLM and regex extraction behavior.
+
+   **Proposed Implementation**:
+   ```rust
+   // Enable with: DEBUG_EXTRACTION=true
+   let debug_mode = std::env::var("DEBUG_EXTRACTION")
+       .unwrap_or_default()
+       .parse::<bool>()
+       .unwrap_or(false);
+   ```
+
+   **What to Log in Debug Mode**:
+
+   a) **LLM Low-Confidence Extractions** (most valuable):
+      - Log full extraction data even when confidence ≤ 0.3
+      - Include: title, company, salary, location, confidence score
+      - Reasoning: Currently we only log "confidence too low" without seeing what LLM actually extracted
+      - This shows LLM's reasoning and helps identify borderline cases
+
+   b) **Regex Confidence Breakdown**:
+      - Log each pattern match and confidence contribution:
+        - Job title (strong +0.3 or weak fallback +0.1)
+        - Company name (+0.2)
+        - Salary (+0.2)
+        - Location (+0.15)
+        - URL (+0.15)
+      - Total confidence calculation
+      - Helps understand why regex returned None vs Some(extraction)
+
+   c) **Email Characteristics**:
+      - Email length (subject, body character counts)
+      - Format (text vs HTML, or both)
+      - Sender domain
+      - Helps identify if certain email types are problematic
+
+   d) **Timing & Performance**:
+      - LLM API call duration
+      - Total extraction time
+      - Regex fallback latency
+      - Useful for performance optimization
+
+   **Files to Modify**:
+   - `backend/src/main.rs:4268-4303` - LLM text extraction logging
+   - `backend/src/main.rs:4943-4982` - LLM HTML extraction logging
+   - `backend/src/main.rs:4985-5119` - Regex fallback detailed breakdown
+
+   **Estimated Effort**: 1-2 hours
+
+   **When to Use**: Enable debug mode when investigating:
+   - Emails that should be jobs but aren't being extracted
+   - Emails that shouldn't be jobs but are being extracted (false positives)
+   - Performance issues with extraction pipeline
+   - LLM vs regex behavior comparison
+
+   **Performance Impact**: Minimal when disabled (single env var check), moderate when enabled (additional logging I/O)
 
 4. **ISSUE-030 Context - Why This Matters**: The threshold fix in ISSUE-030 (changed `>= 0.3` to `> 0.3`) means:
    - Emails with confidence=0.30 now correctly trigger regex fallback
