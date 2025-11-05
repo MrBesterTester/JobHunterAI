@@ -1,0 +1,1 @@
+helper-scripts/switch-to-personal.sh
