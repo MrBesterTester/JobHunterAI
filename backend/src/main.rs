@@ -2537,6 +2537,14 @@ async fn condense_text_with_claude(
         text.to_string()
     };
 
+    // Check word count - if description is already concise, return as-is
+    // This saves API costs and avoids LLM returning placeholder for short descriptions
+    let word_count = clean_text.split_whitespace().count();
+    if word_count <= 150 {
+        // Description is already concise, no need to condense
+        return Ok(clean_text);
+    }
+
     // Truncate if too long (Claude has token limits)
     // Use char_indices to find a safe truncation point at a character boundary
     let truncated_text = if clean_text.len() > 10000 {
