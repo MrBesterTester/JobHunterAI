@@ -1,6 +1,17 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
+  - [id: ISSUE-031
+title: "Claude Not Following Existing File Discovery Guidance in CLAUDE.md"
+status: open
+type: workflow
+priority: high
+severity: high
+component: workflow
+created: 2025-11-04
+updated: 2025-11-04
+affects: [claude-behavior, file-discovery, tool-usage]
+related: [ISSUE-011]](#id-issue-031%0Atitle-claude-not-following-existing-file-discovery-guidance-in-claudemd%0Astatus-open%0Atype-workflow%0Apriority-high%0Aseverity-high%0Acomponent-workflow%0Acreated-2025-11-04%0Aupdated-2025-11-04%0Aaffects-claude-behavior-file-discovery-tool-usage%0Arelated-issue-011)
 - [ISSUE-031: Claude Not Following Existing File Discovery Guidance in CLAUDE.md](#issue-031-claude-not-following-existing-file-discovery-guidance-in-claudemd)
   - [Summary](#summary)
   - [Background](#background)
@@ -20,6 +31,10 @@
   - [Decision](#decision)
   - [Implementation Plan](#implementation-plan)
   - [Testing](#testing)
+  - [When to Close This Issue](#when-to-close-this-issue)
+    - [Closure Criteria (All Must Be True)](#closure-criteria-all-must-be-true)
+    - [Recommended Testing Approach](#recommended-testing-approach)
+    - [Why Not Close Immediately?](#why-not-close-immediately)
   - [Related Issues](#related-issues)
   - [Status History](#status-history)
   - [Notes](#notes)
@@ -215,14 +230,20 @@ Implement all three solutions for maximum effectiveness.
 
 ## Decision
 
-**Selected**: [To be determined by user]
+**Selected**: Option 1 - Strengthen CLAUDE.md Guidance (implemented)
+
+Additional options (2, 3, 4) remain available if Option 1 proves insufficient.
 
 ## Implementation Plan
 
-1. [ ] Strengthen CLAUDE.md with prominent warnings
-2. [ ] Add File Discovery Checklist to CLAUDE_WORKFLOWS.md
-3. [ ] Add session start reminder to hook
-4. [ ] Test adherence in next session
+1. [x] Strengthen CLAUDE.md with prominent warnings (COMPLETED 2025-11-04)
+   - Added "File Discovery Tools" section to Developer Preferences
+   - Listed prohibited bash commands with ❌ markers
+   - Listed required tools with ✅ markers
+   - Linked to this issue for full details
+2. [ ] Add File Discovery Checklist to CLAUDE_WORKFLOWS.md (if needed)
+3. [ ] Add session start reminder to hook (if needed)
+4. [ ] Test adherence over multiple sessions (in progress)
 5. [ ] Document results and iterate if needed
 
 ## Testing
@@ -240,6 +261,57 @@ Implement all three solutions for maximum effectiveness.
 3. "Where is authentication implemented?" → Should use Task/Explore
 4. "Find files mentioning 'auth'" → Should use Grep or Task/Explore
 
+## When to Close This Issue
+
+**Status**: Should remain **open** until proven fixed through observation
+
+This is a behavioral issue, not a documentation gap. The fix requires demonstrated behavior change over time, not just updating documentation.
+
+### Closure Criteria (All Must Be True)
+
+1. **Demonstrated adherence over multiple sessions** (2-3 sessions minimum)
+   - Claude consistently uses Read/Glob/Grep/Task tools without prompting
+   - No instances of using bash `find`, `ls`, `grep`, `cat` commands
+   - Proper tool selection becomes automatic, not forced
+   - File discovery happens smoothly without false starts
+
+2. **User observation confirms improvement**
+   - User no longer sees Claude struggling to find files
+   - No more "where is this script?" moments with multiple failed attempts
+   - File operations complete efficiently on first try
+
+3. **Evidence in session transcripts**
+   - Review of recent sessions shows consistent proper tool usage
+   - Natural progression: need to find files → immediately use correct tool
+   - No backsliding to bash commands over time
+
+### Recommended Testing Approach
+
+**Near term** (current session or next):
+- Give Claude file discovery tasks and observe tool choices
+- Test scenarios from Testing section above
+- Watch for whether Claude reaches for bash commands or proper tools
+- Immediately point out any bash command usage
+
+**Medium term** (2-3 sessions):
+- Continue normal work and passively observe
+- Track whether bash command frequency decreases to zero
+- Note whether corrections are needed or behavior is self-sustaining
+
+**Long term** (before closing):
+- Validate that proper tool usage persists without reminders
+- Confirm behavior change is stable, not temporary
+- User feels confident the problem is resolved
+
+### Why Not Close Immediately?
+
+The strengthened CLAUDE.md guidance may help, but we need to validate it actually changes behavior before closing. Behavioral changes require:
+- Repeated reinforcement over multiple sessions
+- Evidence of internalized learning (not just following recent instructions)
+- Sustained performance without regression
+
+Closing too early risks declaring victory prematurely while the underlying problem persists.
+
 ## Related Issues
 
 - **ISSUE-011**: File path prefix conventions (addressed wrong problem)
@@ -252,6 +324,7 @@ Implement all three solutions for maximum effectiveness.
 
 - **2025-11-04**: Issue created after user identified ongoing file discovery problems
 - **2025-11-04**: Research completed - found CLAUDE.md guidance is correct, problem is adherence
+- **2025-11-04**: Added "When to Close This Issue" section with closure criteria and testing approach
 
 ## Notes
 
