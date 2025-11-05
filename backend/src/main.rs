@@ -4269,26 +4269,58 @@ async fn extract_job_from_text_async(
     text: &str,
     pool: &PgPool,
 ) -> Option<JobExtractionResult> {
+    let debug_mode = std::env::var("DEBUG_EXTRACTION")
+        .unwrap_or_default()
+        .parse::<bool>()
+        .unwrap_or(false);
+
+    let start_time = std::time::Instant::now();
+
+    if debug_mode {
+        log_debug(&format!("[DEBUG_EXTRACTION] Text extraction started - length: {} chars", text.len()));
+    }
+
     // Try LLM extraction first if API key is available
     if let Ok(api_key) = std::env::var("ANTHROPIC_API_KEY") {
         if !api_key.is_empty() {
             // Fetch active prompt
             if let Ok(prompt) = get_active_extraction_prompt(pool).await {
                 // For text extraction, we'll pass the text as the "body" and empty subject
+                let llm_start = std::time::Instant::now();
                 match call_claude_api(&api_key, &prompt.prompt_content, "", text).await {
                     Ok(extraction) => {
-                        log_debug(&format!("LLM text extraction succeeded - Title: {:?}, Company: {:?}, Confidence: {:.2}",
-                            extraction.title, extraction.company, extraction.confidence));
+                        let llm_duration = llm_start.elapsed();
+
+                        if debug_mode {
+                            log_debug(&format!("[DEBUG_EXTRACTION] LLM text extraction - Title: {:?}, Company: {:?}, Salary: ${:?}-${:?}, Location: {:?}, Confidence: {:.2}, Duration: {:?}",
+                                extraction.title, extraction.company, extraction.salary_min, extraction.salary_max,
+                                extraction.location, extraction.confidence, llm_duration));
+                        } else {
+                            log_debug(&format!("LLM text extraction succeeded - Title: {:?}, Company: {:?}, Confidence: {:.2}",
+                                extraction.title, extraction.company, extraction.confidence));
+                        }
 
                         // Only return if confidence is high enough (> 0.3 to match processing threshold)
                         if extraction.confidence > 0.3 {
+                            if debug_mode {
+                                log_debug(&format!("[DEBUG_EXTRACTION] LLM extraction accepted (confidence > 0.3), total duration: {:?}", start_time.elapsed()));
+                            }
                             return Some(extraction);
                         } else {
-                            log_debug(&format!("LLM text extraction confidence too low: {:.2}, falling back to regex", extraction.confidence));
+                            if debug_mode {
+                                log_debug(&format!("[DEBUG_EXTRACTION] LLM extraction confidence too low: {:.2} (threshold: > 0.3), falling back to regex", extraction.confidence));
+                            } else {
+                                log_debug(&format!("LLM text extraction confidence too low: {:.2}, falling back to regex", extraction.confidence));
+                            }
                         }
                     }
                     Err(e) => {
-                        log_debug(&format!("LLM text extraction failed: {}, falling back to regex", e));
+                        let llm_duration = llm_start.elapsed();
+                        if debug_mode {
+                            log_debug(&format!("[DEBUG_EXTRACTION] LLM text extraction failed after {:?}: {}, falling back to regex", llm_duration, e));
+                        } else {
+                            log_debug(&format!("LLM text extraction failed: {}, falling back to regex", e));
+                        }
                     }
                 }
             } else {
@@ -4299,7 +4331,13 @@ async fn extract_job_from_text_async(
 
     // Fallback to regex-based extraction
     log_debug("Using regex-based extraction for text");
-    extract_job_from_email(&None, &Some(text.to_string()))
+    let result = extract_job_from_email(&None, &Some(text.to_string()), debug_mode);
+
+    if debug_mode {
+        log_debug(&format!("[DEBUG_EXTRACTION] Text extraction completed, total duration: {:?}", start_time.elapsed()));
+    }
+
+    result
 }
 
 /// Process JSearch jobs from RapidAPI (aggregates LinkedIn, Indeed, Glassdoor, etc.)
@@ -4945,6 +4983,20 @@ async fn extract_job_from_email_async(
     body: &Option<String>,
     pool: &PgPool,
 ) -> Option<JobExtractionResult> {
+    let debug_mode = std::env::var("DEBUG_EXTRACTION")
+        .unwrap_or_default()
+        .parse::<bool>()
+        .unwrap_or(false);
+
+    let start_time = std::time::Instant::now();
+
+    if debug_mode {
+        let subject_len = subject.as_ref().map(|s| s.len()).unwrap_or(0);
+        let body_len = body.as_ref().map(|b| b.len()).unwrap_or(0);
+        log_debug(&format!("[DEBUG_EXTRACTION] Email extraction started - subject: {} chars, body: {} chars",
+            subject_len, body_len));
+    }
+
     // Try LLM extraction first if API key is available
     if let Ok(api_key) = std::env::var("ANTHROPIC_API_KEY") {
         if !api_key.is_empty() {
@@ -4954,20 +5006,41 @@ async fn extract_job_from_email_async(
                 let body_str = body.as_deref().unwrap_or("");
 
                 // Try Claude API
+                let llm_start = std::time::Instant::now();
                 match call_claude_api(&api_key, &prompt.prompt_content, subject_str, body_str).await {
                     Ok(extraction) => {
-                        log_debug(&format!("LLM extraction succeeded - Title: {:?}, Company: {:?}, Confidence: {:.2}",
-                            extraction.title, extraction.company, extraction.confidence));
+                        let llm_duration = llm_start.elapsed();
+
+                        if debug_mode {
+                            log_debug(&format!("[DEBUG_EXTRACTION] LLM email extraction - Title: {:?}, Company: {:?}, Salary: ${:?}-${:?}, Location: {:?}, Confidence: {:.2}, Duration: {:?}",
+                                extraction.title, extraction.company, extraction.salary_min, extraction.salary_max,
+                                extraction.location, extraction.confidence, llm_duration));
+                        } else {
+                            log_debug(&format!("LLM extraction succeeded - Title: {:?}, Company: {:?}, Confidence: {:.2}",
+                                extraction.title, extraction.company, extraction.confidence));
+                        }
 
                         // Only return if confidence is high enough (> 0.3 to match processing threshold)
                         if extraction.confidence > 0.3 {
+                            if debug_mode {
+                                log_debug(&format!("[DEBUG_EXTRACTION] LLM extraction accepted (confidence > 0.3), total duration: {:?}", start_time.elapsed()));
+                            }
                             return Some(extraction);
                         } else {
-                            log_debug(&format!("LLM extraction confidence too low: {:.2}, falling back to regex", extraction.confidence));
+                            if debug_mode {
+                                log_debug(&format!("[DEBUG_EXTRACTION] LLM extraction confidence too low: {:.2} (threshold: > 0.3), falling back to regex", extraction.confidence));
+                            } else {
+                                log_debug(&format!("LLM extraction confidence too low: {:.2}, falling back to regex", extraction.confidence));
+                            }
                         }
                     }
                     Err(e) => {
-                        log_debug(&format!("LLM extraction failed: {}, falling back to regex", e));
+                        let llm_duration = llm_start.elapsed();
+                        if debug_mode {
+                            log_debug(&format!("[DEBUG_EXTRACTION] LLM email extraction failed after {:?}: {}, falling back to regex", llm_duration, e));
+                        } else {
+                            log_debug(&format!("LLM extraction failed: {}, falling back to regex", e));
+                        }
                     }
                 }
             } else {
@@ -4978,16 +5051,28 @@ async fn extract_job_from_email_async(
 
     // Fallback to regex-based extraction
     log_debug("Using regex-based extraction");
-    extract_job_from_email(subject, body)
+    let result = extract_job_from_email(subject, body, debug_mode);
+
+    if debug_mode {
+        log_debug(&format!("[DEBUG_EXTRACTION] Email extraction completed, total duration: {:?}", start_time.elapsed()));
+    }
+
+    result
 }
 
 /// Regex-based extraction fallback
-fn extract_job_from_email(subject: &Option<String>, body: &Option<String>) -> Option<JobExtractionResult> {
+fn extract_job_from_email(subject: &Option<String>, body: &Option<String>, debug_mode: bool) -> Option<JobExtractionResult> {
+    let regex_start = std::time::Instant::now();
+
     let combined_text = format!(
         "{} {}",
         subject.as_deref().unwrap_or(""),
         body.as_deref().unwrap_or("")
     );
+
+    if debug_mode {
+        log_debug(&format!("[DEBUG_EXTRACTION] Regex extraction started - combined text: {} chars", combined_text.len()));
+    }
 
     let mut extraction = JobExtractionResult {
         title: None,
@@ -5021,6 +5106,10 @@ fn extract_job_from_email(subject: &Option<String>, body: &Option<String>) -> Op
                     if let Some(title_match) = captures.get(0) {
                         extraction.title = Some(title_match.as_str().trim().to_string());
                         extraction.confidence += 0.3;
+                        if debug_mode {
+                            log_debug(&format!("[DEBUG_EXTRACTION] Regex: Job title (strong pattern) matched: {:?} (+0.3 confidence, total: {:.2})",
+                                extraction.title, extraction.confidence));
+                        }
                         break;
                     }
                 }
@@ -5038,7 +5127,15 @@ fn extract_job_from_email(subject: &Option<String>, body: &Option<String>) -> Op
             };
             extraction.title = Some(title);
             extraction.confidence += 0.1; // Lower confidence for fallback
+            if debug_mode {
+                log_debug(&format!("[DEBUG_EXTRACTION] Regex: Job title (weak fallback from subject) matched: {:?} (+0.1 confidence, total: {:.2})",
+                    extraction.title, extraction.confidence));
+            }
+        } else if debug_mode && extraction.title.is_none() {
+            log_debug("[DEBUG_EXTRACTION] Regex: No job title found (+0.0 confidence)");
         }
+    } else if debug_mode {
+        log_debug("[DEBUG_EXTRACTION] Regex: No subject provided for title extraction (+0.0 confidence)");
     }
 
     // Extract company name
@@ -5054,10 +5151,18 @@ fn extract_job_from_email(subject: &Option<String>, body: &Option<String>) -> Op
                 if let Some(company_match) = captures.get(1) {
                     extraction.company = Some(company_match.as_str().trim().to_string());
                     extraction.confidence += 0.2;
+                    if debug_mode {
+                        log_debug(&format!("[DEBUG_EXTRACTION] Regex: Company name matched: {:?} (+0.2 confidence, total: {:.2})",
+                            extraction.company, extraction.confidence));
+                    }
                     break;
                 }
             }
         }
+    }
+
+    if debug_mode && extraction.company.is_none() {
+        log_debug("[DEBUG_EXTRACTION] Regex: No company name found (+0.0 confidence)");
     }
 
     // Extract salary
@@ -5076,11 +5181,19 @@ fn extract_job_from_email(subject: &Option<String>, body: &Option<String>) -> Op
                         extraction.salary_min = Some(salary_value);
                         extraction.salary_max = Some(salary_value);
                         extraction.confidence += 0.2;
+                        if debug_mode {
+                            log_debug(&format!("[DEBUG_EXTRACTION] Regex: Salary matched: ${} (+0.2 confidence, total: {:.2})",
+                                salary_value, extraction.confidence));
+                        }
                         break;
                     }
                 }
             }
         }
+    }
+
+    if debug_mode && extraction.salary_min.is_none() {
+        log_debug("[DEBUG_EXTRACTION] Regex: No salary found (+0.0 confidence)");
     }
 
     // Extract location
@@ -5095,10 +5208,18 @@ fn extract_job_from_email(subject: &Option<String>, body: &Option<String>) -> Op
                 if let Some(location_match) = captures.get(1) {
                     extraction.location = Some(location_match.as_str().trim().to_string());
                     extraction.confidence += 0.15;
+                    if debug_mode {
+                        log_debug(&format!("[DEBUG_EXTRACTION] Regex: Location matched: {:?} (+0.15 confidence, total: {:.2})",
+                            extraction.location, extraction.confidence));
+                    }
                     break;
                 }
             }
         }
+    }
+
+    if debug_mode && extraction.location.is_none() {
+        log_debug("[DEBUG_EXTRACTION] Regex: No location found (+0.0 confidence)");
     }
 
     // Extract URLs
@@ -5106,15 +5227,33 @@ fn extract_job_from_email(subject: &Option<String>, body: &Option<String>) -> Op
         if let Some(url_match) = re.find(&combined_text) {
             extraction.url = Some(url_match.as_str().to_string());
             extraction.confidence += 0.15;
+            if debug_mode {
+                log_debug(&format!("[DEBUG_EXTRACTION] Regex: URL matched: {:?} (+0.15 confidence, total: {:.2})",
+                    extraction.url, extraction.confidence));
+            }
+        } else if debug_mode {
+            log_debug("[DEBUG_EXTRACTION] Regex: No URL found (+0.0 confidence)");
         }
     }
 
+    let regex_duration = regex_start.elapsed();
+
     if extraction.confidence > 0.3 {
-        log_debug(&format!("Regex extraction succeeded - Title: {:?}, Company: {:?}, Confidence: {:.2}",
-            extraction.title, extraction.company, extraction.confidence));
+        if debug_mode {
+            log_debug(&format!("[DEBUG_EXTRACTION] Regex extraction ACCEPTED - Title: {:?}, Company: {:?}, Final confidence: {:.2} (threshold: > 0.3), Duration: {:?}",
+                extraction.title, extraction.company, extraction.confidence, regex_duration));
+        } else {
+            log_debug(&format!("Regex extraction succeeded - Title: {:?}, Company: {:?}, Confidence: {:.2}",
+                extraction.title, extraction.company, extraction.confidence));
+        }
         Some(extraction)
     } else {
-        log_debug(&format!("Regex extraction rejected - low confidence: {:.2}", extraction.confidence));
+        if debug_mode {
+            log_debug(&format!("[DEBUG_EXTRACTION] Regex extraction REJECTED - Final confidence: {:.2} (threshold: > 0.3), Duration: {:?}",
+                extraction.confidence, regex_duration));
+        } else {
+            log_debug(&format!("Regex extraction rejected - low confidence: {:.2}", extraction.confidence));
+        }
         None
     }
 }
