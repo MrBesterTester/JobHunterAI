@@ -3357,14 +3357,15 @@ async fn process_microsoft_messages(
         }
     };
 
-    // Fetch unread messages from JobOps folder via Microsoft Graph API
+    // Fetch ALL messages from JobOps folder via Microsoft Graph API
+    // Process both read and unread messages (sam@samkirk.com requirement)
     // Limited to 10 messages per sync to match Gmail behavior
     let url = format!(
-        "https://graph.microsoft.com/v1.0/me/mailFolders/{}/messages?$filter=isRead eq false&$top=10&$orderby=receivedDateTime desc",
+        "https://graph.microsoft.com/v1.0/me/mailFolders/{}/messages?$top=10&$orderby=receivedDateTime desc",
         folder_id
     );
 
-    log_debug(&format!("Fetching unread messages from JobOps folder (ID: {})", folder_id));
+    log_debug(&format!("Fetching all messages from JobOps folder (ID: {})", folder_id));
 
     let response = client
         .get(url)
@@ -3399,7 +3400,7 @@ async fn process_microsoft_messages(
             if let Some(archive_id) = &archive_folder_id {
                 match move_microsoft_message(&client, access_token, &message.id, archive_id).await {
                     Ok(_) => {
-                        log_debug(&format!("Moved duplicate message {} to JobOps_Processed", message.id));
+                        log_debug(&format!("Moved duplicate message {} to JobOps-OLD", message.id));
                     }
                     Err(e) => {
                         log_debug(&format!("Warning: Failed to move duplicate {}: {}. Marking as read instead.", message.id, e));
@@ -3493,7 +3494,7 @@ async fn process_microsoft_messages(
                         if let Some(archive_id) = &archive_folder_id {
                             match move_microsoft_message(&client, access_token, &message.id, archive_id).await {
                                 Ok(_) => {
-                                    log_debug(&format!("Moved processed message {} to JobOps_Processed", message.id));
+                                    log_debug(&format!("Moved processed message {} to JobOps-OLD", message.id));
                                 }
                                 Err(e) => {
                                     log_debug(&format!("Warning: Failed to move message {}: {}. Marking as read instead.", message.id, e));
@@ -3653,13 +3654,13 @@ async fn mark_microsoft_message_as_read(
     Ok(())
 }
 
-/// Get or create the JobOps_Processed archive folder for Microsoft emails
+/// Get or create the JobOps-OLD archive folder for Microsoft emails
 async fn get_or_create_archive_folder(
     client: &reqwest::Client,
     access_token: &str,
 ) -> std::result::Result<String, Box<dyn std::error::Error + Send + Sync>> {
     // Try to find existing folder first
-    let search_url = "https://graph.microsoft.com/v1.0/me/mailFolders?$filter=displayName eq 'JobOps_Processed'";
+    let search_url = "https://graph.microsoft.com/v1.0/me/mailFolders?$filter=displayName eq 'JobOps-OLD'";
 
     let response = client
         .get(search_url)
@@ -3673,7 +3674,7 @@ async fn get_or_create_archive_folder(
             if !folders.is_empty() {
                 // Folder exists, return ID
                 if let Some(id) = folders[0]["id"].as_str() {
-                    log_debug(&format!("Found existing JobOps_Processed folder: {}", id));
+                    log_debug(&format!("Found existing JobOps-OLD folder: {}", id));
                     return Ok(id.to_string());
                 }
             }
@@ -3681,13 +3682,13 @@ async fn get_or_create_archive_folder(
     }
 
     // Folder doesn't exist, create it
-    log_debug("Creating JobOps_Processed folder...");
+    log_debug("Creating JobOps-OLD folder...");
     let create_url = "https://graph.microsoft.com/v1.0/me/mailFolders";
     let response = client
         .post(create_url)
         .bearer_auth(access_token)
         .json(&serde_json::json!({
-            "displayName": "JobOps_Processed",
+            "displayName": "JobOps-OLD",
             "isHidden": false
         }))
         .send()
@@ -3704,7 +3705,7 @@ async fn get_or_create_archive_folder(
         .ok_or("No folder ID in response")?
         .to_string();
 
-    log_debug(&format!("Created JobOps_Processed folder: {}", folder_id));
+    log_debug(&format!("Created JobOps-OLD folder: {}", folder_id));
     Ok(folder_id)
 }
 

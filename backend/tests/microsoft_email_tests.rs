@@ -510,7 +510,7 @@ mod microsoft_email_tests {
         // Test that archive folder can be represented in our data structures
         let mock_folder = serde_json::json!({
             "id": "AAMkAGI2TH1234567890",
-            "displayName": "JobOps_Processed",
+            "displayName": "JobOps-OLD",
             "parentFolderId": "inbox",
             "childFolderCount": 0,
             "unreadItemCount": 0,
@@ -520,7 +520,7 @@ mod microsoft_email_tests {
         // Verify we can deserialize the folder structure
         let folder_id = mock_folder["id"].as_str().unwrap();
         assert_eq!(folder_id, "AAMkAGI2TH1234567890");
-        assert_eq!(mock_folder["displayName"].as_str().unwrap(), "JobOps_Processed");
+        assert_eq!(mock_folder["displayName"].as_str().unwrap(), "JobOps-OLD");
     }
 
     #[tokio::test]
@@ -551,7 +551,7 @@ mod microsoft_email_tests {
     #[tokio::test]
     async fn test_folder_search_filter() {
         // Test the folder search filter construction
-        let folder_name = "JobOps_Processed";
+        let folder_name = "JobOps-OLD";
         let search_url = format!(
             "https://graph.microsoft.com/v1.0/me/mailFolders?$filter=displayName eq '{}'",
             folder_name
