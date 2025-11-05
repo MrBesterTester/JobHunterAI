@@ -31,6 +31,7 @@ related: []
 - [Implementation](#implementation)
 - [Testing](#testing)
 - [Status History](#status-history)
+- [Why "Mitigated" (Not "Fixed")](#why-mitigated-not-fixed)
 - [Notes](#notes)
 - [Related Files](#related-files)
 
@@ -227,6 +228,40 @@ curl http://localhost:8080/api/intake/ignored-emails | jq
 - 2025-11-04 14:30: Root cause identified - off-by-one threshold inconsistency (>= vs >)
 - 2025-11-04 14:45: Fix applied - changed extraction thresholds from >= 0.3 to > 0.3
 - 2025-11-04 14:50: Code compiles successfully, backend tests pass (30/30 core tests)
+
+## Why "Mitigated" (Not "Fixed")
+
+**Code is fixed, but not yet verified in production:**
+
+The issue is marked as **mitigated** rather than **fixed** because:
+
+1. ✅ **Root cause identified** - Off-by-one threshold inconsistency
+2. ✅ **Code fix applied** - Changed `>= 0.3` to `> 0.3` in both extraction functions
+3. ✅ **Compiles successfully** - No build errors
+4. ✅ **Tests pass** - Backend core tests (30/30)
+5. ❌ **Not yet tested with real emails** - Need to verify with actual email sync
+6. ❌ **Existing bad data** - 1 job with confidence=0.30 still in database
+
+**When this can move to "Fixed":**
+
+This issue can be closed as **fixed** when:
+
+1. **Real-world test:** Sync an email that would generate confidence=0.30
+   - Verify NO job is created
+   - Verify email appears in "Non-Job Emails" tab
+   - Verify email does NOT appear in "Filtered" tab
+
+2. **Clean up existing data (optional):**
+   ```sql
+   -- Delete the incorrectly created job
+   DELETE FROM jobs WHERE job_id = '8d9c1c40-d932-428a-bfcb-80e287b0a32c';
+   ```
+
+3. **Monitor next sync:** Watch logs during the next Microsoft/Gmail sync to confirm no confidence=0.30 jobs are created
+
+**Recommendation:**
+
+The fix is solid and the logic is correct. The threshold inconsistency is eliminated and the edge case can't occur anymore. "Mitigated" represents "code fixed, awaiting production verification" - standard practice for issues that haven't been validated in the live environment yet.
 
 ## Notes
 
