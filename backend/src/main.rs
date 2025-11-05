@@ -4280,8 +4280,8 @@ async fn extract_job_from_text_async(
                         log_debug(&format!("LLM text extraction succeeded - Title: {:?}, Company: {:?}, Confidence: {:.2}",
                             extraction.title, extraction.company, extraction.confidence));
 
-                        // Only return if confidence is high enough (>= 0.3 as per prompt spec)
-                        if extraction.confidence >= 0.3 {
+                        // Only return if confidence is high enough (> 0.3 to match processing threshold)
+                        if extraction.confidence > 0.3 {
                             return Some(extraction);
                         } else {
                             log_debug(&format!("LLM text extraction confidence too low: {:.2}, falling back to regex", extraction.confidence));
@@ -4959,8 +4959,8 @@ async fn extract_job_from_email_async(
                         log_debug(&format!("LLM extraction succeeded - Title: {:?}, Company: {:?}, Confidence: {:.2}",
                             extraction.title, extraction.company, extraction.confidence));
 
-                        // Only return if confidence is high enough (>= 0.3 as per prompt spec)
-                        if extraction.confidence >= 0.3 {
+                        // Only return if confidence is high enough (> 0.3 to match processing threshold)
+                        if extraction.confidence > 0.3 {
                             return Some(extraction);
                         } else {
                             log_debug(&format!("LLM extraction confidence too low: {:.2}, falling back to regex", extraction.confidence));
