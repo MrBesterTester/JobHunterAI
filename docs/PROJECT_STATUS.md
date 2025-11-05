@@ -37,7 +37,7 @@
 
 # JobHunter Project Status
 
-**Last Updated**: 2025-11-04 17:30:00 PST (Phase 2.7 complete - all bugs resolved)
+**Last Updated**: 2025-11-04 18:45:00 PST (Phase 2.7 investigation complete)
 
 ---
 
@@ -126,7 +126,7 @@
 - ✅ [BUG-0009](../bugs/fixed/BUG-0009-condensed-description-api-returns-placeholder-for-short-job-descriptions.md): Condensed description word count check (fixed)
 
 **Remaining Investigation** (Optional):
-- Investigate regex fallback trigger for non-job emails (low priority)
+- ✅ ~~Investigate regex fallback trigger for non-job emails~~ (complete - see [INVESTIGATION_regex-fallback-for-non-job-emails.md](INVESTIGATION_regex-fallback-for-non-job-emails.md))
 
 **Business Case**: Complete professional relationship lifecycle tracking
 - **Gmail** (MrBesterTester@gmail.com): High-volume prospecting
@@ -542,13 +542,18 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 
 ---
 
-**Last Updated**: 2025-11-04 10:15:00 PST (Phase 5.1 complete, Option B now highest priority)
+**Last Updated**: 2025-11-04 18:45:00 PST (Phase 2.7 investigation complete)
 
 **Major Updates in This Revision**:
+- **Phase 2.7 Optional Investigation Complete** (2025-11-04 18:45:00 PST)
+  - ✅ Completed investigation: Regex fallback trigger for non-job emails
+  - ✅ Documentation: [INVESTIGATION_regex-fallback-for-non-job-emails.md](INVESTIGATION_regex-fallback-for-non-job-emails.md)
+  - **Finding**: Regex fallback correctly rejects most non-job emails (confidence ≤ 0.3)
+  - **Confidence**: Dual-layer approach (LLM → regex) works well in practice
 - **Phase 2.7 Bugs Resolved, Phase Complete** (2025-11-04 17:30:00 PST)
   - ✅ ISSUE-030 RESOLVED (mitigated) - Low-confidence email threshold fix
   - ✅ BUG-0009 FIXED - Condensed description word count check
-  - ✅ **Phase 2.7 NOW 100% COMPLETE** - All bugs resolved
+  - ✅ **Phase 2.7 NOW 100% COMPLETE** - All bugs resolved, investigation complete
   - Next priority: Phase 5.2+ (Analytics) or Phase 4 extensions
 - **Phase 5.1 Complete, Priority Shift to Phase 2.7 Polish** (2025-11-04 10:15:00 PST)
   - ✅ Phase 5.1.1 (Refresh Descriptions) COMPLETE - BUG-0007 fixed
