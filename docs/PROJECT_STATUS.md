@@ -126,7 +126,7 @@
 - ✅ [BUG-0009](../bugs/fixed/BUG-0009-condensed-description-api-returns-placeholder-for-short-job-descriptions.md): Condensed description word count check (fixed)
 
 **Remaining Investigation** (Optional):
-- ✅ ~~Investigate regex fallback trigger for non-job emails~~ (complete - see [INVESTIGATION_regex-fallback-for-non-job-emails.md](INVESTIGATION_regex-fallback-for-non-job-emails.md))
+- ✅ ~~Investigate regex fallback trigger for non-job emails~~ (complete - see [ISSUE-030 Appendix](../bugs/mitigated/ISSUE-030-low-confidence-emails-appear-in-filtered-tab-instead-of-non-job-emails.md#appendix-regex-fallback-investigation))
 
 **Business Case**: Complete professional relationship lifecycle tracking
 - **Gmail** (MrBesterTester@gmail.com): High-volume prospecting
@@ -547,7 +547,7 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 **Major Updates in This Revision**:
 - **Phase 2.7 Optional Investigation Complete** (2025-11-04 18:45:00 PST)
   - ✅ Completed investigation: Regex fallback trigger for non-job emails
-  - ✅ Documentation: [INVESTIGATION_regex-fallback-for-non-job-emails.md](INVESTIGATION_regex-fallback-for-non-job-emails.md)
+  - ✅ Documentation: Integrated into [ISSUE-030 Appendix](../bugs/mitigated/ISSUE-030-low-confidence-emails-appear-in-filtered-tab-instead-of-non-job-emails.md#appendix-regex-fallback-investigation)
   - **Finding**: Regex fallback correctly rejects most non-job emails (confidence ≤ 0.3)
   - **Confidence**: Dual-layer approach (LLM → regex) works well in practice
 - **Phase 2.7 Bugs Resolved, Phase Complete** (2025-11-04 17:30:00 PST)
