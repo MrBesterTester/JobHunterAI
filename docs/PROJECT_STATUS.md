@@ -37,7 +37,7 @@
 
 # JobHunter Project Status
 
-**Last Updated**: 2025-11-04 18:43:05 PST ✅ **CORE SOFTWARE FEATURE COMPLETE**
+**Last Updated**: 2025-11-05 09:15:00 PST (Phase 2.8 planning complete, implementation starting)
 
 ---
 
@@ -238,6 +238,7 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 | 2.5 | Email Composition | 5 | ✅ Complete | 100% | 2025-11-03 | [PHASE_2.5](PHASE_2.5_email-composition.md) |
 | 2.6 | LLM Job Extraction | 3 | ✅ Complete | 100% | 2025-10-11 | [PHASE_2.6](PHASE_2.6_llm-job-extraction.md) |
 | 2.7 | Microsoft Email Source | 2 | ✅ Complete | 100% | 2025-11-04 | [PHASE_2.7](PHASE_2.7_samkirk-email-source-plan.md) |
+| 2.8 | MS Email Auto-Archive | 2 | 🔄 In Progress | 0% | - | [PHASE_2.8](PHASE_2.8_ms-email-processing.md) |
 
 **Phase 2.4 Details** (Calendar & Follow-ups):
 - ✅ Google Calendar OAuth (373 lines): OAuth 2.0 flow, token refresh
