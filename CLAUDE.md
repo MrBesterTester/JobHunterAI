@@ -134,9 +134,15 @@ afplay /System/Library/Sounds/Glass.aiff && osascript -e "display dialog \"[mess
 **Examples**:
 - Root files: `./CLAUDE.md`, `./README.md`, `./package.json`
 - Subdirectories: `./backend/src/main.rs`, `./docs/file.md`
-- Scripts: `./switch-to-personal.sh`, `./start.sh`
+- User scripts: `./start.sh`, `./stop.sh` (frequently used, kept in root)
+- Helper scripts: `./helper-scripts/create-bug.sh`, `./helper-scripts/move-bug.sh` (automation scripts for Claude)
 
 **Why**: Clearer, more portable, eliminates path resolution ambiguity. See [ISSUE-011](bugs/fixed/ISSUE-011-file-path-prefix-conventions.md) for detailed research.
+
+**Helper Scripts Organization**:
+- All automation scripts live in `./helper-scripts/` directory
+- User-facing scripts (`start.sh`, `stop.sh`) remain in root for convenience
+- Claude should always reference scripts as `./helper-scripts/<script-name>.sh`
 
 ### Work Session Tagging
 
@@ -144,8 +150,8 @@ afplay /System/Library/Sounds/Glass.aiff && osascript -e "display dialog \"[mess
 
 **Quick Reference**:
 ```bash
-./tag-session.sh end-of-pm "Description of today's work"
-./list-sessions.sh --week
+./helper-scripts/tag-session.sh end-of-pm "Description of today's work"
+./helper-scripts/list-sessions.sh --week
 ```
 
 **Tag Format**: `{session-type}-{YYYY-MM-DD}` (e.g., `end-of-pm-2025-10-24`)
@@ -365,13 +371,13 @@ The system centers around three main entities:
 - **Testing Status**: `docs/TESTING_STATUS.md` ← **Current status & open issues**
 - **Testing History**: `docs/TESTING_HISTORY.md` ← **Completed work archive**
 - **Work Summaries**: `README_work-summary-*.md` (root level, dated)
-- **Helper Scripts**: `./create-bug.sh`, `./move-bug.sh`, `./tag-session.sh`, etc. (see `README_dev.md`)
+- **Helper Scripts**: `helper-scripts/` directory (see `README_dev.md`)
 
 **Finding Bugs/Issues**:
 1. **Always check index first**: `bugs/README.md` (auto-generated)
 2. **Use Glob for patterns**: `bugs/**/*ISSUE-018*.md`
 3. **Bug ID format**: `BUG-####` (bugs), `ISSUE-####` (issues)
-4. **Next available ID**: Run `./create-bug.sh` to see next ID (scans all directories)
+4. **Next available ID**: Run `./helper-scripts/create-bug.sh` to see next ID (scans all directories)
 
 **Navigation Tips**:
 - Use `@bugs/README.md` to see current bug list
@@ -448,9 +454,9 @@ bugs/
 
 **REQUIRED: Always use the helper script (never create bug files manually):**
 ```bash
-./create-bug.sh              # Interactive mode
-./create-bug.sh --type bug   # Direct bug creation
-./create-bug.sh --type issue # Direct issue creation
+./helper-scripts/create-bug.sh              # Interactive mode
+./helper-scripts/create-bug.sh --type bug   # Direct bug creation
+./helper-scripts/create-bug.sh --type issue # Direct issue creation
 ```
 
 **CRITICAL**: The script will output the next available bug/issue ID (e.g., "Next ID: ISSUE-021"). **ALWAYS use the exact ID the script provides.** The script scans all three directories (open, mitigated, fixed) to avoid ID collisions. Never second-guess or override the script's ID assignment.
@@ -474,7 +480,7 @@ See [README_dev.md - Helper Scripts](README_dev.md#helper-scripts) for full docu
 
 **REQUIRED: Always use the helper script (never move bug files manually):**
 ```bash
-./move-bug.sh BUG-001 fixed
+./helper-scripts/move-bug.sh BUG-001 fixed
 ```
 
 **What the script does automatically**:
