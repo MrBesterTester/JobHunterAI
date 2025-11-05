@@ -2,6 +2,9 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [JobHunter Project History](#jobhunter-project-history)
+  - [2025-11-04: Phase 2.7 COMPLETE - Microsoft Email Source Integration](#2025-11-04-phase-27-complete---microsoft-email-source-integration)
+  - [2025-11-04: Phase 5.1 COMPLETE - Content Refresh Feature](#2025-11-04-phase-51-complete---content-refresh-feature)
+  - [2025-11-03: Phase 4.2 COMPLETE - Automatic Pagination for RapidAPI](#2025-11-03-phase-42-complete---automatic-pagination-for-rapidapi)
   - [2025-11-01: Phase 2.4 COMPLETE - Gmail Send Integration with TEST_MODE Safety](#2025-11-01-phase-24-complete---gmail-send-integration-with-test_mode-safety)
   - [2025-10-31: Zero-Warning Build Achieved (ISSUE-012)](#2025-10-31-zero-warning-build-achieved-issue-012)
   - [2025-10-31: Phase 2.4 UX Improvements Complete (BUG-0008)](#2025-10-31-phase-24-ux-improvements-complete-bug-0008)
@@ -24,6 +27,80 @@
 **Purpose**: Historical record of major project milestones, implementations, and decisions.
 
 **Note**: For current status and next steps, see [PROJECT_STATUS.md](PROJECT_STATUS.md)
+
+---
+
+## 2025-11-04: Phase 2.7 COMPLETE - Microsoft Email Source Integration
+
+**Summary**: Phase 2.7 completed with Microsoft Email Source fully integrated, including OAuth authentication, folder filtering, LLM extraction, and all related bugs resolved.
+
+**Accomplishments**:
+- **Microsoft Email Integration**: Full OAuth2 flow with Azure AD
+  - Automated folder creation and filtering (JobOps folder)
+  - Message fetching from Microsoft Graph API
+  - LLM extraction with 100% accuracy for job emails (confidence 0.7-0.75)
+  - Full workflow: OAuth → Sync → Extract → Approve
+- **Bug Resolutions**:
+  - ✅ **ISSUE-030** (mitigated): Fixed off-by-one threshold inconsistency for low-confidence emails
+    - Changed LLM extraction threshold from `>= 0.3` to `> 0.3` to match processing logic
+    - Prevents emails with confidence=0.30 from creating filtered jobs
+  - ✅ **BUG-0009** (fixed): Added word count check to skip LLM for short descriptions
+    - Condensed descriptions now handle short content properly
+- **Testing Results**:
+  - Backend unit tests: 8/8 passing (100%)
+  - E2E tests: 9/9 passing (100%), 4 skipped (manual/auth)
+  - Manual testing: 4/4 tests passed
+  - E2E tab selector bug fixed
+  - E2E branding test fixed
+- **Business Value**: Complete professional relationship lifecycle tracking across Gmail (high-volume prospecting) and Microsoft (business-critical engagements)
+
+**Time Investment**: ~40-50 hours (implementation + testing + bug fixes)
+
+**Phase 2.7 Status**: 100% COMPLETE ✅
+
+**Documentation**: [PHASE_2.7_samkirk-email-source-plan.md](PHASE_2.7_samkirk-email-source-plan.md)
+
+---
+
+## 2025-11-04: Phase 5.1 COMPLETE - Content Refresh Feature
+
+**Summary**: Phase 5.1.1 completed with "Refresh Descriptions" button implementation, enabling users to re-run LLM extraction for improved job descriptions.
+
+**Accomplishments**:
+- **Fixes BUG-0007**: "Refresh Descriptions" button implemented
+- **Features Delivered**:
+  - Re-run LLM extraction with updated settings from job details modal
+  - Refresh job descriptions without manual editing
+  - Recovery mechanism for extraction errors
+  - UI integration complete with intuitive button placement
+- **Business Value**: Iterate on LLM-generated content, recover from extraction errors, improve job data quality over time
+
+**Time Investment**: 24-30 hours
+
+**Phase 5.1 Status**: 100% COMPLETE ✅
+
+**Documentation**: [PHASE_5_advanced-features.md](PHASE_5_advanced-features.md#phase-51-content-refresh)
+
+---
+
+## 2025-11-03: Phase 4.2 COMPLETE - Automatic Pagination for RapidAPI
+
+**Summary**: Phase 4.2 completed with automatic pagination for RapidAPI JSearch integration, eliminating manual SQL requirements.
+
+**Accomplishments**:
+- **Auto-increment pagination**: No more manual SQL to increment page numbers
+- **UI Features**:
+  - Current page display in RapidAPI card
+  - "Reset to Page 1" button for starting fresh searches
+  - Auto-reset when reaching end of results
+- **Testing**: 4/4 backend unit tests passing (2/3 E2E tests deferred due to RapidAPI outage)
+- **Business Value**: Eliminated manual SQL friction, prevents wasted API quota from repeated page queries
+
+**Time Investment**: ~6 hours (fast implementation)
+
+**Phase 4.2 Status**: 100% COMPLETE ✅
+
+**Documentation**: [PHASE_4.2_automatic-pagination.md](PHASE_4.2_automatic-pagination.md)
 
 ---
 
