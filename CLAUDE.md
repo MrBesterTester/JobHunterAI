@@ -134,15 +134,14 @@ afplay /System/Library/Sounds/Glass.aiff && osascript -e "display dialog \"[mess
 **Examples**:
 - Root files: `./CLAUDE.md`, `./README.md`, `./package.json`
 - Subdirectories: `./backend/src/main.rs`, `./docs/file.md`
-- User scripts: `./start.sh`, `./stop.sh` (frequently used, kept in root)
-- Helper scripts: `./helper-scripts/create-bug.sh`, `./helper-scripts/move-bug.sh` (automation scripts for Claude)
+- Helper scripts: `./helper-scripts/create-bug.sh`, `./helper-scripts/start.sh`, `./helper-scripts/stop.sh`
 
 **Why**: Clearer, more portable, eliminates path resolution ambiguity. See [ISSUE-011](bugs/fixed/ISSUE-011-file-path-prefix-conventions.md) for detailed research.
 
 **Helper Scripts Organization**:
-- All automation scripts live in `./helper-scripts/` directory
-- User-facing scripts (`start.sh`, `stop.sh`) remain in root for convenience
+- **All scripts** live in `./helper-scripts/` directory
 - Claude should always reference scripts as `./helper-scripts/<script-name>.sh`
+- This ensures uniformity and easy discoverability
 
 ### Work Session Tagging
 
