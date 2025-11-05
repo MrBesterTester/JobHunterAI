@@ -8,6 +8,7 @@
     - [Database Configuration](#database-configuration)
     - [Notifications](#notifications)
     - [File Path Conventions](#file-path-conventions)
+    - [File Discovery Tools](#file-discovery-tools)
     - [Work Session Tagging](#work-session-tagging)
   - [Workflow Standards (Summary)](#workflow-standards-summary)
     - [Documentation Timestamp Standards](#documentation-timestamp-standards)
@@ -142,6 +143,29 @@ afplay /System/Library/Sounds/Glass.aiff && osascript -e "display dialog \"[mess
 - **All scripts** live in `./helper-scripts/` directory
 - Claude should always reference scripts as `./helper-scripts/<script-name>.sh`
 - This ensures uniformity and easy discoverability
+
+### File Discovery Tools
+
+**⚠️ CRITICAL REQUIREMENT**: NEVER use bash commands for file operations!
+
+**Prohibited bash commands** (ALWAYS WRONG):
+- ❌ `find` - Use Glob or Task/Explore instead
+- ❌ `ls` - Use Glob or Read instead
+- ❌ `grep` - Use Grep tool or Task/Explore instead
+- ❌ `cat`, `head`, `tail` - Use Read tool instead
+
+**Required tools** (ALWAYS CORRECT):
+- ✅ **Read** - For known file paths
+- ✅ **Glob** - For known file patterns (e.g., `bugs/**/*ISSUE-*.md`)
+- ✅ **Grep** - For searching content in 1-3 known files
+- ✅ **Task/Explore** - For exploratory searches ("Where is X?", "How does Y work?")
+
+**Why this matters**:
+- Bash commands waste tokens and may fail due to permissions
+- Proper tools provide better results and follow project standards
+- This is a documented anti-pattern (see [ISSUE-031](bugs/open/ISSUE-031-claude-ignoring-file-discovery-guidance.md))
+
+**See "Efficient File Discovery" section below for detailed guidance.**
 
 ### Work Session Tagging
 
