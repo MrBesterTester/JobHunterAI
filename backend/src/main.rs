@@ -3345,6 +3345,18 @@ async fn process_microsoft_messages(
         created: 0,
     };
 
+    // Get or create archive folder for processed emails
+    let archive_folder_id = match get_or_create_archive_folder(&client, access_token).await {
+        Ok(id) => {
+            log_debug(&format!("Archive folder ready: {}", id));
+            Some(id)
+        }
+        Err(e) => {
+            log_debug(&format!("Warning: Could not get archive folder: {}. Will only mark as read.", e));
+            None
+        }
+    };
+
     // Fetch unread messages from JobOps folder via Microsoft Graph API
     // Limited to 10 messages per sync to match Gmail behavior
     let url = format!(
@@ -3383,9 +3395,25 @@ async fn process_microsoft_messages(
         if existing.is_some() {
             metrics.duplicated += 1;
 
-            // Still mark as read even if already processed
-            if let Err(e) = mark_microsoft_message_as_read(&client, access_token, &message.id).await {
-                log_debug(&format!("Warning: Failed to mark message {} as read: {}", message.id, e));
+            // Move duplicate to archive (already processed)
+            if let Some(archive_id) = &archive_folder_id {
+                match move_microsoft_message(&client, access_token, &message.id, archive_id).await {
+                    Ok(_) => {
+                        log_debug(&format!("Moved duplicate message {} to JobOps_Processed", message.id));
+                    }
+                    Err(e) => {
+                        log_debug(&format!("Warning: Failed to move duplicate {}: {}. Marking as read instead.", message.id, e));
+                        // Fallback to mark as read
+                        if let Err(e) = mark_microsoft_message_as_read(&client, access_token, &message.id).await {
+                            log_debug(&format!("Warning: Failed to mark message {} as read: {}", message.id, e));
+                        }
+                    }
+                }
+            } else {
+                // No archive folder available, fall back to mark as read
+                if let Err(e) = mark_microsoft_message_as_read(&client, access_token, &message.id).await {
+                    log_debug(&format!("Warning: Failed to mark message {} as read: {}", message.id, e));
+                }
             }
 
             continue; // Skip already processed messages
@@ -3461,9 +3489,25 @@ async fn process_microsoft_messages(
                     }
 
                     if job_data.confidence > 0.3 { // Real job opportunity
-                        // Mark email as read in Microsoft
-                        if let Err(e) = mark_microsoft_message_as_read(&client, access_token, &message.id).await {
-                            log_debug(&format!("Warning: Failed to mark message {} as read: {}", message.id, e));
+                        // Move email to archive folder (or mark as read if archive unavailable)
+                        if let Some(archive_id) = &archive_folder_id {
+                            match move_microsoft_message(&client, access_token, &message.id, archive_id).await {
+                                Ok(_) => {
+                                    log_debug(&format!("Moved processed message {} to JobOps_Processed", message.id));
+                                }
+                                Err(e) => {
+                                    log_debug(&format!("Warning: Failed to move message {}: {}. Marking as read instead.", message.id, e));
+                                    // Fallback to mark as read
+                                    if let Err(e) = mark_microsoft_message_as_read(&client, access_token, &message.id).await {
+                                        log_debug(&format!("Warning: Failed to mark message {} as read: {}", message.id, e));
+                                    }
+                                }
+                            }
+                        } else {
+                            // No archive folder available, fall back to mark as read
+                            if let Err(e) = mark_microsoft_message_as_read(&client, access_token, &message.id).await {
+                                log_debug(&format!("Warning: Failed to mark message {} as read: {}", message.id, e));
+                            }
                         }
 
                         match create_job_from_extraction(&job_data, source, pool, Some(received_date)).await {
@@ -3604,6 +3648,89 @@ async fn mark_microsoft_message_as_read(
         let status = response.status();
         let error_text = response.text().await.unwrap_or_default();
         return Err(format!("Failed to mark message as read: {} - {}", status, error_text).into());
+    }
+
+    Ok(())
+}
+
+/// Get or create the JobOps_Processed archive folder for Microsoft emails
+async fn get_or_create_archive_folder(
+    client: &reqwest::Client,
+    access_token: &str,
+) -> std::result::Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    // Try to find existing folder first
+    let search_url = "https://graph.microsoft.com/v1.0/me/mailFolders?$filter=displayName eq 'JobOps_Processed'";
+
+    let response = client
+        .get(search_url)
+        .bearer_auth(access_token)
+        .send()
+        .await?;
+
+    if response.status().is_success() {
+        let data: serde_json::Value = response.json().await?;
+        if let Some(folders) = data["value"].as_array() {
+            if !folders.is_empty() {
+                // Folder exists, return ID
+                if let Some(id) = folders[0]["id"].as_str() {
+                    log_debug(&format!("Found existing JobOps_Processed folder: {}", id));
+                    return Ok(id.to_string());
+                }
+            }
+        }
+    }
+
+    // Folder doesn't exist, create it
+    log_debug("Creating JobOps_Processed folder...");
+    let create_url = "https://graph.microsoft.com/v1.0/me/mailFolders";
+    let response = client
+        .post(create_url)
+        .bearer_auth(access_token)
+        .json(&serde_json::json!({
+            "displayName": "JobOps_Processed",
+            "isHidden": false
+        }))
+        .send()
+        .await?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_default();
+        return Err(format!("Failed to create archive folder: {} - {}", status, error_text).into());
+    }
+
+    let data: serde_json::Value = response.json().await?;
+    let folder_id = data["id"].as_str()
+        .ok_or("No folder ID in response")?
+        .to_string();
+
+    log_debug(&format!("Created JobOps_Processed folder: {}", folder_id));
+    Ok(folder_id)
+}
+
+/// Move a Microsoft message to a different folder
+async fn move_microsoft_message(
+    client: &reqwest::Client,
+    access_token: &str,
+    message_id: &str,
+    destination_folder_id: &str,
+) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let url = format!("https://graph.microsoft.com/v1.0/me/messages/{}/move", message_id);
+
+    let response = client
+        .post(&url)
+        .bearer_auth(access_token)
+        .header("Content-Type", "application/json")
+        .json(&serde_json::json!({
+            "destinationId": destination_folder_id
+        }))
+        .send()
+        .await?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_default();
+        return Err(format!("Failed to move message: {} - {}", status, error_text).into());
     }
 
     Ok(())

@@ -361,4 +361,103 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       expect(newTotalCount).toBeGreaterThanOrEqual(initialTotalCount);
     });
   });
+
+  test.describe('Email Archiving (Phase 2.8)', () => {
+    test('should display Microsoft JobOps folder status', async ({ page }) => {
+      // Navigate to Intake tab
+      await page.getByRole('button', { name: /^intake$/i }).click();
+      await page.waitForTimeout(1000);
+
+      // Check if Microsoft is authenticated
+      const microsoftAuthButton = page.getByRole('button', { name: /authenticate.*microsoft/i });
+      const authVisible = await microsoftAuthButton.isVisible().catch(() => false);
+
+      if (authVisible) {
+        console.log('Microsoft not authenticated - skipping test');
+        test.skip();
+        return;
+      }
+
+      // Look for JobOps folder status indicator
+      const jobOpsFolderStatus = page.locator('text=/JobOps Folder/i');
+      await expect(jobOpsFolderStatus).toBeVisible({ timeout: 5000 });
+
+      // Verify folder shows ready or creating status
+      const statusText = await jobOpsFolderStatus.textContent();
+      expect(statusText).toMatch(/ready|creating/i);
+    });
+
+    test('should handle archive folder creation gracefully', async ({ page }) => {
+      // This test verifies that the system handles archive folder creation
+      // without breaking the sync workflow
+
+      // Navigate to Intake tab
+      await page.getByRole('button', { name: /^intake$/i }).click();
+      await page.waitForTimeout(1000);
+
+      // Check if Microsoft is authenticated
+      const microsoftAuthButton = page.getByRole('button', { name: /authenticate.*microsoft/i });
+      const authVisible = await microsoftAuthButton.isVisible().catch(() => false);
+
+      if (authVisible) {
+        console.log('Microsoft not authenticated - skipping test');
+        test.skip();
+        return;
+      }
+
+      // Trigger a sync - this should create archive folder if it doesn't exist
+      const microsoftSyncButton = page.locator('button', { hasText: /sync.*microsoft/i }).or(
+        page.locator('button', { hasText: /sync now/i })
+      ).last();
+
+      // Click sync button
+      await microsoftSyncButton.click();
+
+      // Wait for sync to complete (archive folder creation happens during sync)
+      await page.waitForTimeout(10000);
+
+      // Verify sync completed without errors
+      // The fact that we got here means archive folder creation didn't break the sync
+      const syncButton = page.locator('button', { hasText: /sync now/i }).last();
+      await expect(syncButton).toBeEnabled({ timeout: 5000 });
+    });
+
+    test('should preserve sync functionality with archiving enabled', async ({ page }) => {
+      // This test ensures that adding archiving doesn't break the existing sync workflow
+
+      // Navigate to Intake tab
+      await page.getByRole('button', { name: /^intake$/i }).click();
+      await page.waitForTimeout(1000);
+
+      // Check if Microsoft is authenticated
+      const microsoftAuthButton = page.getByRole('button', { name: /authenticate.*microsoft/i });
+      const authVisible = await microsoftAuthButton.isVisible().catch(() => false);
+
+      if (authVisible) {
+        console.log('Microsoft not authenticated - skipping test');
+        test.skip();
+        return;
+      }
+
+      // Get initial job count
+      const initialTotal = await page.getByText(/Total/i).last().textContent();
+      const initialTotalCount = parseInt(initialTotal?.match(/\d+/)?.[0] || '0');
+
+      // Perform sync (which now includes archiving)
+      const microsoftSyncButton = page.locator('button', { hasText: /sync.*microsoft/i }).or(
+        page.locator('button', { hasText: /sync now/i })
+      ).last();
+      await microsoftSyncButton.click();
+
+      // Wait for sync with archiving to complete
+      await page.waitForTimeout(15000);
+
+      // Verify sync still works - jobs should be created
+      const newTotal = await page.getByText(/Total/i).last().textContent();
+      const newTotalCount = parseInt(newTotal?.match(/\d+/)?.[0] || '0');
+
+      // Total should be same or higher (archiving shouldn't remove jobs from UI)
+      expect(newTotalCount).toBeGreaterThanOrEqual(initialTotalCount);
+    });
+  });
 });

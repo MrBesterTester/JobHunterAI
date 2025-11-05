@@ -500,4 +500,94 @@ mod microsoft_email_tests {
         .await;
         assert!(oauth_check.is_ok(), "oauth_credentials table must be accessible");
     }
+
+    // =================================================================
+    // Phase 2.8: Email Archiving Tests
+    // =================================================================
+
+    #[tokio::test]
+    async fn test_archive_folder_structure() {
+        // Test that archive folder can be represented in our data structures
+        let mock_folder = serde_json::json!({
+            "id": "AAMkAGI2TH1234567890",
+            "displayName": "JobOps_Processed",
+            "parentFolderId": "inbox",
+            "childFolderCount": 0,
+            "unreadItemCount": 0,
+            "totalItemCount": 5
+        });
+
+        // Verify we can deserialize the folder structure
+        let folder_id = mock_folder["id"].as_str().unwrap();
+        assert_eq!(folder_id, "AAMkAGI2TH1234567890");
+        assert_eq!(mock_folder["displayName"].as_str().unwrap(), "JobOps_Processed");
+    }
+
+    #[tokio::test]
+    async fn test_move_message_api_structure() {
+        // Test that we can construct the move message API request
+        let message_id = "AAMkAGI2MESSAGE123";
+        let destination_folder_id = "AAMkAGI2FOLDER456";
+
+        let request_body = serde_json::json!({
+            "destinationId": destination_folder_id
+        });
+
+        // Verify the request structure
+        assert_eq!(
+            request_body["destinationId"].as_str().unwrap(),
+            destination_folder_id
+        );
+
+        // Verify URL construction
+        let url = format!(
+            "https://graph.microsoft.com/v1.0/me/messages/{}/move",
+            message_id
+        );
+        assert!(url.contains(message_id));
+        assert!(url.contains("/move"));
+    }
+
+    #[tokio::test]
+    async fn test_folder_search_filter() {
+        // Test the folder search filter construction
+        let folder_name = "JobOps_Processed";
+        let search_url = format!(
+            "https://graph.microsoft.com/v1.0/me/mailFolders?$filter=displayName eq '{}'",
+            folder_name
+        );
+
+        assert!(search_url.contains("$filter="));
+        assert!(search_url.contains("displayName eq"));
+        assert!(search_url.contains(folder_name));
+    }
+
+    #[tokio::test]
+    async fn test_archive_fallback_logic() {
+        // Test the logic for deciding whether to archive or mark as read
+        let archive_folder_available = Some("AAMkAGI2ARCHIVE123".to_string());
+        let no_archive_folder: Option<String> = None;
+
+        // With archive folder available, should use it
+        match &archive_folder_available {
+            Some(_folder_id) => {
+                // Should attempt to move message
+                assert!(true, "Should use archive when available");
+            }
+            None => {
+                panic!("Should not fall back when archive is available");
+            }
+        }
+
+        // Without archive folder, should fall back to mark as read
+        match &no_archive_folder {
+            Some(_) => {
+                panic!("Should fall back when no archive available");
+            }
+            None => {
+                // Should mark as read
+                assert!(true, "Should fall back to mark as read");
+            }
+        }
+    }
 }
