@@ -54,6 +54,7 @@
     - [Gmail Integration Setup](#gmail-integration-setup)
     - [Google Calendar Integration Setup (Phase 2.4)](#google-calendar-integration-setup-phase-24)
     - [Claude Code Notification Setup](#claude-code-notification-setup)
+    - [DEBUG_EXTRACTION Mode](#debug_extraction-mode)
     - [Quick Start: Database Setup](#quick-start-database-setup)
     - [Understanding Your Workflow: Setup vs. Daily Use](#understanding-your-workflow-setup-vs-daily-use)
       - [One-Time Setup (Do This Once)](#one-time-setup-do-this-once)
@@ -1700,6 +1701,76 @@ The system uses two notification methods:
 2. **Pushover** (optional) - Sends push notifications directly to your iPhone
 
 Combined, these provide reliable notifications whether you're at your desk or away from your Mac.
+
+### DEBUG_EXTRACTION Mode
+
+**Purpose**: Comprehensive debugging mode for the email job extraction pipeline. Provides detailed visibility into LLM and regex extraction behavior, confidence scoring, and performance metrics.
+
+**When to Use**:
+- Investigating emails that should be jobs but aren't being extracted
+- Diagnosing false positives (non-job emails incorrectly extracted as jobs)
+- Understanding why emails receive specific confidence scores
+- Comparing LLM vs regex extraction behavior
+- Troubleshooting extraction failures
+- Optimizing extraction pipeline performance
+
+**Features**:
+- **LLM extraction details**: Shows full extraction data even when confidence ≤ 0.3 (title, company, salary, location, confidence, API duration)
+- **Regex confidence breakdown**: Logs each pattern match with its confidence contribution:
+  - Job title strong pattern: +0.3
+  - Job title weak fallback: +0.1
+  - Company name: +0.2
+  - Salary: +0.2
+  - Location: +0.15
+  - URL: +0.15
+- **Email characteristics**: Subject and body character counts at extraction start
+- **Performance timing**: LLM API call duration, regex duration, total extraction time
+
+**Usage**:
+
+```bash
+# Enable debug mode (add to backend/.env or set in terminal)
+export DEBUG_EXTRACTION=true
+
+# Start backend with debug mode
+cargo run
+
+# Or set for single run
+DEBUG_EXTRACTION=true cargo run
+
+# Disable debug mode
+unset DEBUG_EXTRACTION
+# or
+export DEBUG_EXTRACTION=false
+```
+
+**Example Debug Output**:
+
+```
+[DEBUG_EXTRACTION] Email extraction started - subject: 45 chars, body: 2341 chars
+[DEBUG_EXTRACTION] LLM email extraction - Title: Some("Software Engineer"), Company: Some("TechCorp"), Salary: $Some(130000)-$Some(160000), Location: Some("Remote"), Confidence: 0.25, Duration: 523ms
+[DEBUG_EXTRACTION] LLM extraction confidence too low: 0.25 (threshold: > 0.3), falling back to regex
+[DEBUG_EXTRACTION] Regex extraction started - combined text: 2386 chars
+[DEBUG_EXTRACTION] Regex: Job title (strong pattern) matched: Some("Software Engineer") (+0.3 confidence, total: 0.30)
+[DEBUG_EXTRACTION] Regex: Company name matched: Some("TechCorp") (+0.2 confidence, total: 0.50)
+[DEBUG_EXTRACTION] Regex: No salary found (+0.0 confidence)
+[DEBUG_EXTRACTION] Regex: Location matched: Some("Remote") (+0.15 confidence, total: 0.65)
+[DEBUG_EXTRACTION] Regex: URL matched: Some("https://techcorp.com/jobs") (+0.15 confidence, total: 0.80)
+[DEBUG_EXTRACTION] Regex extraction ACCEPTED - Title: Some("Software Engineer"), Company: Some("TechCorp"), Final confidence: 0.80 (threshold: > 0.3), Duration: 12ms
+[DEBUG_EXTRACTION] Email extraction completed, total duration: 547ms
+```
+
+**Benefits**:
+- Complete visibility into extraction pipeline behavior
+- Helps diagnose why specific emails are/aren't extracted
+- Shows LLM reasoning even for low-confidence results (normally hidden)
+- Tracks performance of LLM API calls and regex processing
+- Makes it easy to identify which patterns contribute to confidence scores
+- Zero performance impact when disabled (single env var check)
+
+**Implementation Details**:
+- Implemented in `backend/src/main.rs` (extraction functions)
+- See [ISSUE-030 Appendix](bugs/mitigated/ISSUE-030-low-confidence-emails-appear-in-filtered-tab-instead-of-non-job-emails.md#appendix-regex-fallback-investigation) for full documentation
 
 ### Quick Start: Database Setup
 
