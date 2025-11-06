@@ -195,8 +195,11 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
         await jobCards.first().click();
         await page.waitForTimeout(500);
 
-        // Check for Approve button
-        const approveButton = page.getByRole('button', { name: /approve/i });
+        // Check for Approve button - scope to modal or job card to avoid matching "Approved" tab
+        const approveButton = page.locator('[data-testid="job-card"]').first()
+          .getByRole('button', { name: /^approve$/i }).or(
+            page.locator('[data-testid="modal-overlay"]').getByRole('button', { name: /^approve$/i })
+          ).first();
         await expect(approveButton).toBeVisible();
 
         // Button should be clickable (not disabled)
@@ -233,6 +236,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
 
   test.describe('Microsoft Email Sync Integration', () => {
     test('should sync Microsoft emails and display jobs', async ({ page }) => {
+      test.setTimeout(60000); // Extend timeout for LLM processing
       // Wait for dashboard to fully load
       await expect(page.getByRole('heading', { name: /^JobHunter$/i })).toBeVisible({ timeout: 10000 });
       await page.waitForTimeout(2000); // Extra time for tabs to render
@@ -320,6 +324,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
     });
 
     test('should verify stats update after Microsoft sync', async ({ page }) => {
+      test.setTimeout(60000); // Extend timeout for LLM processing
       // Wait for dashboard to fully load
       await expect(page.getByRole('heading', { name: /^JobHunter$/i })).toBeVisible({ timeout: 10000 });
       await page.waitForTimeout(2000); // Extra time for tabs to render
