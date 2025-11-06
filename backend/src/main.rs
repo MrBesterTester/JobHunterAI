@@ -3489,28 +3489,28 @@ async fn process_microsoft_messages(
                         job_data.description = subject.clone().or(Some("(No email content available)".to_string()));
                     }
 
-                    if job_data.confidence > 0.3 { // Real job opportunity
-                        // Move email to archive folder (or mark as read if archive unavailable)
-                        if let Some(archive_id) = &archive_folder_id {
-                            match move_microsoft_message(&client, access_token, &message.id, archive_id).await {
-                                Ok(_) => {
-                                    log_debug(&format!("Moved processed message {} to JobOps-OLD", message.id));
-                                }
-                                Err(e) => {
-                                    log_debug(&format!("Warning: Failed to move message {}: {}. Marking as read instead.", message.id, e));
-                                    // Fallback to mark as read
-                                    if let Err(e) = mark_microsoft_message_as_read(&client, access_token, &message.id).await {
-                                        log_debug(&format!("Warning: Failed to mark message {} as read: {}", message.id, e));
-                                    }
-                                }
+                    // Move ALL processed emails to archive folder (or mark as read if archive unavailable)
+                    if let Some(archive_id) = &archive_folder_id {
+                        match move_microsoft_message(&client, access_token, &message.id, archive_id).await {
+                            Ok(_) => {
+                                log_debug(&format!("Moved processed message {} to JobOps-OLD", message.id));
                             }
-                        } else {
-                            // No archive folder available, fall back to mark as read
-                            if let Err(e) = mark_microsoft_message_as_read(&client, access_token, &message.id).await {
-                                log_debug(&format!("Warning: Failed to mark message {} as read: {}", message.id, e));
+                            Err(e) => {
+                                log_debug(&format!("Warning: Failed to move message {}: {}. Marking as read instead.", message.id, e));
+                                // Fallback to mark as read
+                                if let Err(e) = mark_microsoft_message_as_read(&client, access_token, &message.id).await {
+                                    log_debug(&format!("Warning: Failed to mark message {} as read: {}", message.id, e));
+                                }
                             }
                         }
+                    } else {
+                        // No archive folder available, fall back to mark as read
+                        if let Err(e) = mark_microsoft_message_as_read(&client, access_token, &message.id).await {
+                            log_debug(&format!("Warning: Failed to mark message {} as read: {}", message.id, e));
+                        }
+                    }
 
+                    if job_data.confidence > 0.3 { // Real job opportunity
                         match create_job_from_extraction(&job_data, source, pool, Some(received_date)).await {
                             Ok(JobCreationResult::Created(job_id)) => {
                                 // Mark email as processed and link to created job
