@@ -184,12 +184,12 @@ flowchart TD
 
     subgraph Sources [" 1. Automated Job Intake "]
         Gmail[📧 Gmail<br/>MrBesterTester@gmail.com] --> HTMLClean
-        Microsoft[🟦 Microsoft Email<br/>sam@samkirk.com JobOps] --> HTMLClean
+        Microsoft[🟦 Microsoft Email<br/>sam@samkirk.com<br/>JobOps Folder] --> HTMLClean
         LinkedIn[💼 LinkedIn] --> HTMLClean
         Indeed[🔍 Indeed] --> HTMLClean
         Manual[✍️ Manual Entry] --> Extract
         HTMLClean[HTML Preprocessing<br/>Mozilla Readability] --> Extract
-        Extract[LLM Extraction<br/>Title, Company, Salary, Location]
+        Extract[LLM Extraction<br/>Title, Company, Salary, Location<br/>→ Processed emails auto-archive to JobOps-OLD]
     end
 
     Extract --> Dedup{Deduplication<br/>SHA256 Hash}
@@ -293,8 +293,36 @@ The Intake tab is your control center for all job sources. Each source has its o
 - **Connect Microsoft** button: Opens OAuth popup to authenticate Microsoft account
 - **Sync Now** button: Manually syncs emails from JobOps folder only
 - **Settings** ⚙️ button: Re-authenticate or update Microsoft credentials
-- **Automatic Folder Creation**: JobOps folder is automatically created on first sync
-- **Manual Curation**: Move job-related emails to JobOps folder for processing
+
+**How Microsoft Email Integration Works:**
+
+1. **Automatic Folder Setup** (First Sync Only):
+   - System automatically creates **JobOps** folder in your mailbox if it doesn't exist
+   - System automatically creates **JobOps-OLD** archive folder for processed emails
+   - No manual setup required - folders appear automatically!
+
+2. **Email Curation Workflow**:
+   - Review your sam@samkirk.com inbox regularly (daily/weekly)
+   - Manually move job-related emails INTO the **JobOps** folder
+   - JobHunter only processes emails in JobOps (ignores other folders)
+   - This keeps processing focused on relevant job opportunities
+
+3. **Automatic Processing & Cleanup**:
+   - Click "Sync Now" to process emails from JobOps folder
+   - LLM (Claude AI) extracts job details from each email
+   - **ALL processed emails automatically move to JobOps-OLD archive**
+   - JobOps folder stays clean with only unprocessed emails
+
+4. **Folder Organization**:
+   - **Inbox** → Your normal email (JobHunter ignores this)
+   - **JobOps** → Job emails YOU manually moved here (awaiting processing)
+   - **JobOps-OLD** → Processed job emails (automatically archived by JobHunter)
+
+**Benefits:**
+- ✅ Clean separation between job emails and regular email
+- ✅ Zero manual cleanup - processed emails auto-archive
+- ✅ JobOps folder always shows what needs attention
+- ✅ Complete audit trail in JobOps-OLD archive
 
 **RapidAPI JSearch Card** (LinkedIn/Indeed aggregator):
 - **Status Indicator**: Shows active/inactive status

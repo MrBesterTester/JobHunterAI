@@ -52,6 +52,7 @@
   - [Configuration, Setups and Development Helper Scripts](#configuration-setups-and-development-helper-scripts)
     - [Database Configuration](#database-configuration)
     - [Gmail Integration Setup](#gmail-integration-setup)
+    - [Microsoft Email Integration Setup (Phase 2.7 & 2.8)](#microsoft-email-integration-setup-phase-27--28)
     - [Google Calendar Integration Setup (Phase 2.4)](#google-calendar-integration-setup-phase-24)
     - [Claude Code Notification Setup](#claude-code-notification-setup)
     - [DEBUG_EXTRACTION Mode](#debug_extraction-mode)
@@ -95,6 +96,7 @@
     - [LLM Job Extraction (Phase 2.6)](#llm-job-extraction-phase-26)
     - [Calendar & Follow-ups (Phase 2.4)](#calendar--follow-ups-phase-24)
     - [Email Composition & Sending (Phase 2.5)](#email-composition--sending-phase-25)
+    - [Microsoft Email Integration (Phase 2.7 & 2.8)](#microsoft-email-integration-phase-27--28)
   - [Implementation Status](#implementation-status)
   - [Project Structure](#project-structure)
   - [LLM Prompt Architecture](#llm-prompt-architecture)
@@ -1456,6 +1458,196 @@ GMAIL_REDIRECT_URI=http://localhost:8080/auth/gmail/callback
 - **"Unauthorized"** - Make sure your Gmail address is added as a test user in the OAuth consent screen
 - **Still not working** - Check backend logs for detailed error messages
 
+### Microsoft Email Integration Setup (Phase 2.7 & 2.8)
+
+To use Microsoft email (sam@samkirk.com) as a job source, you need to set up Microsoft Azure OAuth credentials and Graph API access.
+
+**Status**: ✅ **Phase 2.7 Complete** (2025-11-06) - OAuth, folder management, LLM extraction, auto-archive
+**Status**: ✅ **Phase 2.8 Complete** (2025-11-06) - JobOps-OLD automatic archiving
+
+**What This Integration Provides:**
+- **Email Source**: Second email inbox (sam@samkirk.com) for professional job opportunities
+- **Folder-Based Filtering**: JobOps folder for manual email curation (automatically created)
+- **LLM Extraction**: Claude AI extracts job details from curated emails
+- **Automatic Archiving**: Processed emails automatically move to JobOps-OLD folder (keeps JobOps clean)
+- **Complete Workflow**: OAuth → Sync → Extract → Archive
+
+**Architecture Overview:**
+- **JobOps Folder**: User manually moves job-related emails here (auto-created on first sync)
+- **JobOps-OLD Folder**: System automatically archives all processed emails here (auto-created on first sync)
+- **LLM Processing**: Reuses Phase 2.6 Claude 3.5 Haiku extraction pipeline
+- **Database**: Stores Microsoft emails in `email_jobs` table with `source='microsoft_email'`
+
+**Detailed Setup Guide:**
+
+For complete Azure app registration instructions, see [`README_azure-setup-guide.md`](README_azure-setup-guide.md).
+
+**Quick Setup Steps:**
+
+**1. Create Azure App Registration:**
+- Go to [Azure Portal](https://portal.azure.com/) → Azure Active Directory → App Registrations
+- Click "New registration"
+- Name: "JobHunter Microsoft Email Integration"
+- **Supported account types**: "Accounts in any organizational directory and personal Microsoft accounts" (Multitenant + personal accounts)
+  - **Critical**: Must support personal Microsoft accounts, not just organizational accounts
+- Redirect URI: Web - `http://localhost:8080/api/email/microsoft/callback`
+- Click "Register"
+- **Copy the Application (client) ID** (you'll need this for `.env`)
+
+**2. Create Client Secret:**
+- In your app registration, go to "Certificates & secrets"
+- Click "New client secret"
+- Description: "JobHunter Backend"
+- Expires: 24 months (or your preference)
+- Click "Add"
+- **Copy the secret Value immediately** (only shown once!)
+
+**3. Set API Permissions:**
+- Go to "API permissions" in your app registration
+- Click "Add a permission" → "Microsoft Graph" → "Delegated permissions"
+- Add these permissions:
+  - ✅ `Mail.Read` - Read user emails
+  - ✅ `Mail.ReadWrite` - Mark emails as read, move to folders
+  - ✅ `MailboxSettings.Read` - Access to folder structure
+- Click "Add permissions"
+- **Admin consent not required** for personal Microsoft accounts
+
+**4. Update `.env` file:**
+```bash
+# Edit backend/.env and add Microsoft OAuth credentials:
+MICROSOFT_CLIENT_ID=your-application-client-id-from-azure
+MICROSOFT_CLIENT_SECRET=your-client-secret-value
+MICROSOFT_REDIRECT_URI=http://localhost:8080/api/email/microsoft/callback
+MICROSOFT_TENANT_ID=common  # 'common' for personal accounts
+```
+
+**5. Run Database Migration** (if not already done):
+```bash
+psql -U jobhunter_user -d jobhunter_personal -f database/migrations/003_add_microsoft_email_source.sql
+```
+
+This migration:
+- Adds `microsoft_email` entry to `job_sources` table
+- Configures OAuth endpoints and Graph API URLs
+- Sets up folder filtering for JobOps folder
+
+**6. Restart Backend:**
+```bash
+./helper-scripts/stop.sh
+./helper-scripts/start.sh
+```
+
+**7. Authenticate in UI:**
+- Navigate to **Intake** tab in your browser
+- Find the **Microsoft Email Integration** card
+- Click "Connect Microsoft" button
+- Complete OAuth flow in popup:
+  - Sign in with your Microsoft account (sam@samkirk.com)
+  - Grant permissions: Mail.Read, Mail.ReadWrite, MailboxSettings.Read
+  - Popup will close automatically on success
+- Status should change to "Connected" with green indicator
+
+**8. Automatic Folder Creation (Phase 2.7 & 2.8):**
+
+No manual setup needed! On first sync, the system automatically creates:
+- **JobOps** folder - For curated job emails (you manually move emails here)
+- **JobOps-OLD** folder - Archive for processed emails (system moves emails here automatically)
+
+**9. Email Curation Workflow:**
+
+1. **Move job emails to JobOps**:
+   - Review your sam@samkirk.com inbox regularly
+   - Manually drag-and-drop job-related emails INTO JobOps folder
+   - Non-job emails stay in inbox (system ignores them)
+
+2. **Sync and Process**:
+   - Click "Sync Now" in Microsoft Email card
+   - System fetches emails from JobOps folder only
+   - Claude AI extracts job details (title, company, salary, location)
+   - High-confidence jobs (>0.3) create database records
+
+3. **Automatic Cleanup** (Phase 2.8):
+   - **ALL processed emails automatically move to JobOps-OLD**
+   - JobOps folder stays clean with only unprocessed emails
+   - Complete audit trail preserved in archive folder
+
+**Testing & Validation:**
+
+**Backend Unit Tests** (8/8 passing):
+```bash
+cd backend
+cargo test microsoft  # Run Microsoft-specific tests
+```
+
+**E2E Tests** (18/21 passing - 86%):
+```bash
+cd frontend
+npm run test:e2e -- e2e/tests/16-microsoft-email-integration.spec.ts
+```
+
+**Manual Testing Checklist:**
+- [ ] OAuth authentication successful (green indicator in UI)
+- [ ] JobOps folder visible in Outlook/Microsoft 365
+- [ ] JobOps-OLD archive folder visible in Outlook
+- [ ] Email sync from JobOps folder works
+- [ ] LLM extraction creates jobs in database
+- [ ] Processed emails move to JobOps-OLD archive automatically
+- [ ] JobOps folder stays clean after sync
+
+**Helper Script for Testing:**
+
+Mark emails as unread for re-testing:
+```bash
+./helper-scripts/mark-microsoft-emails-unread.sh
+```
+
+**Technical Details:**
+
+**Microsoft Graph API Endpoints Used:**
+- **OAuth**: `https://login.microsoftonline.com/common/oauth2/v2.0/authorize`
+- **Token Exchange**: `https://login.microsoftonline.com/common/oauth2/v2.0/token`
+- **List Folders**: `GET /me/mailFolders`
+- **Create Folder**: `POST /me/mailFolders` (for JobOps and JobOps-OLD creation)
+- **List Messages**: `GET /me/mailFolders/{folderId}/messages`
+- **Get Message**: `GET /me/messages/{messageId}`
+- **Move Message**: `POST /me/messages/{messageId}/move` (for archiving to JobOps-OLD)
+
+**Backend Implementation** (`backend/src/main.rs`):
+- `list_microsoft_folders()` - Lists all mail folders (lines 3598-3656)
+- `get_or_create_jobops_folder()` - Auto-creates JobOps folder if missing (lines 3658-3710)
+- `get_or_create_archive_folder()` - Auto-creates JobOps-OLD folder (Phase 2.8)
+- `move_microsoft_message()` - Moves emails to archive folder (Phase 2.8, lines 3713-3738)
+- `process_microsoft_messages()` - Main sync logic with LLM extraction (lines 3300-3584)
+
+**Database Schema:**
+- `job_sources` table: `microsoft_email` entry with Graph API config
+- `email_jobs` table: `source='microsoft_email'` for Microsoft-sourced jobs
+- `oauth_credentials` table: Stores Microsoft access/refresh tokens
+- Unique constraint on `message_id` prevents duplicate processing
+
+**Phase 2.8 Archiving Behavior:**
+- **ALL processed emails**: Moved to JobOps-OLD regardless of confidence
+- **High-confidence (>0.3)**: Create job record in database + archive
+- **Low-confidence (≤0.3)**: Archive only (no job record created)
+- **Duplicates**: Automatically archived (already in database)
+- **Graceful Fallback**: If archive move fails, falls back to mark-as-read
+
+**Troubleshooting:**
+
+- **"Failed to authenticate Microsoft"**: Check `MICROSOFT_CLIENT_ID` in `.env`
+- **OAuth popup error**: Verify redirect URI matches: `http://localhost:8080/api/email/microsoft/callback`
+- **"Unsupported account type"**: Azure app must support "Multitenant + personal accounts"
+- **"No JobOps folder"**: Folder auto-created on first sync, no manual setup needed
+- **"Emails not archiving"**: Check backend logs for JobOps-OLD folder creation errors
+- **Permission errors**: Verify Azure app has `Mail.Read`, `Mail.ReadWrite`, `MailboxSettings.Read`
+- **Token expired**: Click "Settings" ⚙️ in Microsoft Email card to re-authenticate
+
+**Related Documentation:**
+- [`README_azure-setup-guide.md`](README_azure-setup-guide.md) - Detailed Azure setup instructions
+- [`docs/PHASE_2.7_samkirk-email-source-plan.md`](docs/PHASE_2.7_samkirk-email-source-plan.md) - Phase 2.7 technical specification
+- [`docs/PHASE_2.8_ms-email-processing.md`](docs/PHASE_2.8_ms-email-processing.md) - Phase 2.8 auto-archive feature
+- [Microsoft Graph Mail API Docs](https://docs.microsoft.com/en-us/graph/api/resources/mail-api-overview)
+
 ### Google Calendar Integration Setup (Phase 2.4)
 
 To use the Google Calendar integration for interview scheduling (Phase 2.4), you need to set up OAuth credentials. This can **reuse your existing Gmail OAuth credentials** or use separate Calendar-specific credentials.
@@ -2772,6 +2964,44 @@ See [`README_database-setup.md`](README_database-setup.md) for detailed database
 **Gmail Draft Creation:**
 - `POST /api/applications/{id}/create-draft` - Create Gmail draft with cover letter body and resume attachment
 - `GET /api/applications/{id}/draft-status` - Get draft creation status and Gmail URL
+
+### Microsoft Email Integration (Phase 2.7 & 2.8)
+
+**OAuth & Authentication:**
+- `GET /api/email/microsoft/auth-url` - Generate Microsoft OAuth authorization URL
+- `GET /api/email/microsoft/callback` - Handle Microsoft OAuth callback and token exchange
+- `GET /api/email/microsoft/status` - Get Microsoft email connection status
+
+**Folder Management:**
+- `GET /api/email/microsoft/folders` - List all mail folders (includes JobOps folder status)
+  - Returns folder ID, display name, unread count, total message count
+  - Auto-creates JobOps and JobOps-OLD folders on first sync if missing
+
+**Email Sync & Processing:**
+- `POST /api/email/microsoft/sync` - Sync emails from JobOps folder
+  - Fetches messages from JobOps folder only
+  - Runs LLM extraction (Claude 3.5 Haiku) on each email
+  - Creates job records for high-confidence extractions (>0.3)
+  - **Automatically archives ALL processed emails to JobOps-OLD** (Phase 2.8)
+  - Returns sync metrics: discovered, processed, filtered, duplicated, failed, archived
+
+**Technical Details:**
+- Uses Microsoft Graph API v1.0
+- OAuth 2.0 with `common` tenant endpoint for personal accounts
+- Scopes: `Mail.Read`, `Mail.ReadWrite`, `MailboxSettings.Read`
+- Token storage in `oauth_credentials` table with `source_id='microsoft_email'`
+- Folder-based filtering (JobOps folder) to reduce LLM API costs
+- Automatic deduplication via `message_id` unique constraint
+- Jobs stored with `source='microsoft_email'` in `email_jobs` table
+- Archive operation uses `POST /me/messages/{id}/move` Graph API endpoint
+- Graceful fallback: If archive fails, marks email as read instead
+
+**Phase 2.8 Archiving Behavior:**
+- ALL processed emails moved to JobOps-OLD (regardless of confidence)
+- High-confidence (>0.3): Create job record + archive
+- Low-confidence (≤0.3): Archive only (no job record)
+- Duplicates: Automatically archived
+- JobOps folder stays clean with only unprocessed emails
 
 ## Implementation Status
 
