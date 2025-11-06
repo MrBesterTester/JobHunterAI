@@ -531,13 +531,15 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       // Verify sync completed - button should be enabled again
       await expect(microsoftSyncButton).toBeEnabled({ timeout: 10000 });
 
-      // Check that jobs were processed (stats should update or stay same if duplicates)
-      const newStats = await page.getByText(/New:|Filtered:/i).first().textContent();
-      console.log(`After sync stats: ${newStats}`);
-
       // Navigate to New Jobs tab to verify Microsoft-sourced jobs
       await page.getByRole('button', { name: /^new jobs$/i }).click();
       await page.waitForTimeout(1000);
+
+      // Check that jobs were processed (stats should update or stay same if duplicates)
+      const updatedStatElement = page.locator('[data-testid="stat-new"]');
+      const updatedStats = await updatedStatElement.locator('p').first().textContent();
+      const updatedNewCount = parseInt(updatedStats || '0');
+      console.log(`After sync stats - New jobs: ${updatedNewCount} (was ${initialNewCount})`);
 
       // Check if any jobs are displayed
       const jobCards = page.locator('[data-testid="job-card"]');
