@@ -645,8 +645,12 @@ test.describe('Phase 2.9: Gmail Label Management', () => {
    - Confirm revocation
 
 3. **Re-authenticate with New Scope**:
-   - In JobHunter app, trigger Gmail sync or authentication flow
-   - Or run backend OAuth initialization endpoint
+   - **Option A (Recommended)**: Use `gmail-oauth.html` helper page
+     - Open `gmail-oauth.html` in browser (from project root)
+     - Page will automatically fetch OAuth URL and redirect to Google
+     - This is a temporary convenience tool for testing
+   - **Option B**: In JobHunter app, trigger Gmail sync or authentication flow
+   - **Option C**: Directly call backend OAuth endpoint: `GET http://localhost:8080/api/auth/gmail/url`
    - Browser will open to Google OAuth consent screen
 
 4. **Verify Permission Screen**:
@@ -703,7 +707,39 @@ LIMIT 1;
 - At least 1 job in "New Jobs" tab from Gmail source
 - Gmail web interface open in browser (https://mail.google.com)
 
-**Steps**:
+**Setup Steps** (if no Gmail jobs exist):
+
+If you don't have any Gmail jobs in your database yet, follow these setup steps:
+
+1. **Sync Gmail Messages**:
+   ```bash
+   # Trigger Gmail sync (fetches up to 10 unread emails with JobOp label)
+   curl -X POST http://localhost:8080/api/intake/gmail/sync
+   ```
+   - This may take 30-90 seconds depending on email count
+   - Check backend logs for sync results
+
+2. **Verify Gmail Jobs Created**:
+   ```bash
+   # Check if any Gmail jobs exist
+   psql -U jobhunter_user -d jobhunter_personal -c \
+     "SELECT job_id, title, status, source FROM jobs WHERE source = 'gmail' LIMIT 5;"
+   ```
+
+3. **Ensure at Least One Job in 'new' Status**:
+   - If all Gmail jobs are 'filtered', manually update one for testing:
+   ```bash
+   # Update a filtered job to 'new' status for testing
+   psql -U jobhunter_user -d jobhunter_personal -c \
+     "UPDATE jobs SET status = 'new' WHERE source = 'gmail' AND status = 'filtered' LIMIT 1 RETURNING job_id, title, status;"
+   ```
+
+4. **Refresh Frontend**:
+   - Press F5 or Cmd+R on JobHunter app (http://localhost:3000)
+   - Navigate to "New Jobs" tab
+   - Verify at least one Gmail job is visible
+
+**Test Steps**:
 
 1. **Identify Test Email**:
    - In Gmail web UI, find an email with the "JobOp" label
