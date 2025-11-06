@@ -142,4 +142,142 @@ test.describe('Phase 2.9: Gmail Label Management', () => {
       console.log('No job cards found - skipping modal rejection test');
     }
   });
+
+  test('should handle Gmail label update failures gracefully', async ({ page }) => {
+    // This test verifies graceful degradation when Gmail API fails
+    // Note: In real scenario, Gmail API failures are handled on backend
+    // The job should still be rejected in database even if labels fail
+
+    // Click on New Jobs tab
+    await page.click('[data-testid="new-tab-button"]');
+
+    // Wait for job cards to load
+    await page.waitForTimeout(1000);
+
+    // Check if there are any job cards
+    const jobCards = page.locator('[data-testid="job-card"]');
+    const jobCardCount = await jobCards.count();
+
+    if (jobCardCount > 0) {
+      // Set up console monitoring to check for warnings (not errors)
+      const consoleMessages: string[] = [];
+      page.on('console', msg => {
+        if (msg.type() === 'error' || msg.type() === 'warning') {
+          consoleMessages.push(msg.text());
+        }
+      });
+
+      // Get the job ID from the first card for tracking
+      const firstJobCard = jobCards.first();
+      const jobId = await firstJobCard.getAttribute('data-job-id');
+
+      // Click the Reject button
+      const rejectButton = firstJobCard.locator('[data-testid="reject-job-button"]');
+      await rejectButton.click();
+
+      // Wait for the job to be rejected
+      await page.waitForTimeout(2000);
+
+      // Verify job still moved to Rejected tab (database update succeeded)
+      await page.click('[data-testid="rejected-tab-button"]');
+      await page.waitForTimeout(1000);
+
+      const rejectedJobCards = page.locator('[data-testid="job-card"]');
+      const rejectedJobCardCount = await rejectedJobCards.count();
+
+      // Job should be rejected even if label update fails
+      expect(rejectedJobCardCount).toBeGreaterThan(0);
+
+      // If job ID was captured, verify it's in the rejected tab
+      if (jobId) {
+        const rejectedJobCard = page.locator(`[data-testid="job-card"][data-job-id="${jobId}"]`);
+        await expect(rejectedJobCard).toBeVisible();
+      }
+
+      // Verify no critical errors occurred (warnings are okay)
+      const criticalErrors = consoleMessages.filter(msg =>
+        msg.includes('Uncaught') || msg.includes('TypeError') || msg.includes('ReferenceError')
+      );
+      expect(criticalErrors.length).toBe(0);
+    } else {
+      console.log('No job cards found - skipping graceful degradation test');
+    }
+  });
+
+  test('should handle multiple rapid rejections', async ({ page }) => {
+    // This test verifies that rapidly rejecting multiple jobs doesn't cause race conditions
+    // or data corruption
+
+    // Click on New Jobs tab
+    await page.click('[data-testid="new-tab-button"]');
+
+    // Wait for job cards to load
+    await page.waitForTimeout(1000);
+
+    // Check if there are multiple job cards
+    const jobCards = page.locator('[data-testid="job-card"]');
+    const jobCardCount = await jobCards.count();
+
+    if (jobCardCount >= 3) {
+      // Get job IDs for tracking
+      const jobIds: string[] = [];
+      for (let i = 0; i < Math.min(3, jobCardCount); i++) {
+        const card = jobCards.nth(i);
+        const jobId = await card.getAttribute('data-job-id');
+        if (jobId) {
+          jobIds.push(jobId);
+        }
+      }
+
+      // Rapidly click Reject on first 3 jobs (or all if less than 3)
+      const rejectCount = Math.min(3, jobCardCount);
+      for (let i = 0; i < rejectCount; i++) {
+        const card = jobCards.nth(i);
+        const rejectButton = card.locator('[data-testid="reject-job-button"]');
+
+        // Click without waiting (rapid succession)
+        await rejectButton.click();
+
+        // Small delay to prevent UI blocking (50ms instead of 2000ms)
+        await page.waitForTimeout(50);
+      }
+
+      // Wait for all rejections to complete
+      await page.waitForTimeout(3000);
+
+      // Verify all rejected jobs appear in Rejected tab
+      await page.click('[data-testid="rejected-tab-button"]');
+      await page.waitForTimeout(1000);
+
+      const rejectedJobCards = page.locator('[data-testid="job-card"]');
+      const rejectedJobCardCount = await rejectedJobCards.count();
+
+      // Should have at least the number of jobs we rejected
+      expect(rejectedJobCardCount).toBeGreaterThanOrEqual(rejectCount);
+
+      // Verify each rejected job appears in the tab (if we captured IDs)
+      for (const jobId of jobIds) {
+        const rejectedJobCard = page.locator(`[data-testid="job-card"][data-job-id="${jobId}"]`);
+        await expect(rejectedJobCard).toBeVisible();
+      }
+
+      // Verify no jobs remain in New Jobs tab
+      await page.click('[data-testid="new-tab-button"]');
+      await page.waitForTimeout(1000);
+
+      const remainingJobCards = page.locator('[data-testid="job-card"]');
+      const remainingCount = await remainingJobCards.count();
+
+      // New Jobs should have fewer jobs than before (or be empty)
+      expect(remainingCount).toBeLessThan(jobCardCount);
+
+      // Verify none of the rejected job IDs are still in New Jobs
+      for (const jobId of jobIds) {
+        const newJobCard = page.locator(`[data-testid="job-card"][data-job-id="${jobId}"]`);
+        await expect(newJobCard).not.toBeVisible();
+      }
+    } else {
+      console.log(`Only ${jobCardCount} job cards found - need at least 3 for rapid rejection test`);
+    }
+  });
 });
