@@ -21,7 +21,7 @@ mod microsoft_email_tests {
     // Cleanup test data
     async fn cleanup_test_data(pool: &PgPool) {
         // Delete in correct order due to foreign key constraints
-        let _ = sqlx::query!("DELETE FROM email_jobs WHERE sender_email LIKE 'test%@microsoft-test.com'")
+        let _ = sqlx::query!("DELETE FROM email_jobs WHERE sender_email LIKE 'test%@microsoft-test.com' OR sender_email LIKE '%@microsoft-test.com' OR message_id LIKE '<test-%@microsoft.com>'")
             .execute(pool)
             .await;
         let _ = sqlx::query!("DELETE FROM jobs WHERE company LIKE 'Microsoft Test%'")
