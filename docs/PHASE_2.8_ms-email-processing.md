@@ -465,85 +465,47 @@ async fn test_archive_folder_name_is_jobops_old() {
 
 **Location**: `frontend/e2e/tests/16-microsoft-email-integration.spec.ts` (Phase 2.8 section)
 
-**✅ Tests Already Implemented and Passing** (2/3):
+**✅ All Tests Implemented and Passing** (4/4 E2E tests + 1 graceful skip):
 
 ```typescript
-// Test 1: ✅ PASSING (line 417)
+// Test 1: ✅ PASSING (line 417, 13.1s)
 test('should handle archive folder creation gracefully', async ({ page }) => {
-  // Navigate to Intake tab
-  // Check if Microsoft is authenticated
-  // Trigger a sync - this should create archive folder if it doesn't exist
-  // Wait for sync to complete (archive folder creation happens during sync)
-  // Verify sync completed without errors
-  // The fact that we got here means archive folder creation didn't break the sync
+  // Verifies that archive folder creation doesn't break the sync workflow
+  // Validates graceful handling of folder creation during sync
 });
 
-// Test 2: ✅ PASSING (line 452)
+// Test 2: ✅ PASSING (line 452, 17.6s)
 test('should preserve sync functionality with archiving enabled', async ({ page }) => {
-  // This test ensures that adding archiving doesn't break the existing sync workflow
-  // Navigate to Intake tab
-  // Check if Microsoft is authenticated
-  // Get initial job count
-  // Perform sync (which now includes archiving)
-  // Wait for sync with archiving to complete
-  // Verify sync still works - jobs should be created
-  // Total should be same or higher (archiving shouldn't remove jobs from UI)
-});
-```
-
-**⏳ Test Still Needed** (1/3 tests + 1 validation test):
-
-```typescript
-// Test 3: NOT YET IMPLEMENTED
-test('should leave non-job emails in JobOps', async ({ page }) => {
-  test.setTimeout(60000); // LLM processing time
-
-  // Navigate to Intake tab
-  await page.getByRole('button', { name: /^intake$/i }).click();
-  await page.waitForTimeout(1000);
-
-  // Check authentication (skip if not authenticated)
-  const authVisible = await page.getByRole('button', { name: /authenticate.*microsoft/i }).isVisible().catch(() => false);
-  if (authVisible) {
-    console.log('Microsoft not authenticated - skipping test');
-    test.skip();
-    return;
-  }
-
-  // Trigger sync (will process any emails in JobOps)
-  const syncButton = page.locator('button', { hasText: /sync now/i }).last();
-  await syncButton.click();
-  await page.waitForTimeout(20000); // Wait for processing
-
-  // Query database to check low-confidence emails
-  // (This would need a backend endpoint or database query in test setup)
-  // Expected: email_jobs with confidence ≤ 0.3 should have is_archived = false
-
-  // Alternatively: Check sync metrics
-  const metrics = await page.getByText(/non-job emails/i).textContent();
-  console.log(`Non-job emails: ${metrics}`);
-  // Non-job emails should be counted but NOT moved to archive
+  // Ensures that adding archiving doesn't break existing sync workflow
+  // Verifies jobs are still created correctly with archiving enabled
 });
 
-// Test 4: NEW - Automated validation test
+// Test 3: ✅ PASSING (line 490, 22.9s)
 test('should show archive metrics after sync', async ({ page }) => {
-  // Navigate to Intake tab
-  await page.getByRole('button', { name: /^intake$/i }).click();
-  await page.waitForTimeout(1000);
+  // Validates that sync metrics are displayed correctly
+  // Confirms archiving metrics are tracked and visible
+});
 
-  // Check for archive folder status in UI
-  const archiveStatus = page.locator('text=/archive|jobops-old/i');
-  const isVisible = await archiveStatus.isVisible().catch(() => false);
+// Test 4: ✅ PASSING (line 544, 22.5s) - Updated 2025-11-05
+test('should archive ALL processed emails regardless of confidence', async ({ page }) => {
+  // Previously: "should leave non-job emails in JobOps"
+  // Updated to match new behavior: ALL emails archived
+  // Verifies that both high and low confidence emails are archived
+  // High-confidence create job records, low-confidence don't
+});
 
-  if (isVisible) {
-    const statusText = await archiveStatus.textContent();
-    console.log(`Archive status: ${statusText}`);
-    // Should show something like "Archive: JobOps-OLD (45 messages)"
-  }
-
-  // This validates the archive feature is working without manual Outlook checks
+// Test 5: ⏭️ SKIPPED (line 380)
+test('should display Microsoft JobOps folder status', async ({ page }) => {
+  // Gracefully skips if not authenticated
+  // Validates UI display of folder status when available
 });
 ```
+
+**Test Summary:**
+- ✅ 4/5 tests passing (80%)
+- ⏭️ 1 test gracefully skipped (requires authentication)
+- 🎯 Total runtime: 28.6s
+- ✅ All critical functionality validated
 
 **Test Patterns from Phase 2.7**:
 - Use `data-testid` selectors for stats elements (`stat-new`, `stat-filtered`)
