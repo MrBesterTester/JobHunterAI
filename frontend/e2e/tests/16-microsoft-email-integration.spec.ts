@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { DashboardPage } from '../pages/DashboardPage';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 /**
  * Test Suite: Microsoft Email Integration (Phase 2.7)
@@ -10,6 +14,23 @@ import { DashboardPage } from '../pages/DashboardPage';
  * - Folder filtering (JobOps folder)
  * - Job extraction and approval workflow
  */
+
+/**
+ * Helper: Check if Microsoft OAuth credentials exist in database
+ * Returns true if valid credentials exist, false otherwise
+ */
+async function hasMicrosoftOAuthCredentials(): Promise<boolean> {
+  try {
+    const { stdout } = await execAsync(
+      `psql -U jobhunter_user -d jobhunter_personal -t -c "SELECT COUNT(*) FROM oauth_credentials oc JOIN job_sources js ON oc.source_id = js.source_id WHERE js.source_name = 'microsoft_email' AND oc.token_expires_at > NOW();"`
+    );
+    const count = parseInt(stdout.trim());
+    return count > 0;
+  } catch (error) {
+    console.error('Failed to check OAuth credentials:', error);
+    return false;
+  }
+}
 
 test.describe('Microsoft Email Integration (Phase 2.7)', () => {
   let dashboardPage: DashboardPage;
@@ -418,19 +439,17 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       // This test verifies that the system handles archive folder creation
       // without breaking the sync workflow
 
-      // Navigate to Intake tab
-      await page.getByRole('button', { name: /^intake$/i }).click();
-      await page.waitForTimeout(1000);
-
-      // Check if Microsoft is authenticated
-      const microsoftAuthButton = page.getByRole('button', { name: /authenticate.*microsoft/i });
-      const authVisible = await microsoftAuthButton.isVisible().catch(() => false);
-
-      if (authVisible) {
-        console.log('Microsoft not authenticated - skipping test');
+      // Check if Microsoft OAuth credentials exist
+      const hasCredentials = await hasMicrosoftOAuthCredentials();
+      if (!hasCredentials) {
+        console.log('Microsoft not authenticated - skipping test (no OAuth credentials in database)');
         test.skip();
         return;
       }
+
+      // Navigate to Intake tab
+      await page.getByRole('button', { name: /^intake$/i }).click();
+      await page.waitForTimeout(1000);
 
       // Trigger a sync - this should create archive folder if it doesn't exist
       const microsoftSyncButton = page.locator('button', { hasText: /sync.*microsoft/i }).or(
@@ -452,19 +471,17 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
     test('should preserve sync functionality with archiving enabled', async ({ page }) => {
       // This test ensures that adding archiving doesn't break the existing sync workflow
 
-      // Navigate to Intake tab
-      await page.getByRole('button', { name: /^intake$/i }).click();
-      await page.waitForTimeout(1000);
-
-      // Check if Microsoft is authenticated
-      const microsoftAuthButton = page.getByRole('button', { name: /authenticate.*microsoft/i });
-      const authVisible = await microsoftAuthButton.isVisible().catch(() => false);
-
-      if (authVisible) {
-        console.log('Microsoft not authenticated - skipping test');
+      // Check if Microsoft OAuth credentials exist
+      const hasCredentials = await hasMicrosoftOAuthCredentials();
+      if (!hasCredentials) {
+        console.log('Microsoft not authenticated - skipping test (no OAuth credentials in database)');
         test.skip();
         return;
       }
+
+      // Navigate to Intake tab
+      await page.getByRole('button', { name: /^intake$/i }).click();
+      await page.waitForTimeout(1000);
 
       // Get initial job count
       const initialTotal = await page.getByText(/Total/i).last().textContent();
@@ -492,19 +509,17 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
 
       test.setTimeout(60000); // Extended timeout for sync operations
 
-      // Navigate to Intake tab
-      await page.getByRole('button', { name: /^intake$/i }).click();
-      await page.waitForTimeout(1000);
-
-      // Check if Microsoft is authenticated
-      const microsoftAuthButton = page.getByRole('button', { name: /authenticate.*microsoft/i });
-      const authVisible = await microsoftAuthButton.isVisible().catch(() => false);
-
-      if (authVisible) {
-        console.log('Microsoft not authenticated - skipping test');
+      // Check if Microsoft OAuth credentials exist
+      const hasCredentials = await hasMicrosoftOAuthCredentials();
+      if (!hasCredentials) {
+        console.log('Microsoft not authenticated - skipping test (no OAuth credentials in database)');
         test.skip();
         return;
       }
+
+      // Navigate to Intake tab
+      await page.getByRole('button', { name: /^intake$/i }).click();
+      await page.waitForTimeout(1000);
 
       // Trigger sync to generate metrics
       const microsoftSyncButton = page.locator('button', { hasText: /sync.*microsoft/i }).or(
@@ -537,19 +552,17 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
 
       test.setTimeout(60000); // Extended timeout for LLM processing
 
-      // Navigate to Intake tab
-      await page.getByRole('button', { name: /^intake$/i }).click();
-      await page.waitForTimeout(1000);
-
-      // Check authentication
-      const microsoftAuthButton = page.getByRole('button', { name: /authenticate.*microsoft/i });
-      const authVisible = await microsoftAuthButton.isVisible().catch(() => false);
-
-      if (authVisible) {
-        console.log('Microsoft not authenticated - skipping test');
+      // Check if Microsoft OAuth credentials exist
+      const hasCredentials = await hasMicrosoftOAuthCredentials();
+      if (!hasCredentials) {
+        console.log('Microsoft not authenticated - skipping test (no OAuth credentials in database)');
         test.skip();
         return;
       }
+
+      // Navigate to Intake tab
+      await page.getByRole('button', { name: /^intake$/i }).click();
+      await page.waitForTimeout(1000);
 
       // Trigger sync (will process any emails in JobOps)
       const syncButton = page.locator('button', { hasText: /sync now/i }).last();
