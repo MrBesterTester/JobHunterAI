@@ -29,7 +29,7 @@
 
 # Phase Execution Order - JobHunter Project
 
-**Last Updated**: 2025-11-04 18:43:05 PST ✅ **CORE SOFTWARE FEATURE COMPLETE**
+**Last Updated**: 2025-11-06 14:05:33 PST ✅ **CORE SOFTWARE FEATURE COMPLETE**
 
 ---
 
@@ -58,12 +58,14 @@ This document shows the **correct execution sequence** based on actual feature d
 └──────────────────────┬──────────────────────────────────────┘
                        │
 ┌──────────────────────▼──────────────────────────────────────┐
-│  Layer 2: Job Intake ✅ COMPLETE                            │
+│  Layer 2: Job Intake ✅ COMPLETE (with optional enhancements)│
 │  • Gmail Integration ✅ (base Phase 2)                      │
 │  • Phase 4.1: RapidAPI JSearch ✅                           │
 │  • Phase 4.2: Automatic Pagination ✅                       │
 │  • Phase 2.7: Microsoft Email Source ✅                     │
-│  • Phase 2.8: MS Email Auto-Archive 🔄 (in progress)       │
+│  • Phase 2.8: MS Email Auto-Archive ✅                      │
+│  • Phase 2.8.1: MS Folder Refinement 📋 (planned)           │
+│  • Phase 2.9: Gmail Label Management 📋 (planned)           │
 └──────────────────────┬──────────────────────────────────────┘
                        │
 ┌──────────────────────▼──────────────────────────────────────┐
@@ -110,13 +112,15 @@ This document shows the **correct execution sequence** based on actual feature d
 | 6 | Phase 2.4 | Calendar & Follow-ups | ✅ 2025-11-01 | Interview scheduling, email follow-ups |
 | 7 | Phase 2.5 | Email Composition | ✅ 2025-11-03 | Gmail draft creation (16/16 E2E tests) |
 | 8 | Phase 4.2 | Automatic Pagination | ✅ 2025-11-03 | RapidAPI page management |
-| 9 | Phase 2.7 | Microsoft Email Source | ✅ 2025-11-04 | sam@samkirk.com integration (9/9 E2E tests) |
+| 9 | Phase 2.7 | Microsoft Email Source | ✅ 2025-11-04 | sam@samkirk.com integration (18/21 E2E tests) |
 | 10 | Phase 5.1 | Content Refresh | ✅ 2025-11-04 | Refresh descriptions feature (BUG-0007 fixed) |
-| 11 | Phase 2.8 | MS Email Auto-Archive | 🔄 In Progress | Auto-move processed emails to archive folder |
+| 11 | Phase 2.8 | MS Email Auto-Archive | ✅ 2025-11-05 | Auto-archive to JobOps-OLD folder |
+| 12 | Phase 2.8.1 | MS Folder Refinement | 📋 Planned | Align MS folder behavior with Gmail (30-45 min) |
+| 13 | Phase 2.9 | Gmail Label Management | 📋 Planned | JobOps-OLD label for rejected jobs (2-3 hours) |
 
-**Total Completed: 10 phases** ✅ **ALL CORE PRD REQUIREMENTS COMPLETE**
+**Total Completed: 11 phases** ✅ **ALL CORE PRD REQUIREMENTS COMPLETE**
 
-**In Progress: Phase 2.8** (MS email workflow enhancement)
+**Planned: Phase 2.8.1 and 2.9** (email management enhancements)
 
 **Remaining: Phase 5.2-5.5 only** (optional advanced features)
 
@@ -271,4 +275,4 @@ This document should be updated whenever:
 - Dependencies change (update dependency chain)
 - New dependencies are discovered (document here)
 
-**Last Reviewed**: 2025-11-04 by Claude Code ✅ **Core software declared feature complete**
+**Last Reviewed**: 2025-11-06 by Claude Code ✅ **Core software feature complete + Phase 2.8.1/2.9 planning**
