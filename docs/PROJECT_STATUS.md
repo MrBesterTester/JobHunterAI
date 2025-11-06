@@ -37,7 +37,7 @@
 
 # JobHunter Project Status
 
-**Last Updated**: 2025-11-05 17:30:39 PST (Phase 2.8 implementation complete)
+**Last Updated**: 2025-11-05 18:22:14 PST (Phase 2.8 behavior refinement - archive ALL emails)
 
 ---
 
@@ -308,22 +308,28 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 **Phase 2.8 Details** (Microsoft Email Auto-Archive) - ✅ **COMPLETE** (2025-11-05):
 - **Feature**: Automatic archival of processed job emails to JobOps-OLD folder
 - **Implementation**:
-  - ✅ Backend: Already complete - archive folder management discovered in codebase
+  - ✅ Backend: Complete with behavior refinement (commits bb0659d, 9af9407)
   - ✅ Archive folder: `get_or_create_archive_folder()` creates JobOps-OLD (lines 3658-3710)
   - ✅ Message moving: `move_microsoft_message()` via Graph API (lines 3713-3738)
-  - ✅ High-confidence emails (>0.3): Moved to JobOps-OLD automatically
-  - ✅ Low-confidence emails (≤0.3): Left in JobOps for manual review
+  - ✅ **ALL processed emails archived**: Moved to JobOps-OLD regardless of confidence
+  - ✅ High-confidence emails (>0.3): Archived AND create job records in database
+  - ✅ Low-confidence emails (≤0.3): Archived WITHOUT creating job records
   - ✅ Duplicate handling: Archives duplicates automatically (lines 3396-3421)
   - ✅ Graceful fallback: Falls back to mark-as-read on archive failure
+- **Behavior Refinement** (2025-11-05 18:13):
+  - **Change**: Archive ALL processed emails (not just high-confidence)
+  - **Rationale**: Keeps JobOps folder completely clean
+  - **Impact**: JobOps only contains unprocessed emails; all processed emails in archive
 - **Testing**: ✅ **ALL TESTS PASSING**
   - ✅ Backend Unit Tests: 12/12 passing (100%, 0.20s runtime)
   - ✅ E2E Tests: 4/5 passing (80%, 1 graceful skip, 28.6s runtime)
+  - ✅ Test updated: "Archive ALL emails" test matches new behavior
   - ✅ Testing ratio achieved: 90% automated / 10% manual (as planned)
 - **Testing Artifacts**:
   - `backend/tests/microsoft_email_tests.rs` - Phase 2.8 unit tests (lines 462+)
-  - `frontend/e2e/tests/16-microsoft-email-integration.spec.ts` - Phase 2.8 E2E tests (lines 379-577)
+  - `frontend/e2e/tests/16-microsoft-email-integration.spec.ts` - Phase 2.8 E2E tests (lines 379-583)
 - **Time**: ~1.5 hours (within 1-2 hour estimate)
-- **Business Value**: Automatic inbox management reduces manual email triage by 80%
+- **Business Value**: Automatic inbox management keeps JobOps completely clean
 
 ### Phase 3: Content Generation
 
@@ -532,17 +538,22 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 
 ---
 
-**Last Updated**: 2025-11-06 01:05:50 PST (Phase 2.7 E2E tests - all passing, 0 failures)
+**Last Updated**: 2025-11-05 18:22:14 PST (Phase 2.8 behavior refinement - archive ALL emails)
 
 **Major Updates in This Revision**:
+- **Phase 2.8 Behavior Refinement** (2025-11-05 18:22:14 PST)
+  - ✅ Changed behavior: ALL processed emails now archived to JobOps-OLD (not just high-confidence)
+  - ✅ Backend fix: Moved archive operation outside confidence check (commit bb0659d)
+  - ✅ Test update: E2E test updated to match new behavior (commit 9af9407)
+  - ✅ User verification: All 2 remaining emails successfully moved to archive
+  - ✅ Rationale: Keeps JobOps folder completely clean for unprocessed emails only
+  - ✅ Impact: High-confidence create job records; low-confidence archived without records
+  - **Status**: Phase 2.8 remains 100% complete with refined archiving behavior
 - **Phase 2.7 E2E Tests - All Passing** (2025-11-06 01:05:50 PST)
   - ✅ Fixed last flaky test (stats update race condition)
   - ✅ Test Results: **18/21 passing (86%, 0 failures)**
   - ✅ Test Progression: 43% → 86% (+43% improvement)
-  - ✅ Used data-testid selector for reliable stats element location
-  - ✅ Navigated to New Jobs tab before checking stats
   - ✅ All critical paths validated, production-ready
-  - **Status**: Phase 2.7 remains 100% complete with improved test coverage
 - **Phase 2.7 Optional Investigation Complete** (2025-11-04 18:45:00 PST)
   - ✅ Completed investigation: Regex fallback trigger for non-job emails
   - ✅ Documentation: Integrated into [ISSUE-030 Appendix](../bugs/mitigated/ISSUE-030-low-confidence-emails-appear-in-filtered-tab-instead-of-non-job-emails.md#appendix-regex-fallback-investigation)
