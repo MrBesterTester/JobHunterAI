@@ -19,6 +19,8 @@
     - [Unit Tests](#unit-tests)
     - [E2E Tests](#e2e-tests)
     - [Manual Testing](#manual-testing)
+      - [**Test 1: OAuth Re-authentication** (5 min) - MANUAL ONLY](#test-1-oauth-re-authentication-5-min---manual-only)
+      - [**Test 2: Visual Gmail Validation** (5 min) - ONE-TIME](#test-2-visual-gmail-validation-5-min---one-time)
   - [Success Criteria](#success-criteria)
   - [Timeline & Effort](#timeline--effort)
   - [Related Documentation](#related-documentation)
@@ -607,22 +609,238 @@ test.describe('Phase 2.9: Gmail Label Management', () => {
 
 ### Manual Testing
 
-**Manual Test Cases** (10 minutes):
+**Manual Test Cases** (10 minutes total):
 
-1. **OAuth Re-authentication** (5 min) - MANUAL ONLY
-   - [ ] Revoke Gmail OAuth token
-   - [ ] Re-authenticate with new scope (`gmail.modify`)
-   - [ ] Verify permission screen shows "Manage labels"
-   - [ ] Confirm successful re-authentication
+---
 
-2. **Visual Gmail Validation** (5 min) - ONE-TIME
-   - [ ] Create test job from Gmail email
-   - [ ] Verify email has "JobOps" label in Gmail UI
-   - [ ] Click "Reject" in JobHunter
-   - [ ] Refresh Gmail → Verify "JobOps" removed, "JobOps-OLD" added
-   - [ ] Verify email appears in JobOps-OLD label filter
+#### **Test 1: OAuth Re-authentication** (5 min) - MANUAL ONLY
 
-**Why Manual**: OAuth consent screens require user interaction, Gmail UI validation easiest manually.
+**Purpose**: Verify the `gmail.modify` OAuth scope is properly configured and authorized.
+
+**Why Manual**: OAuth consent screens require interactive user approval in browser.
+
+**Prerequisites**:
+- Backend server running (`cargo run` in backend/)
+- Gmail OAuth credentials configured in `.env`
+- Access to Google account settings
+
+**Steps**:
+
+1. **Check Current OAuth Scope**:
+   ```bash
+   # Check .env file for OAuth scope
+   grep GMAIL_SCOPE /Users/sam/Projects/JobHunterAI-Claude/backend/.env
+   ```
+   **Expected**: Should include `https://www.googleapis.com/auth/gmail.modify`
+
+2. **Revoke Current Token** (if needed):
+   - Navigate to: https://myaccount.google.com/permissions
+   - Find "JobHunter" or your OAuth app name
+   - Click "Remove Access"
+   - Confirm revocation
+
+3. **Re-authenticate with New Scope**:
+   - In JobHunter app, trigger Gmail sync or authentication flow
+   - Or run backend OAuth initialization endpoint
+   - Browser will open to Google OAuth consent screen
+
+4. **Verify Permission Screen**:
+   - [ ] **CRITICAL**: Screen should show "Manage your labels" or "Modify labels"
+   - [ ] Screen should show "Read your email messages and settings" (readonly scope)
+   - [ ] App name matches your OAuth configuration
+   - [ ] Gmail account email is correct
+
+5. **Grant Permissions**:
+   - Click "Allow" or "Continue"
+   - Wait for redirect back to application
+
+6. **Confirm Successful Authentication**:
+   - [ ] No error messages displayed
+   - [ ] Backend logs show successful token acquisition
+   - [ ] Can trigger Gmail sync without errors
+
+**Expected Results**:
+- ✅ OAuth consent screen displays correctly
+- ✅ Permissions include "Manage labels" capability
+- ✅ Token successfully stored in database
+- ✅ Backend can access Gmail API with modify permissions
+
+**Troubleshooting**:
+
+| Problem | Solution |
+|---------|----------|
+| Consent screen doesn't show "Manage labels" | Verify `gmail.modify` scope in `.env` file and OAuth configuration |
+| "Error 400: redirect_uri_mismatch" | Update OAuth redirect URIs in Google Cloud Console |
+| "Access blocked" error | Enable Gmail API in Google Cloud Console, verify OAuth app status |
+| Token not persisted | Check database connection, verify `oauth_credentials` table exists |
+
+**Verification Query**:
+```sql
+-- Check if OAuth token is stored with correct scope
+SELECT access_token, scope, created_at, updated_at
+FROM oauth_credentials
+WHERE source_id = (SELECT source_id FROM job_sources WHERE source_name = 'gmail' LIMIT 1)
+ORDER BY updated_at DESC
+LIMIT 1;
+```
+
+---
+
+#### **Test 2: Visual Gmail Validation** (5 min) - ONE-TIME
+
+**Purpose**: Verify that Gmail labels update correctly in the actual Gmail web interface when a job is rejected in JobHunter.
+
+**Why Manual**: Direct Gmail UI inspection is faster and more reliable than API mocking for initial validation.
+
+**Prerequisites**:
+- Backend and frontend servers running
+- OAuth re-authentication complete (Test 1)
+- At least 1 job in "New Jobs" tab from Gmail source
+- Gmail web interface open in browser (https://mail.google.com)
+
+**Steps**:
+
+1. **Identify Test Email**:
+   - In Gmail web UI, find an email with the "JobOp" label
+   - Note the email subject/sender for tracking
+   - Verify it's currently in your inbox or JobOp folder view
+   - **Tip**: Use Gmail search: `label:JobOp` to find labeled emails
+
+2. **Verify Initial State in Gmail**:
+   - [ ] Email has "JobOp" label (visible as colored tag)
+   - [ ] Email does NOT have "JobOp-OLD" label yet
+   - [ ] Email is visible when filtering by "JobOp" label
+   - [ ] Take a screenshot for reference (optional)
+
+3. **Find Corresponding Job in JobHunter**:
+   - Navigate to "New Jobs" tab in JobHunter app
+   - Find the job matching the email (same subject/company)
+   - Verify it's in "new" status (not already rejected)
+   - Note the job title for verification
+
+4. **Reject the Job**:
+   - Click the **"Reject"** button on the job card
+   - Or: Click job card → Open modal → Click "Reject" button
+   - Wait 2-3 seconds for operation to complete
+   - Verify job disappears from "New Jobs" tab
+
+5. **Verify Job in Rejected Tab**:
+   - Click on **"Rejected"** tab in JobHunter
+   - [ ] Rejected job appears in the list
+   - [ ] Job shows correct title, company, details
+   - [ ] Tab badge count increased by 1
+
+6. **Check Gmail Label Changes** (CRITICAL):
+   - Switch back to Gmail browser tab
+   - **Refresh the page** (F5 or Cmd+R)
+   - Find the same email (search by subject if needed)
+   - **Verify label changes**:
+     - [ ] ✅ "JobOp" label has been **REMOVED**
+     - [ ] ✅ "JobOp-OLD" label has been **ADDED**
+     - [ ] Email still exists (not deleted)
+     - [ ] Email still in inbox (not moved to trash)
+
+7. **Verify JobOp-OLD Label Filter**:
+   - In Gmail left sidebar, click on "JobOp-OLD" label
+   - Or search: `label:JobOp-OLD`
+   - [ ] The rejected job email appears in results
+   - [ ] Label shows correct count of archived jobs
+   - [ ] Label is visible in sidebar (not hidden)
+
+8. **Test Bulk Cleanup** (Optional - 2 min):
+   - In Gmail, filter by `label:JobOp-OLD`
+   - Select all rejected job emails
+   - Click "Delete" or "Archive"
+   - [ ] Emails removed from inbox successfully
+   - [ ] This demonstrates the cleanup workflow benefit
+
+**Expected Results**:
+- ✅ JobOp label removed from rejected job email
+- ✅ JobOp-OLD label added to rejected job email
+- ✅ Email appears in JobOp-OLD label filter
+- ✅ JobOp-OLD label was auto-created if it didn't exist
+- ✅ Email remains in inbox (not deleted/archived automatically)
+- ✅ Job appears in "Rejected" tab in JobHunter
+
+**What to Look For**:
+
+| Location | Expected State |
+|----------|---------------|
+| Gmail Email | Has "JobOp-OLD" label, NO "JobOp" label |
+| Gmail Label Sidebar | "JobOp-OLD" label visible with count |
+| Gmail Search: `label:JobOp` | Email NOT in results |
+| Gmail Search: `label:JobOp-OLD` | Email appears in results |
+| JobHunter "New Jobs" Tab | Job is gone |
+| JobHunter "Rejected" Tab | Job appears with correct details |
+
+**Troubleshooting**:
+
+| Problem | Cause | Solution |
+|---------|-------|----------|
+| Labels didn't update in Gmail | OAuth token expired | Re-run Test 1 (OAuth re-authentication) |
+| "JobOp" label still present | Label update failed but job rejected | Check backend logs for Gmail API errors |
+| "JobOp-OLD" label not visible | Label creation failed | Manually create label in Gmail, retry rejection |
+| Email deleted instead of labeled | Wrong implementation | **CRITICAL**: Report bug - email should never be deleted |
+| Changes take >10 seconds | API latency or rate limiting | Wait longer, check network connection |
+| Changes not visible after refresh | Browser cache issue | Hard refresh (Ctrl+Shift+R), clear Gmail cache |
+
+**Backend Log Verification**:
+
+Check backend console output for these log messages:
+```
+✅ Expected logs:
+- "Successfully updated Gmail labels for rejected job {uuid}"
+- "Found existing JobOp-OLD label with ID: {label_id}"
+- Or: "Created new JobOp-OLD label with ID: {label_id}"
+- "Updated labels for message {message_id}: removed JobOp, added JobOp-OLD"
+
+❌ Warning logs (non-critical):
+- "Warning: Failed to update Gmail labels..." (job still rejected in DB)
+
+🚨 Error logs (investigate immediately):
+- "Failed to fetch labels: 401" (OAuth token expired - re-authenticate)
+- "Failed to update labels: 404" (message deleted in Gmail)
+- "Failed to update labels: 429" (API rate limit - wait and retry)
+```
+
+**Database Verification** (Optional):
+```sql
+-- Verify job status updated correctly
+SELECT job_id, title, status, updated_at
+FROM jobs
+WHERE status = 'rejected'
+ORDER BY updated_at DESC
+LIMIT 5;
+
+-- Verify email_jobs association maintained
+SELECT ej.message_id, ej.source, j.status, j.title
+FROM email_jobs ej
+JOIN jobs j ON ej.job_id = j.job_id
+WHERE j.status = 'rejected'
+ORDER BY j.updated_at DESC
+LIMIT 5;
+```
+
+---
+
+**Why These Tests Are Manual**:
+
+1. **OAuth Consent Screen**:
+   - Requires human interaction to grant permissions
+   - Cannot be automated due to Google security restrictions
+   - Must verify actual permission grants in browser
+
+2. **Gmail UI Validation**:
+   - Direct visual confirmation is fastest for initial verification
+   - Gmail API responses can be cached or delayed
+   - Easier to spot unexpected behavior (e.g., deleted emails)
+   - Validates end-to-end user experience, not just API calls
+
+**Future Automation Potential**:
+
+- OAuth flow could be automated with Playwright (complex setup)
+- Gmail label verification could use Gmail API instead of UI
+- Consider automating after initial manual validation confirms correctness
 
 ---
 
