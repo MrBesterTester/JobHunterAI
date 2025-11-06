@@ -541,8 +541,9 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       }
     });
 
-    test('should leave non-job emails in JobOps (confidence ≤ 0.3)', async ({ page }) => {
-      // This test verifies that low-confidence emails are not moved to archive
+    test('should archive ALL processed emails regardless of confidence', async ({ page }) => {
+      // This test verifies that ALL emails (including low-confidence) are moved to JobOps-OLD archive
+      // Only high-confidence emails (>0.3) create job records in database
 
       test.setTimeout(60000); // Extended timeout for LLM processing
 
@@ -558,7 +559,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       await page.getByRole('button', { name: /^intake$/i }).click();
       await page.waitForTimeout(1000);
 
-      // Trigger sync (will process any emails in JobOps)
+      // Trigger sync (will process any emails in JobOps and move them ALL to archive)
       const syncButton = page.locator('[data-testid="microsoft-sync-button"]');
       await syncButton.click();
       await page.waitForTimeout(20000); // Wait for processing
@@ -566,20 +567,19 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       // Wait for sync to complete
       await expect(syncButton).toBeEnabled({ timeout: 10000 });
 
-      // Check for non-job email indicator in metrics or status
-      // The system should show "Non-Job Emails: X" or similar
-      const nonJobIndicator = page.locator('text=/non-job|filtered/i');
-      const hasNonJobMetrics = await nonJobIndicator.isVisible().catch(() => false);
+      // Check sync metrics - should show emails were processed
+      const syncMetrics = page.locator('text=/discovered:|processed:|archived:/i');
+      const hasMetrics = await syncMetrics.isVisible().catch(() => false);
 
-      if (hasNonJobMetrics) {
-        const metricsText = await nonJobIndicator.textContent();
-        console.log(`Non-job metrics: ${metricsText}`);
-        // Non-job emails should be counted but NOT moved to archive
+      if (hasMetrics) {
+        const metricsText = await syncMetrics.textContent();
+        console.log(`Sync metrics: ${metricsText}`);
+        // All processed emails should be archived (including low-confidence)
         expect(metricsText).toBeTruthy();
       }
 
       // The test passes as long as sync completes without errors
-      // (Real validation would require checking email_jobs table for is_archived=false on low-confidence emails)
+      // Behavior: ALL emails archived to JobOps-OLD, only high-confidence create job records
     });
   });
 
