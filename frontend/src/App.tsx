@@ -178,7 +178,7 @@ interface JobScore {
   calculated_at: string;
 }
 
-type TabType = 'approved' | 'applied' | 'filtered' | 'failed' | 'duplicates' | 'new' | 'all' | 'intake' | 'calendar' | 'follow-ups' | 'ignored' | 'ranked';
+type TabType = 'approved' | 'applied' | 'filtered' | 'failed' | 'duplicates' | 'new' | 'all' | 'intake' | 'calendar' | 'follow-ups' | 'ignored' | 'ranked' | 'rejected';
 
 // Helper functions moved outside component to prevent recreation on re-renders
 const isHtmlContent = (text: string): boolean => {
@@ -314,6 +314,7 @@ const JobDetails: React.FC<{
   job: Job;
   onClose: () => void;
   updateJobStatus: (jobId: string, newStatus: string) => Promise<void>;
+  rejectJob: (jobId: string) => Promise<void>;
   generateContent: (jobId: string) => Promise<void>;
   renderDescription: (description: string) => JSX.Element;
   formatCompensationType: (type?: string) => string;
@@ -327,6 +328,7 @@ const JobDetails: React.FC<{
   job,
   onClose,
   updateJobStatus,
+  rejectJob,
   generateContent,
   renderDescription,
   formatCompensationType,
@@ -832,7 +834,7 @@ const JobDetails: React.FC<{
                 Approve
               </button>
               <button
-                onClick={() => { updateJobStatus(job.job_id, 'rejected'); onClose(); }}
+                onClick={() => { rejectJob(job.job_id); onClose(); }}
                 style={{
                   flex: 1,
                   backgroundColor: '#ef4444',
@@ -843,6 +845,7 @@ const JobDetails: React.FC<{
                   cursor: 'pointer',
                   scrollMarginTop: '9999px'
                 }}
+                data-testid="reject-job-button-modal"
               >
                 Reject
               </button>
@@ -1221,6 +1224,33 @@ const JobHunterDashboard: React.FC = () => {
       // Use functional setState to avoid needing jobs in dependency array
       // Optimistically update UI even if fetch fails
       setJobs(prevJobs => prevJobs.map(j => j.job_id === jobId ? {...j, status: newStatus} : j));
+      // Don't re-throw - we've handled the error with optimistic update
+    }
+  }, []); // Empty dependency array since we use functional setState and fetchJobs/fetchStats are stable
+
+  const rejectJob = useCallback(async (jobId: string): Promise<void> => {
+    try {
+      const response = await fetch(`${API_URL}/jobs/${jobId}/reject`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to reject job: ${response.status} ${response.statusText}. ${errorText}`);
+      }
+
+      // Wait for the rejection to complete before refreshing
+      await fetchJobs();
+      await fetchStats();
+
+      // Show success notification
+      console.log('Job rejected successfully. Gmail labels updated.');
+    } catch (error) {
+      console.error('Error rejecting job:', error);
+      // Use functional setState to avoid needing jobs in dependency array
+      // Optimistically update UI even if fetch fails
+      setJobs(prevJobs => prevJobs.map(j => j.job_id === jobId ? {...j, status: 'rejected'} : j));
       // Don't re-throw - we've handled the error with optimistic update
     }
   }, []); // Empty dependency array since we use functional setState and fetchJobs/fetchStats are stable
@@ -2305,7 +2335,7 @@ const JobHunterDashboard: React.FC = () => {
             Approve
           </button>
           <button
-            onClick={(e) => { e.stopPropagation(); updateJobStatus(job.job_id, 'rejected'); }}
+            onClick={(e) => { e.stopPropagation(); rejectJob(job.job_id); }}
             style={{
               flex: 1,
               backgroundColor: '#ef4444',
@@ -2316,6 +2346,7 @@ const JobHunterDashboard: React.FC = () => {
               cursor: 'pointer',
               fontSize: '14px'
             }}
+            data-testid="reject-job-button"
           >
             Reject
           </button>
@@ -2633,7 +2664,7 @@ const JobHunterDashboard: React.FC = () => {
 
       <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 16px', boxSizing: 'border-box', width: '100%' }}>
         <nav style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid #e5e7eb', overflowX: 'auto' }}>
-          {(['ignored', 'intake', 'filtered', 'failed', 'duplicates', 'new', 'approved', 'applied', 'follow-ups', 'calendar', 'ranked', 'all'] as TabType[]).map(tab => (
+          {(['ignored', 'intake', 'filtered', 'failed', 'duplicates', 'new', 'approved', 'rejected', 'applied', 'follow-ups', 'calendar', 'ranked', 'all'] as TabType[]).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -2660,6 +2691,7 @@ const JobHunterDashboard: React.FC = () => {
               {tab === 'failed' && <AlertTriangle style={{ width: '16px', height: '16px' }} />}
               {tab === 'duplicates' && <Copy style={{ width: '16px', height: '16px' }} />}
               {tab === 'new' && <AlertCircle style={{ width: '16px', height: '16px' }} />}
+              {tab === 'rejected' && <XCircle style={{ width: '16px', height: '16px', color: '#dc2626' }} />}
               {tab === 'calendar' && <CalendarIcon style={{ width: '16px', height: '16px' }} />}
               {tab === 'follow-ups' && <Mail style={{ width: '16px', height: '16px' }} />}
               {tab === 'ranked' && <TrendingUp style={{ width: '16px', height: '16px' }} />}
@@ -2687,6 +2719,7 @@ const JobHunterDashboard: React.FC = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))', gap: '16px', width: '100%' }}>
               {(activeTab === 'new' ? filterJobs('new') :
                 activeTab === 'approved' ? filterJobs('approved') :
+                activeTab === 'rejected' ? filterJobs('rejected') :
                 activeTab === 'applied' ? filterJobs('applied') :
                 activeTab === 'filtered' ? filterJobs('filtered') :
                 getAllActiveJobs()
@@ -2697,6 +2730,7 @@ const JobHunterDashboard: React.FC = () => {
 
             {(activeTab === 'new' ? filterJobs('new') :
               activeTab === 'approved' ? filterJobs('approved') :
+              activeTab === 'rejected' ? filterJobs('rejected') :
               activeTab === 'applied' ? filterJobs('applied') :
               activeTab === 'filtered' ? filterJobs('filtered') :
               getAllActiveJobs()
@@ -2716,6 +2750,7 @@ const JobHunterDashboard: React.FC = () => {
           job={selectedJob}
           onClose={handleCloseJobDetails}
           updateJobStatus={updateJobStatus}
+          rejectJob={rejectJob}
           generateContent={generateContent}
           renderDescription={renderDescription}
           formatCompensationType={formatCompensationType}

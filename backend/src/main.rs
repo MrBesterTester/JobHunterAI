@@ -1845,6 +1845,81 @@ async fn get_jobs_by_status(
     Ok(HttpResponse::Ok().json(jobs))
 }
 
+async fn reject_job(
+    pool: web::Data<PgPool>,
+    job_id: web::Path<Uuid>,
+) -> Result<HttpResponse> {
+    let job_id_val = *job_id;
+
+    // 1. Update job status to "rejected"
+    let job = sqlx::query_as::<_, Job>(
+        "UPDATE jobs SET status = 'rejected', updated_at = NOW() WHERE job_id = $1 RETURNING job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, url, filter_reason, extraction_method, raw_data"
+    )
+    .bind(job_id_val)
+    .fetch_optional(pool.get_ref())
+    .await
+    .map_err(actix_web::error::ErrorInternalServerError)?;
+
+    if job.is_none() {
+        return Ok(HttpResponse::NotFound().json("Job not found"));
+    }
+
+    // 2. Get email message_id from email_jobs table
+    let email_job = sqlx::query!(
+        "SELECT message_id, source FROM email_jobs WHERE job_id = $1",
+        job_id_val
+    )
+    .fetch_optional(pool.get_ref())
+    .await
+    .map_err(actix_web::error::ErrorInternalServerError)?;
+
+    if let Some(email_job) = email_job {
+        // 3. Check if this is a Gmail job (source is 'gmail' or not microsoft_email)
+        // Gmail emails have source='gmail' (default value), Microsoft emails have source="microsoft_email"
+        let is_gmail = email_job.source.as_deref() != Some("microsoft_email");
+
+        if is_gmail {
+            // 4. Get Gmail OAuth credentials
+            let oauth_creds = sqlx::query!(
+                "SELECT access_token FROM oauth_credentials WHERE source_id = (SELECT source_id FROM job_sources WHERE source_name = 'gmail' LIMIT 1) LIMIT 1",
+            )
+            .fetch_optional(pool.get_ref())
+            .await
+            .map_err(actix_web::error::ErrorInternalServerError)?;
+
+            if let Some(creds) = oauth_creds {
+                if let Some(access_token) = &creds.access_token {
+                    // 5. Update Gmail labels (best effort - don't fail if this fails)
+                    let client = reqwest::Client::new();
+                    if let Err(e) = update_gmail_labels_for_rejected_job(
+                        &client,
+                        access_token,
+                        &email_job.message_id,
+                    ).await {
+                    log_debug(&format!(
+                        "Warning: Failed to update Gmail labels for job {}: {}. Job rejection still successful.",
+                        job_id_val, e
+                    ));
+                    // Continue - job rejection still succeeds even if label update fails
+                    } else {
+                        log_debug(&format!("Successfully updated Gmail labels for rejected job {}", job_id_val));
+                    }
+                } else {
+                    log_debug(&format!("Warning: No Gmail access token found. Skipping label update."));
+                }
+            } else {
+                log_debug(&format!("Warning: No Gmail OAuth credentials found for job {}. Skipping label update.", job_id_val));
+            }
+        } else {
+            log_debug(&format!("Job {} is from {:?} source, skipping Gmail label update", job_id_val, email_job.source));
+        }
+    } else {
+        log_debug(&format!("Job {} has no associated email, skipping label update", job_id_val));
+    }
+
+    Ok(HttpResponse::Ok().json(job.unwrap()))
+}
+
 // ============================================================================
 // Application Handlers
 // ============================================================================
@@ -3998,6 +4073,150 @@ async fn add_jobop_label(
         return Err(format!("Failed to add label: {} - {}", status, error_text).into());
     }
 
+    Ok(())
+}
+
+/// Get or create the "JobOp-OLD" label in Gmail for archiving rejected jobs
+async fn get_or_create_jobop_old_label(
+    client: &reqwest::Client,
+    access_token: &str,
+) -> std::result::Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    #[derive(Debug, Deserialize)]
+    struct LabelsResponse {
+        labels: Vec<LabelInfo>,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct LabelInfo {
+        id: String,
+        name: String,
+    }
+
+    // First, try to find existing label
+    let url = "https://gmail.googleapis.com/gmail/v1/users/me/labels";
+    let response = client
+        .get(url)
+        .bearer_auth(access_token)
+        .send()
+        .await?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_default();
+        return Err(format!("Failed to fetch labels: {} - {}", status, error_text).into());
+    }
+
+    let labels: LabelsResponse = response.json().await?;
+
+    // Check if "JobOp-OLD" label already exists
+    if let Some(label) = labels.labels.iter().find(|l| l.name == "JobOp-OLD") {
+        log_debug(&format!("Found existing JobOp-OLD label with ID: {}", label.id));
+        return Ok(label.id.clone());
+    }
+
+    // Create new "JobOp-OLD" label
+    log_debug("JobOp-OLD label not found, creating new label");
+    let create_body = serde_json::json!({
+        "name": "JobOp-OLD",
+        "labelListVisibility": "labelShow",
+        "messageListVisibility": "show"
+    });
+
+    let create_response = client
+        .post("https://gmail.googleapis.com/gmail/v1/users/me/labels")
+        .bearer_auth(access_token)
+        .json(&create_body)
+        .send()
+        .await?;
+
+    if !create_response.status().is_success() {
+        let status = create_response.status();
+        let error_text = create_response.text().await.unwrap_or_default();
+        return Err(format!("Failed to create JobOp-OLD label: {} - {}", status, error_text).into());
+    }
+
+    let created_label: LabelInfo = create_response.json().await?;
+    log_debug(&format!("Created new JobOp-OLD label with ID: {}", created_label.id));
+    Ok(created_label.id)
+}
+
+/// Get the "JobOp" label ID from Gmail (must already exist)
+async fn get_jobop_label_id(
+    client: &reqwest::Client,
+    access_token: &str,
+) -> std::result::Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    #[derive(Debug, Deserialize)]
+    struct LabelsResponse {
+        labels: Vec<LabelInfo>,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct LabelInfo {
+        id: String,
+        name: String,
+    }
+
+    let url = "https://gmail.googleapis.com/gmail/v1/users/me/labels";
+    let response = client
+        .get(url)
+        .bearer_auth(access_token)
+        .send()
+        .await?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_default();
+        return Err(format!("Failed to fetch labels: {} - {}", status, error_text).into());
+    }
+
+    let labels: LabelsResponse = response.json().await?;
+
+    // Find "JobOp" label
+    if let Some(label) = labels.labels.iter().find(|l| l.name == "JobOp") {
+        return Ok(label.id.clone());
+    }
+
+    Err("JobOp label not found".into())
+}
+
+/// Update Gmail labels for a rejected job (remove JobOp, add JobOp-OLD)
+async fn update_gmail_labels_for_rejected_job(
+    client: &reqwest::Client,
+    access_token: &str,
+    message_id: &str,
+) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    // Get label IDs
+    let jobop_label_id = get_jobop_label_id(client, access_token).await?;
+    let jobop_old_label_id = get_or_create_jobop_old_label(client, access_token).await?;
+
+    // Modify message labels
+    let url = format!(
+        "https://gmail.googleapis.com/gmail/v1/users/me/messages/{}/modify",
+        message_id
+    );
+
+    let body = serde_json::json!({
+        "addLabelIds": [jobop_old_label_id],
+        "removeLabelIds": [jobop_label_id]
+    });
+
+    let response = client
+        .post(&url)
+        .bearer_auth(access_token)
+        .json(&body)
+        .send()
+        .await?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_default();
+        return Err(format!("Failed to update labels: {} - {}", status, error_text).into());
+    }
+
+    log_debug(&format!(
+        "Updated labels for message {}: removed JobOp, added JobOp-OLD",
+        message_id
+    ));
     Ok(())
 }
 
@@ -8003,6 +8222,7 @@ async fn main() -> std::io::Result<()> {
             // Job routes with {id} parameter
             .route("/api/jobs/{id}", web::get().to(get_job))
             .route("/api/jobs/{id}/status", web::put().to(update_job_status))
+            .route("/api/jobs/{id}/reject", web::put().to(reject_job))
             .route("/api/jobs/{id}/score", web::get().to(get_job_score_handler))
             .route("/api/jobs/{id}/calculate-score", web::post().to(calculate_single_job_score))
             .route("/api/jobs/status/{status}", web::get().to(get_jobs_by_status))
