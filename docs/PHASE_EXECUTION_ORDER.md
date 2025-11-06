@@ -2,7 +2,7 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Phase Execution Order - JobHunter Project](#phase-execution-order---jobhunter-project)
-  - [🎉 **CORE FEATURE COMPLETENESS ACHIEVED**](#-core-feature-completeness-achieved)
+  - [🎯 **CORE WORKFLOWS COMPLETE - EMAIL MANAGEMENT REFINEMENTS REQUIRED**](#-core-workflows-complete---email-management-refinements-required)
   - [⚠️ Important Notice](#-important-notice)
   - [📊 Visual Dependency Chain](#-visual-dependency-chain)
   - [✅ Completed Phases (In Execution Order)](#-completed-phases-in-execution-order)
@@ -19,7 +19,8 @@
     - [TRACKING: Manage Applications](#tracking-manage-applications)
     - [ADVANCED: Nice-to-Have Features](#advanced-nice-to-have-features)
   - [🎯 Recommended Next Steps](#-recommended-next-steps)
-    - [Immediate: Start Using The Application](#immediate-start-using-the-application)
+    - [Required: Phase 2.9 and 2.8.1 Implementation](#required-phase-29-and-281-implementation)
+    - [After Completion: Start Using The Application](#after-completion-start-using-the-application)
     - [Short Term (Optional Enhancements)](#short-term-optional-enhancements)
     - [Long Term (3-6 Months)](#long-term-3-6-months)
   - [📚 Related Documentation](#-related-documentation)
@@ -29,15 +30,15 @@
 
 # Phase Execution Order - JobHunter Project
 
-**Last Updated**: 2025-11-06 14:05:33 PST ✅ **CORE SOFTWARE FEATURE COMPLETE**
+**Last Updated**: 2025-11-06 14:13:25 PST ⏳ **Phase 2.8.1/2.9 Required**
 
 ---
 
-## 🎉 **CORE FEATURE COMPLETENESS ACHIEVED**
+## 🎯 **CORE WORKFLOWS COMPLETE - EMAIL MANAGEMENT REFINEMENTS REQUIRED**
 
-**Status**: ✅ **All PRD requirements implemented and validated (Phases 1-4 + Phase 5.1)**
+**Status**: ✅ **Core PRD workflows implemented** | ⏳ **Phase 2.8.1/2.9 Required (3-4 hours)**
 
-The software is now **feature complete** for all core job hunting workflows defined in the Product Requirements Document (PRD). The only remaining work is Phase 5 advanced features (5.2-5.5), which are enhancements, not core requirements.
+The software implements all core job hunting workflows defined in the Product Requirements Document (PRD). Email management refinements (Phase 2.8.1 and 2.9) are **required** to complete the email workflow. Phase 5 advanced features (5.2-5.5) remain optional enhancements.
 
 ---
 
@@ -58,14 +59,14 @@ This document shows the **correct execution sequence** based on actual feature d
 └──────────────────────┬──────────────────────────────────────┘
                        │
 ┌──────────────────────▼──────────────────────────────────────┐
-│  Layer 2: Job Intake ✅ COMPLETE (with optional enhancements)│
+│  Layer 2: Job Intake ⏳ REFINEMENTS REQUIRED                │
 │  • Gmail Integration ✅ (base Phase 2)                      │
 │  • Phase 4.1: RapidAPI JSearch ✅                           │
 │  • Phase 4.2: Automatic Pagination ✅                       │
 │  • Phase 2.7: Microsoft Email Source ✅                     │
 │  • Phase 2.8: MS Email Auto-Archive ✅                      │
-│  • Phase 2.8.1: MS Folder Refinement 📋 (planned)           │
-│  • Phase 2.9: Gmail Label Management 📋 (planned)           │
+│  • Phase 2.8.1: MS Folder Refinement ⚠️ REQUIRED           │
+│  • Phase 2.9: Gmail Label Management ⚠️ REQUIRED           │
 └──────────────────────┬──────────────────────────────────────┘
                        │
 ┌──────────────────────▼──────────────────────────────────────┐
@@ -95,7 +96,7 @@ This document shows the **correct execution sequence** based on actual feature d
 │  • Phase 5.2-5.5: Advanced Features 📋 (optional)           │
 └─────────────────────────────────────────────────────────────┘
 
-🎉 ALL CORE WORKFLOWS COMPLETE (Layers 1-6 + Phase 5.1)
+⏳ Core workflows complete, Phase 2.8.1/2.9 required (3-4 hours)
 ```
 
 ---
@@ -115,14 +116,14 @@ This document shows the **correct execution sequence** based on actual feature d
 | 9 | Phase 2.7 | Microsoft Email Source | ✅ 2025-11-04 | sam@samkirk.com integration (18/21 E2E tests) |
 | 10 | Phase 5.1 | Content Refresh | ✅ 2025-11-04 | Refresh descriptions feature (BUG-0007 fixed) |
 | 11 | Phase 2.8 | MS Email Auto-Archive | ✅ 2025-11-05 | Auto-archive to JobOps-OLD folder |
-| 12 | Phase 2.8.1 | MS Folder Refinement | 📋 Planned | Align MS folder behavior with Gmail (30-45 min) |
-| 13 | Phase 2.9 | Gmail Label Management | 📋 Planned | JobOps-OLD label for rejected jobs (2-3 hours) |
+| 12 | Phase 2.8.1 | MS Folder Refinement | ⚠️ **REQUIRED** | Align MS folder behavior with Gmail (30-45 min) |
+| 13 | Phase 2.9 | Gmail Label Management | ⚠️ **REQUIRED** | JobOps-OLD label for rejected jobs (2-3 hours) |
 
-**Total Completed: 11 phases** ✅ **ALL CORE PRD REQUIREMENTS COMPLETE**
+**Total Completed: 11 phases** ✅ **Core workflows complete**
 
-**Planned: Phase 2.8.1 and 2.9** (email management enhancements)
+**⚠️ Required: Phase 2.8.1 and 2.9** (email management refinements, 3-4 hours total)
 
-**Remaining: Phase 5.2-5.5 only** (optional advanced features)
+**Optional: Phase 5.2-5.5** (advanced features)
 
 ---
 
@@ -211,12 +212,25 @@ If we were to reorganize by feature group instead of historical phase numbers:
 
 ## 🎯 Recommended Next Steps
 
-**🎉 All Core Workflows Complete!** The software is **feature complete** for all PRD requirements (Phases 1-4 + Phase 5.1).
+**⚠️ Email Management Refinements Required** (3-4 hours total)
 
-### Immediate: Start Using The Application
-**The system is production-ready for real job searching!**
+### Required: Phase 2.9 and 2.8.1 Implementation
 
-All core features are implemented and validated:
+**Priority 1: Phase 2.9 - Gmail Label Management** (2-3 hours):
+- Add "Reject" button to job cards
+- Implement Gmail label management (JobOps → JobOps-OLD)
+- Real-time label updates on rejection
+- Testing: 6 unit tests + 4 E2E tests
+
+**Priority 2: Phase 2.8.1 - Microsoft Folder Refinement** (30-45 min):
+- Fix Phase 2.8 aggressive archival behavior
+- Align Microsoft folder management with Gmail approach
+- Implement unified rejection endpoint
+
+### After Completion: Start Using The Application
+**The system will be fully production-ready for real job searching!**
+
+Core features already implemented:
 - ✅ Email intake from Gmail and Microsoft (sam@samkirk.com)
 - ✅ RapidAPI JSearch for multi-board job search (30+ boards)
 - ✅ LLM-based job extraction and scoring
@@ -275,4 +289,4 @@ This document should be updated whenever:
 - Dependencies change (update dependency chain)
 - New dependencies are discovered (document here)
 
-**Last Reviewed**: 2025-11-06 by Claude Code ✅ **Core software feature complete + Phase 2.8.1/2.9 planning**
+**Last Reviewed**: 2025-11-06 by Claude Code ⏳ **Phase 2.8.1/2.9 required for email management completion**

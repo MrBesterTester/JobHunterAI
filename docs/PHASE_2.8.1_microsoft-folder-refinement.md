@@ -23,8 +23,8 @@
 
 # Phase 2.8.1: Microsoft Folder Behavior Refinement
 
-**Status**: 📋 **Planned** (Depends on Phase 2.9 Gmail approach decision)
-**Priority**: High (aligns Microsoft with Gmail behavior)
+**Status**: 📋 **REQUIRED** - Ready for Implementation (After Phase 2.9)
+**Priority**: ⚠️ **HIGH** (Required for complete email management)
 **Estimated Effort**: 30-45 minutes
 **Dependencies**:
 - ✅ Phase 2.8 (Microsoft Folder Management) - COMPLETE

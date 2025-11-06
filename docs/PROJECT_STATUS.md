@@ -2,15 +2,15 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [JobHunter Project Status](#jobhunter-project-status)
-  - [🎉 **FEATURE COMPLETENESS ACHIEVED**](#-feature-completeness-achieved)
+  - [🎯 **CORE WORKFLOWS COMPLETE - EMAIL MANAGEMENT REFINEMENTS REQUIRED**](#-core-workflows-complete---email-management-refinements-required)
   - [⚠️ Important: Phase Execution Order](#-important-phase-execution-order)
   - [Current State](#current-state)
   - [Recommended Next Steps](#recommended-next-steps)
     - [Immediate: Begin Using The Application](#immediate-begin-using-the-application)
-    - [Optional: Email Management Enhancements (Phase 2.8.1 & 2.9)](#optional-email-management-enhancements-phase-281--29)
+    - [⚠️ Required: Email Management Refinements (Phase 2.8.1 & 2.9)](#-required-email-management-refinements-phase-281--29)
     - [Optional: Phase 5.2+ Advanced Features](#optional-phase-52-advanced-features)
     - [✅ Recently Completed](#-recently-completed)
-    - [📋 Planned Next (Optional Enhancements)](#-planned-next-optional-enhancements)
+    - [📋 Planned Next](#-planned-next)
   - [Development Progress by Execution Order](#development-progress-by-execution-order)
     - [✅ Layer 1: Foundation (Complete)](#-layer-1-foundation-complete)
     - [✅ Layer 2: Job Intake (Complete)](#-layer-2-job-intake-complete)
@@ -39,17 +39,18 @@
 
 # JobHunter Project Status
 
-**Last Updated**: 2025-11-06 14:05:33 PST (Phase 2.9 and 2.8.1 planning documents created)
+**Last Updated**: 2025-11-06 14:13:25 PST (Phase 2.9 and 2.8.1 marked as REQUIRED)
 
 ---
 
-## 🎉 **FEATURE COMPLETENESS ACHIEVED**
+## 🎯 **CORE WORKFLOWS COMPLETE - EMAIL MANAGEMENT REFINEMENTS REQUIRED**
 
-**Status**: ✅ **100% of Core PRD Requirements Implemented (Phases 1-4 + Phase 5.1)**
+**Status**: ✅ **Core PRD Requirements Implemented** | ⏳ **Email Management Refinements In Progress**
 
-The software is now **production-ready** and **feature complete** for all core job hunting workflows defined in the Product Requirements Document (PRD). All 6 dependency layers plus content refresh are fully implemented, tested, and validated.
+The software implements all core job hunting workflows defined in the Product Requirements Document (PRD). All 6 dependency layers plus content refresh are fully implemented, tested, and validated.
 
-**Optional Enhancements Available**: Phase 2.8.1/2.9 (email management) and Phase 5.2+ (advanced features)
+**Required Next Steps**: Phase 2.8.1/2.9 (email management refinements) - 3-4 hours total
+**Optional Enhancements Available**: Phase 5.2+ (advanced features)
 
 ---
 
@@ -63,9 +64,9 @@ The software is now **production-ready** and **feature complete** for all core j
 
 ## Current State
 
-**Development Stage**: ✅ **Core Feature Complete - Production Ready**
+**Development Stage**: ⏳ **Email Management Refinements Required**
 
-**Functional Completeness**: 🎯 **100% of Core PRD Requirements Implemented**
+**Functional Completeness**: 🎯 **Core PRD Complete** | ⏳ **Phase 2.8.1/2.9 Required (3-4 hours)**
 
 **Testing Infrastructure**: ✅ **EXCELLENT**
 - Backend Tests: 158/158 passing (100%)
@@ -98,11 +99,11 @@ The software is now **production-ready** and **feature complete** for all core j
 
 ## Recommended Next Steps
 
-**🎉 CORE SOFTWARE IS FEATURE COMPLETE!** The application implements 100% of PRD requirements.
+**⚠️ REQUIRED: Email Management Refinements (Phase 2.8.1 & 2.9)**
 
-**Current Status**: ✅ All 6 dependency layers + Phase 5.1 complete and validated with comprehensive tests.
+**Current Status**: ✅ Core workflows complete | ⏳ Email management refinements required (3-4 hours)
 
-**Ready for Production Use**: Start using the application for real job searching!
+**Priority**: Implement Phase 2.9 first, then Phase 2.8.1 to complete email management features.
 
 ### Immediate: Begin Using The Application
 
@@ -120,27 +121,27 @@ All core features are fully functional:
 - ✅ Follow-up email system
 - ✅ Content refresh feature (regenerate descriptions on-demand)
 
-### Optional: Email Management Enhancements (Phase 2.8.1 & 2.9)
+### ⚠️ Required: Email Management Refinements (Phase 2.8.1 & 2.9)
 
-**Status**: 📋 **Planned** - Small workflow improvements (3-4 hours total)
+**Status**: 📋 **REQUIRED** - Complete email management workflow (3-4 hours total)
 **Documents**: [PHASE_2.8.1](PHASE_2.8.1_microsoft-folder-refinement.md), [PHASE_2.9](PHASE_2.9_gmail-label-management.md)
 
-**Phase 2.9: Gmail Label Management** (2-3 hours):
-- **User Benefit**: Enable bulk cleanup of rejected job emails via Gmail's JobOps-OLD label
+**Phase 2.9: Gmail Label Management** (2-3 hours) - ⭐ **IMPLEMENT FIRST**:
+- **Required Feature**: Enable user-controlled cleanup of rejected job emails via Gmail's JobOps-OLD label
 - **Implementation**: Add "Reject" button that automatically updates Gmail labels
 - **Approach**: Conservative - ONLY rejected jobs get archived label
 - **Testing**: 6 unit tests + 4 E2E tests
 - **Key Feature**: Real-time label updates when user clicks "Reject"
 
-**Phase 2.8.1: Microsoft Folder Refinement** (30-45 minutes):
-- **User Benefit**: Align Microsoft email behavior with Gmail approach
+**Phase 2.8.1: Microsoft Folder Refinement** (30-45 minutes) - **IMPLEMENT SECOND**:
+- **Required Fix**: Align Microsoft email behavior with Gmail approach
+- **Current Problem**: Phase 2.8 archives ALL emails immediately (too aggressive)
 - **Fix**: Keep emails in JobOps folder until user explicitly rejects them
-- **Current Issue**: Phase 2.8 archives ALL emails immediately (too aggressive)
 - **Implementation**: Remove immediate archival, add rejection trigger
 - **Dependency**: Implement after Phase 2.9 for unified rejection endpoint
 
-**Priority**: Optional but recommended for improved inbox management workflow
-**Value**: Better control over email cleanup, consistent behavior across Gmail and Microsoft sources
+**Priority**: ⚠️ **HIGH - REQUIRED** for complete email management workflow
+**Value**: Essential user control over email cleanup, consistent behavior across Gmail and Microsoft sources
 
 ### Optional: Phase 5.2+ Advanced Features
 
@@ -164,8 +165,8 @@ All core features are fully functional:
 
 ### ✅ Recently Completed
 
-✅ **ALL CORE PRD REQUIREMENTS COMPLETE** (2025-11-05):
-- **Phase 2.8.1 & 2.9 PLANNING** (2025-11-06): Email management enhancements planned
+✅ **CORE PRD REQUIREMENTS COMPLETE** - Email Management Refinements Required:
+- **Phase 2.8.1 & 2.9 PLANNING** (2025-11-06): Email management refinements planned (REQUIRED)
 - **Phase 2.8** (2025-11-05): Microsoft Email Auto-Archive - JobOps-OLD folder management
 - **Phase 2.7** (2025-11-04): Microsoft Email Source - Full integration with bug fixes
 - **Phase 5.1** (2025-11-04): Content Refresh - "Refresh Descriptions" feature
@@ -175,13 +176,13 @@ All core features are fully functional:
 
 **See [PROJECT_HISTORY.md](PROJECT_HISTORY.md) for detailed completion notes.**
 
-### 📋 Planned Next (Optional Enhancements)
+### 📋 Planned Next
 
-**Email Management Improvements** (3-4 hours total):
-1. **Phase 2.9**: Gmail Label Management (2-3 hours) - JobOps-OLD label for rejected jobs
-2. **Phase 2.8.1**: Microsoft Folder Refinement (30-45 min) - Align with Gmail behavior
+**⚠️ REQUIRED: Email Management Refinements** (3-4 hours total):
+1. **Phase 2.9**: Gmail Label Management (2-3 hours) - ⭐ **IMPLEMENT FIRST**
+2. **Phase 2.8.1**: Microsoft Folder Refinement (30-45 min) - **IMPLEMENT SECOND**
 
-**Advanced Features** (130-158 hours):
+**Optional: Advanced Features** (130-158 hours):
 - Phase 5.2-5.5: Analytics, Automation, UX, Performance enhancements
 
 ---
@@ -606,7 +607,7 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 
 ---
 
-**Last Updated**: 2025-11-06 14:05:33 PST (Phase 2.9 and 2.8.1 planning documents created)
+**Last Updated**: 2025-11-06 14:13:25 PST (Phase 2.9 and 2.8.1 marked as REQUIRED)
 
 **Major Updates in This Revision**:
 - **Phase 2.9 and 2.8.1 Planning Documents Created** (2025-11-06 14:05:33 PST)
