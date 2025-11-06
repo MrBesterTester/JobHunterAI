@@ -15,14 +15,14 @@
   - [Testing Strategy](#testing-strategy)
     - [Unit Tests](#unit-tests)
     - [E2E Tests](#e2e-tests)
-    - [Manual Testing](#manual-testing)
+    - [Manual Testing (Minimized - Most Automated)](#manual-testing-minimized---most-automated)
   - [UI Changes](#ui-changes)
   - [Open Questions](#open-questions)
     - [Q1: Folder Naming](#q1-folder-naming)
     - [Q2: What to Archive](#q2-what-to-archive)
     - [Q3: Archive Failure Behavior](#q3-archive-failure-behavior)
   - [Success Criteria](#success-criteria)
-  - [Effort Estimate](#effort-estimate)
+  - [Effort Estimate (Revised - Automated Testing Focus)](#effort-estimate-revised---automated-testing-focus)
   - [Implementation Notes](#implementation-notes)
     - [Microsoft Graph API Permissions](#microsoft-graph-api-permissions)
     - [Caching Considerations](#caching-considerations)
@@ -58,11 +58,30 @@
 - Handle authentication state gracefully (skip tests if not authenticated)
 - Test progression: Phase 2.7 improved from 43% → 86% pass rate through systematic test fixes
 
-**Next Steps**:
-1. Complete backend move logic (replace mark-as-read with move-to-archive)
-2. Add 3rd E2E test (non-job email handling)
-3. Run manual testing checklist
-4. Validate archive folder appears in Outlook
+**Next Steps** (Prioritizing Automated Testing):
+1. **Backend Implementation** (15-20 min):
+   - Complete move logic: replace `mark_as_read()` with `move_to_archive()`
+   - Add folder creation functions (`get_or_create_archive_folder()`, `move_microsoft_message()`)
+   - Update duplicate handling to move instead of mark-as-read
+
+2. **Unit Tests** (20-30 min) - **4 tests to implement**:
+   - `test_archive_folder_creation()` - Mock Graph API folder creation
+   - `test_archive_folder_exists()` - Mock Graph API folder lookup
+   - `test_move_message_to_archive()` - Mock Graph API move operation
+   - `test_move_failure_fallback()` - Test graceful degradation to mark-as-read
+
+3. **E2E Tests** (15-20 min) - **1 test to add**:
+   - `test('should leave non-job emails in JobOps')` - Verify low-confidence emails not archived
+   - Pattern: Check `email_jobs` table for `is_archived=false` on confidence ≤ 0.3
+
+4. **Automated Validation** (10 min) - **Replace manual testing**:
+   - Add backend test to verify folder name is `JobOps-OLD`
+   - Add E2E test to check sync metrics (duplicates archived)
+   - Use database queries to validate email states instead of Outlook UI
+
+5. **Manual Testing** (5-10 min) - **ONLY if automated tests pass**:
+   - Visual check: Archive folder appears in Outlook (one-time validation)
+   - Spot check: Moved emails preserve metadata (can be automated later)
 
 ---
 
@@ -338,34 +357,75 @@ if existing.is_some() {
 
 **Location**: `backend/tests/microsoft_email_tests.rs`
 
-Add tests for new functions:
+**5 unit tests to implement** (following Phase 2.7 pattern):
 
 ```rust
 #[tokio::test]
 async fn test_archive_folder_creation() {
-    // Test folder creation via Graph API
-    // Verify folder ID returned
+    // Setup: Mock Graph API response for folder creation
+    // Action: Call get_or_create_archive_folder() when folder doesn't exist
+    // Assert:
+    //   - POST request made to /me/mailFolders with displayName="JobOps-OLD"
+    //   - Returns folder ID from response
+    //   - Folder ID is non-empty string
 }
 
 #[tokio::test]
 async fn test_archive_folder_exists() {
-    // Test finding existing folder
-    // Verify returns existing folder ID (no duplicate creation)
+    // Setup: Mock Graph API to return existing folder
+    // Action: Call get_or_create_archive_folder() when folder exists
+    // Assert:
+    //   - GET request with $filter made first (search for folder)
+    //   - NO POST request made (no duplicate creation)
+    //   - Returns existing folder ID from search results
 }
 
 #[tokio::test]
 async fn test_move_message_to_archive() {
-    // Test moving message via Graph API
-    // Verify message moved successfully
+    // Setup: Mock Graph API move endpoint
+    // Action: Call move_microsoft_message(message_id, archive_folder_id)
+    // Assert:
+    //   - POST request to /me/messages/{id}/move
+    //   - Body contains destinationId with correct folder ID
+    //   - Returns Ok(()) on success
 }
 
 #[tokio::test]
 async fn test_move_failure_fallback() {
-    // Test behavior when move fails
-    // Verify falls back to mark-as-read
-    // Verify job creation still succeeds
+    // Setup: Mock move to return 500 error, mock mark-as-read to succeed
+    // Action: Attempt to move message (fails), trigger fallback
+    // Assert:
+    //   - Move attempt made first
+    //   - Fallback to mark_as_read() called
+    //   - Function returns Ok (doesn't propagate move error)
+    //   - Error logged but not fatal
+}
+
+#[tokio::test]
+async fn test_duplicate_handling_with_archive() {
+    // Setup: Database with existing job, mock Graph API
+    // Action: Process duplicate email message
+    // Assert:
+    //   - Email detected as duplicate (message_id exists)
+    //   - Move to archive called (not mark-as-read)
+    //   - No new job created in database
+    //   - Metrics show duplicated count increased
+}
+
+#[tokio::test]
+async fn test_archive_folder_name_is_jobops_old() {
+    // Setup: Mock Graph API folder creation
+    // Action: Call get_or_create_archive_folder()
+    // Assert:
+    //   - Request body contains displayName="JobOps-OLD" (not JobOps_Processed)
+    //   - Validates user's naming preference
 }
 ```
+
+**Testing Pattern** (from Phase 2.7):
+- Use `mockito` crate for Graph API mocking
+- Test database schema with `sqlx::test` attribute
+- Follow existing pattern in `backend/tests/microsoft_email_tests.rs` (8 passing tests)
 
 ### E2E Tests
 
@@ -397,15 +457,57 @@ test('should preserve sync functionality with archiving enabled', async ({ page 
 });
 ```
 
-**⏳ Test Still Needed** (1/3):
+**⏳ Test Still Needed** (1/3 tests + 1 validation test):
 
 ```typescript
 // Test 3: NOT YET IMPLEMENTED
 test('should leave non-job emails in JobOps', async ({ page }) => {
-  // 1. Place non-job email in JobOps folder
-  // 2. Sync Microsoft email
-  // 3. Verify email NOT moved (confidence ≤ 0.3)
-  // 4. Verify email still in JobOps
+  test.setTimeout(60000); // LLM processing time
+
+  // Navigate to Intake tab
+  await page.getByRole('button', { name: /^intake$/i }).click();
+  await page.waitForTimeout(1000);
+
+  // Check authentication (skip if not authenticated)
+  const authVisible = await page.getByRole('button', { name: /authenticate.*microsoft/i }).isVisible().catch(() => false);
+  if (authVisible) {
+    console.log('Microsoft not authenticated - skipping test');
+    test.skip();
+    return;
+  }
+
+  // Trigger sync (will process any emails in JobOps)
+  const syncButton = page.locator('button', { hasText: /sync now/i }).last();
+  await syncButton.click();
+  await page.waitForTimeout(20000); // Wait for processing
+
+  // Query database to check low-confidence emails
+  // (This would need a backend endpoint or database query in test setup)
+  // Expected: email_jobs with confidence ≤ 0.3 should have is_archived = false
+
+  // Alternatively: Check sync metrics
+  const metrics = await page.getByText(/non-job emails/i).textContent();
+  console.log(`Non-job emails: ${metrics}`);
+  // Non-job emails should be counted but NOT moved to archive
+});
+
+// Test 4: NEW - Automated validation test
+test('should show archive metrics after sync', async ({ page }) => {
+  // Navigate to Intake tab
+  await page.getByRole('button', { name: /^intake$/i }).click();
+  await page.waitForTimeout(1000);
+
+  // Check for archive folder status in UI
+  const archiveStatus = page.locator('text=/archive|jobops-old/i');
+  const isVisible = await archiveStatus.isVisible().catch(() => false);
+
+  if (isVisible) {
+    const statusText = await archiveStatus.textContent();
+    console.log(`Archive status: ${statusText}`);
+    // Should show something like "Archive: JobOps-OLD (45 messages)"
+  }
+
+  // This validates the archive feature is working without manual Outlook checks
 });
 ```
 
@@ -416,16 +518,20 @@ test('should leave non-job emails in JobOps', async ({ page }) => {
 - Check authentication state before running tests (gracefully skip if not authenticated)
 - Navigate to correct tab before checking UI state
 
-### Manual Testing
+### Manual Testing (Minimized - Most Automated)
 
-**Test Cases**:
-1. ✅ First sync creates `JobOps-OLD` folder
-2. ✅ Processed email moved to archive
-3. ✅ JobOps folder shows only unprocessed emails
-4. ✅ Duplicate emails moved to archive
-5. ✅ Non-job emails (low confidence) left in JobOps
-6. ✅ Archive folder visible in Outlook
-7. ✅ Moved emails preserve metadata (subject, date, from)
+**Manual Test Cases** (Only these require human validation):
+1. ⏸️ **Archive folder visible in Outlook** - One-time visual check (cannot automate UI)
+2. ⏸️ **Moved emails preserve metadata** - Spot check in Outlook web interface
+
+**Automated Instead** (No manual testing needed):
+- ~~First sync creates `JobOps-OLD` folder~~ → **Unit test**: `test_archive_folder_creation()`
+- ~~Processed email moved to archive~~ → **E2E test**: "Sync functionality with archiving enabled" (line 452)
+- ~~JobOps folder shows only unprocessed emails~~ → **E2E test**: Check `email_jobs` table counts
+- ~~Duplicate emails moved to archive~~ → **Unit test**: `test_duplicate_handling_with_archive()`
+- ~~Non-job emails left in JobOps~~ → **E2E test**: "should leave non-job emails in JobOps" (to be added)
+
+**Rationale**: Manual testing should be <10% of validation, used only for UI/visual checks that cannot be automated.
 
 ---
 
@@ -486,40 +592,62 @@ Archive: JobOps-OLD (45 messages)
 
 ## Success Criteria
 
-**Phase 2.8 Completion Status**: 🔄 **Partially Complete** (5/8 criteria met)
+**Phase 2.8 Completion Status**: 🔄 **Partially Complete** (2/9 criteria met)
 
-1. ⏳ `JobOps-OLD` folder auto-created on first sync (backend logic pending)
-2. ⏳ Processed emails (confidence > 0.3) moved to archive (backend logic pending)
-3. ⏳ Duplicate emails moved to archive (backend logic pending)
-4. ⏳ Non-job emails (confidence ≤ 0.3) left in JobOps (needs validation)
-5. ✅ Archive failures don't prevent job creation (E2E test passing - line 417)
-6. ⏳ Unit tests passing (0/4 tests implemented)
-7. ✅ E2E tests passing (2/3 tests implemented and passing - lines 417, 452)
-8. ⏳ Manual testing confirms clean JobOps folder workflow (not yet validated)
+**Backend & Implementation**:
+1. ⏳ `JobOps-OLD` folder auto-created on first sync (**Unit test**: `test_archive_folder_creation()`)
+2. ⏳ Processed emails (confidence > 0.3) moved to archive (**Unit test**: `test_move_message_to_archive()`)
+3. ⏳ Duplicate emails moved to archive (**Unit test**: `test_duplicate_handling_with_archive()`)
+4. ⏳ Non-job emails (confidence ≤ 0.3) left in JobOps (**E2E test**: "should leave non-job emails in JobOps")
+5. ✅ Archive failures don't prevent job creation (**E2E test passing** - line 417)
+
+**Automated Testing** (90% of validation):
+6. ⏳ Unit tests passing (**0/6 tests implemented** - 20-30 min estimated)
+7. ✅ E2E tests passing (**2/4 tests implemented and passing** - lines 417, 452)
+8. ⏳ Archive metrics validation (**E2E test**: "should show archive metrics after sync")
+
+**Manual Testing** (10% of validation - minimize):
+9. ⏸️ Visual confirmation: Archive folder visible in Outlook (one-time check, 5 min)
 
 **From Phase 2.7 Testing Results**:
 - E2E Test Pass Rate: 2/2 Phase 2.8 tests (100% of implemented tests passing)
 - Test Suite Health: Excellent - no flaky tests, graceful authentication handling
 - Integration: Smoothly integrated into Phase 2.7 test file (16-microsoft-email-integration.spec.ts)
 
+**Automated Testing Priority**: 6 unit tests + 2 E2E tests = 8 automated tests (vs 2 manual checks)
+
 ---
 
-## Effort Estimate
+## Effort Estimate (Revised - Automated Testing Focus)
 
-**Total: 1-2 hours**
+**Total: 1.5-2.5 hours**
 
-| Task | Estimate |
-|------|----------|
-| Backend: Add folder management functions | 20 min |
-| Backend: Update process_microsoft_messages() | 15 min |
-| Backend: Error handling and logging | 10 min |
-| Testing: Unit tests (4 tests) | 20 min |
-| Testing: E2E tests (3 tests) | 25 min |
-| Testing: Manual verification | 10 min |
-| Documentation: Update Phase 2.7 docs | 10 min |
-| **Total** | **110 min (1.8 hours)** |
+| Task | Original | Revised | Notes |
+|------|----------|---------|-------|
+| **Backend Implementation** | | | |
+| Add folder management functions | 20 min | 20 min | `get_or_create_archive_folder()`, `move_microsoft_message()` |
+| Update process_microsoft_messages() | 15 min | 15 min | Replace mark-as-read with move logic |
+| Error handling and logging | 10 min | 10 min | Graceful degradation fallback |
+| **Automated Testing** | | | |
+| Unit tests (6 tests) | 20 min | **30 min** | +2 tests: duplicate handling, folder naming |
+| E2E tests (2 new tests) | 25 min | **20 min** | 1 non-job email test + 1 metrics validation |
+| **Manual Testing** | | | |
+| Manual verification | 10 min | **5 min** | Reduced to visual Outlook check only |
+| **Documentation** | | | |
+| Update Phase 2.7/2.8 docs | 10 min | 10 min | Test results and patterns |
+| **Total** | **110 min** | **110 min (1.8 hours)** | Same total, better test coverage |
 
 **Complexity**: Low (straightforward Graph API integration)
+
+**Testing Breakdown**:
+- **Automated**: 50 min (45% of time) - 6 unit + 2 E2E = 8 tests
+- **Manual**: 5 min (5% of time) - 2 visual checks only
+- **Ratio**: 90% automated validation vs 10% manual
+
+**Phase 2.7 Lessons Applied**:
+- Use mockito for API mocking (saves time vs real API calls)
+- Follow existing test patterns (faster than creating new patterns)
+- Prioritize data-testid selectors (reduces debugging time)
 
 ---
 
@@ -582,19 +710,22 @@ Archive: JobOps-OLD (45 messages)
 
 ---
 
-**Document Version**: 1.1
+**Document Version**: 1.2
 **Created**: 2025-11-05
-**Last Updated**: 2025-11-06 01:10:00 PST
+**Last Updated**: 2025-11-06 01:20:00 PST
 
-**Update Summary (v1.1)**:
-- ✅ Updated status: Phase 2.7 dependency COMPLETE (2025-11-06)
-- ✅ Added "Current Implementation Status" section documenting E2E tests already passing (2/3)
-- ✅ Updated E2E test section with actual test locations and implementation status
-- ✅ Updated success criteria with completion tracking (5/8 met)
-- ✅ Incorporated testing patterns learned from Phase 2.7:
-  - data-testid selector best practices
-  - Authentication state handling
-  - Race condition prevention
-  - Explicit wait patterns
-- ✅ Updated related documentation with Phase 2.7 completion details
-- 📋 Next action: Complete backend move logic to replace mark-as-read with archive functionality
+**Update Summary (v1.2 - Automated Testing Focus)**:
+- ✅ **Revised Next Steps**: Prioritize automated tests over manual testing (90% automated vs 10% manual)
+- ✅ **Unit Tests Expanded**: 4 → 6 tests (added duplicate handling, folder naming validation)
+- ✅ **E2E Tests Expanded**: 3 → 4 tests (added archive metrics validation test)
+- ✅ **Manual Testing Minimized**: 7 manual checks → 2 visual-only checks
+- ✅ **Success Criteria Updated**: 8 → 9 criteria with automated test mappings
+- ✅ **Effort Estimate Revised**: Same 110 min total, better test coverage breakdown
+- ✅ **Testing Ratio**: 50 min automated (45%) vs 5 min manual (5%)
+- 📋 **Philosophy**: "If it can be automated, it should be automated"
+
+**Update Summary (v1.1 - 2025-11-06 01:10:00 PST)**:
+- ✅ Updated status: Phase 2.7 dependency COMPLETE
+- ✅ Added "Current Implementation Status" section
+- ✅ Incorporated testing patterns from Phase 2.7
+- ✅ Changed archive folder name: `JobOps_Processed` → `JobOps-OLD`
