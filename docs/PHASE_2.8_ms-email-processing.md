@@ -68,14 +68,14 @@
 
 ## Overview
 
-Automatically move processed Microsoft emails from the `JobOps` folder to an archive folder (`JobOps_Processed`) after successful job extraction. This keeps the active JobOps folder clean and provides a clear visual indicator of which emails still need attention.
+Automatically move processed Microsoft emails from the `JobOps` folder to an archive folder (`JobOps-OLD`) after successful job extraction. This keeps the active JobOps folder clean and provides a clear visual indicator of which emails still need attention.
 
 **User Workflow**:
 1. Email arrives at `sam@samkirk.com` with job opportunity
 2. User moves email to `JobOps` folder (manual triage)
 3. User clicks "Sync Now" in JobHunter
 4. System processes email → LLM extracts job data
-5. **NEW**: System automatically moves email to `JobOps_Processed` folder
+5. **NEW**: System automatically moves email to `JobOps-OLD` folder
 6. JobOps folder remains clean with only unprocessed emails
 
 ---
@@ -98,7 +98,7 @@ Automatically move processed Microsoft emails from the `JobOps` folder to an arc
 
 ## Goals
 
-1. **Automatic Archiving**: Move processed emails to `JobOps_Processed` folder
+1. **Automatic Archiving**: Move processed emails to `JobOps-OLD` folder
 2. **Folder Management**: Auto-create archive folder if it doesn't exist
 3. **Clean Workflow**: JobOps folder only shows unprocessed emails
 4. **Audit Trail**: All processed emails preserved in archive
@@ -111,7 +111,7 @@ Automatically move processed Microsoft emails from the `JobOps` folder to an arc
 ### Functional Requirements
 
 **FR-1: Archive Folder Creation**
-- System checks for `JobOps_Processed` folder on startup/first sync
+- System checks for `JobOps-OLD` folder on startup/first sync
 - If not found, create folder at root level of mailbox
 - Store folder ID in memory for subsequent moves
 
@@ -121,9 +121,9 @@ Automatically move processed Microsoft emails from the `JobOps` folder to an arc
 - Archive emails where confidence > 0.3 (real job opportunities)
 
 **FR-3: Filtering Behavior**
-- **Processed Jobs** (confidence > 0.3): Move to `JobOps_Processed`
+- **Processed Jobs** (confidence > 0.3): Move to `JobOps-OLD`
 - **Non-Jobs** (confidence ≤ 0.3): Leave in JobOps for manual review
-- **Duplicates**: Move to `JobOps_Processed` (already in system)
+- **Duplicates**: Move to `JobOps-OLD` (already in system)
 - **Processing Errors**: Leave in JobOps (requires user attention)
 
 **FR-4: Error Handling**
@@ -155,10 +155,10 @@ Automatically move processed Microsoft emails from the `JobOps` folder to an arc
 ```
 POST https://graph.microsoft.com/v1.0/me/mailFolders
 Body: {
-  "displayName": "JobOps_Processed",
+  "displayName": "JobOps-OLD",
   "isHidden": false
 }
-Response: { "id": "AAMkA...", "displayName": "JobOps_Processed", ... }
+Response: { "id": "AAMkA...", "displayName": "JobOps-OLD", ... }
 ```
 
 **Move Message**:
@@ -172,7 +172,7 @@ Response: { "id": "AAMkA...", ... } (moved message)
 
 **Find Folder by Name**:
 ```
-GET https://graph.microsoft.com/v1.0/me/mailFolders?$filter=displayName eq 'JobOps_Processed'
+GET https://graph.microsoft.com/v1.0/me/mailFolders?$filter=displayName eq 'JobOps-OLD'
 Response: { "value": [{ "id": "AAMkA...", ... }] }
 ```
 
@@ -188,7 +188,7 @@ async fn get_or_create_archive_folder(
     access_token: &str,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     // Try to find existing folder first
-    let search_url = "https://graph.microsoft.com/v1.0/me/mailFolders?$filter=displayName eq 'JobOps_Processed'";
+    let search_url = "https://graph.microsoft.com/v1.0/me/mailFolders?$filter=displayName eq 'JobOps-OLD'";
 
     let response = client
         .get(search_url)
@@ -202,7 +202,7 @@ async fn get_or_create_archive_folder(
             if !folders.is_empty() {
                 // Folder exists, return ID
                 if let Some(id) = folders[0]["id"].as_str() {
-                    log_debug(&format!("Found existing JobOps_Processed folder: {}", id));
+                    log_debug(&format!("Found existing JobOps-OLD folder: {}", id));
                     return Ok(id.to_string());
                 }
             }
@@ -210,13 +210,13 @@ async fn get_or_create_archive_folder(
     }
 
     // Folder doesn't exist, create it
-    log_debug("Creating JobOps_Processed folder...");
+    log_debug("Creating JobOps-OLD folder...");
     let create_url = "https://graph.microsoft.com/v1.0/me/mailFolders";
     let response = client
         .post(create_url)
         .bearer_auth(access_token)
         .json(&serde_json::json!({
-            "displayName": "JobOps_Processed",
+            "displayName": "JobOps-OLD",
             "isHidden": false
         }))
         .send()
@@ -231,7 +231,7 @@ async fn get_or_create_archive_folder(
         .ok_or("No folder ID in response")?
         .to_string();
 
-    log_debug(&format!("Created JobOps_Processed folder: {}", folder_id));
+    log_debug(&format!("Created JobOps-OLD folder: {}", folder_id));
     Ok(folder_id)
 }
 
@@ -293,7 +293,7 @@ if let Some(archive_id) = &archive_folder_id {
     // Try to move to archive
     match move_microsoft_message(&client, access_token, &message.id, archive_id).await {
         Ok(_) => {
-            log_debug(&format!("Moved message {} to JobOps_Processed", message.id));
+            log_debug(&format!("Moved message {} to JobOps-OLD", message.id));
         }
         Err(e) => {
             log_debug(&format!("Warning: Failed to move message {}: {}. Marking as read instead.", message.id, e));
@@ -419,7 +419,7 @@ test('should leave non-job emails in JobOps', async ({ page }) => {
 ### Manual Testing
 
 **Test Cases**:
-1. ✅ First sync creates `JobOps_Processed` folder
+1. ✅ First sync creates `JobOps-OLD` folder
 2. ✅ Processed email moved to archive
 3. ✅ JobOps folder shows only unprocessed emails
 4. ✅ Duplicate emails moved to archive
@@ -443,7 +443,7 @@ JobOps Folder: ✓ Ready
 ```
 JobOps Folder: ✓ Ready
 5 unread messages (12 total)
-Archive: JobOps_Processed (45 messages)
+Archive: JobOps-OLD (45 messages)
 ```
 
 **Implementation**: Optional enhancement (not required for Phase 2.8)
@@ -458,11 +458,11 @@ Archive: JobOps_Processed (45 messages)
 ### Q1: Folder Naming
 
 **Options**:
-- `JobOps_Processed` ⭐ (Clear, matches convention)
-- `JobOps_Archive` (Generic)
-- `JobOps_OLD` (User's original suggestion)
+- `JobOps-OLD` ⭐ **SELECTED** (User preference - simple and clear)
+- `JobOps_Processed` (Alternative: Descriptive, matches convention)
+- `JobOps_Archive` (Alternative: Generic)
 
-**Decision**: Use `JobOps_Processed` (clearest intent)
+**Decision**: Use `JobOps-OLD` (user's preference for simpler naming)
 
 ### Q2: What to Archive
 
@@ -488,7 +488,7 @@ Archive: JobOps_Processed (45 messages)
 
 **Phase 2.8 Completion Status**: 🔄 **Partially Complete** (5/8 criteria met)
 
-1. ⏳ `JobOps_Processed` folder auto-created on first sync (backend logic pending)
+1. ⏳ `JobOps-OLD` folder auto-created on first sync (backend logic pending)
 2. ⏳ Processed emails (confidence > 0.3) moved to archive (backend logic pending)
 3. ⏳ Duplicate emails moved to archive (backend logic pending)
 4. ⏳ Non-job emails (confidence ≤ 0.3) left in JobOps (needs validation)
