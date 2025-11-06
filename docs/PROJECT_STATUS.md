@@ -37,7 +37,7 @@
 
 # JobHunter Project Status
 
-**Last Updated**: 2025-11-05 18:22:14 PST (Phase 2.8 behavior refinement - archive ALL emails)
+**Last Updated**: 2025-11-06 14:05:33 PST (Phase 2.9 and 2.8.1 planning documents created)
 
 ---
 
@@ -241,6 +241,8 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 | 2.6 | LLM Job Extraction | 3 | ✅ Complete | 100% | 2025-10-11 | [PHASE_2.6](PHASE_2.6_llm-job-extraction.md) |
 | 2.7 | Microsoft Email Source | 2 | ✅ Complete | 100% | 2025-11-04 | [PHASE_2.7](PHASE_2.7_samkirk-email-source-plan.md) |
 | 2.8 | MS Email Auto-Archive | 2 | ✅ Complete | 100% | 2025-11-06 | [PHASE_2.8](PHASE_2.8_ms-email-processing.md) |
+| 2.8.1 | MS Folder Refinement | 2 | 📋 Planned | 0% | - | [PHASE_2.8.1](PHASE_2.8.1_microsoft-folder-refinement.md) |
+| 2.9 | Gmail Label Management | 2 | 📋 Planned | 0% | - | [PHASE_2.9](PHASE_2.9_gmail-label-management.md) |
 
 **Phase 2.4 Details** (Calendar & Follow-ups):
 - ✅ Google Calendar OAuth (373 lines): OAuth 2.0 flow, token refresh
@@ -330,6 +332,35 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
   - `frontend/e2e/tests/16-microsoft-email-integration.spec.ts` - Phase 2.8 E2E tests (lines 379-583)
 - **Time**: ~1.5 hours (within 1-2 hour estimate)
 - **Business Value**: Automatic inbox management keeps JobOps completely clean
+
+**Phase 2.8.1 Details** (Microsoft Folder Refinement) - 📋 **PLANNED** (2025-11-06):
+- **Feature**: Refine Phase 2.8 behavior to match Gmail approach
+- **Problem**: Phase 2.8 currently archives ALL emails immediately after processing
+- **Desired Behavior**: Keep emails in JobOps until user explicitly rejects them
+- **Implementation**:
+  - ⏳ Remove immediate archival from sync function (lines 3492-3510)
+  - ⏳ Add rejection trigger to move emails to JobOps-OLD on user action
+  - ⏳ Align Microsoft folder behavior with Gmail label management (Phase 2.9)
+- **Effort**: 30-45 minutes (small refactor)
+- **Dependencies**: Should be implemented AFTER Phase 2.9 for unified rejection endpoint
+- **Rationale**: JobOps = "Needs attention", JobOps-OLD = "User explicitly rejected"
+
+**Phase 2.9 Details** (Gmail Label Management) - 📋 **PLANNED** (2025-11-06):
+- **Feature**: Automatic Gmail label management for rejected job opportunities
+- **User Benefit**: Enable bulk cleanup of rejected jobs via Gmail's label filtering
+- **Implementation**:
+  - ⏳ Backend: 3 Gmail label management functions (get/create, remove, add)
+  - ⏳ Backend: New `PUT /api/jobs/{id}/reject` endpoint
+  - ⏳ Frontend: Add "Rejected" tab with job counter
+  - ⏳ Frontend: Add "Reject" button to job cards
+  - ⏳ OAuth: Add `gmail.modify` scope (requires user re-authentication)
+- **Label Rules**:
+  - New/Approved jobs: Keep JobOps label
+  - Rejected jobs: Remove JobOps → Add JobOps-OLD
+  - Non-jobs, duplicates, failed: No labels (conservative approach)
+- **Testing**: 6 unit tests + 4 E2E tests + manual OAuth/Gmail validation
+- **Effort**: 2-3 hours
+- **Key Principle**: Conservative approach - ONLY rejected jobs get archived label
 
 ### Phase 3: Content Generation
 
@@ -538,9 +569,18 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 
 ---
 
-**Last Updated**: 2025-11-05 18:22:14 PST (Phase 2.8 behavior refinement - archive ALL emails)
+**Last Updated**: 2025-11-06 14:05:33 PST (Phase 2.9 and 2.8.1 planning documents created)
 
 **Major Updates in This Revision**:
+- **Phase 2.9 and 2.8.1 Planning Documents Created** (2025-11-06 14:05:33 PST)
+  - ✅ Created comprehensive planning document for Phase 2.9 (Gmail Label Management)
+  - ✅ Created comprehensive planning document for Phase 2.8.1 (Microsoft Folder Refinement)
+  - **Phase 2.9 Scope**: Conservative approach - ONLY rejected jobs get JobOps-OLD label
+  - **Phase 2.8.1 Scope**: Fix Phase 2.8 to match Gmail - keep emails in JobOps until user rejects
+  - **Design Decision**: Real-time label/folder updates when user clicks "Reject" button
+  - **Unified Approach**: Both Gmail labels and Microsoft folders follow same rejection workflow
+  - **Effort Estimates**: Phase 2.9 (2-3 hours), Phase 2.8.1 (30-45 minutes)
+  - **Implementation Order**: Phase 2.9 first, then Phase 2.8.1 (for unified rejection endpoint)
 - **Phase 2.8 Behavior Refinement** (2025-11-05 18:22:14 PST)
   - ✅ Changed behavior: ALL processed emails now archived to JobOps-OLD (not just high-confidence)
   - ✅ Backend fix: Moved archive operation outside confidence check (commit bb0659d)
