@@ -1019,6 +1019,7 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
               <button
                 onClick={handleMicrosoftSync}
                 disabled={isMicrosoftSyncing || syncingAll}
+                data-testid="microsoft-sync-button"
                 style={{
                   flex: 1,
                   padding: '10px 16px',

@@ -452,9 +452,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       await page.waitForTimeout(1000);
 
       // Trigger a sync - this should create archive folder if it doesn't exist
-      const microsoftSyncButton = page.locator('button', { hasText: /sync.*microsoft/i }).or(
-        page.locator('button', { hasText: /sync now/i })
-      ).last();
+      const microsoftSyncButton = page.locator('[data-testid="microsoft-sync-button"]');
 
       // Click sync button
       await microsoftSyncButton.click();
@@ -488,9 +486,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       const initialTotalCount = parseInt(initialTotal?.match(/\d+/)?.[0] || '0');
 
       // Perform sync (which now includes archiving)
-      const microsoftSyncButton = page.locator('button', { hasText: /sync.*microsoft/i }).or(
-        page.locator('button', { hasText: /sync now/i })
-      ).last();
+      const microsoftSyncButton = page.locator('[data-testid="microsoft-sync-button"]');
       await microsoftSyncButton.click();
 
       // Wait for sync with archiving to complete
@@ -522,9 +518,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       await page.waitForTimeout(1000);
 
       // Trigger sync to generate metrics
-      const microsoftSyncButton = page.locator('button', { hasText: /sync.*microsoft/i }).or(
-        page.locator('button', { hasText: /sync now/i })
-      ).last();
+      const microsoftSyncButton = page.locator('[data-testid="microsoft-sync-button"]');
 
       await microsoftSyncButton.click();
       await page.waitForTimeout(20000); // Wait for sync to complete
@@ -565,7 +559,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       await page.waitForTimeout(1000);
 
       // Trigger sync (will process any emails in JobOps)
-      const syncButton = page.locator('button', { hasText: /sync now/i }).last();
+      const syncButton = page.locator('[data-testid="microsoft-sync-button"]');
       await syncButton.click();
       await page.waitForTimeout(20000); // Wait for processing
 
