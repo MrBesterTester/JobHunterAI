@@ -513,7 +513,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       console.log(`After sync stats: ${newStats}`);
 
       // Navigate to New Jobs tab to verify Microsoft-sourced jobs
-      await page.getByRole('button', { name: /^new$/i }).click();
+      await page.getByRole('button', { name: /^new jobs$/i }).click();
       await page.waitForTimeout(1000);
 
       // Check if any jobs are displayed
@@ -537,7 +537,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
 
     test('Item 4: End-to-End Workflow - Microsoft job through full application flow', async ({ page }) => {
       // Navigate to New Jobs tab
-      await page.getByRole('button', { name: /^new$/i }).click();
+      await page.getByRole('button', { name: /^new jobs$/i }).click();
       await page.waitForTimeout(1000);
 
       // Find jobs (may be from any source)
@@ -681,7 +681,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       await page.getByRole('button', { name: /^intake$/i }).click();
       await page.waitForTimeout(500);
 
-      await page.getByRole('button', { name: /^new$/i }).click();
+      await page.getByRole('button', { name: /^new jobs$/i }).click();
       await page.waitForTimeout(500);
 
       await page.getByRole('button', { name: /^approved$/i }).click();
