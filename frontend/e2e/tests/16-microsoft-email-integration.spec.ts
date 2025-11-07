@@ -541,9 +541,11 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       }
     });
 
-    test('should archive ALL processed emails regardless of confidence', async ({ page }) => {
-      // This test verifies that ALL emails (including low-confidence) are moved to JobOps-OLD archive
+    test('should keep processed emails in JobOps until user rejects (Phase 2.8.1)', async ({ page }) => {
+      // This test verifies Phase 2.8.1 behavior: processed emails stay in JobOps folder
+      // Emails are marked as read but NOT moved to JobOps-OLD during sync
       // Only high-confidence emails (>0.3) create job records in database
+      // Archival happens when user clicks "Reject" button (tested separately)
 
       test.setTimeout(60000); // Extended timeout for LLM processing
 
@@ -559,7 +561,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       await page.getByRole('button', { name: /^intake$/i }).click();
       await page.waitForTimeout(1000);
 
-      // Trigger sync (will process any emails in JobOps and move them ALL to archive)
+      // Trigger sync (will process emails in JobOps and mark them as read, but keep in JobOps)
       const syncButton = page.locator('[data-testid="microsoft-sync-button"]');
       await syncButton.click();
       await page.waitForTimeout(20000); // Wait for processing
@@ -568,18 +570,19 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       await expect(syncButton).toBeEnabled({ timeout: 10000 });
 
       // Check sync metrics - should show emails were processed
-      const syncMetrics = page.locator('text=/discovered:|processed:|archived:/i');
+      const syncMetrics = page.locator('text=/discovered:|processed:/i');
       const hasMetrics = await syncMetrics.isVisible().catch(() => false);
 
       if (hasMetrics) {
         const metricsText = await syncMetrics.textContent();
         console.log(`Sync metrics: ${metricsText}`);
-        // All processed emails should be archived (including low-confidence)
+        // Emails should be processed but NOT archived during sync
         expect(metricsText).toBeTruthy();
       }
 
       // The test passes as long as sync completes without errors
-      // Behavior: ALL emails archived to JobOps-OLD, only high-confidence create job records
+      // New behavior (Phase 2.8.1): Emails stay in JobOps, marked as read
+      // Archival to JobOps-OLD happens only when user clicks "Reject"
     });
   });
 

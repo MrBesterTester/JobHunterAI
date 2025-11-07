@@ -49,16 +49,18 @@
 - ✅ `get_or_create_archive_folder()` - Creates JobOps-OLD folder (lines 3658-3710)
 - ✅ `move_microsoft_message()` - Moves emails via Graph API (lines 3713-3738)
 - ✅ Duplicate handling - Archives duplicates automatically (lines 3396-3421)
-- ✅ **ALL processed emails archived** - Moved to JobOps-OLD regardless of confidence (commit bb0659d)
+- ✅ **Emails stay in JobOps until rejection** - Phase 2.8.1 refinement (2025-11-06)
 - ✅ High-confidence emails (>0.3) - Create job records in database
-- ✅ Low-confidence emails (≤0.3) - Archived without creating job records
+- ✅ Low-confidence emails (≤0.3) - Marked as read, no job records created
 - ✅ Graceful fallback - Falls back to mark-as-read on failure
 
-**Behavior Change (2025-11-05 18:13)**:
-- **Previous**: Only high-confidence emails (>0.3) were archived to JobOps-OLD
-- **Updated**: ALL processed emails are now archived to JobOps-OLD after processing
-- **Rationale**: Keeps JobOps folder completely clean; all processed emails go to archive
-- **Commits**: Backend fix (bb0659d), Test update (9af9407)
+**Behavior Changes**:
+- **Phase 2.8 (2025-11-05 18:13)**: ALL processed emails archived to JobOps-OLD after processing (commit bb0659d)
+- **Phase 2.8.1 (2025-11-06)**: ✅ **REFINEMENT** - Emails stay in JobOps until user clicks "Reject"
+  - **Current**: Processed emails marked as read but stay in JobOps folder
+  - **Archival**: Only happens when user clicks "Reject" button (matches Gmail behavior)
+  - **Rationale**: Aligns Microsoft folder management with Gmail label management (Phase 2.9)
+  - **Commits**: Backend changes + E2E test update
 
 **Unit Tests**: ✅ **12/12 Passing (100%)**
 - Runtime: 0.20s
@@ -71,9 +73,9 @@
 - ✅ Archive folder creation gracefully handled (13.1s)
 - ✅ Sync functionality with archiving enabled (17.6s)
 - ✅ Archive metrics validation (22.9s)
-- ✅ **Archive ALL emails test (22.5s)** - Updated to match new behavior (commit 9af9407)
-  - Previous: "should leave non-job emails in JobOps"
-  - Current: "should archive ALL processed emails regardless of confidence"
+- ✅ **Keep emails in JobOps test (22.5s)** - Updated for Phase 2.8.1 behavior
+  - Phase 2.8: "should archive ALL processed emails regardless of confidence"
+  - Phase 2.8.1: "should keep processed emails in JobOps until user rejects"
 - ⏭️ JobOps folder status (skipped - requires auth)
 - Location: `frontend/e2e/tests/16-microsoft-email-integration.spec.ts` (lines 379-583)
 

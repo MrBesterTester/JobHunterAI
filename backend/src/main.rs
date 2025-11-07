@@ -1874,47 +1874,91 @@ async fn reject_job(
     .map_err(actix_web::error::ErrorInternalServerError)?;
 
     if let Some(email_job) = email_job {
-        // 3. Check if this is a Gmail job (source is 'gmail' or not microsoft_email)
-        // Gmail emails have source='gmail' (default value), Microsoft emails have source="microsoft_email"
-        let is_gmail = email_job.source.as_deref() != Some("microsoft_email");
+        // 3. Check email source type
+        let source = email_job.source.as_deref();
 
-        if is_gmail {
-            // 4. Get Gmail OAuth credentials
-            let oauth_creds = sqlx::query!(
-                "SELECT access_token FROM oauth_credentials WHERE source_id = (SELECT source_id FROM job_sources WHERE source_name = 'gmail' LIMIT 1) LIMIT 1",
-            )
-            .fetch_optional(pool.get_ref())
-            .await
-            .map_err(actix_web::error::ErrorInternalServerError)?;
+        match source {
+            Some("microsoft_email") => {
+                // Handle Microsoft email - move to JobOps-OLD folder
+                let oauth_creds = sqlx::query!(
+                    "SELECT access_token FROM oauth_credentials WHERE source_id = (SELECT source_id FROM job_sources WHERE source_name = 'microsoft_email' LIMIT 1) LIMIT 1",
+                )
+                .fetch_optional(pool.get_ref())
+                .await
+                .map_err(actix_web::error::ErrorInternalServerError)?;
 
-            if let Some(creds) = oauth_creds {
-                if let Some(access_token) = &creds.access_token {
-                    // 5. Update Gmail labels (best effort - don't fail if this fails)
-                    let client = reqwest::Client::new();
-                    if let Err(e) = update_gmail_labels_for_rejected_job(
-                        &client,
-                        access_token,
-                        &email_job.message_id,
-                    ).await {
-                    log_debug(&format!(
-                        "Warning: Failed to update Gmail labels for job {}: {}. Job rejection still successful.",
-                        job_id_val, e
-                    ));
-                    // Continue - job rejection still succeeds even if label update fails
+                if let Some(creds) = oauth_creds {
+                    if let Some(access_token) = &creds.access_token {
+                        let client = reqwest::Client::new();
+
+                        // Get or create archive folder
+                        match get_or_create_archive_folder(&client, access_token).await {
+                            Ok(archive_id) => {
+                                // Move message to JobOps-OLD
+                                if let Err(e) = move_microsoft_message(
+                                    &client,
+                                    access_token,
+                                    &email_job.message_id,
+                                    &archive_id,
+                                ).await {
+                                    log_debug(&format!(
+                                        "Warning: Failed to move Microsoft message {} to JobOps-OLD: {}. Job rejection still successful.",
+                                        email_job.message_id, e
+                                    ));
+                                } else {
+                                    log_debug(&format!("Successfully moved Microsoft message {} to JobOps-OLD", email_job.message_id));
+                                }
+                            }
+                            Err(e) => {
+                                log_debug(&format!(
+                                    "Warning: Failed to get JobOps-OLD folder for job {}: {}. Job rejection still successful.",
+                                    job_id_val, e
+                                ));
+                            }
+                        }
                     } else {
-                        log_debug(&format!("Successfully updated Gmail labels for rejected job {}", job_id_val));
+                        log_debug(&format!("Warning: No Microsoft access token found. Skipping folder move."));
                     }
                 } else {
-                    log_debug(&format!("Warning: No Gmail access token found. Skipping label update."));
+                    log_debug(&format!("Warning: No Microsoft OAuth credentials found for job {}. Skipping folder move.", job_id_val));
                 }
-            } else {
-                log_debug(&format!("Warning: No Gmail OAuth credentials found for job {}. Skipping label update.", job_id_val));
             }
-        } else {
-            log_debug(&format!("Job {} is from {:?} source, skipping Gmail label update", job_id_val, email_job.source));
+            _ => {
+                // Handle Gmail or default - update labels
+                let oauth_creds = sqlx::query!(
+                    "SELECT access_token FROM oauth_credentials WHERE source_id = (SELECT source_id FROM job_sources WHERE source_name = 'gmail' LIMIT 1) LIMIT 1",
+                )
+                .fetch_optional(pool.get_ref())
+                .await
+                .map_err(actix_web::error::ErrorInternalServerError)?;
+
+                if let Some(creds) = oauth_creds {
+                    if let Some(access_token) = &creds.access_token {
+                        // Update Gmail labels (best effort - don't fail if this fails)
+                        let client = reqwest::Client::new();
+                        if let Err(e) = update_gmail_labels_for_rejected_job(
+                            &client,
+                            access_token,
+                            &email_job.message_id,
+                        ).await {
+                        log_debug(&format!(
+                            "Warning: Failed to update Gmail labels for job {}: {}. Job rejection still successful.",
+                            job_id_val, e
+                        ));
+                        // Continue - job rejection still succeeds even if label update fails
+                        } else {
+                            log_debug(&format!("Successfully updated Gmail labels for rejected job {}", job_id_val));
+                        }
+                    } else {
+                        log_debug(&format!("Warning: No Gmail access token found. Skipping label update."));
+                    }
+                } else {
+                    log_debug(&format!("Warning: No Gmail OAuth credentials found for job {}. Skipping label update.", job_id_val));
+                }
+            }
         }
     } else {
-        log_debug(&format!("Job {} has no associated email, skipping label update", job_id_val));
+        log_debug(&format!("Job {} has no associated email, skipping email management", job_id_val));
     }
 
     Ok(HttpResponse::Ok().json(job.unwrap()))
@@ -3564,25 +3608,9 @@ async fn process_microsoft_messages(
                         job_data.description = subject.clone().or(Some("(No email content available)".to_string()));
                     }
 
-                    // Move ALL processed emails to archive folder (or mark as read if archive unavailable)
-                    if let Some(archive_id) = &archive_folder_id {
-                        match move_microsoft_message(&client, access_token, &message.id, archive_id).await {
-                            Ok(_) => {
-                                log_debug(&format!("Moved processed message {} to JobOps-OLD", message.id));
-                            }
-                            Err(e) => {
-                                log_debug(&format!("Warning: Failed to move message {}: {}. Marking as read instead.", message.id, e));
-                                // Fallback to mark as read
-                                if let Err(e) = mark_microsoft_message_as_read(&client, access_token, &message.id).await {
-                                    log_debug(&format!("Warning: Failed to mark message {} as read: {}", message.id, e));
-                                }
-                            }
-                        }
-                    } else {
-                        // No archive folder available, fall back to mark as read
-                        if let Err(e) = mark_microsoft_message_as_read(&client, access_token, &message.id).await {
-                            log_debug(&format!("Warning: Failed to mark message {} as read: {}", message.id, e));
-                        }
+                    // Mark email as read (keep in JobOps folder until user explicitly rejects)
+                    if let Err(e) = mark_microsoft_message_as_read(&client, access_token, &message.id).await {
+                        log_debug(&format!("Warning: Failed to mark message {} as read: {}", message.id, e));
                     }
 
                     if job_data.confidence > 0.3 { // Real job opportunity
