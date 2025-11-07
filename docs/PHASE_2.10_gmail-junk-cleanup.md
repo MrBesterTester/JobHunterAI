@@ -17,10 +17,17 @@
   - [Implementation Plan](#implementation-plan)
     - [Step 1: Backend Implementation (45-60 min)](#step-1-backend-implementation-45-60-min)
     - [Step 2: Frontend Implementation (45-60 min)](#step-2-frontend-implementation-45-60-min)
+  - [Implementation Status](#implementation-status)
+  - [Detailed Implementation Guide: Rejected Tab](#detailed-implementation-guide-rejected-tab)
+    - [Step 1: Add State Management to App.tsx (5 min)](#step-1-add-state-management-to-apptsx-5-min)
+    - [Step 2: Add Helper Functions to App.tsx (10 min)](#step-2-add-helper-functions-to-apptsx-10-min)
+    - [Step 3: Add Bulk Action Controls in Rejected Tab Section (10 min)](#step-3-add-bulk-action-controls-in-rejected-tab-section-10-min)
+    - [Step 4: Modify JobCard to Support Checkboxes (10 min)](#step-4-modify-jobcard-to-support-checkboxes-10-min)
+    - [Step 5: Add Confirmation Dialog (5 min)](#step-5-add-confirmation-dialog-5-min)
   - [Testing Strategy](#testing-strategy)
-    - [Backend Unit Tests (2 tests)](#backend-unit-tests-2-tests)
-    - [E2E Tests (3 tests)](#e2e-tests-3-tests)
-    - [Manual Test (1 test)](#manual-test-1-test)
+    - [Backend Unit Tests (4 tests)](#backend-unit-tests-4-tests)
+    - [E2E Tests (6 tests)](#e2e-tests-6-tests)
+    - [Manual Tests (2 tests)](#manual-tests-2-tests)
   - [Success Criteria](#success-criteria)
   - [Dependencies](#dependencies)
   - [Risks and Mitigations](#risks-and-mitigations)
@@ -493,54 +500,484 @@ async fn bulk_delete_gmail_emails(
 
 ---
 
+## Implementation Status
+
+**Last Updated**: 2025-11-06 17:45:00 PST
+
+**Backend**: ✅ 100% Complete
+- ✅ `trash_gmail_message()` function implemented (main.rs:4285-4311)
+- ✅ `POST /api/email-jobs/bulk-delete-gmail` endpoint implemented (main.rs:2075-2154)
+- ✅ `POST /api/jobs/bulk-delete-gmail` endpoint implemented (main.rs:1992-2072)
+- ✅ Routes registered (main.rs:8472-8473)
+- ✅ `get_ignored_emails` updated to include `source` field (main.rs:6024)
+- ✅ Backend compiles successfully
+
+**Frontend - Ignored Tab**: ✅ 100% Complete
+- ✅ Bulk selection state management (selectedForDeletion Set)
+- ✅ Checkboxes for Gmail emails only
+- ✅ Bulk action controls (Select All, Deselect All, Delete)
+- ✅ Confirmation dialog with email count
+- ✅ API integration with error handling
+- ✅ Success/failure feedback
+- ✅ Frontend compiles successfully
+
+**Frontend - Rejected Tab**: ⏳ Pending Implementation (30-45 min)
+- ⏳ Add bulk selection state to App.tsx
+- ⏳ Add bulk action controls in rejected jobs section
+- ⏳ Add checkboxes to JobCard (conditional rendering)
+- ⏳ Add confirmation dialog
+- ⏳ Wire up API call to `/api/jobs/bulk-delete-gmail`
+
+**Testing**: ⏳ Pending
+- ⏳ Backend unit tests (2 tests)
+- ⏳ E2E tests (6 tests - 3 for Ignored + 3 for Rejected)
+- ⏳ Manual Gmail trash verification
+
+**Commit**: 379cd12 - Backend + Ignored tab complete
+
+---
+
+## Detailed Implementation Guide: Rejected Tab
+
+**Overview**: The rejected jobs are displayed in App.tsx using a shared JobCard component. This section provides step-by-step instructions for adding bulk delete functionality.
+
+**Estimated Time**: 30-45 minutes
+
+### Step 1: Add State Management to App.tsx (5 min)
+
+Add these state variables near the other state declarations (around line 200):
+
+```typescript
+const [selectedJobsForDeletion, setSelectedJobsForDeletion] = useState<Set<string>>(new Set());
+const [isDeletingJobs, setIsDeletingJobs] = useState<boolean>(false);
+const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState<boolean>(false);
+```
+
+### Step 2: Add Helper Functions to App.tsx (10 min)
+
+Add these functions after the `handleReject` function:
+
+```typescript
+const toggleJobSelection = (jobId: string): void => {
+  setSelectedJobsForDeletion(prev => {
+    const newSet = new Set(prev);
+    if (newSet.has(jobId)) {
+      newSet.delete(jobId);
+    } else {
+      newSet.add(jobId);
+    }
+    return newSet;
+  });
+};
+
+const selectAllGmailJobs = (): void => {
+  const gmailJobs = filterJobs('rejected').filter(j => j.source === 'gmail');
+  setSelectedJobsForDeletion(new Set(gmailJobs.map(j => j.job_id)));
+};
+
+const deselectAllJobs = (): void => {
+  setSelectedJobsForDeletion(new Set());
+};
+
+const handleBulkDeleteJobs = async (): Promise<void> => {
+  if (selectedJobsForDeletion.size === 0) return;
+
+  setIsDeletingJobs(true);
+  try {
+    const response = await fetch(`${API_URL}/jobs/bulk-delete-gmail`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ job_ids: Array.from(selectedJobsForDeletion) })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete jobs: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (result.success_count > 0) {
+      // Refresh the jobs list
+      await fetchJobs();
+      setSelectedJobsForDeletion(new Set());
+      alert(`Successfully deleted ${result.success_count} job(s) from Gmail`);
+    }
+
+    if (result.failure_count > 0) {
+      const failureMsg = result.failures.map((f: any) => `${f.id}: ${f.error}`).join('\n');
+      console.error(`Failed to delete ${result.failure_count} job(s):\n${failureMsg}`);
+    }
+  } catch (err) {
+    console.error('Error deleting jobs:', err);
+    alert('Failed to delete jobs from Gmail');
+  } finally {
+    setIsDeletingJobs(false);
+    setShowDeleteConfirmDialog(false);
+  }
+};
+```
+
+### Step 3: Add Bulk Action Controls in Rejected Tab Section (10 min)
+
+Find the section where `activeTab === 'rejected'` is rendered (around line 2722). Add the bulk action controls BEFORE the job cards grid:
+
+```typescript
+{activeTab === 'rejected' && filterJobs('rejected').some(j => j.source === 'gmail') && (
+  <div style={{
+    backgroundColor: '#f9fafb',
+    border: '1px solid #e5e7eb',
+    borderRadius: '8px',
+    padding: '16px',
+    marginBottom: '24px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  }}>
+    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+      <button
+        onClick={selectAllGmailJobs}
+        disabled={filterJobs('rejected').filter(j => j.source === 'gmail').length === 0}
+        style={{
+          padding: '8px 16px',
+          borderRadius: '6px',
+          border: '1px solid #d1d5db',
+          backgroundColor: 'white',
+          color: '#374151',
+          fontWeight: '500',
+          cursor: 'pointer',
+          fontSize: '14px',
+          opacity: filterJobs('rejected').filter(j => j.source === 'gmail').length === 0 ? 0.5 : 1
+        }}
+      >
+        Select All Gmail
+      </button>
+      <button
+        onClick={deselectAllJobs}
+        disabled={selectedJobsForDeletion.size === 0}
+        style={{
+          padding: '8px 16px',
+          borderRadius: '6px',
+          border: '1px solid #d1d5db',
+          backgroundColor: 'white',
+          color: '#374151',
+          fontWeight: '500',
+          cursor: 'pointer',
+          fontSize: '14px',
+          opacity: selectedJobsForDeletion.size === 0 ? 0.5 : 1
+        }}
+      >
+        Deselect All
+      </button>
+    </div>
+    <button
+      onClick={() => setShowDeleteConfirmDialog(true)}
+      disabled={selectedJobsForDeletion.size === 0 || isDeletingJobs}
+      style={{
+        padding: '10px 20px',
+        borderRadius: '6px',
+        border: 'none',
+        backgroundColor: selectedJobsForDeletion.size === 0 || isDeletingJobs ? '#9ca3af' : '#ef4444',
+        color: 'white',
+        fontWeight: '600',
+        cursor: selectedJobsForDeletion.size === 0 || isDeletingJobs ? 'not-allowed' : 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        fontSize: '14px'
+      }}
+    >
+      <Trash2 style={{ width: '18px', height: '18px' }} />
+      {isDeletingJobs ? 'Deleting...' : `Delete ${selectedJobsForDeletion.size} from Gmail`}
+    </button>
+  </div>
+)}
+```
+
+### Step 4: Modify JobCard to Support Checkboxes (10 min)
+
+Find the JobCard component definition. Update it to accept optional checkbox props:
+
+```typescript
+interface JobCardProps {
+  job: Job;
+  showCheckbox?: boolean;
+  isSelected?: boolean;
+  onToggleSelection?: (jobId: string) => void;
+}
+
+const JobCard: React.FC<JobCardProps> = ({
+  job,
+  showCheckbox = false,
+  isSelected = false,
+  onToggleSelection
+}) => {
+  // ... existing code ...
+
+  return (
+    <div style={{ /* existing styles */ display: 'flex', gap: '12px' }}>
+      {/* Checkbox for Gmail jobs only */}
+      {showCheckbox && job.source === 'gmail' && (
+        <div
+          style={{ display: 'flex', alignItems: 'flex-start', paddingTop: '2px' }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSelection?.(job.job_id);
+          }}
+        >
+          {isSelected ? (
+            <CheckSquare style={{ width: '20px', height: '20px', color: '#3b82f6', cursor: 'pointer' }} />
+          ) : (
+            <Square style={{ width: '20px', height: '20px', color: '#9ca3af', cursor: 'pointer' }} />
+          )}
+        </div>
+      )}
+
+      <div style={{ flex: 1 }}>
+        {/* Existing JobCard content */}
+      </div>
+    </div>
+  );
+};
+```
+
+Update the JobCard usage in the rejected tab section:
+
+```typescript
+{activeTab === 'rejected' ? filterJobs('rejected').map(job => (
+  <JobCard
+    key={job.job_id}
+    job={job}
+    showCheckbox={true}
+    isSelected={selectedJobsForDeletion.has(job.job_id)}
+    onToggleSelection={toggleJobSelection}
+  />
+)) : /* other tabs */}
+```
+
+### Step 5: Add Confirmation Dialog (5 min)
+
+Add the confirmation dialog near the end of the App component return statement (before the closing </div>):
+
+```typescript
+{showDeleteConfirmDialog && (
+  <div style={{
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000
+  }}>
+    <div style={{
+      backgroundColor: 'white',
+      borderRadius: '8px',
+      padding: '24px',
+      maxWidth: '500px',
+      width: '90%',
+      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+    }}>
+      <h3 style={{ margin: '0 0 16px 0', fontSize: '20px', fontWeight: 'bold', color: '#111827' }}>
+        Confirm Deletion
+      </h3>
+      <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#6b7280', lineHeight: '1.5' }}>
+        Move {selectedJobsForDeletion.size} job email{selectedJobsForDeletion.size !== 1 ? 's' : ''} to Gmail trash?
+        Jobs will be removed from JobHunter. You can permanently delete emails later in Gmail trash
+        (they will be recoverable for 30 days).
+      </p>
+      <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+        <button
+          onClick={() => setShowDeleteConfirmDialog(false)}
+          disabled={isDeletingJobs}
+          style={{
+            padding: '10px 20px',
+            borderRadius: '6px',
+            border: '1px solid #d1d5db',
+            backgroundColor: 'white',
+            color: '#374151',
+            fontWeight: '600',
+            cursor: isDeletingJobs ? 'not-allowed' : 'pointer',
+            fontSize: '14px',
+            opacity: isDeletingJobs ? 0.5 : 1
+          }}
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleBulkDeleteJobs}
+          disabled={isDeletingJobs}
+          style={{
+            padding: '10px 20px',
+            borderRadius: '6px',
+            border: 'none',
+            backgroundColor: isDeletingJobs ? '#9ca3af' : '#ef4444',
+            color: 'white',
+            fontWeight: '600',
+            cursor: isDeletingJobs ? 'not-allowed' : 'pointer',
+            fontSize: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          {isDeletingJobs ? (
+            <>
+              <RefreshCw style={{ width: '18px', height: '18px', animation: 'spin 1s linear infinite' }} />
+              Deleting...
+            </>
+          ) : (
+            <>
+              <Trash2 style={{ width: '18px', height: '18px' }} />
+              Delete from Gmail
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+```
+
+Don't forget to import the new icons at the top of App.tsx:
+
+```typescript
+import { CheckSquare, Square, Trash2 } from 'lucide-react';
+```
+
+---
+
 ## Testing Strategy
 
-### Backend Unit Tests (2 tests)
+**Total Tests**: 10 (4 backend unit + 6 E2E + manual verification)
+
+### Backend Unit Tests (4 tests)
 
 **Test Suite**: `backend/tests/gmail_cleanup_tests.rs`
 
-1. **`test_bulk_delete_validates_gmail_source`**:
-   - Try to delete non-Gmail jobs
+**For Rejected Tab (`/api/jobs/bulk-delete-gmail`)**:
+
+1. **`test_bulk_delete_jobs_validates_gmail_source`**:
+   - Create 2 Gmail jobs and 1 Microsoft job in test database
+   - Attempt to bulk delete all 3 jobs (including non-Gmail)
    - Expect 400 Bad Request error
+   - Verify error message: "Some jobs are not from Gmail source"
+   - Verify no jobs deleted from database
 
-2. **`test_bulk_delete_endpoint_integration`**:
-   - Create 3 Gmail jobs in test database
-   - Call bulk delete endpoint
-   - Verify jobs deleted from database
-   - Mock Gmail API calls
+2. **`test_bulk_delete_jobs_success`**:
+   - Create 3 Gmail jobs with email_jobs entries
+   - Mock Gmail API trash endpoint (return success)
+   - Call bulk delete endpoint with all 3 job IDs
+   - Verify response: `{ success_count: 3, failure_count: 0, failures: [] }`
+   - Verify all jobs deleted from database
+   - Verify all email_jobs entries CASCADE deleted
 
-### E2E Tests (3 tests)
+**For Ignored Tab (`/api/email-jobs/bulk-delete-gmail`)**:
+
+3. **`test_bulk_delete_email_jobs_validates_gmail_source`**:
+   - Create 2 Gmail email_jobs and 1 Microsoft email_job (no job records)
+   - Attempt to bulk delete all 3 email_jobs (including non-Gmail)
+   - Expect 400 Bad Request error
+   - Verify error message: "Some emails are not from Gmail source"
+   - Verify no email_jobs deleted from database
+
+4. **`test_bulk_delete_email_jobs_success`**:
+   - Create 3 Gmail email_jobs entries (no job records - ignored emails)
+   - Mock Gmail API trash endpoint (return success)
+   - Call bulk delete endpoint with all 3 email_job IDs
+   - Verify response: `{ success_count: 3, failure_count: 0, failures: [] }`
+   - Verify all email_jobs deleted from database
+
+### E2E Tests (6 tests)
 
 **Test Suite**: `frontend/e2e/tests/18-gmail-junk-cleanup.spec.ts`
 
-1. **`should show checkboxes only for Gmail jobs in Rejected tab`**:
+**For Ignored Tab** (3 tests):
+
+1. **`should show checkboxes only for Gmail emails in Ignored tab`**:
+   - Create 2 Gmail ignored emails and 1 Microsoft ignored email
+   - Navigate to Ignored tab
+   - Verify 2 checkboxes visible (Gmail emails only)
+   - Verify no checkbox for Microsoft email
+   - Verify bulk action controls visible
+
+2. **`should delete selected Gmail emails from Ignored tab after confirmation`**:
+   - Create 3 Gmail ignored emails
+   - Navigate to Ignored tab
+   - Select 2 emails using checkboxes
+   - Click "Delete 2 from Gmail" button
+   - Verify confirmation dialog appears with correct count
+   - Click "Delete from Gmail" in dialog
+   - Mock API response: `{ success_count: 2, failure_count: 0 }`
+   - Verify success alert appears
+   - Verify Ignored tab refreshes
+   - Verify 2 emails removed, 1 remains
+
+3. **`should handle bulk delete cancellation in Ignored tab`**:
+   - Create 2 Gmail ignored emails
+   - Navigate to Ignored tab
+   - Select all emails
+   - Click "Delete 2 from Gmail" button
+   - Verify confirmation dialog appears
+   - Click "Cancel" button
+   - Verify dialog closes
+   - Verify emails still present in Ignored tab
+   - Verify selections cleared
+
+**For Rejected Tab** (3 tests):
+
+4. **`should show checkboxes only for Gmail jobs in Rejected tab`**:
+   - Create 2 Gmail rejected jobs and 1 Microsoft rejected job
    - Navigate to Rejected tab
-   - Verify checkboxes visible for Gmail jobs
-   - Verify no checkboxes for non-Gmail jobs
+   - Verify 2 checkboxes visible (Gmail jobs only)
+   - Verify no checkbox for Microsoft job
+   - Verify bulk action controls visible
 
-2. **`should delete selected Gmail jobs after confirmation`**:
-   - Select 2 Gmail jobs in Rejected tab
-   - Click "Delete Selected from Gmail" button
-   - Confirm in dialog
-   - Verify jobs removed from Rejected tab
-   - Verify success toast appears
+5. **`should delete selected Gmail jobs from Rejected tab after confirmation`**:
+   - Create 3 Gmail rejected jobs
+   - Navigate to Rejected tab
+   - Select 2 jobs using checkboxes
+   - Click "Delete 2 from Gmail" button
+   - Verify confirmation dialog appears with correct count
+   - Click "Delete from Gmail" in dialog
+   - Mock API response: `{ success_count: 2, failure_count: 0 }`
+   - Verify success alert appears
+   - Verify Rejected tab refreshes
+   - Verify 2 jobs removed, 1 remains
 
-3. **`should handle bulk delete cancellation`**:
-   - Select jobs
-   - Click delete button
-   - Cancel in confirmation dialog
-   - Verify jobs still present in Rejected tab
+6. **`should handle select all and deselect all in Rejected tab`**:
+   - Create 3 Gmail rejected jobs and 1 Microsoft rejected job
+   - Navigate to Rejected tab
+   - Click "Select All Gmail" button
+   - Verify 3 Gmail jobs selected (Microsoft job not selected)
+   - Verify button shows "Delete 3 from Gmail"
+   - Click "Deselect All" button
+   - Verify all selections cleared
+   - Verify button shows "Delete 0 from Gmail" (disabled)
 
-### Manual Test (1 test)
+### Manual Tests (2 tests)
 
-**Test 1: Visual Gmail Trash Verification** (3 min):
+**Test 1: Visual Gmail Trash Verification - Rejected Job** (3 min):
 - Reject a Gmail job in JobHunter
-- Select it in Rejected tab
-- Click "Delete Selected from Gmail"
+- Navigate to Rejected tab
+- Select the job using checkbox
+- Click "Delete 1 from Gmail"
 - Confirm deletion
 - Open Gmail → Trash folder
 - Verify email appears in Gmail trash (not permanently deleted)
 - Verify job removed from JobHunter Rejected tab
+
+**Test 2: Visual Gmail Trash Verification - Ignored Email** (3 min):
+- Process a Gmail non-job email (low confidence) → appears in Ignored tab
+- Navigate to Ignored tab
+- Select the email using checkbox
+- Click "Delete 1 from Gmail"
+- Confirm deletion
+- Open Gmail → Trash folder
+- Verify email appears in Gmail trash
+- Verify email removed from JobHunter Ignored tab
 
 ---
 
