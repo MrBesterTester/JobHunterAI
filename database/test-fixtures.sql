@@ -16,20 +16,32 @@
 -- ============================================================================
 -- Job Sources
 -- ============================================================================
--- Note: Gmail and MS Email sources already inserted by schema.sql
--- We'll update them to ensure they're configured for testing
 
--- Update Gmail source
-UPDATE job_sources
-SET
+-- Insert Gmail source (if not exists)
+INSERT INTO job_sources (
+    source_id,
+    source_name,
+    source_type,
+    auth_required,
+    auth_type,
+    is_active,
+    configuration
+) VALUES (
+    '11111111-1111-1111-1111-111111111111'::UUID,
+    'gmail',
+    'email',
+    TRUE,
+    'oauth2',
+    TRUE,
+    '{"scopes": ["https://www.googleapis.com/auth/gmail.readonly", "https://www.googleapis.com/auth/gmail.modify"], "batch_size": 50, "test_mode": true}'::JSONB
+) ON CONFLICT (source_name) DO UPDATE SET
     is_active = TRUE,
     last_sync = NOW() - INTERVAL '1 hour',
     configuration = jsonb_set(
-        configuration,
+        EXCLUDED.configuration,
         '{test_mode}',
         'true'
-    )
-WHERE source_name = 'gmail';
+    );
 
 -- Insert Microsoft Email source (if not exists)
 INSERT INTO job_sources (
