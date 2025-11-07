@@ -3,6 +3,10 @@
 /backend/**/*.rs.bk
 /backend/.env
 
+# Test environment OAuth tokens (root level)
+.env.test
+.env.test.local
+
 # Frontend (Node)
 /frontend/node_modules/
 /frontend/build/
