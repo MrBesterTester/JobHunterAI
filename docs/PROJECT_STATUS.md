@@ -2,12 +2,12 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [JobHunter Project Status](#jobhunter-project-status)
-  - [🎯 **CORE WORKFLOWS COMPLETE - EMAIL MANAGEMENT REFINEMENTS REQUIRED**](#-core-workflows-complete---email-management-refinements-required)
+  - [🎯 **CORE WORKFLOWS COMPLETE - ALL EMAIL MANAGEMENT REFINEMENTS DONE**](#-core-workflows-complete---all-email-management-refinements-done)
   - [⚠️ Important: Phase Execution Order](#-important-phase-execution-order)
   - [Current State](#current-state)
   - [Recommended Next Steps](#recommended-next-steps)
     - [Immediate: Begin Using The Application](#immediate-begin-using-the-application)
-    - [📋 Recommended: Email Management Refinements (Phase 2.10)](#-recommended-email-management-refinements-phase-210)
+    - [✅ Complete: Email Management Refinements (Phase 2.10)](#-complete-email-management-refinements-phase-210)
     - [Optional: Phase 5.2+ Advanced Features](#optional-phase-52-advanced-features)
     - [✅ Recently Completed](#-recently-completed)
     - [📋 Planned Next](#-planned-next)
@@ -39,17 +39,17 @@
 
 # JobHunter Project Status
 
-**Last Updated**: 2025-11-06 17:10:44 PST (Phase 2.10 implementation complete - manual testing required)
+**Last Updated**: 2025-11-06 18:37:23 PST (Phase 2.10 complete with all E2E tests passing)
 
 ---
 
-## 🎯 **CORE WORKFLOWS COMPLETE - EMAIL MANAGEMENT REFINEMENTS REQUIRED**
+## 🎯 **CORE WORKFLOWS COMPLETE - ALL EMAIL MANAGEMENT REFINEMENTS DONE**
 
-**Status**: ✅ **Core PRD Requirements Implemented** | ⏳ **Final Email Refinement Remaining**
+**Status**: ✅ **Core PRD Requirements Implemented** | ✅ **All Email Management Refinements Complete**
 
-The software implements all core job hunting workflows defined in the Product Requirements Document (PRD). All 6 dependency layers plus content refresh are fully implemented, tested, and validated. Phase 2.8.1 and 2.9 email management refinements are complete.
+The software implements all core job hunting workflows defined in the Product Requirements Document (PRD). All 6 dependency layers plus content refresh are fully implemented, tested, and validated. Phase 2.8.1, 2.9, and 2.10 email management refinements are complete.
 
-**Recommended Next Step**: Phase 2.10 (Gmail Junk Cleanup) - 2-3 hours total
+**Recommended Next Step**: Begin using the application! All core workflows complete.
 **Optional Enhancements Available**: Phase 5.2+ (advanced features)
 
 ---
@@ -64,9 +64,9 @@ The software implements all core job hunting workflows defined in the Product Re
 
 ## Current State
 
-**Development Stage**: ⏳ **Final Email Refinement Recommended**
+**Development Stage**: ✅ **Core Workflows Complete**
 
-**Functional Completeness**: 🎯 **Core PRD Complete** | 📋 **Phase 2.10 Recommended (2-3 hours)**
+**Functional Completeness**: 🎯 **Core PRD Complete** | ✅ **All Email Management Refinements Complete**
 
 **Testing Infrastructure**: ✅ **EXCELLENT**
 - Backend Tests: 158/158 passing (100%)
@@ -77,6 +77,7 @@ The software implements all core job hunting workflows defined in the Product Re
 - All 12 components above 75% coverage (none below 60%)
 
 **Recent Achievements** (Last 14 days - since 2025-10-20):
+- ✅ Phase 2.10 COMPLETE (2025-11-06 18:37:23 PST) - Gmail junk cleanup with 10/10 tests passing (4 backend + 6 E2E)
 - ✅ Phase 2.8.1 COMPLETE (2025-11-06 17:20:00 PST) - Microsoft folder behavior aligned with Gmail (backend + E2E test updates)
 - ✅ Phase 2.9 COMPLETE (2025-11-06 15:53:05 PST) - Gmail label management with 12/12 tests passing (including manual production validation)
 - ✅ Phase 2.8 COMPLETE (2025-11-05) - Microsoft email auto-archive to JobOps-OLD
@@ -93,18 +94,19 @@ The software implements all core job hunting workflows defined in the Product Re
 
 **See**: [PROJECT_HISTORY.md](PROJECT_HISTORY.md) for detailed historical records
 
-**Open Issues**: 1 bug/issue (all infrastructure and quality issues resolved!)
+**Open Issues**: 2 bugs/issues (all infrastructure and quality issues resolved!)
 - ISSUE-010: CLAUDE.md token usage optimization (low)
+- ISSUE-032: Non-job emails with JobOps-OLD label appear in Ignored tab (medium, pre-existing)
 
 ---
 
 ## Recommended Next Steps
 
-**📋 RECOMMENDED: Email Management Refinements (Phase 2.10)**
+**✅ COMPLETE: Email Management Refinements (Phase 2.10)**
 
-**Current Status**: ✅ Core workflows complete | ✅ Phase 2.8.1 & 2.9 complete | 📋 Phase 2.10 remaining (2-3 hours)
+**Current Status**: ✅ Core workflows complete | ✅ All email management phases complete (2.8.1, 2.9, 2.10)
 
-**Priority**: Implement Phase 2.10 (quality of life) to complete email management features.
+**Status**: ✅ **All email management features complete!** Phase 2.10 was the final refinement.
 
 ### Immediate: Begin Using The Application
 
@@ -122,9 +124,9 @@ All core features are fully functional:
 - ✅ Follow-up email system
 - ✅ Content refresh feature (regenerate descriptions on-demand)
 
-### 📋 Recommended: Email Management Refinements (Phase 2.10)
+### ✅ Complete: Email Management Refinements (Phase 2.10)
 
-**Status**: 📋 **Ready to Implement** - Phase 2.8.1 & 2.9 complete, Phase 2.10 remaining (2-3 hours)
+**Status**: ✅ **ALL COMPLETE** - Phase 2.8.1, 2.9, and 2.10 all implemented and tested
 **Documents**: [PHASE_2.8.1](PHASE_2.8.1_microsoft-folder-refinement.md), [PHASE_2.9](PHASE_2.9_gmail-label-management.md), [PHASE_2.10](PHASE_2.10_gmail-junk-cleanup.md)
 
 **Phase 2.9: Gmail Label Management** - ✅ **COMPLETE** (2025-11-06 15:53:05 PST):
@@ -156,29 +158,28 @@ All core features are fully functional:
 - **Value**: Essential user control over email cleanup, consistent behavior across Gmail and Microsoft sources
 - **Commit**: 0900156 - feat: Implement Phase 2.8.1 - Microsoft folder behavior refinement
 
-**Phase 2.10: Gmail Junk Cleanup** - ⏳ **IMPLEMENTATION COMPLETE, TESTING IN PROGRESS**:
-- **Status**: ✅ Implementation COMPLETE | ⏳ Manual Testing REQUIRED | ⏳ E2E Tests Pending
+**Phase 2.10: Gmail Junk Cleanup** - ✅ **COMPLETE** (2025-11-06 18:37:23 PST):
+- **Status**: ✅ Implementation COMPLETE | ✅ Testing COMPLETE | ✅ All Tests Passing
 - **Completed** (2025-11-06):
   - ✅ Backend: 2 endpoints implemented (`bulk_delete_gmail_jobs`, `bulk_delete_gmail_email_jobs`)
   - ✅ Backend: `trash_gmail_message()` function for Gmail API integration
   - ✅ Frontend: Ignored Tab (checkboxes, bulk controls, confirmation dialog)
   - ✅ Frontend: Rejected Tab (checkboxes, bulk controls, confirmation dialog)
   - ✅ Backend Unit Tests: 4/4 passing (source validation, deletion logic)
-  - ✅ E2E Test Structure: 6/6 passing (placeholders ready for implementation)
+  - ✅ E2E Tests: **6/6 passing (9.2s runtime)**
   - ✅ Code compiles successfully (backend + frontend)
-- **Next Steps**:
-  1. ⏳ **Manual smoke test** (10 min) - REQUIRED BEFORE E2E IMPLEMENTATION
-     - Verify basic functionality works end-to-end
-     - Check UI/UX quality (alignment, spacing, colors)
-     - Validate real Gmail API integration (emails move to trash)
-     - Catch obvious bugs before writing detailed E2E tests
-  2. ⏳ **Implement full E2E tests** (1-2 hours) - AFTER manual verification
-     - Convert placeholder tests to full implementations
-     - Add database setup, UI interactions, API mocking
-     - Verify workflows match actual feature behavior
-- **Testing Philosophy**: Manual testing first validates feature works correctly before investing time in comprehensive E2E test implementations
-- **Why Manual First**: Claude cannot see UI quality issues or verify real Gmail API integration
-- **Commits**: 379cd12 (backend), c463086 (frontend), 9d02792 (tests)
+- **Test Results** (10/10 passing):
+  - Backend: 4/4 tests passing (source validation, deletion logic)
+  - E2E: 6/6 tests passing (9.2s runtime)
+- **Test Coverage**:
+  - Ignored Tab: 3/3 tests (checkbox visibility, bulk delete, cancellation)
+  - Rejected Tab: 3/3 tests (checkbox visibility, bulk delete, select all/deselect all)
+- **Key Findings During Test Development**:
+  - Checkboxes are lucide-react SVG icons (`CheckSquare`/`Square`), not HTML `<input>` elements
+  - Confirmation dialogs selected by heading text (no `role="dialog"`)
+  - Rejected tab uses `/jobs/bulk-delete-gmail` endpoint
+  - Ignored tab uses `/email-jobs/bulk-delete-gmail` endpoint
+- **Commits**: 379cd12 (backend), c463086 (frontend), 5aded86 (E2E initial), 19b629d (E2E fixes)
 
 **Quality of Life Feature**: Bulk delete Gmail junk emails from within JobHunter UI
 **Value**: Convenient bulk cleanup of junk emails (non-jobs + rejected jobs) without manual Gmail operations
@@ -206,7 +207,8 @@ All core features are fully functional:
 
 ### ✅ Recently Completed
 
-✅ **CORE PRD REQUIREMENTS COMPLETE** - Final Email Refinement Remaining:
+✅ **CORE PRD REQUIREMENTS COMPLETE** - All Email Management Refinements Done:
+- **Phase 2.10** (2025-11-06): Gmail Junk Cleanup - COMPLETE with 10/10 tests passing
 - **Phase 2.8.1** (2025-11-06): Microsoft Folder Refinement - Aligned with Gmail behavior (backend + E2E test updates)
 - **Phase 2.9** (2025-11-06): Gmail Label Management - COMPLETE with 12/12 tests passing
 - **Phase 2.8** (2025-11-05): Microsoft Email Auto-Archive - JobOps-OLD folder management
@@ -220,7 +222,7 @@ All core features are fully functional:
 
 ### 📋 Planned Next
 
-**📋 Email Management Refinements** (Testing phase):
+**✅ Email Management Refinements** (All Complete):
 1. ✅ **Phase 2.9**: Gmail Label Management - **COMPLETE** (2025-11-06 15:53:05 PST)
    - ✅ Implementation complete (backend + frontend)
    - ✅ 12/12 tests passing (4 backend + 6 E2E + 2 manual)
@@ -230,16 +232,14 @@ All core features are fully functional:
    - ✅ Removed immediate archival from sync
    - ✅ Added rejection trigger for JobOps-OLD folder
    - ✅ Backend + E2E test updates complete
-3. **Phase 2.10**: Gmail Junk Cleanup - ⏳ **TESTING IN PROGRESS**
+3. ✅ **Phase 2.10**: Gmail Junk Cleanup - **COMPLETE** (2025-11-06 18:37:23 PST)
    - ✅ Implementation complete (backend + frontend)
    - ✅ Backend unit tests: 4/4 passing
-   - ✅ E2E test structure: 6/6 passing
-   - ⏳ **NEXT**: Manual smoke test (10 min)
-   - ⏳ **THEN**: Full E2E test implementation (1-2 hours)
-   - **PRIMARY**: Bulk delete from Ignored (Non-Job Emails) tab - where most junk is
-   - **SECONDARY**: Bulk delete from Rejected tab
-   - Multi-select checkboxes + confirmation dialogs (2 tabs)
-   - Soft delete to Gmail trash (recoverable for 30 days)
+   - ✅ E2E tests: 6/6 passing (9.2s runtime)
+   - ✅ **PRIMARY**: Bulk delete from Ignored (Non-Job Emails) tab - where most junk is
+   - ✅ **SECONDARY**: Bulk delete from Rejected tab
+   - ✅ Multi-select checkboxes + confirmation dialogs (2 tabs)
+   - ✅ Soft delete to Gmail trash (recoverable for 30 days)
    - Quality of life feature (brings comfort and joy!)
 
 **Optional: Advanced Features** (130-158 hours):
@@ -573,7 +573,7 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 
 ## Bug Tracking
 
-**Total Bugs**: 40 (5 open, 4 mitigated, 31 fixed)
+**Total Bugs**: 41 (3 open, 5 mitigated, 33 fixed)
 
 **Priority Breakdown**:
 - Critical: 1
@@ -583,7 +583,8 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 - Unknown: 2
 
 **Recent Activity** (Last 7 days):
-- **FILED** [ISSUE-032](../bugs/open/ISSUE-032-rejected-non-job-emails-with-jobops-old-label-appear-in-ignored-tab-while-already-in-gmail-trash.md): Pre-existing classification bug (2025-11-06) - Discovered during Phase 2.10 testing (not caused by Phase 2.10)
+- **FILED** [ISSUE-032](../bugs/open/ISSUE-032-rejected-non-job-emails-with-jobops-old-label-appear-in-ignored-tab-while-already-in-gmail-trash.md): Pre-existing classification bug (2025-11-06) - Discovered during Phase 2.10 manual testing, not caused by Phase 2.10 feature
+- **NOTE**: ISSUE-032 is a pre-existing data quality issue from earlier email processing, not a Phase 2.10 regression
 - **RESOLVED** [ISSUE-030](../bugs/mitigated/ISSUE-030-low-confidence-emails-appear-in-filtered-tab-instead-of-non-job-emails.md): Low-confidence email threshold fix (2025-11-04) - Mitigated
 - **FIXED** [BUG-0009](../bugs/fixed/BUG-0009-condensed-description-api-returns-placeholder-for-short-job-descriptions.md): Condensed description word count (2025-11-04) - Fixed
 
@@ -668,9 +669,21 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 
 ---
 
-**Last Updated**: 2025-11-06 17:10:44 PST (Phase 2.10 implementation complete - manual testing required)
+**Last Updated**: 2025-11-06 18:37:23 PST (Phase 2.10 complete with all E2E tests passing)
 
 **Major Updates in This Revision**:
+- **Phase 2.10 COMPLETE** (2025-11-06 18:37:23 PST)
+  - ✅ Test Results: 10/10 tests passing (4 backend + 6 E2E)
+  - ✅ E2E Runtime: 9.2 seconds for all 6 tests
+  - ✅ Test Coverage: Both Ignored and Rejected tabs fully tested
+  - **E2E Test Fixes Applied**:
+    - Fixed checkbox selectors (SVG icons, not input elements)
+    - Fixed confirmation dialog selectors (by heading text)
+    - Fixed API endpoint URLs (correct paths verified)
+    - Updated Rejected tab setup (valid test IDs)
+  - **Result**: All email management refinements (2.8.1, 2.9, 2.10) now complete
+  - **Known Issue**: ISSUE-032 discovered during testing (pre-existing classification bug)
+  - **Commits**: 5aded86 (E2E initial), 19b629d (E2E fixes all passing)
 - **Phase 2.8.1 Implementation Complete** (2025-11-06 17:20:00 PST)
   - ✅ Backend: Removed immediate archival from sync function (main.rs:3567-3570)
   - ✅ Backend: Added Microsoft email handling to reject endpoint (main.rs:1881-1925)
