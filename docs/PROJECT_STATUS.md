@@ -102,7 +102,7 @@ The software implements all core job hunting workflows defined in the Product Re
 
 **⚠️ REQUIRED: Email Management Refinements (Phase 2.8.1 & 2.10)**
 
-**Current Status**: ✅ Core workflows complete | ✅ Phase 2.9 complete | ⏳ Phase 2.8.1 & 2.10 remaining (2-3 hours)
+**Current Status**: ✅ Core workflows complete | ✅ Phase 2.9 complete | ⏳ Phase 2.8.1 & 2.10 remaining (3-4 hours)
 
 **Priority**: Implement Phase 2.8.1 first (required), then Phase 2.10 (quality of life) to complete email management features.
 
@@ -124,7 +124,7 @@ All core features are fully functional:
 
 ### ⚠️ Required: Email Management Refinements (Phase 2.8.1 & 2.10)
 
-**Status**: 📋 **In Progress** - Phase 2.9 complete, 2.8.1 & 2.10 remaining (2-3 hours total)
+**Status**: 📋 **In Progress** - Phase 2.9 complete, 2.8.1 & 2.10 remaining (3-4 hours total)
 **Documents**: [PHASE_2.8.1](PHASE_2.8.1_microsoft-folder-refinement.md), [PHASE_2.9](PHASE_2.9_gmail-label-management.md), [PHASE_2.10](PHASE_2.10_gmail-junk-cleanup.md)
 
 **Phase 2.9: Gmail Label Management** - ✅ **COMPLETE** (2025-11-06 15:53:05 PST):
@@ -154,20 +154,25 @@ All core features are fully functional:
 **Priority**: ⚠️ **HIGH - REQUIRED** for complete email management workflow
 **Value**: Essential user control over email cleanup, consistent behavior across Gmail and Microsoft sources
 
-**Phase 2.10: Gmail Junk Cleanup** (1-2 hours) - **IMPLEMENT THIRD**:
-- **Quality of Life Feature**: Bulk delete rejected Gmail job emails from within JobHunter UI
-- **User Pain Point**: Rejected jobs accumulate with Gmail emails cluttering inbox
-- **Solution**: Multi-select checkboxes in Rejected tab + "Delete Selected from Gmail" button
+**Phase 2.10: Gmail Junk Cleanup** (2-3 hours) - **IMPLEMENT THIRD**:
+- **Quality of Life Feature**: Bulk delete Gmail junk emails from within JobHunter UI
+- **User Pain Point**: Non-job emails and rejected jobs accumulate with Gmail emails cluttering inbox; user needs to SEE emails to identify junk
+- **Solution**: Multi-select checkboxes in BOTH Ignored and Rejected tabs + "Delete Selected from Gmail" button
 - **Implementation**:
-  - Frontend: Checkboxes, bulk selection controls, confirmation dialog
-  - Backend: `POST /api/jobs/bulk-delete-gmail-emails` endpoint
-  - Gmail API: Soft delete (trash) emails, delete job records from database
-- **Safety**: Confirmation dialog, soft delete to Gmail trash (recoverable), no undo needed
-- **Scope**: Rejected tab only (not Filtered tab - user can Disapprove to move to Rejected)
+  - Frontend (2 tabs): Checkboxes, bulk selection controls, confirmation dialogs
+  - Backend (2 endpoints):
+    - `POST /api/email-jobs/bulk-delete-gmail` (Ignored tab - delete email_jobs records)
+    - `POST /api/jobs/bulk-delete-gmail` (Rejected tab - delete job records)
+  - Gmail API: Soft delete (trash) emails, delete database records
+- **Safety**: Confirmation dialogs, soft delete to Gmail trash (recoverable for 30 days), no undo needed
+- **Scope**:
+  - **PRIMARY**: Ignored (Non-Job Emails) tab - where most junk accumulates (LLM classified as non-jobs)
+  - **SECONDARY**: Rejected tab - jobs user explicitly rejected
+  - Note: Email content display already exists in Ignored tab (subject, sender, body)
 - **Dependency**: Requires Phase 2.9 (gmail.modify scope already authorized)
 
 **Priority**: ⚠️ **MEDIUM - Quality of Life** - Brings comfort and joy by eliminating junk mail buildup
-**Value**: Convenient bulk cleanup of rejected job emails without manual Gmail operations
+**Value**: Convenient bulk cleanup of junk emails (non-jobs + rejected jobs) without manual Gmail operations
 **Document**: [PHASE_2.10_gmail-junk-cleanup.md](PHASE_2.10_gmail-junk-cleanup.md)
 
 ### Optional: Phase 5.2+ Advanced Features
@@ -206,7 +211,7 @@ All core features are fully functional:
 
 ### 📋 Planned Next
 
-**⚠️ Email Management Refinements** (2-3 hours remaining):
+**⚠️ Email Management Refinements** (3-4 hours remaining):
 1. ✅ **Phase 2.9**: Gmail Label Management - **COMPLETE** (2025-11-06 15:53:05 PST)
    - ✅ Implementation complete (backend + frontend)
    - ✅ 12/12 tests passing (4 backend + 6 E2E + 2 manual)
@@ -215,10 +220,11 @@ All core features are fully functional:
    - Align Microsoft email behavior with Gmail approach
    - Remove immediate archival from sync
    - Add rejection trigger for JobOps-OLD folder
-3. **Phase 2.10**: Gmail Junk Cleanup (1-2 hours) - 📋 **PLANNED**
-   - Bulk delete rejected Gmail job emails from Rejected tab
-   - Multi-select checkboxes + confirmation dialog
-   - Soft delete to Gmail trash (recoverable)
+3. **Phase 2.10**: Gmail Junk Cleanup (2-3 hours) - 📋 **PLANNED**
+   - **PRIMARY**: Bulk delete from Ignored (Non-Job Emails) tab - where most junk is
+   - **SECONDARY**: Bulk delete from Rejected tab
+   - Multi-select checkboxes + confirmation dialogs (2 tabs)
+   - Soft delete to Gmail trash (recoverable for 30 days)
    - Quality of life feature (brings comfort and joy!)
 
 **Optional: Advanced Features** (130-158 hours):

@@ -10,7 +10,7 @@
   - [Technical Design](#technical-design)
     - [Database Schema](#database-schema)
     - [API Design](#api-design)
-      - [New Endpoint](#new-endpoint)
+      - [New Endpoints](#new-endpoints)
     - [Frontend Design](#frontend-design)
       - [UI Components](#ui-components)
     - [Gmail API Integration](#gmail-api-integration)
@@ -37,7 +37,7 @@
 
 **Created**: 2025-11-06 16:15:00 PST
 
-**Estimated Effort**: 1-2 hours
+**Estimated Effort**: 2-3 hours (both Ignored and Rejected tabs)
 
 **Priority**: Medium (Quality of Life feature)
 
@@ -45,27 +45,34 @@
 
 ## Overview
 
-Enable bulk deletion of rejected Gmail job emails directly from the JobHunter UI, providing a convenient way to clean up junk mail without manual Gmail operations.
+Enable bulk deletion of Gmail junk emails directly from the JobHunter UI, providing a convenient way to clean up unwanted emails without manual Gmail operations.
 
-**User Pain Point**: Rejected jobs accumulate in the database with corresponding Gmail emails that clutter the inbox. Currently requires manual cleanup in Gmail.
+**User Pain Point**: Non-job emails (LLM classified as not job-related) and rejected jobs accumulate in the database with corresponding Gmail emails that clutter the inbox. User needs to SEE the email to determine if it's junk. Currently requires manual cleanup in Gmail.
 
-**Solution**: Add bulk email deletion capability to the Rejected tab for Gmail-sourced jobs.
+**Solution**: Add bulk email deletion capability to BOTH the Ignored (Non-Job Emails) tab and the Rejected tab for Gmail-sourced emails.
+
+**Primary Target**: Ignored tab - where most junk email accumulates (emails LLM classified as non-jobs)
+**Secondary Target**: Rejected tab - jobs user explicitly rejected
 
 ---
 
 ## User Story
 
-> **As a user**, I want to bulk-delete rejected job emails from Gmail so I can clean up junk mail without switching to Gmail and manually finding/deleting emails.
+> **As a user**, I want to bulk-delete junk emails from Gmail (both non-job emails and rejected jobs) so I can clean up my inbox without switching to Gmail and manually finding/deleting emails. I need to see the email content to determine if it's junk.
 
 **Acceptance Criteria**:
-1. ✅ Rejected tab shows checkboxes for Gmail-sourced jobs only
-2. ✅ "Select All" / "Deselect All" buttons for bulk selection
-3. ✅ "Delete Selected from Gmail" button appears when jobs selected
-4. ✅ Confirmation dialog shows count and requires user confirmation
-5. ✅ Emails moved to Gmail trash (soft delete, recoverable)
-6. ✅ Job records deleted from database after successful email trash
-7. ✅ User sees success/failure feedback
-8. ✅ Gmail emails can be permanently deleted by user in Gmail trash
+1. ✅ **Ignored tab** shows checkboxes for Gmail-sourced non-job emails only
+2. ✅ **Rejected tab** shows checkboxes for Gmail-sourced rejected jobs only
+3. ✅ Both tabs display email content (subject, sender, body) so user can identify junk
+4. ✅ "Select All" / "Deselect All" buttons for bulk selection in both tabs
+5. ✅ "Delete Selected from Gmail" button appears when emails/jobs selected
+6. ✅ Confirmation dialog shows count and requires user confirmation
+7. ✅ Emails moved to Gmail trash (soft delete, recoverable)
+8. ✅ Database records deleted after successful email trash:
+   - Ignored tab: Delete `email_jobs` records (no job exists)
+   - Rejected tab: Delete job records (CASCADE deletes `email_jobs`)
+9. ✅ User sees success/failure feedback
+10. ✅ Gmail emails can be permanently deleted by user in Gmail trash
 
 ---
 
@@ -73,20 +80,33 @@ Enable bulk deletion of rejected Gmail job emails directly from the JobHunter UI
 
 ### In Scope
 
-**Frontend**:
-- Multi-select checkboxes on Rejected tab job cards
-- Checkboxes only visible for `source='gmail'` jobs
+**Frontend - Ignored Tab** (Primary):
+- Multi-select checkboxes on email cards for Gmail-sourced emails only
+- Checkboxes only visible for emails with `source='gmail'`
 - "Select All" / "Deselect All" buttons
 - "Delete Selected from Gmail" button (disabled when none selected)
 - Confirmation dialog with email count
 - Success/failure toast notifications
+- Automatic refresh of Ignored tab after deletion
+- Note: Email display already exists (subject, sender, body content)
+
+**Frontend - Rejected Tab** (Secondary):
+- Multi-select checkboxes on job cards for Gmail-sourced jobs only
+- Checkboxes only visible for `source='gmail'` jobs
+- "Select All" / "Deselect All" buttons
+- "Delete Selected from Gmail" button (disabled when none selected)
+- Confirmation dialog with job count
+- Success/failure toast notifications
 - Automatic refresh of Rejected tab after deletion
 
 **Backend**:
-- New endpoint: `POST /api/jobs/bulk-delete-gmail-emails`
-- Input validation (job IDs must be from Gmail source)
+- New endpoint: `POST /api/email-jobs/bulk-delete-gmail` (for Ignored tab - deletes email_jobs records)
+- New endpoint: `POST /api/jobs/bulk-delete-gmail` (for Rejected tab - deletes job records)
+- Input validation (IDs must be from Gmail source)
 - Gmail API integration (messages.trash endpoint)
-- Database cleanup (delete job records after email trashed)
+- Database cleanup:
+  - Ignored: Delete `email_jobs` records after email trashed
+  - Rejected: Delete job records after email trashed (CASCADE deletes email_jobs)
 - Error handling and partial success reporting
 
 **Gmail API**:
@@ -96,11 +116,13 @@ Enable bulk deletion of rejected Gmail job emails directly from the JobHunter UI
 
 ### Out of Scope
 
-- ❌ Bulk deletion for Microsoft email jobs (different API, future phase)
-- ❌ Bulk deletion from Filtered tab (user can Disapprove to move to Rejected)
+- ❌ Bulk deletion for Microsoft emails (different API, future phase - Phase 2.11)
+- ❌ Bulk deletion from Filtered tab (user can Disapprove to move to Rejected, or mark as non-job)
+- ❌ Bulk deletion from Failed/Duplicates tabs (different use case)
 - ❌ Permanent deletion from Gmail (user does this manually in Gmail trash)
-- ❌ Undo functionality (soft delete is sufficient)
-- ❌ Email preview before deletion (user already rejected these jobs)
+- ❌ Undo functionality (soft delete is sufficient - Gmail trash recoverable for 30 days)
+- ❌ Email content display in Ignored tab (already exists)
+- ❌ Creating Ignored tab UI (already exists - see IgnoredTab.tsx)
 
 ---
 
@@ -114,10 +136,45 @@ No schema changes required. Uses existing tables:
 
 ### API Design
 
-#### New Endpoint
+#### New Endpoints
+
+**Endpoint 1: Bulk Delete from Ignored Tab (Non-Job Emails)**
 
 ```rust
-POST /api/jobs/bulk-delete-gmail-emails
+POST /api/email-jobs/bulk-delete-gmail
+Content-Type: application/json
+
+{
+  "email_job_ids": ["uuid1", "uuid2", "uuid3"]
+}
+
+Response (200 OK):
+{
+  "success_count": 2,
+  "failure_count": 1,
+  "failures": [
+    {
+      "email_job_id": "uuid3",
+      "error": "Gmail API error: Message not found"
+    }
+  ]
+}
+```
+
+**Implementation Steps**:
+1. Validate all email_job_ids exist and have source='gmail'
+2. Get OAuth credentials for Gmail source
+3. For each email_job:
+   - Fetch `message_id` from `email_jobs` table
+   - Call Gmail API: `POST https://gmail.googleapis.com/gmail/v1/users/me/messages/{messageId}/trash`
+   - If success: Delete email_jobs record from database
+   - If failure: Log error, continue to next email
+4. Return summary of successes and failures
+
+**Endpoint 2: Bulk Delete from Rejected Tab (Rejected Jobs)**
+
+```rust
+POST /api/jobs/bulk-delete-gmail
 Content-Type: application/json
 
 {
@@ -135,10 +192,23 @@ Response (200 OK):
     }
   ]
 }
+```
 
+**Implementation Steps**:
+1. Validate all job IDs exist and have source='gmail'
+2. Get OAuth credentials for Gmail source
+3. For each job:
+   - Fetch `message_id` from `email_jobs` table (via job_id foreign key)
+   - Call Gmail API: `POST https://gmail.googleapis.com/gmail/v1/users/me/messages/{messageId}/trash`
+   - If success: Delete job record from database (CASCADE deletes email_jobs entry)
+   - If failure: Log error, continue to next job
+4. Return summary of successes and failures
+
+**Common Error Responses**:
+```rust
 Response (400 Bad Request):
 {
-  "error": "Invalid request: Some jobs are not from Gmail source"
+  "error": "Invalid request: Some emails/jobs are not from Gmail source"
 }
 
 Response (401 Unauthorized):
@@ -147,21 +217,39 @@ Response (401 Unauthorized):
 }
 ```
 
-**Implementation Steps**:
-1. Validate all job IDs exist and have source='gmail'
-2. Get OAuth credentials for Gmail source
-3. For each job:
-   - Fetch `message_id` from `email_jobs` table
-   - Call Gmail API: `POST https://gmail.googleapis.com/gmail/v1/users/me/messages/{messageId}/trash`
-   - If success: Delete job record from database (CASCADE deletes email_jobs entry)
-   - If failure: Log error, continue to next job
-4. Return summary of successes and failures
-
 ### Frontend Design
 
 #### UI Components
 
-**Rejected Tab Updates**:
+**Ignored Tab Updates** (Primary):
+
+```tsx
+// Email card with checkbox (Gmail emails only)
+<div className="email-card">
+  {email.source === 'gmail' && (
+    <input
+      type="checkbox"
+      checked={selectedEmails.has(email.email_job_id)}
+      onChange={() => toggleEmailSelection(email.email_job_id)}
+    />
+  )}
+  {/* existing email card content - subject, sender, body preview */}
+</div>
+
+// Bulk action controls
+<div className="bulk-actions">
+  <button onClick={selectAllEmails}>Select All Gmail Emails</button>
+  <button onClick={deselectAll}>Deselect All</button>
+  <button
+    onClick={handleBulkDeleteEmails}
+    disabled={selectedEmails.size === 0}
+  >
+    Delete {selectedEmails.size} from Gmail
+  </button>
+</div>
+```
+
+**Rejected Tab Updates** (Secondary):
 
 ```tsx
 // Job card with checkbox (Gmail jobs only)
@@ -178,17 +266,20 @@ Response (401 Unauthorized):
 
 // Bulk action controls
 <div className="bulk-actions">
-  <button onClick={selectAll}>Select All Gmail Jobs</button>
+  <button onClick={selectAllJobs}>Select All Gmail Jobs</button>
   <button onClick={deselectAll}>Deselect All</button>
   <button
-    onClick={handleBulkDelete}
+    onClick={handleBulkDeleteJobs}
     disabled={selectedJobs.size === 0}
   >
     Delete {selectedJobs.size} from Gmail
   </button>
 </div>
+```
 
-// Confirmation dialog
+**Shared Confirmation Dialog**:
+
+```tsx
 <ConfirmDialog
   title="Delete Emails from Gmail"
   message={`Move ${selectedJobs.size} emails to Gmail trash? Jobs will be removed from JobHunter. You can permanently delete emails later in Gmail trash.`}
@@ -538,11 +629,13 @@ async fn bulk_delete_gmail_emails(
 ## Open Questions
 
 None - all design questions answered by user:
-- ✅ Delete email + job record (Option B)
-- ✅ Rejected tab only (not Filtered tab)
+- ✅ Delete email + job/email_jobs record (Option B)
+- ✅ **PRIMARY**: Ignored (Non-Job Emails) tab - where most junk accumulates
+- ✅ **SECONDARY**: Rejected tab - also needs cleanup capability
+- ✅ User needs to SEE email content to identify junk (already exists in Ignored tab)
 - ✅ Confirmation dialog required
-- ✅ Soft delete (Gmail trash)
-- ✅ No undo needed
+- ✅ Soft delete (Gmail trash, recoverable for 30 days)
+- ✅ No undo needed (soft delete is sufficient)
 
 ---
 
