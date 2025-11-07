@@ -7,7 +7,7 @@
   - [Current State](#current-state)
   - [Recommended Next Steps](#recommended-next-steps)
     - [Immediate: Begin Using The Application](#immediate-begin-using-the-application)
-    - [⚠️ Required: Email Management Refinements (Phase 2.8.1 & 2.9)](#-required-email-management-refinements-phase-281--29)
+    - [⚠️ Required: Email Management Refinements (Phase 2.8.1 & 2.10)](#-required-email-management-refinements-phase-281--210)
     - [Optional: Phase 5.2+ Advanced Features](#optional-phase-52-advanced-features)
     - [✅ Recently Completed](#-recently-completed)
     - [📋 Planned Next](#-planned-next)
@@ -100,11 +100,11 @@ The software implements all core job hunting workflows defined in the Product Re
 
 ## Recommended Next Steps
 
-**⚠️ REQUIRED: Email Management Refinements (Phase 2.8.1 & 2.9)**
+**⚠️ REQUIRED: Email Management Refinements (Phase 2.8.1 & 2.10)**
 
-**Current Status**: ✅ Core workflows complete | ⏳ Email management refinements required (3-4 hours)
+**Current Status**: ✅ Core workflows complete | ✅ Phase 2.9 complete | ⏳ Phase 2.8.1 & 2.10 remaining (2-3 hours)
 
-**Priority**: Implement Phase 2.9 first, then Phase 2.8.1 to complete email management features.
+**Priority**: Implement Phase 2.8.1 first (required), then Phase 2.10 (quality of life) to complete email management features.
 
 ### Immediate: Begin Using The Application
 
@@ -122,10 +122,10 @@ All core features are fully functional:
 - ✅ Follow-up email system
 - ✅ Content refresh feature (regenerate descriptions on-demand)
 
-### ⚠️ Required: Email Management Refinements (Phase 2.8.1 & 2.9)
+### ⚠️ Required: Email Management Refinements (Phase 2.8.1 & 2.10)
 
-**Status**: 📋 **REQUIRED** - Complete email management workflow (3-4 hours total)
-**Documents**: [PHASE_2.8.1](PHASE_2.8.1_microsoft-folder-refinement.md), [PHASE_2.9](PHASE_2.9_gmail-label-management.md)
+**Status**: 📋 **In Progress** - Phase 2.9 complete, 2.8.1 & 2.10 remaining (2-3 hours total)
+**Documents**: [PHASE_2.8.1](PHASE_2.8.1_microsoft-folder-refinement.md), [PHASE_2.9](PHASE_2.9_gmail-label-management.md), [PHASE_2.10](PHASE_2.10_gmail-junk-cleanup.md)
 
 **Phase 2.9: Gmail Label Management** - ✅ **COMPLETE** (2025-11-06 15:53:05 PST):
 - **Status**: ✅ Implementation COMPLETE | ✅ Testing COMPLETE | ✅ Production Validated
@@ -153,6 +153,22 @@ All core features are fully functional:
 
 **Priority**: ⚠️ **HIGH - REQUIRED** for complete email management workflow
 **Value**: Essential user control over email cleanup, consistent behavior across Gmail and Microsoft sources
+
+**Phase 2.10: Gmail Junk Cleanup** (1-2 hours) - **IMPLEMENT THIRD**:
+- **Quality of Life Feature**: Bulk delete rejected Gmail job emails from within JobHunter UI
+- **User Pain Point**: Rejected jobs accumulate with Gmail emails cluttering inbox
+- **Solution**: Multi-select checkboxes in Rejected tab + "Delete Selected from Gmail" button
+- **Implementation**:
+  - Frontend: Checkboxes, bulk selection controls, confirmation dialog
+  - Backend: `POST /api/jobs/bulk-delete-gmail-emails` endpoint
+  - Gmail API: Soft delete (trash) emails, delete job records from database
+- **Safety**: Confirmation dialog, soft delete to Gmail trash (recoverable), no undo needed
+- **Scope**: Rejected tab only (not Filtered tab - user can Disapprove to move to Rejected)
+- **Dependency**: Requires Phase 2.9 (gmail.modify scope already authorized)
+
+**Priority**: ⚠️ **MEDIUM - Quality of Life** - Brings comfort and joy by eliminating junk mail buildup
+**Value**: Convenient bulk cleanup of rejected job emails without manual Gmail operations
+**Document**: [PHASE_2.10_gmail-junk-cleanup.md](PHASE_2.10_gmail-junk-cleanup.md)
 
 ### Optional: Phase 5.2+ Advanced Features
 
@@ -190,16 +206,20 @@ All core features are fully functional:
 
 ### 📋 Planned Next
 
-**⚠️ REQUIRED: Email Management Refinements** (30-45 minutes remaining):
-1. ✅ **Phase 2.9**: Gmail Label Management - **COMPLETE** (2025-11-06)
+**⚠️ Email Management Refinements** (2-3 hours remaining):
+1. ✅ **Phase 2.9**: Gmail Label Management - **COMPLETE** (2025-11-06 15:53:05 PST)
    - ✅ Implementation complete (backend + frontend)
-   - ✅ 4 backend unit tests passing (100%)
-   - ✅ 6 E2E tests passing (100%)
-   - ✅ Documentation updated with test results
+   - ✅ 12/12 tests passing (4 backend + 6 E2E + 2 manual)
+   - ✅ Production validated (Gmail label updates confirmed)
 2. **Phase 2.8.1**: Microsoft Folder Refinement (30-45 min) - ⭐ **NEXT TO IMPLEMENT**
    - Align Microsoft email behavior with Gmail approach
    - Remove immediate archival from sync
    - Add rejection trigger for JobOps-OLD folder
+3. **Phase 2.10**: Gmail Junk Cleanup (1-2 hours) - 📋 **PLANNED**
+   - Bulk delete rejected Gmail job emails from Rejected tab
+   - Multi-select checkboxes + confirmation dialog
+   - Soft delete to Gmail trash (recoverable)
+   - Quality of life feature (brings comfort and joy!)
 
 **Optional: Advanced Features** (130-158 hours):
 - Phase 5.2-5.5: Analytics, Automation, UX, Performance enhancements
