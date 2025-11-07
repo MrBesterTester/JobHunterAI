@@ -142,43 +142,53 @@ check_database_selection() {
     fi
 }
 
-check_database_cleared() {
+check_database_state() {
     log_section "PREFLIGHT: Database State"
 
-    # TODO: Implement database cleared check
-    # This needs to verify tables are empty or in known initial state
+    # Clear database
+    log_info "Clearing database..."
+    if ! "$SCRIPT_DIR/clear-database.sh"; then
+        log_error "Failed to clear database"
+        return 1
+    fi
 
-    log_warning "Database cleared check: NOT YET IMPLEMENTED"
-    log_warning "Manual verification required"
-    return 0  # Don't block for now
+    # Seed database with test fixtures
+    log_info "Seeding database with test fixtures..."
+    if ! "$SCRIPT_DIR/seed-database.sh"; then
+        log_error "Failed to seed database"
+        return 1
+    fi
+
+    log_info "Database state: cleared and seeded"
+    return 0
 }
 
 check_gmail_state() {
     log_section "PREFLIGHT: Gmail State"
 
-    # TODO: Implement Gmail state check
-    # - No unread emails in test account
-    # - No JobOps or JobOps-OLD tags/labels
+    # Clear Gmail state (remove labels, mark emails as read)
+    log_info "Clearing Gmail state..."
+    if ! "$SCRIPT_DIR/clear-gmail-state.sh"; then
+        log_error "Failed to clear Gmail state"
+        return 1
+    fi
 
-    log_warning "Gmail state check: NOT YET IMPLEMENTED"
-    log_warning "Manual verification required:"
-    log_warning "  - No unread emails"
-    log_warning "  - No JobOps or JobOps-OLD tags"
-    return 0  # Don't block for now
+    log_info "Gmail state: cleared (no unread, no JobOps labels)"
+    return 0
 }
 
 check_msmail_state() {
     log_section "PREFLIGHT: Microsoft Mail State"
 
-    # TODO: Implement MS Mail state check
-    # - JobOps-OLD folder empty
-    # - JobOps folder pre-populated with test data
+    # Setup MS Mail state (clear JobOps-OLD, prepare JobOps folder)
+    log_info "Setting up Microsoft Mail state..."
+    if ! "$SCRIPT_DIR/setup-msmail-state.sh"; then
+        log_error "Failed to setup Microsoft Mail state"
+        return 1
+    fi
 
-    log_warning "MS Mail state check: NOT YET IMPLEMENTED"
-    log_warning "Manual verification required:"
-    log_warning "  - JobOps-OLD folder empty"
-    log_warning "  - JobOps folder pre-populated"
-    return 0  # Don't block for now
+    log_info "Microsoft Mail state: JobOps folders ready"
+    return 0
 }
 
 check_git_status() {
@@ -200,24 +210,44 @@ run_preflight_checks() {
 
     local all_passed=true
 
-    # Git status (abort if fails)
+    # Git status (HARD requirement - abort if fails)
     if ! check_git_status; then
         all_passed=false
     fi
 
-    # Database selection (abort if fails)
+    # Database selection (HARD requirement - abort if fails)
     if ! check_database_selection; then
         all_passed=false
     fi
 
-    # Database state (warning only for now)
-    check_database_cleared || true
+    # OAuth token refresh (HARD requirement - abort if fails)
+    if [ -f "$PROJECT_ROOT/.env.test" ]; then
+        log_info "Refreshing OAuth tokens..."
+        if ! "$SCRIPT_DIR/refresh-oauth-tokens.sh"; then
+            log_error "Failed to refresh OAuth tokens"
+            log_error "Run: ./helper-scripts/setup-test-oauth.sh"
+            all_passed=false
+        fi
+    else
+        log_error ".env.test not found - OAuth tokens required"
+        log_error "Run: ./helper-scripts/setup-test-oauth.sh"
+        all_passed=false
+    fi
 
-    # Gmail state (warning only for now)
-    check_gmail_state || true
+    # Database state (HARD requirement - abort if fails)
+    if ! check_database_state; then
+        all_passed=false
+    fi
 
-    # MS Mail state (warning only for now)
-    check_msmail_state || true
+    # Gmail state (HARD requirement - abort if fails)
+    if ! check_gmail_state; then
+        all_passed=false
+    fi
+
+    # MS Mail state (HARD requirement - abort if fails)
+    if ! check_msmail_state; then
+        all_passed=false
+    fi
 
     if [ "$all_passed" = false ]; then
         log_error "Preflight checks FAILED"
