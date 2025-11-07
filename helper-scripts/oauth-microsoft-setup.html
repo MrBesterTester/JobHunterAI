@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microsoft OAuth Setup - JobHunter Testing</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #0078d4 0%, #5c2d91 100%);
+        }
+        .container {
+            background: white;
+            padding: 3rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 500px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 0.5rem;
+            font-size: 2rem;
+        }
+        .subtitle {
+            color: #0078d4;
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+        }
+        p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+        .oauth-button {
+            display: inline-block;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+            font-size: 1.1rem;
+            background: linear-gradient(135deg, #0078d4 0%, #5c2d91 100%);
+            color: white;
+        }
+        .oauth-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 120, 212, 0.4);
+        }
+        .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        .status {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 6px;
+            display: none;
+        }
+        .status.error {
+            color: #d32f2f;
+            background: #ffebee;
+            display: block;
+        }
+        .status.success {
+            color: #2e7d32;
+            background: #e8f5e9;
+            display: block;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #0078d4;
+            padding: 1rem;
+            margin-top: 2rem;
+            text-align: left;
+            border-radius: 4px;
+        }
+        .info-box h3 {
+            margin-top: 0;
+            color: #0078d4;
+            font-size: 1rem;
+        }
+        .info-box ul {
+            margin: 0.5rem 0 0 0;
+            padding-left: 1.5rem;
+        }
+        .info-box li {
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #0078d4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">🪟</div>
+        <h1>Microsoft OAuth Setup</h1>
+        <div class="subtitle">JobHunter Testing - Step 2 of 2</div>
+
+        <p>Click the button below to authorize JobHunter to access your Microsoft email account for testing.</p>
+
+        <button class="oauth-button" onclick="authorizeMicrosoft()">
+            🔐 Authorize Microsoft
+        </button>
+
+        <div id="status" class="status"></div>
+
+        <div class="info-box">
+            <h3>📋 What happens next:</h3>
+            <ul>
+                <li>Opens Microsoft authorization page</li>
+                <li>You sign in and grant permissions</li>
+                <li>Tokens are stored in database</li>
+                <li>You return here to see success message</li>
+            </ul>
+        </div>
+
+        <div class="info-box" style="margin-top: 1rem;">
+            <h3>🔒 Permissions requested:</h3>
+            <ul>
+                <li><strong>Mail.Read:</strong> Read email messages</li>
+                <li><strong>Mail.ReadWrite:</strong> Read and manage mail</li>
+            </ul>
+        </div>
+
+        <div class="info-box" style="margin-top: 1rem; border-left-color: #5c2d91;">
+            <h3>✅ After Microsoft authorization:</h3>
+            <ul>
+                <li>Both OAuth tokens are now configured!</li>
+                <li>Tell Claude "done" to extract tokens and run tests</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = message;
+        }
+
+        async function authorizeMicrosoft() {
+            try {
+                showStatus('Fetching Microsoft authorization URL... <span class="loading"></span>', 'success');
+
+                const response = await fetch('http://localhost:8080/api/email/microsoft/auth-url');
+
+                if (!response.ok) {
+                    throw new Error(`Backend returned ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                if (data.auth_url) {
+                    showStatus('Redirecting to Microsoft authorization page...', 'success');
+                    setTimeout(() => {
+                        window.location.href = data.auth_url;
+                    }, 500);
+                } else {
+                    throw new Error('No auth URL received from backend');
+                }
+            } catch (error) {
+                showStatus(
+                    `<strong>Microsoft OAuth Error:</strong><br>${error.message}<br><br>` +
+                    'Make sure backend is running: <code>./helper-scripts/start.sh</code>',
+                    'error'
+                );
+                console.error('Microsoft OAuth error:', error);
+            }
+        }
+
+        // Check if we just returned from OAuth callback
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('code') || window.location.pathname.includes('callback')) {
+            showStatus(
+                '<strong>✓ Microsoft authorization successful!</strong><br><br>' +
+                'Tokens have been stored in the database.<br><br>' +
+                '🎉 Both Gmail and Microsoft OAuth are now configured!<br>' +
+                'Tell Claude "done" to continue with testing.',
+                'success'
+            );
+        } else if (urlParams.has('error')) {
+            const error = urlParams.get('error') || 'Unknown error';
+            showStatus(`<strong>Authorization failed:</strong><br>${error}`, 'error');
+        }
+    </script>
+</body>
+</html>
