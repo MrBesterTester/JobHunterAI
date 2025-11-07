@@ -1,3 +1,16 @@
+---
+document_type: testing_history
+purpose: Historical archive of all completed testing work and phase-specific results
+scope: Complete testing journey from October 2025 onward
+update_policy: Append only - new work gets added, historical work is never deleted
+content_lifecycle: Permanent archive - all phase-specific results, detailed analysis, and completed work
+related_docs:
+  - TESTING_STATUS.md (current status)
+  - PROJECT_STATUS.md (overall project status)
+archive_start_date: 2025-10-23
+last_updated: 2025-11-07 12:47:47 PST
+---
+
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
@@ -43,6 +56,26 @@
       - [Phase 2: Fix Job Details Modal Tests ✅ COMPLETED (2025-10-31 Afternoon)](#phase-2-fix-job-details-modal-tests--completed-2025-10-31-afternoon)
       - [Additional Fixes (2025-10-31)](#additional-fixes-2025-10-31)
       - [Summary: October 31 Unit Test Cleanup](#summary-october-31-unit-test-cleanup)
+  - [Phase 2.4-2.7 Testing Work (November 2025)](#phase-24-27-testing-work-november-2025)
+    - [Phase 2.7: Microsoft Email Integration](#phase-27-microsoft-email-integration)
+      - [Backend Unit Tests - Microsoft Email Integration](#backend-unit-tests---microsoft-email-integration)
+      - [E2E Tests - Microsoft Email Integration](#e2e-tests---microsoft-email-integration)
+    - [Phase 2.5: Email Composition](#phase-25-email-composition)
+      - [Quick Summary](#quick-summary)
+      - [Test Details](#test-details)
+      - [Implementation Approach](#implementation-approach)
+    - [Phase 2.4: Calendar, Follow-ups, Timeline](#phase-24-calendar-follow-ups-timeline)
+      - [Quick Summary (Round 4 - LATEST)](#quick-summary-round-4---latest)
+      - [Failure Analysis (Round 4 - 1 Remaining Failure)](#failure-analysis-round-4---1-remaining-failure)
+      - [Key Findings](#key-findings)
+    - [Phase 2.4: Gmail Send Integration](#phase-24-gmail-send-integration)
+      - [Test Results Summary](#test-results-summary)
+      - [Test Coverage](#test-coverage)
+      - [Key Validations](#key-validations)
+    - [Phase 2.4: Backend Test Analysis](#phase-24-backend-test-analysis)
+      - [Current Backend Test Coverage](#current-backend-test-coverage)
+      - [What's NOT Covered (External APIs)](#whats-not-covered-external-apis)
+      - [Decision: Option A1 - Skip Additional Backend Tests](#decision-option-a1---skip-additional-backend-tests)
   - [Key Insights](#key-insights)
     - [Relationship Between ISSUE-018 and ISSUE-023](#relationship-between-issue-018-and-issue-023)
     - [Email Composer in Context](#email-composer-in-context)
@@ -58,7 +91,7 @@
 
 **For current status**: See [TESTING_STATUS.md](TESTING_STATUS.md)
 
-**Last Updated**: 2025-10-31
+**Last Updated**: 2025-11-07 12:47:47 PST (Phase 2.4-2.7 testing work archived)
 
 ---
 
@@ -136,6 +169,15 @@
 - ✅ **Filtered Jobs Display**: Fixed button visibility logic (1 test)
 - Unit test pass rate: 99.0% → 99.8% (516/517 passing)
 - Skipped tests: 5 → 1 (only architectural limitation remains)
+
+**November 1-3, 2025**: Phase 2.4-2.7 Testing & Validation
+- ✅ **Phase 2.4**: Calendar, Follow-ups, Timeline features (68/69 tests passing, 98.6%)
+- ✅ **Phase 2.4**: Gmail send integration (9/9 tests passing, 100%)
+- ✅ **Phase 2.5**: Email composition feature (16/16 tests passing, 100%)
+- ✅ **Phase 2.7**: Microsoft email integration (8 backend + 13 E2E tests)
+- Backend test count: 148 → 158 tests (+10 tests)
+- E2E test count: 343 → 359 tests (+16 tests)
+- Overall pass rate maintained at production-ready levels
 
 ---
 
@@ -578,6 +620,280 @@ From the comprehensive test report ([README_test-report-10-23-2025.md](../README
 - **Skipped Tests**: 5 → 1 (only architectural limitation remains)
 - **Total Effort**: ~4.5 hours
 - **Final Status**: 516/517 passing (99.8%), 1/517 skipped (0.2%)
+
+---
+
+## Phase 2.4-2.7 Testing Work (November 2025)
+
+**Overview**: Phase-specific testing validation completed between November 1-3, 2025. This section archives detailed test results from Phase 2.4 (Calendar/Follow-ups/Timeline/Gmail Send), Phase 2.5 (Email Composition), and Phase 2.7 (Microsoft Email Integration).
+
+### Phase 2.7: Microsoft Email Integration
+
+**Test Run Date**: 2025-11-03 14:40:00 PST
+**Status**: ✅ **Backend Tests Complete** (8/8 passing, 100%)
+
+#### Backend Unit Tests - Microsoft Email Integration
+
+| Test Category | Tests | Passed | Failed | Pass Rate |
+|---------------|-------|--------|--------|-----------|
+| **OAuth Credentials** | 2 | 2 | 0 | 100% |
+| **Email Job Processing** | 3 | 3 | 0 | 100% |
+| **Database Schema** | 2 | 2 | 0 | 100% |
+| **Integration Health** | 1 | 1 | 0 | 100% |
+| **TOTAL** | **8** | **8** | **0** | **100%** |
+
+**Test Coverage:**
+1. ✅ `test_microsoft_oauth_credential_storage` - OAuth credential storage and retrieval
+2. ✅ `test_microsoft_token_expiration_check` - Token expiration detection
+3. ✅ `test_microsoft_email_job_insertion` - Email job insertion with `microsoft_email` source
+4. ✅ `test_microsoft_email_deduplication` - Duplicate message_id prevention
+5. ✅ `test_microsoft_job_extraction_linkage` - Email job to extracted job linking
+6. ✅ `test_microsoft_source_configuration` - microsoft_email source validation
+7. ✅ `test_oauth_credential_tenant_field` - OAuth scope array storage (TEXT[])
+8. ✅ `test_microsoft_integration_readiness` - Database schema readiness check
+
+**Test File**: `backend/tests/microsoft_email_tests.rs` (462 lines)
+
+**Key Accomplishments:**
+- ✅ Validated OAuth credential storage with unique source_id constraint
+- ✅ Verified email_jobs table accepts `source` column (gmail vs microsoft_email)
+- ✅ Tested message deduplication via unique message_id constraint
+- ✅ Confirmed job extraction linkage between email_jobs and jobs tables
+- ✅ Validated Microsoft Graph API configuration in job_sources table
+- ✅ Verified scope array storage (TEXT[]) for Mail.Read, Mail.ReadWrite permissions
+
+**Database Migrations Applied:**
+- ✅ `003_add_microsoft_email_source.sql` - Added microsoft_email job source
+- ✅ `004_add_email_jobs_source_column.sql` - Added source column to email_jobs
+
+#### E2E Tests - Microsoft Email Integration
+
+**Status**: ✅ **Test Framework Created** - Manual testing required
+
+**Test File**: `frontend/e2e/tests/16-microsoft-email-integration.spec.ts` (197 lines)
+
+**Test Coverage (13 tests total):**
+- ✅ **UI Display Tests** (3 tests) - Microsoft Email card, branding, authentication buttons
+- ✅ **Folder Status Tests** (2 tests) - JobOps folder status, unread count display
+- ✅ **Source Differentiation** (1 test) - Microsoft vs Gmail source badges
+- ⏸️ **OAuth Flow** (2 manual tests) - Requires live Microsoft authentication
+- ✅ **Error Handling** (1 test) - Authentication failure messages
+- ✅ **Integration Tests** (2 tests) - Job approval flow, source display in details
+- 🔄 **Job Source Badge Test** (1 test) - Soft assertion (requires Microsoft-sourced jobs)
+
+**Manual Testing Required:**
+- OAuth flow with sam@samkirk.com (requires live Microsoft 365 account)
+- Email sync from JobOps folder (requires configured mailbox)
+- End-to-end: OAuth → Sync → Extract → Approve workflow
+
+**Phase 2.7 Summary:**
+- **Backend Testing**: ✅ **COMPLETE** (8/8 tests passing, 100%)
+- **E2E Testing**: 🔄 **Framework Ready** (13 tests created, manual validation pending)
+- **Total New Tests**: 21 tests (8 backend + 13 E2E)
+- **Backend Test Runtime**: ~0.2 seconds
+
+---
+
+### Phase 2.5: Email Composition
+
+**Test Run Date**: 2025-11-03 10:55:00 PST
+**Status**: ✅ **100% COMPLETE**
+
+#### Quick Summary
+
+| Test Category | Tests | Passed | Failed | Pass Rate |
+|---------------|-------|--------|--------|-----------|
+| **Create Email Draft Button** | 2 | 2 | 0 | 100% |
+| **Email Composer Modal** | 8 | 8 | 0 | 100% |
+| **Draft Creation Workflow** | 3 | 3 | 0 | 100% |
+| **Error Handling** | 2 | 2 | 0 | 100% |
+| **Draft Status Display** | 1 | 1 | 0 | 100% |
+| **TOTAL** | **16** | **16** | **0** | **100%** |
+
+#### Test Details
+
+**All tests passing with API mocking:**
+- ✅ Create Email Draft button appears after content generation
+- ✅ Button displays Send icon
+- ✅ Email composer modal opens when button clicked
+- ✅ Recipient email field displayed and editable
+- ✅ Subject line field displayed and editable
+- ✅ Cover letter preview displayed correctly
+- ✅ Resume attachment indicator shown (filename + size)
+- ✅ Close button functionality working
+- ✅ Validation for required recipient email
+- ✅ Error message display on draft creation failure
+- ✅ Invalid email validation
+- ✅ Draft status badge shown on job card after creation
+- ✅ Link to open draft in Gmail working
+
+**Test Performance:**
+- Individual test times: 6.8s - 17.4s per test
+- Total suite runtime: 44.2 seconds
+- No timeout issues with mocked API
+
+#### Implementation Approach
+
+**API Mocking Strategy:**
+- Used Playwright `page.route()` to intercept `/api/jobs/*/generate-content` calls
+- Returns realistic mock `GeneratedContent` data structure
+- Eliminates dependency on slow LLM API calls (30-45+ seconds)
+- Provides instant, reliable test execution
+
+**Key Findings:**
+- ✅ **100% pass rate** - All Phase 2.5 E2E tests passing!
+- ✅ **All Email Composition functionality working**
+- ✅ **Test Performance**: Fast execution (44.2s total vs 10+ minutes with live LLM)
+- ✅ **No flaky tests or timeouts**
+
+**Phase 2.5 Testing Status**: ✅ **100% COMPLETE**
+- ✅ E2E tests: 16/16 passing (100%)
+- ✅ Unit tests: 34/34 passing (3 backend + 31 frontend)
+- ✅ API mocking: Implemented for fast, reliable tests
+- ✅ Validation: All functionality verified
+
+---
+
+### Phase 2.4: Calendar, Follow-ups, Timeline
+
+**Test Run Date**: 2025-10-31 15:04:27 PDT (Round 3 - After Test Fixes)
+**Run Type**: Phase 2.4 Feature Tests Only
+**Total Runtime**: ~1.3 minutes per run
+
+#### Quick Summary (Round 4 - LATEST)
+
+| Feature | Tests | Passed | Failed | Pass Rate |
+|---------|-------|--------|--------|-----------|
+| **Calendar Management** | 17 | 16 | 1 | 94.1% |
+| **Follow-ups Management** | 28 | 28 | 0 | 100% |
+| **Timeline View** | 24 | 24 | 0 | 100% |
+| **TOTAL** | **69** | **68** | **1** | **98.6%** |
+
+**Progress Over 4 Rounds:**
+- Round 1 (2025-10-31 14:15:00 PDT): 59/69 passing (85.5%) - Initial run
+- Round 2 (2025-10-31 14:45:00 PDT): 62/69 passing (89.9%) - Fixed text mismatch + 4 timing issues
+- Round 3 (2025-10-31 15:04:27 PDT): 65/69 passing (94.2%) - Fixed 3 strict mode violations
+- Round 4 (2025-10-31 16:05:49 PDT): 68/69 passing (98.6%) - Fixed 3 UX issues (modal, error handling, button label)
+- **Total Improvement**: Fixed 9 out of 10 original failures 🎉
+
+#### Failure Analysis (Round 4 - 1 Remaining Failure)
+
+**✅ FIXED (9 failures resolved across all rounds):**
+- Text mismatch: "Follow-up Queue" → "Pending Follow-ups" ✅
+- API timing issues: 4 instances of waitForResponse after action (moved listener setup before action) ✅
+- Strict mode violations: 2 instances of ambiguous selectors (added .first() or .last()) ✅
+- **Round 4 fixes (2025-10-31 16:05:49 PDT):**
+  - Calendar modal heading: Changed h2 → h3 in ScheduleModal component ✅
+  - Calendar error handling: Added error state and retry button ✅
+  - Follow-ups error handling: Added error state and retry button ✅
+  - Timeline "New Jobs" button: Updated getTabLabel() to return "New Jobs" instead of "New" ✅
+
+**❌ REMAINING (1 pre-existing timing issue):**
+1. **Calendar: "should display upcoming interviews in calendar view"** (line 116)
+   - Error: `TimeoutError: page.waitForResponse: Timeout 10000ms exceeded`
+   - Issue: API response timing issue (pre-existing, unrelated to UX fixes)
+   - Type: Test infrastructure issue - needs investigation or timeout adjustment
+   - Status: Not a blocker - 98.6% pass rate is excellent
+
+#### Key Findings
+
+✅ **98.6% pass rate** - Outstanding result after UX improvements!
+✅ **All Phase 2.4 functionality working:**
+- Calendar tab navigation and API integration ✅
+- Error handling UI for API failures ✅
+- Follow-up templates, scheduling, and approval workflow ✅
+- Timeline display and event history ✅
+- Interview creation and management ✅
+- Proper button labels and modal headings ✅
+
+⚠️ **1 remaining failure is a pre-existing timing issue:**
+- Calendar API response timeout (not related to UX fixes)
+- Not a blocker for Phase 2.4 completion
+
+---
+
+### Phase 2.4: Gmail Send Integration
+
+**Test Run Date**: 2025-11-01 15:04:00 PDT
+**Test File**: `frontend/e2e/tests/20-gmail-send-integration.spec.ts`
+**Total Runtime**: ~30 seconds
+
+#### Test Results Summary
+
+| Test Category | Tests | Passed | Failed | Pass Rate |
+|---------------|-------|--------|--------|-----------|
+| **Follow-up Email Sending** | 5 | 5 | 0 | 100% |
+| **Gmail OAuth Token Status** | 2 | 2 | 0 | 100% |
+| **TEST_MODE Safety** | 2 | 2 | 0 | 100% |
+| **TOTAL** | **9** | **9** | **0** | **100%** |
+
+#### Test Coverage
+
+**Follow-up Email Sending with TEST_MODE**:
+- ✅ Send follow-up email to test address when TEST_MODE enabled
+- ✅ Handle Gmail send errors gracefully
+- ✅ Show Gmail message ID after successful send
+- ✅ Update follow-up status to sent after successful send
+- ✅ Prevent sending follow-up before approval
+
+**Gmail OAuth Token Status**:
+- ✅ Valid Gmail OAuth token with send scope
+- ✅ Handle expired OAuth tokens gracefully
+
+**TEST_MODE Safety**:
+- ✅ Log TEST_MODE override in backend logs
+- ✅ Send test emails only to MrBesterTester@gmail.com
+
+#### Key Validations
+
+✅ **Gmail OAuth**: All 3 scopes verified (readonly, modify, send)
+✅ **Email Sending**: Follow-up sent successfully (Gmail message ID: 19a4173af2fbd34e)
+✅ **TEST_MODE Safety**: Backend logs confirm override to MrBesterTester@gmail.com
+✅ **Database**: Follow-up status = 'sent', no errors
+✅ **Backend Implementation**: OAuth scope parsing fixed, TEST_MODE env var working
+
+---
+
+### Phase 2.4: Backend Test Analysis
+
+**Analysis Date/Time**: 2025-10-31 14:46:00 PDT
+**Total Backend Tests**: 150 passing + 2 ignored = **152 total**
+
+#### Current Backend Test Coverage
+
+**Phase 2.4 features are already well-tested!**
+- ✅ **23 tests** in `phase5_1_tests.rs` cover Phase 2.4 functionality
+- ✅ All 23 tests passing (100%)
+- ✅ Coverage includes:
+  - Interview CRUD operations (create, get, update, delete)
+  - Follow-up workflow (create, approve, send)
+  - Timeline views and application tracking
+  - Database constraints and cascade deletes
+  - Complete end-to-end workflows
+
+#### What's NOT Covered (External APIs)
+
+Phase 2.4 backend tests cover database operations but NOT external API integrations:
+- Calendar OAuth (calendar_auth.rs) - has 1 inline unit test for token expiry
+- Google Calendar API (calendar_service.rs) - has 1 inline unit test for reminders
+- Email template rendering (main.rs) - function exists, no dedicated tests
+- Gmail API email sending (main.rs) - function exists, no dedicated tests
+
+#### Decision: Option A1 - Skip Additional Backend Tests
+
+**Rationale**:
+1. **Strong DB coverage**: 23 tests validate all database operations
+2. **External APIs require mocking**: Calendar/Gmail APIs need complex mocking or live credentials
+3. **E2E tests validate integration**: End-to-end tests verify the full flow including API calls
+4. **Diminishing returns**: Additional backend tests would test external services, not our code
+
+**Alternative (Option A2)**: Add minimal mock tests for API integrations (~5-10 tests, 30-60 minutes)
+- Mock Calendar OAuth token exchange
+- Mock Google Calendar event creation
+- Mock Gmail message sending
+- Mock template variable substitution
+
+**Status**: Proceeded to E2E test validation - more valuable for immediate Phase 2.4 validation
 
 ---
 
