@@ -38,8 +38,26 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Ignored Tab', () => {
     console.log(`Gmail emails: ${gmailEmails.length}, Non-Gmail emails: ${nonGmailEmails.length}`);
 
     // Check that checkboxes exist (one per Gmail email)
-    const checkboxes = page.locator('input[type="checkbox"][data-email-id]');
-    const checkboxCount = await checkboxes.count();
+    // Note: Checkboxes are lucide-react SVG icons (CheckSquare/Square), not input elements
+    // They appear within email cards that have Gmail source
+    const emailCards = page.locator('[data-testid="ignored-email-card"]');
+    let checkboxCount = 0;
+
+    // Count cards that have checkbox icons (CheckSquare or Square SVG)
+    const cardCount = await emailCards.count();
+    for (let i = 0; i < cardCount; i++) {
+      const card = emailCards.nth(i);
+      // Look for SVG elements (lucide-react renders as <svg> with specific classes)
+      const hasSvgIcon = await card.locator('svg').first().isVisible().catch(() => false);
+      if (hasSvgIcon) {
+        // Check if this is a checkbox icon (has cursor: pointer style)
+        const svg = card.locator('svg').first();
+        const style = await svg.getAttribute('style');
+        if (style && style.includes('cursor: pointer')) {
+          checkboxCount++;
+        }
+      }
+    }
 
     console.log(`Found ${checkboxCount} checkboxes`);
 
@@ -59,19 +77,37 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Ignored Tab', () => {
     await ignoredTab.click();
     await page.waitForTimeout(1000);
 
-    // Check if we have Gmail emails
-    const checkboxes = page.locator('input[type="checkbox"][data-email-id]');
-    const checkboxCount = await checkboxes.count();
+    // Check if we have Gmail emails with checkboxes
+    const emailCards = page.locator('[data-testid="ignored-email-card"]');
+    const cardCount = await emailCards.count();
 
-    if (checkboxCount === 0) {
+    if (cardCount === 0) {
+      console.log('No emails in Ignored tab - skipping test');
+      return;
+    }
+
+    // Find first card with a checkbox icon (Gmail email)
+    let checkboxCard = null;
+    for (let i = 0; i < cardCount; i++) {
+      const card = emailCards.nth(i);
+      const svg = card.locator('svg').first();
+      const hasCursorPointer = await svg.getAttribute('style').then(s => s?.includes('cursor: pointer')).catch(() => false);
+      if (hasCursorPointer) {
+        checkboxCard = card;
+        break;
+      }
+    }
+
+    if (!checkboxCard) {
       console.log('No Gmail emails in Ignored tab - skipping test');
       return;
     }
 
-    console.log(`Found ${checkboxCount} Gmail emails to test with`);
+    console.log('Found Gmail email with checkbox');
 
-    // Select first checkbox
-    await checkboxes.first().check();
+    // Click the checkbox icon to select
+    const checkboxIcon = checkboxCard.locator('svg').first();
+    await checkboxIcon.click();
     await page.waitForTimeout(500);
 
     // Find and click the delete button
@@ -86,9 +122,9 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Ignored Tab', () => {
     await deleteButton.click();
     await page.waitForTimeout(500);
 
-    // Verify confirmation dialog appears
-    const confirmDialog = page.locator('div[role="dialog"], div.modal, div.confirmation-dialog').first();
-    await expect(confirmDialog).toBeVisible({ timeout: 3000 });
+    // Verify confirmation dialog appears (look for the heading text)
+    const confirmDialogHeading = page.locator('h3', { hasText: 'Confirm Deletion' });
+    await expect(confirmDialogHeading).toBeVisible({ timeout: 3000 });
 
     console.log('Confirmation dialog appeared');
 
@@ -121,23 +157,37 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Ignored Tab', () => {
     await ignoredTab.click();
     await page.waitForTimeout(1000);
 
-    // Check if we have Gmail emails
-    const checkboxes = page.locator('input[type="checkbox"][data-email-id]');
-    const checkboxCount = await checkboxes.count();
+    // Check if we have emails
+    const emailCards = page.locator('[data-testid="ignored-email-card"]');
+    const initialCount = await emailCards.count();
 
-    if (checkboxCount === 0) {
+    if (initialCount === 0) {
+      console.log('No emails in Ignored tab - skipping test');
+      return;
+    }
+
+    // Find first card with a checkbox icon (Gmail email)
+    let checkboxCard = null;
+    for (let i = 0; i < initialCount; i++) {
+      const card = emailCards.nth(i);
+      const svg = card.locator('svg').first();
+      const hasCursorPointer = await svg.getAttribute('style').then(s => s?.includes('cursor: pointer')).catch(() => false);
+      if (hasCursorPointer) {
+        checkboxCard = card;
+        break;
+      }
+    }
+
+    if (!checkboxCard) {
       console.log('No Gmail emails in Ignored tab - skipping test');
       return;
     }
 
-    // Get initial email count
-    const initialEmailCards = page.locator('[data-testid="ignored-email-card"]');
-    const initialCount = await initialEmailCards.count();
-
     console.log(`Initial email count: ${initialCount}`);
 
-    // Select first checkbox
-    await checkboxes.first().check();
+    // Click the checkbox icon to select
+    const checkboxIcon = checkboxCard.locator('svg').first();
+    await checkboxIcon.click();
     await page.waitForTimeout(500);
 
     // Click delete button
@@ -145,9 +195,9 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Ignored Tab', () => {
     await deleteButton.click();
     await page.waitForTimeout(500);
 
-    // Verify confirmation dialog appears
-    const confirmDialog = page.locator('div[role="dialog"], div.modal, div.confirmation-dialog').first();
-    await expect(confirmDialog).toBeVisible({ timeout: 3000 });
+    // Verify confirmation dialog appears (look for the heading text)
+    const confirmDialogHeading = page.locator('h3', { hasText: 'Confirm Deletion' });
+    await expect(confirmDialogHeading).toBeVisible({ timeout: 3000 });
 
     // Click Cancel button
     const cancelButton = page.locator('button', { hasText: 'Cancel' });
@@ -156,8 +206,8 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Ignored Tab', () => {
 
     await page.waitForTimeout(500);
 
-    // Verify dialog is closed
-    await expect(confirmDialog).not.toBeVisible();
+    // Verify dialog is closed (heading should no longer be visible)
+    await expect(confirmDialogHeading).not.toBeVisible();
 
     // Verify emails still present
     const currentEmailCards = page.locator('[data-testid="ignored-email-card"]');
@@ -172,8 +222,8 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Ignored Tab', () => {
 test.describe('Phase 2.10: Gmail Junk Cleanup - Rejected Tab', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(BASE_URL);
-    // Wait for the app to load
-    await page.waitForSelector('[data-testid="stat-rejected"]', { timeout: 10000 });
+    // Wait for the app to load (wait for stats section which always exists)
+    await page.waitForSelector('[data-testid="stat-new"]', { timeout: 10000 });
   });
 
   test('should show checkboxes only for Gmail jobs in Rejected tab', async ({ page }) => {
@@ -201,8 +251,21 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Rejected Tab', () => {
     console.log(`Gmail jobs: ${gmailJobs.length}, Non-Gmail jobs: ${nonGmailJobs.length}`);
 
     // Check that checkboxes exist (one per Gmail job)
-    const checkboxes = page.locator('input[type="checkbox"][data-job-id]');
-    const checkboxCount = await checkboxes.count();
+    // Note: Checkboxes are lucide-react SVG icons (CheckSquare/Square), not input elements
+    const jobCards = page.locator('[data-testid="job-card"]');
+    let checkboxCount = 0;
+
+    // Count cards that have checkbox icons (CheckSquare or Square SVG)
+    const cardCount = await jobCards.count();
+    for (let i = 0; i < cardCount; i++) {
+      const card = jobCards.nth(i);
+      // Look for SVG elements with cursor: pointer style (checkbox icons)
+      const svg = card.locator('svg').first();
+      const style = await svg.getAttribute('style').catch(() => null);
+      if (style && style.includes('cursor: pointer')) {
+        checkboxCount++;
+      }
+    }
 
     console.log(`Found ${checkboxCount} checkboxes`);
 
@@ -222,19 +285,37 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Rejected Tab', () => {
     await rejectedTab.click();
     await page.waitForTimeout(1000);
 
-    // Check if we have Gmail jobs
-    const checkboxes = page.locator('input[type="checkbox"][data-job-id]');
-    const checkboxCount = await checkboxes.count();
+    // Check if we have job cards with checkboxes
+    const jobCards = page.locator('[data-testid="job-card"]');
+    const cardCount = await jobCards.count();
 
-    if (checkboxCount === 0) {
+    if (cardCount === 0) {
+      console.log('No jobs in Rejected tab - skipping test');
+      return;
+    }
+
+    // Find first card with a checkbox icon (Gmail job)
+    let checkboxCard = null;
+    for (let i = 0; i < cardCount; i++) {
+      const card = jobCards.nth(i);
+      const svg = card.locator('svg').first();
+      const style = await svg.getAttribute('style').catch(() => null);
+      if (style && style.includes('cursor: pointer')) {
+        checkboxCard = card;
+        break;
+      }
+    }
+
+    if (!checkboxCard) {
       console.log('No Gmail jobs in Rejected tab - skipping test');
       return;
     }
 
-    console.log(`Found ${checkboxCount} Gmail jobs to test with`);
+    console.log('Found Gmail job with checkbox');
 
-    // Select first checkbox
-    await checkboxes.first().check();
+    // Click the checkbox icon to select
+    const checkboxIcon = checkboxCard.locator('svg').first();
+    await checkboxIcon.click();
     await page.waitForTimeout(500);
 
     // Find and click the delete button
@@ -249,9 +330,9 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Rejected Tab', () => {
     await deleteButton.click();
     await page.waitForTimeout(500);
 
-    // Verify confirmation dialog appears
-    const confirmDialog = page.locator('div[role="dialog"], div.modal, div.confirmation-dialog').first();
-    await expect(confirmDialog).toBeVisible({ timeout: 3000 });
+    // Verify confirmation dialog appears (look for the heading text)
+    const confirmDialogHeading = page.locator('h3', { hasText: 'Confirm Deletion' });
+    await expect(confirmDialogHeading).toBeVisible({ timeout: 3000 });
 
     console.log('Confirmation dialog appeared');
 
@@ -261,7 +342,7 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Rejected Tab', () => {
 
     // Intercept the API call to verify request and mock response
     const deletePromise = page.waitForResponse(
-      (response) => response.url().includes('/bulk-delete-gmail-rejected') && response.request().method() === 'POST',
+      (response) => response.url().includes('/jobs/bulk-delete-gmail') && response.request().method() === 'POST',
       { timeout: 5000 }
     );
 
@@ -284,16 +365,32 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Rejected Tab', () => {
     await rejectedTab.click();
     await page.waitForTimeout(1000);
 
-    // Check if we have Gmail jobs
-    const checkboxes = page.locator('input[type="checkbox"][data-job-id]');
-    const checkboxCount = await checkboxes.count();
+    // Check if we have job cards
+    const jobCards = page.locator('[data-testid="job-card"]');
+    const cardCount = await jobCards.count();
 
-    if (checkboxCount === 0) {
+    if (cardCount === 0) {
+      console.log('No jobs in Rejected tab - skipping test');
+      return;
+    }
+
+    // Count cards with checkbox icons (Gmail jobs)
+    let gmailJobCount = 0;
+    for (let i = 0; i < cardCount; i++) {
+      const card = jobCards.nth(i);
+      const svg = card.locator('svg').first();
+      const style = await svg.getAttribute('style').catch(() => null);
+      if (style && style.includes('cursor: pointer')) {
+        gmailJobCount++;
+      }
+    }
+
+    if (gmailJobCount === 0) {
       console.log('No Gmail jobs in Rejected tab - skipping test');
       return;
     }
 
-    console.log(`Found ${checkboxCount} Gmail jobs`);
+    console.log(`Found ${gmailJobCount} Gmail jobs`);
 
     // Find and click "Select All Gmail" button
     const selectAllButton = page.locator('button', { hasText: 'Select All Gmail' });
@@ -305,27 +402,18 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Rejected Tab', () => {
       await selectAllButton.click();
       await page.waitForTimeout(500);
 
-      // Verify all checkboxes are checked
-      for (let i = 0; i < checkboxCount; i++) {
-        const checkbox = checkboxes.nth(i);
-        await expect(checkbox).toBeChecked();
-      }
-
       // Verify delete button shows correct count
       const deleteButton = page.locator('button', { hasText: /Delete \d+ from Gmail/ });
       const buttonText = await deleteButton.textContent();
       console.log(`After select all, button shows: ${buttonText}`);
 
+      // Verify the count in the button matches our Gmail job count
+      expect(buttonText).toContain(`Delete ${gmailJobCount} from Gmail`);
+
       // Find and click "Deselect All" button
       const deselectAllButton = page.locator('button', { hasText: 'Deselect All' });
       await deselectAllButton.click();
       await page.waitForTimeout(500);
-
-      // Verify all checkboxes are unchecked
-      for (let i = 0; i < checkboxCount; i++) {
-        const checkbox = checkboxes.nth(i);
-        await expect(checkbox).not.toBeChecked();
-      }
 
       // Verify delete button is disabled or shows 0
       const finalButtonText = await deleteButton.textContent();
