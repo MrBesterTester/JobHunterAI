@@ -9,7 +9,7 @@ related_docs:
   - TESTING_HISTORY.md (historical archive)
   - TESTING_GUIDE.md (testing principles and investigation guide)
   - PROJECT_STATUS.md (overall project status)
-last_updated: 2025-11-07 14:38:25 PST (Merged preflight checklist documentation)
+last_updated: 2025-11-07 15:10:00 PST (Added global configuration parameters section)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -19,6 +19,7 @@ last_updated: 2025-11-07 14:38:25 PST (Merged preflight checklist documentation)
   - [Table of Contents](#table-of-contents)
   - [Overview](#overview)
   - [Current Implementation](#current-implementation)
+    - [Global Configuration Parameters](#global-configuration-parameters)
     - [Comprehensive Test Suite Script](#comprehensive-test-suite-script)
     - [Preflight Requirements (HARD Requirements)](#preflight-requirements-hard-requirements)
       - [1. Git Status ✅](#1-git-status-)
@@ -211,6 +212,43 @@ This document outlines the comprehensive testing strategy for the JobHunter auto
 ---
 
 ## Current Implementation
+
+### Global Configuration Parameters
+
+**Core Testing Limits** (Email Processing):
+- **Preflight Gmail Cleanup**: 500 unread emails maximum (`clear-gmail-state.sh`)
+- **Gmail Sync Limit**: 30 emails per sync (`POST /api/intake/gmail/sync`)
+- **RapidAPI Sync Limit**: 15 jobs per sync (`POST /api/intake/rapidapi/sync`)
+- **Microsoft Mail Sync**: Processes all unread emails in JobOps folder (no hard limit)
+
+**Database Configuration**:
+- **Test Database**: `jobhunter_personal` (required by preflight checks)
+- **Test Fixtures**: `database/test-fixtures.sql` (8 jobs, 3 applications, 3 sources)
+- **OAuth Credentials**: Stored in `oauth_credentials` table (injected from `.env.test`)
+
+**OAuth & Security**:
+- **OAuth Tokens File**: `.env.test` (gitignored, required for all email operations)
+- **Token Refresh**: Auto-refresh during preflight if expired (~2-4 sec overhead)
+- **Gmail Scopes**: `gmail.readonly`, `gmail.modify`
+- **MS Mail Scopes**: `Mail.Read`, `Mail.ReadWrite`
+
+**Environment Files**:
+- `.env.test` - OAuth tokens for test automation (gitignored, user-created)
+- `.env.test.example` - Template with placeholders
+- `backend/.env` - Backend configuration (DATABASE_URL, OAuth client IDs)
+
+**Token Lifecycle**:
+- **Gmail Access Token**: 1 hour (auto-refreshed)
+- **Gmail Refresh Token**: Never expires (unless unused 6+ months)
+- **MS Mail Access Token**: 1 hour (auto-refreshed)
+- **MS Mail Refresh Token**: 90 days (quarterly re-authorization required)
+
+**Build Requirements**:
+- **Zero-warning builds**: Both backend (Rust/Cargo) and frontend (React/RSBuild) must build with zero warnings
+- **Backend**: `cargo clean && cargo build`
+- **Frontend**: `npm run build`
+
+---
 
 ### Comprehensive Test Suite Script
 
