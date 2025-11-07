@@ -853,6 +853,24 @@ import { CheckSquare, Square, Trash2 } from 'lucide-react';
 
 **Total Tests**: 10 (4 backend unit + 6 E2E + manual verification)
 
+**Testing Approach**:
+1. ✅ **Backend unit tests** (4 tests) - Completed, all passing
+2. ⏳ **Manual smoke test** (10 min) - REQUIRED NEXT STEP
+   - Verify basic functionality works end-to-end
+   - Check UI/UX quality (alignment, spacing, colors)
+   - Validate real Gmail API integration
+   - Catch obvious bugs before writing detailed E2E tests
+3. ⏳ **Full E2E test implementation** (6 tests) - After manual verification
+   - Only implement full E2E tests after manual verification succeeds
+   - This avoids wasting time writing tests for broken features
+   - Real implementations will include database setup, UI interactions, API mocking
+
+**Why Manual Testing First**:
+- Claude cannot see visual/UX quality issues (alignment, spacing, usability)
+- Manual testing verifies real Gmail API integration (not mocked)
+- Faster bug discovery (2 min manual vs 30 min writing E2E tests)
+- E2E tests should validate working features, not discover broken ones
+
 ### Backend Unit Tests (4 tests)
 
 **Test Suite**: `backend/tests/gmail_cleanup_tests.rs`
@@ -893,6 +911,11 @@ import { CheckSquare, Square, Trash2 } from 'lucide-react';
 ### E2E Tests (6 tests)
 
 **Test Suite**: `frontend/e2e/tests/18-gmail-junk-cleanup.spec.ts`
+
+**Current Status**: ✅ Test structure created, placeholders passing (6/6)
+**Next Step**: ⏳ Implement full test logic after manual verification
+
+**Note**: Currently these are placeholder tests with `expect(true).toBe(true)` assertions. They verify test discovery and framework functionality. Full implementations (with database setup, UI interactions, API mocking, and real assertions) will be added after manual verification confirms the feature works correctly.
 
 **For Ignored Tab** (3 tests):
 
