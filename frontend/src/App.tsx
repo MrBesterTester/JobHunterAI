@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { AlertCircle, CheckCircle, XCircle, Clock, Briefcase, DollarSign, MapPin, Filter, FileText, Mail, Calendar as CalendarIcon, Download, Send, ExternalLink, AlertTriangle, Copy, RefreshCw, TrendingUp, Settings } from 'lucide-react';
+import { AlertCircle, CheckCircle, XCircle, Clock, Briefcase, DollarSign, MapPin, Filter, FileText, Mail, Calendar as CalendarIcon, Download, Send, ExternalLink, AlertTriangle, Copy, RefreshCw, TrendingUp, Settings, CheckSquare, Square, Trash2 } from 'lucide-react';
 import ResumeManagement from './ResumeManagement';
 import CalendarTab from './CalendarTab';
 import FollowupsTab from './FollowupsTab';
@@ -956,6 +956,11 @@ const JobHunterDashboard: React.FC = () => {
   const [condensedDescriptions, setCondensedDescriptions] = useState<Record<string, string>>({});
   const [validDescriptionFlags, setValidDescriptionFlags] = useState<Record<string, boolean>>({});
 
+  // Phase 2.10: Gmail junk cleanup - bulk delete state
+  const [selectedJobsForDeletion, setSelectedJobsForDeletion] = useState<Set<string>>(new Set());
+  const [isDeletingJobs, setIsDeletingJobs] = useState<boolean>(false);
+  const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState<boolean>(false);
+
   // Track which jobs are currently being fetched to prevent duplicate requests
   const fetchingJobsRef = React.useRef<Set<string>>(new Set());
 
@@ -1254,6 +1259,66 @@ const JobHunterDashboard: React.FC = () => {
       // Don't re-throw - we've handled the error with optimistic update
     }
   }, []); // Empty dependency array since we use functional setState and fetchJobs/fetchStats are stable
+
+  // Phase 2.10: Gmail junk cleanup - helper functions
+  const toggleJobSelection = (jobId: string): void => {
+    setSelectedJobsForDeletion(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(jobId)) {
+        newSet.delete(jobId);
+      } else {
+        newSet.add(jobId);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAllGmailJobs = (): void => {
+    const gmailJobs = filterJobs('rejected').filter(j => j.source === 'gmail');
+    setSelectedJobsForDeletion(new Set(gmailJobs.map(j => j.job_id)));
+  };
+
+  const deselectAllJobs = (): void => {
+    setSelectedJobsForDeletion(new Set());
+  };
+
+  const handleBulkDeleteJobs = async (): Promise<void> => {
+    if (selectedJobsForDeletion.size === 0) return;
+
+    setIsDeletingJobs(true);
+    try {
+      const response = await fetch(`${API_URL}/jobs/bulk-delete-gmail`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ job_ids: Array.from(selectedJobsForDeletion) })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete jobs: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (result.success_count > 0) {
+        // Refresh the jobs list
+        await fetchJobs();
+        await fetchStats();
+        setSelectedJobsForDeletion(new Set());
+        alert(`Successfully deleted ${result.success_count} job(s) from Gmail`);
+      }
+
+      if (result.failure_count > 0) {
+        const failureMsg = result.failures.map((f: any) => `${f.id}: ${f.error}`).join('\n');
+        console.error(`Failed to delete ${result.failure_count} job(s):\n${failureMsg}`);
+      }
+    } catch (err) {
+      console.error('Error deleting jobs:', err);
+      alert('Failed to delete jobs from Gmail');
+    } finally {
+      setIsDeletingJobs(false);
+      setShowDeleteConfirmDialog(false);
+    }
+  };
 
   const generateContent = useCallback(async (jobId: string): Promise<void> => {
     console.log('[generateContent] Called for job:', jobId);
@@ -1622,7 +1687,12 @@ const JobHunterDashboard: React.FC = () => {
   const isRemote = (job: Job): boolean => job.location?.toLowerCase().includes('remote') || false;
   const withinCommute = (job: Job): boolean => !job.commute_time || job.commute_time <= 45;
 
-  const JobCard: React.FC<{ job: Job }> = ({ job }) => {
+  const JobCard: React.FC<{
+    job: Job;
+    showCheckbox?: boolean;
+    isSelected?: boolean;
+    onToggleSelection?: (jobId: string) => void;
+  }> = ({ job, showCheckbox = false, isSelected = false, onToggleSelection }) => {
     // Fetch condensed description when card renders
     React.useEffect(() => {
       fetchCondensedDescription(job.job_id);
@@ -1641,12 +1711,29 @@ const JobHunterDashboard: React.FC = () => {
 
     return (
     <div
-      className="bg-white border rounded-lg p-4 mb-3 hover:shadow-md transition-shadow cursor-pointer"
-      onClick={() => setSelectedJob(job)}
-      style={{ border: '1px solid #e5e7eb' }}
+      className="bg-white border rounded-lg p-4 mb-3 hover:shadow-md transition-shadow"
+      style={{ border: '1px solid #e5e7eb', display: 'flex', gap: '12px' }}
       data-testid="job-card"
       data-job-id={job.job_id}
     >
+      {/* Phase 2.10: Checkbox for Gmail jobs only */}
+      {showCheckbox && job.source === 'gmail' && (
+        <div
+          style={{ display: 'flex', alignItems: 'flex-start', paddingTop: '2px' }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSelection?.(job.job_id);
+          }}
+        >
+          {isSelected ? (
+            <CheckSquare style={{ width: '20px', height: '20px', color: '#3b82f6', cursor: 'pointer' }} />
+          ) : (
+            <Square style={{ width: '20px', height: '20px', color: '#9ca3af', cursor: 'pointer' }} />
+          )}
+        </div>
+      )}
+
+      <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => setSelectedJob(job)}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <h3 style={{ fontWeight: 600, fontSize: '18px', color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} data-testid="job-title">{job.title}</h3>
@@ -2403,6 +2490,7 @@ const JobHunterDashboard: React.FC = () => {
           )}
         </div>
       )}
+      </div>
     </div>
   );
   };
@@ -2716,6 +2804,77 @@ const JobHunterDashboard: React.FC = () => {
           <DuplicatesTab />
         ) : (
           <div data-testid={`${activeTab}-tab-content`}>
+            {/* Phase 2.10: Bulk delete controls for rejected tab */}
+            {activeTab === 'rejected' && filterJobs('rejected').some(j => j.source === 'gmail') && (
+              <div style={{
+                backgroundColor: '#f9fafb',
+                border: '1px solid #e5e7eb',
+                borderRadius: '8px',
+                padding: '16px',
+                marginBottom: '24px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <button
+                    onClick={selectAllGmailJobs}
+                    disabled={filterJobs('rejected').filter(j => j.source === 'gmail').length === 0}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '6px',
+                      border: '1px solid #d1d5db',
+                      backgroundColor: 'white',
+                      color: '#374151',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      opacity: filterJobs('rejected').filter(j => j.source === 'gmail').length === 0 ? 0.5 : 1
+                    }}
+                  >
+                    Select All Gmail
+                  </button>
+                  <button
+                    onClick={deselectAllJobs}
+                    disabled={selectedJobsForDeletion.size === 0}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '6px',
+                      border: '1px solid #d1d5db',
+                      backgroundColor: 'white',
+                      color: '#374151',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      opacity: selectedJobsForDeletion.size === 0 ? 0.5 : 1
+                    }}
+                  >
+                    Deselect All
+                  </button>
+                </div>
+                <button
+                  onClick={() => setShowDeleteConfirmDialog(true)}
+                  disabled={selectedJobsForDeletion.size === 0 || isDeletingJobs}
+                  style={{
+                    padding: '10px 20px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    backgroundColor: selectedJobsForDeletion.size === 0 || isDeletingJobs ? '#9ca3af' : '#ef4444',
+                    color: 'white',
+                    fontWeight: '600',
+                    cursor: selectedJobsForDeletion.size === 0 || isDeletingJobs ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '14px'
+                  }}
+                >
+                  <Trash2 style={{ width: '18px', height: '18px' }} />
+                  {isDeletingJobs ? 'Deleting...' : `Delete ${selectedJobsForDeletion.size} from Gmail`}
+                </button>
+              </div>
+            )}
+
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))', gap: '16px', width: '100%' }}>
               {(activeTab === 'new' ? filterJobs('new') :
                 activeTab === 'approved' ? filterJobs('approved') :
@@ -2724,7 +2883,13 @@ const JobHunterDashboard: React.FC = () => {
                 activeTab === 'filtered' ? filterJobs('filtered') :
                 getAllActiveJobs()
               ).map(job => (
-                <JobCard key={job.job_id} job={job} />
+                <JobCard
+                  key={job.job_id}
+                  job={job}
+                  showCheckbox={activeTab === 'rejected'}
+                  isSelected={selectedJobsForDeletion.has(job.job_id)}
+                  onToggleSelection={toggleJobSelection}
+                />
               ))}
             </div>
 
@@ -3315,6 +3480,88 @@ const JobHunterDashboard: React.FC = () => {
           />
         );
       })()}
+
+      {/* Phase 2.10: Bulk delete confirmation dialog */}
+      {showDeleteConfirmDialog && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            padding: '24px',
+            maxWidth: '500px',
+            width: '90%',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+          }}>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '20px', fontWeight: 'bold', color: '#111827' }}>
+              Confirm Deletion
+            </h3>
+            <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#6b7280', lineHeight: '1.5' }}>
+              Move {selectedJobsForDeletion.size} job email{selectedJobsForDeletion.size !== 1 ? 's' : ''} to Gmail trash?
+              Jobs will be removed from JobHunter. You can permanently delete emails later in Gmail trash
+              (they will be recoverable for 30 days).
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowDeleteConfirmDialog(false)}
+                disabled={isDeletingJobs}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '6px',
+                  border: '1px solid #d1d5db',
+                  backgroundColor: 'white',
+                  color: '#374151',
+                  fontWeight: '600',
+                  cursor: isDeletingJobs ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  opacity: isDeletingJobs ? 0.5 : 1
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkDeleteJobs}
+                disabled={isDeletingJobs}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  backgroundColor: isDeletingJobs ? '#9ca3af' : '#ef4444',
+                  color: 'white',
+                  fontWeight: '600',
+                  cursor: isDeletingJobs ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                {isDeletingJobs ? (
+                  <>
+                    <RefreshCw style={{ width: '18px', height: '18px', animation: 'spin 1s linear infinite' }} />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 style={{ width: '18px', height: '18px' }} />
+                    Delete from Gmail
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
