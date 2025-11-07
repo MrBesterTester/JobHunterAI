@@ -9,7 +9,7 @@ related_docs:
   - TESTING_HISTORY.md (historical archive)
   - TESTING_GUIDE.md (testing principles and investigation guide)
   - PROJECT_STATUS.md (overall project status)
-last_updated: 2025-11-07 12:47:47 PST
+last_updated: 2025-11-07 14:38:25 PST (Merged preflight checklist documentation)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -18,6 +18,40 @@ last_updated: 2025-11-07 12:47:47 PST
 - [Comprehensive Automated Test Suite Plan - JobHunter](#comprehensive-automated-test-suite-plan---jobhunter)
   - [Table of Contents](#table-of-contents)
   - [Overview](#overview)
+  - [Current Implementation](#current-implementation)
+    - [Comprehensive Test Suite Script](#comprehensive-test-suite-script)
+    - [Preflight Requirements (HARD Requirements)](#preflight-requirements-hard-requirements)
+      - [1. Git Status ✅](#1-git-status-)
+      - [2. Database Selection ✅](#2-database-selection-)
+      - [3. Database State 🔄](#3-database-state-)
+      - [4. Gmail State ⚠️](#4-gmail-state-)
+      - [5. Microsoft Email State ⚠️](#5-microsoft-email-state-)
+    - [OAuth Token Management Strategy](#oauth-token-management-strategy)
+  - [Implementation Details](#implementation-details)
+    - [File Structure](#file-structure)
+    - [Components to Implement](#components-to-implement)
+      - [1. Database Fixtures (`database/test-fixtures.sql`)](#1-database-fixtures-databasetest-fixturessql)
+      - [2. OAuth Setup Script (`helper-scripts/setup-test-oauth.sh`)](#2-oauth-setup-script-helper-scriptssetup-test-oauthsh)
+      - [3. Token Refresh Script (`helper-scripts/refresh-oauth-tokens.sh`)](#3-token-refresh-script-helper-scriptsrefresh-oauth-tokenssh)
+      - [4. Gmail State Script (`helper-scripts/clear-gmail-state.sh`)](#4-gmail-state-script-helper-scriptsclear-gmail-statesh)
+      - [5. MS Mail State Script (`helper-scripts/setup-msmail-state.sh`)](#5-ms-mail-state-script-helper-scriptssetup-msmail-statesh)
+      - [6. Database Scripts](#6-database-scripts)
+      - [7. Updated Preflight (`run-comprehensive-tests.sh`)](#7-updated-preflight-run-comprehensive-testssh)
+    - [Security Considerations](#security-considerations)
+      - [`.env.test` Example (gitignored)](#envtest-example-gitignored)
+      - [`.gitignore` Update](#gitignore-update)
+    - [API Implementation Details](#api-implementation-details)
+      - [Gmail API (using `curl` + `jq`)](#gmail-api-using-curl--jq)
+      - [MS Graph API (using `curl` + `jq`)](#ms-graph-api-using-curl--jq)
+  - [Decisions & Research](#decisions--research)
+    - [Automation Level](#automation-level)
+    - [Database Strategy](#database-strategy)
+    - [Preflight Requirements](#preflight-requirements)
+    - [OAuth Token Management](#oauth-token-management)
+    - [Current Test Behavior Analysis](#current-test-behavior-analysis)
+      - [Backend Tests (Rust/Cargo)](#backend-tests-rustcargo)
+      - [E2E Tests (Playwright)](#e2e-tests-playwright)
+      - [Conflict Resolution: Database Cleared vs Tests Expecting Data](#conflict-resolution-database-cleared-vs-tests-expecting-data)
   - [Test Architecture](#test-architecture)
     - [Test Environment Structure](#test-environment-structure)
   - [Phase-by-Phase Testing Coverage](#phase-by-phase-testing-coverage)
@@ -173,6 +207,377 @@ last_updated: 2025-11-07 12:47:47 PST
 ## Overview
 
 This document outlines the comprehensive testing strategy for the JobHunter autonomous job application management system. Our testing approach ensures reliability, performance, and correctness across all 4 phases of the platform, from core functionality through automated job intake and content generation.
+
+---
+
+## Current Implementation
+
+### Comprehensive Test Suite Script
+
+**Script**: `./helper-scripts/run-comprehensive-tests.sh`
+
+**Purpose**: Local, on-demand comprehensive validation (informal CI/CD)
+
+**What it does**:
+1. **Preflight checks** (git, database, email state)
+2. **Clean rebuild** backend and frontend (zero warnings required)
+3. **Run all test suites** (backend, frontend unit, E2E)
+4. **Report comprehensive results** with iPhone notification
+
+**Usage**:
+```bash
+# Run all tests, report at end (default)
+./helper-scripts/run-comprehensive-tests.sh
+
+# Stop at first failure (fail-fast mode)
+./helper-scripts/run-comprehensive-tests.sh --fail-fast
+
+# Skip preflight checks (not recommended)
+./helper-scripts/run-comprehensive-tests.sh --skip-preflight
+```
+
+### Preflight Requirements (HARD Requirements)
+
+All preflight checks are **HARD requirements** - the script aborts if any check fails.
+
+#### 1. Git Status ✅
+- **Requirement**: No uncommitted changes
+- **Why**: Ensure clean baseline for comprehensive test run
+- **Implementation**: `git diff-index --quiet HEAD --`
+
+#### 2. Database Selection ✅
+- **Requirement**: Using `jobhunter_personal` database only
+- **Why**: Ensures consistent test environment
+- **Implementation**: Check `DATABASE_URL` in `backend/.env`
+
+#### 3. Database State 🔄
+- **Requirement**: Database cleared AND test fixtures loaded
+- **Why**: Provides known initial state for repeatable testing
+- **Implementation**:
+  ```bash
+  # Clear all tables (CASCADE handles foreign keys)
+  ./helper-scripts/clear-database.sh
+
+  # Load test fixtures (5-10 representative jobs)
+  ./helper-scripts/seed-database.sh
+  ```
+- **Status**: ⚠️ Implementation in progress (see "Components to Implement" below)
+
+#### 4. Gmail State ⚠️
+- **Requirement**: No unread emails, no JobOps or JobOps-OLD labels
+- **Why**: Email intake tests expect clean slate
+- **Implementation**:
+  ```bash
+  ./helper-scripts/clear-gmail-state.sh
+  # - Uses Gmail API to remove labels
+  # - Marks all unread emails as read
+  # - Auto-refreshes OAuth tokens if needed
+  ```
+- **Status**: ⚠️ Implementation in progress
+
+#### 5. Microsoft Email State ⚠️
+- **Requirement**: JobOps-OLD folder empty, JobOps folder pre-populated
+- **Why**: MS Email intake tests expect specific initial state
+- **Implementation**:
+  ```bash
+  ./helper-scripts/setup-msmail-state.sh
+  # - Uses MS Graph API to manage folders
+  # - Empties JobOps-OLD folder
+  # - Populates JobOps with test emails from fixtures
+  # - Auto-refreshes OAuth tokens if needed
+  ```
+- **Status**: ⚠️ Implementation in progress
+
+### OAuth Token Management Strategy
+
+**Security Approach**: Hybrid - Refresh tokens stored locally, access tokens auto-refreshed
+
+**One-Time Setup** (manual browser OAuth flow):
+```bash
+./helper-scripts/setup-test-oauth.sh
+# 1. Opens browser for Gmail OAuth consent
+# 2. Opens browser for MS Mail OAuth consent
+# 3. Saves refresh tokens to .env.test (gitignored)
+```
+
+**Every Test Run** (fully automated):
+```bash
+./helper-scripts/run-comprehensive-tests.sh
+# - Checks if access tokens are valid
+# - If expired, auto-refresh using refresh tokens (~2-4 sec)
+# - If refresh token expired, abort with helpful error
+```
+
+**Token Lifecycle**:
+- **Access Tokens**: Expire after 1 hour (both Gmail and MS Mail)
+- **Refresh Tokens**:
+  - Gmail: Never expires (unless unused for 6 months or revoked)
+  - MS Mail: Expires after 90 days (default)
+
+**Maintenance Schedule**:
+- **Gmail**: Truly one-time setup (valid for years)
+- **MS Mail**: Re-run setup every 90 days (~30 seconds)
+
+**Why This Works**:
+- ✅ Fast: 0.1 sec if tokens valid, 2-4 sec if refresh needed
+- ✅ Secure: No tokens committed to git repository
+- ✅ Automated: No manual intervention per test run
+- ✅ Low maintenance: Refresh tokens last months/years
+
+---
+
+## Implementation Details
+
+### File Structure
+
+```
+database/
+  test-fixtures.sql                      # NEW: Minimal test data (5-10 jobs)
+
+helper-scripts/
+  run-comprehensive-tests.sh             # UPDATED: Hard preflight checks
+  setup-test-oauth.sh                    # NEW: One-time OAuth setup
+  preflight-comprehensive-tests.sh       # NEW: Standalone preflight
+  clear-database.sh                      # NEW: Truncate all tables
+  seed-database.sh                       # NEW: Load test fixtures
+  clear-gmail-state.sh                   # NEW: Gmail API cleanup
+  setup-msmail-state.sh                  # NEW: MS Mail API setup
+  refresh-oauth-tokens.sh                # NEW: Auto-refresh tokens
+
+.env.test                                # NEW: OAuth tokens (gitignored)
+.env.test.example                        # NEW: Template for .env.test
+```
+
+### Components to Implement
+
+#### 1. Database Fixtures (`database/test-fixtures.sql`)
+Create SQL file with minimal but complete test data:
+- **Job Sources**: Gmail, MS Email, RapidAPI (configured, active)
+- **OAuth Credentials**: Placeholder for tokens (loaded from .env.test at runtime)
+- **Jobs**: 5-10 representative jobs
+  - 3 jobs: "new" status (for approval workflow tests)
+  - 2 jobs: "approved" status (for application workflow tests)
+  - 1 job: "filtered" status (for rejection workflow tests)
+  - 1 job: "applied" status (for follow-up workflow tests)
+  - Various companies, salaries, locations (test filtering criteria)
+- **Applications**: 2-3 test applications (for content generation tests)
+- **Standard data**: User preferences, filter criteria, templates
+
+**Why Minimal Works**:
+- Fixtures provide known initial state
+- Tests create additional data as needed via API
+- Enables full E2E workflow validation
+- Fast to load, easy to maintain
+
+#### 2. OAuth Setup Script (`helper-scripts/setup-test-oauth.sh`)
+One-time manual setup for OAuth credentials:
+```bash
+#!/bin/bash
+# Prompts:
+# 1. Open Gmail OAuth consent URL in browser
+# 2. User grants access, gets auth code
+# 3. Exchange code for tokens, save refresh token to .env.test
+# 4. Repeat for MS Mail OAuth
+# 5. Validate tokens work
+# 6. Display success message with maintenance schedule
+```
+
+#### 3. Token Refresh Script (`helper-scripts/refresh-oauth-tokens.sh`)
+Automated token refresh (called by preflight):
+```bash
+#!/bin/bash
+# 1. Check if access tokens in .env.test are valid
+# 2. If expired, use refresh token to get new access token
+# 3. Update .env.test with new access token
+# 4. Validate new token works
+# 5. Return success/failure
+```
+
+#### 4. Gmail State Script (`helper-scripts/clear-gmail-state.sh`)
+Automated Gmail cleanup using Gmail API:
+```bash
+#!/bin/bash
+# 1. Load access token from .env.test
+# 2. List all messages with "JobOps" or "JobOps-OLD" labels
+# 3. Delete the labels
+# 4. Mark all unread emails as read
+# 5. Verify state is clean
+```
+
+#### 5. MS Mail State Script (`helper-scripts/setup-msmail-state.sh`)
+Automated MS Mail setup using MS Graph API:
+```bash
+#!/bin/bash
+# 1. Load access token from .env.test
+# 2. Empty "JobOps-OLD" folder (delete all messages)
+# 3. Empty "JobOps" folder (delete all messages)
+# 4. Populate "JobOps" with test emails from fixtures
+# 5. Verify state is correct
+```
+
+#### 6. Database Scripts
+```bash
+# helper-scripts/clear-database.sh
+# Truncate all tables (CASCADE to handle foreign keys)
+
+# helper-scripts/seed-database.sh
+# Load test-fixtures.sql
+# Inject OAuth tokens from .env.test into oauth_credentials table
+```
+
+#### 7. Updated Preflight (`run-comprehensive-tests.sh`)
+All checks become HARD requirements:
+```bash
+check_git_status()           # Abort if uncommitted changes
+check_database_selection()   # Abort if not jobhunter_personal
+refresh_oauth_tokens()       # Abort if token refresh fails
+clear_database()             # Abort if truncate fails
+seed_database()              # Abort if fixture load fails
+clear_gmail_state()          # Abort if Gmail API fails
+setup_msmail_state()         # Abort if MS Mail API fails
+```
+
+### Security Considerations
+
+#### `.env.test` Example (gitignored)
+```bash
+# Gmail OAuth
+GMAIL_TEST_ACCESS_TOKEN=ya29.a0AfH6SMB...
+GMAIL_TEST_REFRESH_TOKEN=1//0gHGw6k...
+GMAIL_TEST_CLIENT_ID=123456789.apps.googleusercontent.com
+GMAIL_TEST_CLIENT_SECRET=GOCSPX-abc123...
+
+# MS Mail OAuth
+MSMAIL_TEST_ACCESS_TOKEN=eyJ0eXAiOiJKV...
+MSMAIL_TEST_REFRESH_TOKEN=0.AXoAqZ8...
+MSMAIL_TEST_CLIENT_ID=12345678-1234-1234-1234-123456789012
+MSMAIL_TEST_CLIENT_SECRET=abc123~xyz789...
+MSMAIL_TEST_TENANT_ID=12345678-1234-1234-1234-123456789012
+```
+
+#### `.gitignore` Update
+```
+.env
+.env.test
+.env.local
+.env.*.local
+```
+
+### API Implementation Details
+
+#### Gmail API (using `curl` + `jq`)
+```bash
+# Token refresh
+curl -X POST https://oauth2.googleapis.com/token \
+  -d "client_id=$GMAIL_CLIENT_ID" \
+  -d "client_secret=$GMAIL_CLIENT_SECRET" \
+  -d "refresh_token=$GMAIL_REFRESH_TOKEN" \
+  -d "grant_type=refresh_token"
+
+# List messages
+curl -H "Authorization: Bearer $GMAIL_ACCESS_TOKEN" \
+  "https://gmail.googleapis.com/gmail/v1/users/me/messages"
+
+# Delete label
+curl -X DELETE \
+  -H "Authorization: Bearer $GMAIL_ACCESS_TOKEN" \
+  "https://gmail.googleapis.com/gmail/v1/users/me/labels/$LABEL_ID"
+```
+
+#### MS Graph API (using `curl` + `jq`)
+```bash
+# Token refresh
+curl -X POST https://login.microsoftonline.com/$TENANT_ID/oauth2/v2.0/token \
+  -d "client_id=$MSMAIL_CLIENT_ID" \
+  -d "client_secret=$MSMAIL_CLIENT_SECRET" \
+  -d "refresh_token=$MSMAIL_REFRESH_TOKEN" \
+  -d "grant_type=refresh_token"
+
+# List folder messages
+curl -H "Authorization: Bearer $MSMAIL_ACCESS_TOKEN" \
+  "https://graph.microsoft.com/v1.0/me/mailFolders/$FOLDER_ID/messages"
+
+# Delete message
+curl -X DELETE \
+  -H "Authorization: Bearer $MSMAIL_ACCESS_TOKEN" \
+  "https://graph.microsoft.com/v1.0/me/messages/$MESSAGE_ID"
+```
+
+---
+
+## Decisions & Research
+
+### Automation Level
+✅ **DECISION**: Fully automated approach, even at the expense of developing additional code
+
+### Database Strategy
+✅ **DECISION**: Clear database + seed fixtures (Hybrid Approach)
+- Database: Continue using `jobhunter_personal` (don't resurrect `jobhunter_test` for now)
+- Clear all tables completely
+- Seed with minimal test fixtures (5-10 jobs sufficient for full E2E workflows)
+- Fixtures provide known initial state for repeatable testing
+
+### Preflight Requirements
+✅ **DECISION**: All requirements are HARD (abort if not met)
+- Git status: HARD requirement (abort)
+- Database selection: HARD requirement (abort)
+- Database state: HARD requirement (abort)
+- Gmail state: HARD requirement (abort)
+- MS Mail state: HARD requirement (abort)
+
+### OAuth Token Management
+✅ **DECISION**: Hybrid Approach
+- NO tokens committed to git (major security vulnerability)
+- Refresh tokens stored in `.env.test` (gitignored)
+- Access tokens auto-refreshed during preflight (~2-4 seconds overhead)
+
+### Current Test Behavior Analysis
+
+#### Backend Tests (Rust/Cargo)
+
+**Location**: `backend/tests/*.rs`
+
+**Database Handling**:
+- Tests use `cleanup_test_data()` functions that DELETE rows based on patterns:
+  - `email_jobs` where `sender_email LIKE 'test%@example.com'`
+  - `jobs` where `company LIKE 'Test%'`
+  - `api_job_sources` where `external_job_id LIKE '%test%'`
+  - `job_intake_logs` where `sync_status = 'test'`
+  - `job_sources` where `source_name LIKE '%_test'`
+- Tests connect to `TEST_DATABASE_URL` env var (defaults to `jobhunter_test` database)
+- Each test does cleanup BEFORE running (not after)
+
+**Key Insight**: Backend tests are **self-cleaning** but expect to **start with existing data intact**. They only clean up their own test patterns.
+
+#### E2E Tests (Playwright)
+
+**Location**: `frontend/e2e/tests/*.spec.ts`
+
+**Setup** (from `global-setup.ts`):
+1. Check if backend is running (or start it)
+2. Call `POST /api/jobs/calculate-all-scores` to pre-calculate scores
+3. Individual tests seed their own data via API calls
+
+**Database Handling**:
+- Tests do NOT clear database
+- Tests expect jobs to exist (for testing UI)
+- Some tests create specific jobs via API
+- One test deletes a specific job by ID after test
+
+**Key Insight**: E2E tests **expect existing job data** for UI testing. They don't require empty database.
+
+#### Conflict Resolution: Database Cleared vs Tests Expecting Data
+
+**Original Conflict**: User required "Database completely cleared", but tests expect existing data.
+
+**Resolution**: Hybrid Approach - Clear DB + Seed Fixtures
+- Clear database completely
+- Load standard test fixtures (create `database/test-fixtures.sql`)
+- Tests run against known fixture data
+- **Pros**: Consistent, repeatable, matches auto-test-plan vision
+- **Result**: Aligned user requirements with test behavior
+
+---
 
 ## Test Architecture
 
