@@ -1845,6 +1845,17 @@ async fn get_jobs_by_status(
     Ok(HttpResponse::Ok().json(jobs))
 }
 
+/// Reject a job and update Gmail labels
+///
+/// This function:
+/// 1. Updates the job status to "rejected"
+/// 2. Applies JobOps-OLD label to the associated email in Gmail
+/// 3. Removes the JobOp label from the email
+///
+/// Note: This only operates on valid jobs (with job_id). Orphaned email_jobs
+/// (where job_id IS NULL) cannot be rejected through this endpoint.
+/// Such records appear in the Ignored tab only if they don't have JobOps-OLD label
+/// (see get_ignored_emails function for filtering logic).
 async fn reject_job(
     pool: web::Data<PgPool>,
     job_id: web::Path<Uuid>,
@@ -4357,6 +4368,96 @@ async fn get_or_create_jobop_old_label(
     Ok(created_label.id)
 }
 
+/// Helper function to get Gmail OAuth access token
+async fn get_gmail_oauth_credentials(
+    pool: &PgPool,
+) -> std::result::Result<Option<String>, Box<dyn std::error::Error + Send + Sync>> {
+    let oauth_creds = sqlx::query!(
+        "SELECT access_token FROM oauth_credentials
+         WHERE source_id = (SELECT source_id FROM job_sources WHERE source_name = 'gmail' LIMIT 1)
+         LIMIT 1"
+    )
+    .fetch_optional(pool)
+    .await?;
+
+    Ok(oauth_creds.and_then(|c| c.access_token))
+}
+
+/// Get all message IDs that have the JobOps-OLD label
+/// Returns empty vector if label doesn't exist or no messages found
+async fn get_message_ids_with_jobops_old_label(
+    client: &reqwest::Client,
+    access_token: &str,
+) -> std::result::Result<Vec<String>, Box<dyn std::error::Error + Send + Sync>> {
+    // First, get the JobOps-OLD label ID
+    let label_id = match get_or_create_jobop_old_label(client, access_token).await {
+        Ok(id) => id,
+        Err(_) => return Ok(Vec::new()), // Label doesn't exist, return empty vec
+    };
+
+    #[derive(Debug, Deserialize)]
+    struct MessagesResponse {
+        #[serde(default)]
+        messages: Vec<MessageInfo>,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct MessageInfo {
+        id: String,
+    }
+
+    let mut all_message_ids = Vec::new();
+    let mut page_token: Option<String> = None;
+
+    // Query Gmail for all messages with JobOps-OLD label (with pagination)
+    loop {
+        let mut url = format!(
+            "https://gmail.googleapis.com/gmail/v1/users/me/messages?labelIds={}&maxResults=500",
+            label_id
+        );
+
+        if let Some(token) = &page_token {
+            url.push_str(&format!("&pageToken={}", token));
+        }
+
+        let response = client
+            .get(&url)
+            .bearer_auth(access_token)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response.text().await.unwrap_or_default();
+            log_debug(&format!("Warning: Failed to fetch JobOps-OLD messages: {} - {}", status, error_text));
+            break;
+        }
+
+        #[derive(Debug, Deserialize)]
+        struct PagedResponse {
+            #[serde(default)]
+            messages: Vec<MessageInfo>,
+            #[serde(rename = "nextPageToken")]
+            next_page_token: Option<String>,
+        }
+
+        let paged_response: PagedResponse = response.json().await?;
+
+        for msg in paged_response.messages {
+            all_message_ids.push(msg.id);
+        }
+
+        page_token = paged_response.next_page_token;
+
+        if page_token.is_none() {
+            break;
+        }
+    }
+
+    log_debug(&format!("Found {} messages with JobOps-OLD label", all_message_ids.len()));
+    Ok(all_message_ids)
+}
+
 /// Get the "JobOp" label ID from Gmail (must already exist)
 async fn get_jobop_label_id(
     client: &reqwest::Client,
@@ -6009,6 +6110,7 @@ async fn get_intake_logs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
 
 // Get ignored/unprocessed emails
 async fn get_ignored_emails(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    // Get all email_jobs with NULL job_id
     let ignored = sqlx::query!(
         r#"
         SELECT
@@ -6033,22 +6135,50 @@ async fn get_ignored_emails(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     .await
     .map_err(actix_web::error::ErrorInternalServerError)?;
 
-    let result: Vec<serde_json::Value> = ignored.iter().map(|row| {
-        serde_json::json!({
-            "email_job_id": row.email_job_id,
-            "message_id": row.message_id,
-            "subject": row.subject,
-            "sender_email": row.sender_email,
-            "sender_name": row.sender_name,
-            "received_date": row.received_date,
-            "body_text": row.body_text,
-            "body_html": row.body_html,
-            "extraction_confidence": row.extraction_confidence.as_ref().map(|c| c.to_string().parse::<f64>().unwrap_or(0.0)),
-            "processing_errors": row.processing_errors,
-            "source": row.source,
-        })
-    }).collect();
+    // Get Gmail OAuth credentials and fetch message IDs with JobOps-OLD label
+    // This filters out rejected jobs from the ignored emails list
+    let rejected_message_ids = match get_gmail_oauth_credentials(pool.get_ref()).await {
+        Ok(Some(access_token)) => {
+            let client = reqwest::Client::new();
+            match get_message_ids_with_jobops_old_label(&client, &access_token).await {
+                Ok(ids) => {
+                    log_debug(&format!("Filtering {} rejected emails from ignored list", ids.len()));
+                    ids
+                }
+                Err(e) => {
+                    log_debug(&format!("Warning: Failed to fetch JobOps-OLD messages: {}. Showing all ignored emails.", e));
+                    Vec::new()
+                }
+            }
+        }
+        _ => {
+            log_debug("No Gmail credentials found, showing all ignored emails");
+            Vec::new()
+        }
+    };
 
+    // Filter out emails with JobOps-OLD label (rejected jobs)
+    let result: Vec<serde_json::Value> = ignored
+        .iter()
+        .filter(|row| !rejected_message_ids.contains(&row.message_id))
+        .map(|row| {
+            serde_json::json!({
+                "email_job_id": row.email_job_id,
+                "message_id": row.message_id,
+                "subject": row.subject,
+                "sender_email": row.sender_email,
+                "sender_name": row.sender_name,
+                "received_date": row.received_date,
+                "body_text": row.body_text,
+                "body_html": row.body_html,
+                "extraction_confidence": row.extraction_confidence.as_ref().map(|c| c.to_string().parse::<f64>().unwrap_or(0.0)),
+                "processing_errors": row.processing_errors,
+                "source": row.source,
+            })
+        })
+        .collect();
+
+    log_debug(&format!("Returning {} ignored emails (filtered from {} total)", result.len(), ignored.len()));
     Ok(HttpResponse::Ok().json(result))
 }
 
