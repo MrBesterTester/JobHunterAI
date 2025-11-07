@@ -583,6 +583,7 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 - Unknown: 2
 
 **Recent Activity** (Last 7 days):
+- **FILED** [ISSUE-032](../bugs/open/ISSUE-032-rejected-non-job-emails-with-jobops-old-label-appear-in-ignored-tab-while-already-in-gmail-trash.md): Pre-existing classification bug (2025-11-06) - Discovered during Phase 2.10 testing (not caused by Phase 2.10)
 - **RESOLVED** [ISSUE-030](../bugs/mitigated/ISSUE-030-low-confidence-emails-appear-in-filtered-tab-instead-of-non-job-emails.md): Low-confidence email threshold fix (2025-11-04) - Mitigated
 - **FIXED** [BUG-0009](../bugs/fixed/BUG-0009-condensed-description-api-returns-placeholder-for-short-job-descriptions.md): Condensed description word count (2025-11-04) - Fixed
 

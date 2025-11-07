@@ -1712,7 +1712,7 @@ const JobHunterDashboard: React.FC = () => {
     return (
     <div
       className="bg-white border rounded-lg p-4 mb-3 hover:shadow-md transition-shadow"
-      style={{ border: '1px solid #e5e7eb', display: 'flex', gap: '12px' }}
+      style={{ border: '1px solid #e5e7eb', display: 'flex', gap: '12px', position: 'relative', overflow: 'hidden' }}
       data-testid="job-card"
       data-job-id={job.job_id}
     >

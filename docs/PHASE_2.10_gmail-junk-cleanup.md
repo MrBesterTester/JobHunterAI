@@ -34,6 +34,8 @@
   - [Future Enhancements (Out of Scope)](#future-enhancements-out-of-scope)
   - [Open Questions](#open-questions)
   - [Implementation Notes](#implementation-notes)
+  - [Issues Discovered During Testing](#issues-discovered-during-testing)
+    - [ISSUE-032: Pre-existing Classification Bug (Not Phase 2.10 Related)](#issue-032-pre-existing-classification-bug-not-phase-210-related)
   - [Related Documentation](#related-documentation)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -1119,14 +1121,39 @@ None - all design questions answered by user:
 
 ---
 
+## Issues Discovered During Testing
+
+### ISSUE-032: Pre-existing Classification Bug (Not Phase 2.10 Related)
+
+**Filed**: 2025-11-06 during manual testing
+**File**: `bugs/open/ISSUE-032-rejected-non-job-emails-with-jobops-old-label-appear-in-ignored-tab-while-already-in-gmail-trash.md`
+
+**Summary**: Non-job emails that were incorrectly classified as job postings and subsequently rejected remain visible in the Ignored tab even though they are already in Gmail trash with the JobOps-OLD label applied.
+
+**Example**: Google Payments email was found in both Ignored tab and Gmail trash with JobOps-OLD label.
+
+**Root Cause**:
+1. Email incorrectly classified as job posting during intake
+2. User manually rejected the "job"
+3. Rejection workflow applied JobOps-OLD label and trashed email
+4. Job record deleted, email_job record remains
+5. Email appears in Ignored tab (job_id IS NULL) while also in Gmail trash
+
+**Impact**: This is a **pre-existing issue** with email classification and rejection workflow, NOT caused by Phase 2.10 bulk delete feature.
+
+**Next Steps**: See ISSUE-032 for proposed solutions (improve classification, filter trashed emails, prevent labeling non-jobs).
+
+---
+
 ## Related Documentation
 
 - [PHASE_2.9_gmail-label-management.md](PHASE_2.9_gmail-label-management.md) - Gmail API integration with modify scope
 - [PHASE_2.8.1_microsoft-folder-refinement.md](PHASE_2.8.1_microsoft-folder-refinement.md) - Microsoft email management
 - [PROJECT_STATUS.md](PROJECT_STATUS.md) - Overall project status
+- `bugs/open/ISSUE-032-*.md` - Classification issue discovered during testing
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: 2025-11-06 16:15:00 PST
-**Status**: Planning Complete - Ready to Implement
+**Document Version**: 1.1
+**Last Updated**: 2025-11-06 19:30:00 PST
+**Status**: Implementation Complete - Manual Testing Complete - E2E Tests In Progress
