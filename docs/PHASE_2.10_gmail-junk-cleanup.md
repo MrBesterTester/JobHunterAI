@@ -37,6 +37,9 @@
   - [Issues Discovered During Testing](#issues-discovered-during-testing)
     - [ISSUE-032: Pre-existing Classification Bug (Not Phase 2.10 Related)](#issue-032-pre-existing-classification-bug-not-phase-210-related)
   - [Related Documentation](#related-documentation)
+  - [E2E Test Implementation (COMPLETE ✅)](#e2e-test-implementation-complete-)
+    - [Test Coverage](#test-coverage)
+    - [Test Implementation Notes](#test-implementation-notes)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -1154,6 +1157,44 @@ None - all design questions answered by user:
 
 ---
 
-**Document Version**: 1.1
-**Last Updated**: 2025-11-06 19:30:00 PST
-**Status**: Implementation Complete - Manual Testing Complete - E2E Tests In Progress
+## E2E Test Implementation (COMPLETE ✅)
+
+**Test Suite**: `frontend/e2e/tests/18-gmail-junk-cleanup.spec.ts`
+
+**Test Results**: **6/6 PASSING** (9.2s runtime)
+
+### Test Coverage
+
+**Ignored Tab Tests (3):**
+1. ✅ Checkbox visibility - Verifies only Gmail emails show checkboxes
+2. ✅ Bulk delete workflow - Tests selection → confirmation → deletion → API response
+3. ✅ Cancellation handling - Verifies emails preserved when canceling
+
+**Rejected Tab Tests (3):**
+4. ✅ Checkbox visibility - Verifies only Gmail jobs show checkboxes
+5. ✅ Bulk delete workflow - Tests selection → confirmation → deletion → API response
+6. ✅ Select All / Deselect All - Tests bulk selection controls
+
+### Test Implementation Notes
+
+**Key Findings During Test Development:**
+- Checkboxes are lucide-react SVG icons (`CheckSquare`/`Square`), not HTML `<input>` elements
+- Confirmation dialogs don't use `role="dialog"` - selected by heading text instead
+- Rejected tab uses `/jobs/bulk-delete-gmail` endpoint
+- Ignored tab uses `/email-jobs/bulk-delete-gmail` endpoint
+- Tests gracefully skip when no test data available
+
+**Selector Fixes Applied:**
+- SVG icon detection via `cursor: pointer` style attribute
+- Dialog detection via `<h3>Confirm Deletion</h3>` heading
+- Valid testid usage (`stat-new` instead of non-existent `stat-rejected`)
+
+**Commits:**
+- `5aded86`: Initial E2E test implementation (6 tests created)
+- `19b629d`: Fixed all selectors (6/6 tests passing) ⭐
+
+---
+
+**Document Version**: 1.2
+**Last Updated**: 2025-11-06 19:45:00 PST
+**Status**: ✅ **COMPLETE** - Implementation, Manual Testing, and E2E Tests All Passing
