@@ -106,7 +106,7 @@ fi
 log_info "Checking for unread emails..."
 
 UNREAD_RESPONSE=$(curl -s -H "Authorization: Bearer $GMAIL_TEST_ACCESS_TOKEN" \
-    "https://gmail.googleapis.com/gmail/v1/users/me/messages?labelIds=UNREAD&maxResults=100")
+    "https://gmail.googleapis.com/gmail/v1/users/me/messages?labelIds=UNREAD&maxResults=500")
 
 UNREAD_COUNT=$(echo "$UNREAD_RESPONSE" | jq -r '.resultSizeEstimate // 0')
 
