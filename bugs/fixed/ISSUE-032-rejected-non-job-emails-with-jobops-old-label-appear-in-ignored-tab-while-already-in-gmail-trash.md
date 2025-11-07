@@ -13,6 +13,15 @@
     - [Option 3: Clean up orphaned email_jobs records](#option-3-clean-up-orphaned-email_jobs-records)
     - [Option 4: Prevent rejection of non-job emails](#option-4-prevent-rejection-of-non-job-emails)
   - [Recommended Approach](#recommended-approach)
+  - [Implementation Plan](#implementation-plan)
+    - [Current State Analysis](#current-state-analysis)
+    - [Cleanup Strategy](#cleanup-strategy)
+    - [Implementation Steps](#implementation-steps)
+  - [Resolution](#resolution)
+    - [Changes Implemented](#changes-implemented)
+    - [Test Results](#test-results)
+    - [Key Insights](#key-insights)
+    - [Database Cleanup](#database-cleanup)
   - [Testing Requirements](#testing-requirements)
   - [Related Issues](#related-issues)
   - [Notes](#notes)
@@ -206,6 +215,39 @@ The sequence of events:
 3. **Graceful degradation**: If Gmail API fails or credentials are missing, the endpoint falls back to showing all ignored emails (original behavior).
 
 4. **MECE accounting**: The filtering properly accounts for rejected emails in the system's mutual exclusivity checks.
+
+### Database Cleanup
+
+**Date**: 2025-11-07 (same day as fix)
+
+After implementing the filtering fix, performed database cleanup to remove orphaned rejected emails:
+
+**Process:**
+1. Queried Gmail API for messages with JobOps-OLD label
+2. Found 2 message IDs: `19a5a48861d7191e`, `19a47c4ce6f23102`
+3. Matched against email_jobs records with `job_id IS NULL`
+4. Found 1 matching orphaned record (Google Payments email)
+5. Deleted the orphaned record
+
+**Results:**
+- **Before cleanup**: 3 orphaned email_jobs records
+- **After cleanup**: 2 orphaned email_jobs records (genuinely ignored non-job emails)
+- **Deleted**: 1 record (Google Payments "Colab subscription cancellation")
+
+**Remaining orphaned records** (expected, should appear in Ignored tab):
+1. "Contract Opportunity - Test Automation Lead" (sam@samkirk.com)
+2. "Job shared with you" (anil.patel@sibitalent.com)
+
+**Verification:**
+- ✅ API endpoint returns 2 emails (matches database)
+- ✅ Only genuinely ignored non-job emails remain
+- ✅ No rejected emails in Ignored tab
+
+**Cleanup script created**: `helper-scripts/cleanup-orphaned-rejected-emails.sh`
+- Automates the cleanup process
+- Queries Gmail API for JobOps-OLD messages
+- Safely deletes matching orphaned records
+- Can be run periodically for maintenance
 
 ## Testing Requirements
 
