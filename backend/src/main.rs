@@ -4484,6 +4484,7 @@ async fn trash_gmail_message(
     let response = client
         .post(&url)
         .bearer_auth(access_token)
+        .header("Content-Length", "0")
         .send()
         .await?;
 
@@ -6023,13 +6024,7 @@ async fn get_ignored_emails(pool: web::Data<PgPool>) -> Result<HttpResponse> {
             processing_errors,
             source
         FROM email_jobs
-        WHERE processed = true
-          AND processing_errors IS NULL
-          AND job_id IS NULL
-          AND extraction_confidence IS NOT NULL
-          AND (extraction_confidence < 0.3
-               OR extracted_data->>'title' IS NULL OR extracted_data->>'title' = ''
-               OR extracted_data->>'company' IS NULL OR extracted_data->>'company' = '')
+        WHERE job_id IS NULL
         ORDER BY received_date DESC
         LIMIT 100
         "#
@@ -6050,6 +6045,7 @@ async fn get_ignored_emails(pool: web::Data<PgPool>) -> Result<HttpResponse> {
             "body_html": row.body_html,
             "extraction_confidence": row.extraction_confidence.as_ref().map(|c| c.to_string().parse::<f64>().unwrap_or(0.0)),
             "processing_errors": row.processing_errors,
+            "source": row.source,
         })
     }).collect();
 

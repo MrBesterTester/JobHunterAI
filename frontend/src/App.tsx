@@ -1586,7 +1586,7 @@ const JobHunterDashboard: React.FC = () => {
 
   // Helper function to get display label for tabs
   const getTabLabel = (tab: TabType): string => {
-    if (tab === 'ignored') return 'Non-Job Emails';
+    if (tab === 'ignored') return 'Ignored';
     if (tab === 'ranked') return 'Ranked Jobs';
     if (tab === 'new') return 'New Jobs';
     return tab.charAt(0).toUpperCase() + tab.slice(1);
@@ -2684,7 +2684,7 @@ const JobHunterDashboard: React.FC = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '8px', width: '100%' }}>
             <div style={{ textAlign: 'center' }} data-testid="stat-ignored">
               <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#dc2626' }}>{stats.ignored || 0}</p>
-              <p style={{ fontSize: '14px', color: '#6b7280' }}>Non-Job Emails</p>
+              <p style={{ fontSize: '14px', color: '#6b7280' }}>Ignored</p>
             </div>
             <div style={{ textAlign: 'center' }} data-testid="stat-filtered">
               <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#f97316' }}>{stats.filtered || 0}</p>

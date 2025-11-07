@@ -796,7 +796,7 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
             <span style={{ color: lastSyncResult.validation_error ? '#991b1b' : '#065f46', fontSize: '14px' }}>
               {lastSyncResult.message}
               {lastSyncResult.metrics && (
-                <> - Discovered: {lastSyncResult.metrics.jobs_discovered}, Failed: {lastSyncResult.metrics.jobs_failed_processing}, Filtered: {lastSyncResult.metrics.jobs_created}, Duplicated: {lastSyncResult.metrics.jobs_duplicated}, Non-Job Emails: {lastSyncResult.metrics.jobs_filtered_out}</>
+                <> - Discovered: {lastSyncResult.metrics.jobs_discovered}, Failed: {lastSyncResult.metrics.jobs_failed_processing}, Filtered: {lastSyncResult.metrics.jobs_created}, Duplicated: {lastSyncResult.metrics.jobs_duplicated}, Ignored: {lastSyncResult.metrics.jobs_filtered_out}</>
               )}
               {!lastSyncResult.metrics && lastSyncResult.jobs_added !== undefined && (
                 <> - {lastSyncResult.jobs_added} new jobs added, {lastSyncResult.duplicates_skipped} duplicates skipped</>
