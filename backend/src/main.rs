@@ -1964,6 +1964,195 @@ async fn reject_job(
     Ok(HttpResponse::Ok().json(job.unwrap()))
 }
 
+// Bulk delete request/response structs
+#[derive(Deserialize)]
+struct BulkDeleteJobsRequest {
+    job_ids: Vec<Uuid>,
+}
+
+#[derive(Deserialize)]
+struct BulkDeleteEmailJobsRequest {
+    email_job_ids: Vec<Uuid>,
+}
+
+#[derive(Serialize)]
+struct BulkDeleteResponse {
+    success_count: usize,
+    failure_count: usize,
+    failures: Vec<BulkDeleteFailure>,
+}
+
+#[derive(Serialize)]
+struct BulkDeleteFailure {
+    id: Uuid,
+    error: String,
+}
+
+// Bulk delete Gmail emails for rejected jobs
+async fn bulk_delete_gmail_jobs(
+    pool: web::Data<PgPool>,
+    request: web::Json<BulkDeleteJobsRequest>,
+) -> Result<HttpResponse> {
+    // 1. Validate all jobs are from Gmail source and get message IDs
+    let jobs = sqlx::query!(
+        "SELECT j.job_id, j.source, ej.message_id
+         FROM jobs j
+         JOIN email_jobs ej ON j.job_id = ej.job_id
+         WHERE j.job_id = ANY($1)",
+        &request.job_ids
+    )
+    .fetch_all(pool.get_ref())
+    .await
+    .map_err(actix_web::error::ErrorInternalServerError)?;
+
+    // Check all are Gmail source
+    if jobs.iter().any(|j| j.source != "gmail") {
+        return Err(actix_web::error::ErrorBadRequest(
+            "Invalid request: Some jobs are not from Gmail source"
+        ));
+    }
+
+    // 2. Get Gmail OAuth token
+    let credentials = sqlx::query!(
+        "SELECT access_token FROM oauth_credentials
+         WHERE source_id = (SELECT source_id FROM job_sources WHERE source_name = 'gmail' LIMIT 1)
+         LIMIT 1"
+    )
+    .fetch_optional(pool.get_ref())
+    .await
+    .map_err(actix_web::error::ErrorInternalServerError)?;
+
+    let access_token = match credentials {
+        Some(creds) => creds.access_token.ok_or_else(|| {
+            actix_web::error::ErrorUnauthorized("No Gmail token available")
+        })?,
+        None => {
+            return Err(actix_web::error::ErrorUnauthorized(
+                "Gmail credentials not found"
+            ));
+        }
+    };
+
+    // 3. Trash emails and delete job records
+    let client = reqwest::Client::new();
+    let mut success_count = 0;
+    let mut failures = Vec::new();
+
+    for job in jobs {
+        // Trash email in Gmail
+        match trash_gmail_message(&client, &access_token, &job.message_id).await {
+            Ok(_) => {
+                // Delete job record (CASCADE deletes email_jobs entry)
+                match sqlx::query!("DELETE FROM jobs WHERE job_id = $1", job.job_id)
+                    .execute(pool.get_ref())
+                    .await
+                {
+                    Ok(_) => {
+                        success_count += 1;
+                        log_debug(&format!("Successfully deleted job {} and trashed Gmail email", job.job_id));
+                    }
+                    Err(e) => failures.push(BulkDeleteFailure {
+                        id: job.job_id,
+                        error: format!("Database deletion failed: {}", e),
+                    }),
+                }
+            }
+            Err(e) => failures.push(BulkDeleteFailure {
+                id: job.job_id,
+                error: format!("Gmail API error: {}", e),
+            }),
+        }
+    }
+
+    Ok(HttpResponse::Ok().json(BulkDeleteResponse {
+        success_count,
+        failure_count: failures.len(),
+        failures,
+    }))
+}
+
+// Bulk delete Gmail emails for non-job emails (Ignored tab)
+async fn bulk_delete_gmail_email_jobs(
+    pool: web::Data<PgPool>,
+    request: web::Json<BulkDeleteEmailJobsRequest>,
+) -> Result<HttpResponse> {
+    // 1. Validate all email_jobs are from Gmail source and get message IDs
+    let email_jobs = sqlx::query!(
+        "SELECT email_job_id, message_id, source
+         FROM email_jobs
+         WHERE email_job_id = ANY($1)",
+        &request.email_job_ids
+    )
+    .fetch_all(pool.get_ref())
+    .await
+    .map_err(actix_web::error::ErrorInternalServerError)?;
+
+    // Check all are Gmail source
+    if email_jobs.iter().any(|ej| ej.source.as_deref() != Some("gmail")) {
+        return Err(actix_web::error::ErrorBadRequest(
+            "Invalid request: Some emails are not from Gmail source"
+        ));
+    }
+
+    // 2. Get Gmail OAuth token
+    let credentials = sqlx::query!(
+        "SELECT access_token FROM oauth_credentials
+         WHERE source_id = (SELECT source_id FROM job_sources WHERE source_name = 'gmail' LIMIT 1)
+         LIMIT 1"
+    )
+    .fetch_optional(pool.get_ref())
+    .await
+    .map_err(actix_web::error::ErrorInternalServerError)?;
+
+    let access_token = match credentials {
+        Some(creds) => creds.access_token.ok_or_else(|| {
+            actix_web::error::ErrorUnauthorized("No Gmail token available")
+        })?,
+        None => {
+            return Err(actix_web::error::ErrorUnauthorized(
+                "Gmail credentials not found"
+            ));
+        }
+    };
+
+    // 3. Trash emails and delete email_jobs records
+    let client = reqwest::Client::new();
+    let mut success_count = 0;
+    let mut failures = Vec::new();
+
+    for email_job in email_jobs {
+        // Trash email in Gmail
+        match trash_gmail_message(&client, &access_token, &email_job.message_id).await {
+            Ok(_) => {
+                // Delete email_jobs record
+                match sqlx::query!("DELETE FROM email_jobs WHERE email_job_id = $1", email_job.email_job_id)
+                    .execute(pool.get_ref())
+                    .await
+                {
+                    Ok(_) => {
+                        success_count += 1;
+                        log_debug(&format!("Successfully deleted email_job {} and trashed Gmail email", email_job.email_job_id));
+                    }
+                    Err(e) => failures.push(BulkDeleteFailure {
+                        id: email_job.email_job_id,
+                        error: format!("Database deletion failed: {}", e),
+                    }),
+                }
+            }
+            Err(e) => failures.push(BulkDeleteFailure {
+                id: email_job.email_job_id,
+                error: format!("Gmail API error: {}", e),
+            }),
+        }
+    }
+
+    Ok(HttpResponse::Ok().json(BulkDeleteResponse {
+        success_count,
+        failure_count: failures.len(),
+        failures,
+    }))
+}
+
 // ============================================================================
 // Application Handlers
 // ============================================================================
@@ -4281,6 +4470,35 @@ async fn mark_gmail_message_as_read(
     Ok(())
 }
 
+/// Trash a Gmail message (soft delete - moves to trash folder)
+async fn trash_gmail_message(
+    client: &reqwest::Client,
+    access_token: &str,
+    message_id: &str,
+) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let url = format!(
+        "https://gmail.googleapis.com/gmail/v1/users/me/messages/{}/trash",
+        message_id
+    );
+
+    let response = client
+        .post(&url)
+        .bearer_auth(access_token)
+        .send()
+        .await?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_default();
+        log_debug(&format!("Failed to trash message {}. Status: {}, Error: {}",
+            message_id, status, error_text));
+        return Err(format!("Failed to trash message: {}", status).into());
+    }
+
+    log_debug(&format!("Successfully trashed Gmail message: {}", message_id));
+    Ok(())
+}
+
 async fn process_gmail_messages(
     access_token: &str,
     source: &JobSource,
@@ -5802,7 +6020,8 @@ async fn get_ignored_emails(pool: web::Data<PgPool>) -> Result<HttpResponse> {
             body_text,
             body_html,
             extraction_confidence,
-            processing_errors
+            processing_errors,
+            source
         FROM email_jobs
         WHERE processed = true
           AND processing_errors IS NULL
@@ -8251,6 +8470,8 @@ async fn main() -> std::io::Result<()> {
             .route("/api/jobs/{id}", web::get().to(get_job))
             .route("/api/jobs/{id}/status", web::put().to(update_job_status))
             .route("/api/jobs/{id}/reject", web::put().to(reject_job))
+            .route("/api/jobs/bulk-delete-gmail", web::post().to(bulk_delete_gmail_jobs))
+            .route("/api/email-jobs/bulk-delete-gmail", web::post().to(bulk_delete_gmail_email_jobs))
             .route("/api/jobs/{id}/score", web::get().to(get_job_score_handler))
             .route("/api/jobs/{id}/calculate-score", web::post().to(calculate_single_job_score))
             .route("/api/jobs/status/{status}", web::get().to(get_jobs_by_status))

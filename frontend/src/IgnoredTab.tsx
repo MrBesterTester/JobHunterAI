@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, AlertCircle, RefreshCw, Clock, User } from 'lucide-react';
+import { Mail, AlertCircle, RefreshCw, Clock, User, Trash2, CheckSquare, Square } from 'lucide-react';
 
 const API_URL = 'http://localhost:8080/api';
 
@@ -14,6 +14,7 @@ interface IgnoredEmail {
   body_html?: string;
   extraction_confidence?: number;
   processing_errors?: string;
+  source?: string;
 }
 
 const IgnoredTab: React.FC = () => {
@@ -21,6 +22,9 @@ const IgnoredTab: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedEmail, setSelectedEmail] = useState<IgnoredEmail | null>(null);
+  const [selectedForDeletion, setSelectedForDeletion] = useState<Set<string>>(new Set());
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState<boolean>(false);
 
   const fetchIgnoredEmails = async (): Promise<void> => {
     try {
@@ -43,6 +47,65 @@ const IgnoredTab: React.FC = () => {
   useEffect(() => {
     fetchIgnoredEmails();
   }, []);
+
+  const toggleEmailSelection = (emailJobId: string): void => {
+    setSelectedForDeletion(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(emailJobId)) {
+        newSet.delete(emailJobId);
+      } else {
+        newSet.add(emailJobId);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAllGmailEmails = (): void => {
+    const gmailEmails = ignoredEmails.filter(e => e.source === 'gmail');
+    setSelectedForDeletion(new Set(gmailEmails.map(e => e.email_job_id)));
+  };
+
+  const deselectAll = (): void => {
+    setSelectedForDeletion(new Set());
+  };
+
+  const handleBulkDelete = async (): Promise<void> => {
+    if (selectedForDeletion.size === 0) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`${API_URL}/email-jobs/bulk-delete-gmail`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email_job_ids: Array.from(selectedForDeletion) })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete emails: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (result.success_count > 0) {
+        // Refresh the list
+        await fetchIgnoredEmails();
+        setSelectedForDeletion(new Set());
+        setError(null);
+        alert(`Successfully deleted ${result.success_count} email(s) from Gmail`);
+      }
+
+      if (result.failure_count > 0) {
+        const failureMsg = result.failures.map((f: any) => `${f.id}: ${f.error}`).join('\n');
+        setError(`Failed to delete ${result.failure_count} email(s):\n${failureMsg}`);
+      }
+    } catch (err) {
+      console.error('Error deleting emails:', err);
+      setError('Failed to delete emails from Gmail');
+    } finally {
+      setIsDeleting(false);
+      setShowConfirmDialog(false);
+    }
+  };
 
   const formatRelativeTime = (dateString: string): string => {
     const date = new Date(dateString);
@@ -86,26 +149,99 @@ const IgnoredTab: React.FC = () => {
             Emails that were not processed or had low extraction confidence
           </p>
         </div>
-        <button
-          onClick={fetchIgnoredEmails}
-          style={{
-            padding: '10px 20px',
-            borderRadius: '6px',
-            border: 'none',
-            backgroundColor: '#3b82f6',
-            color: 'white',
-            fontWeight: '600',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            fontSize: '14px'
-          }}
-        >
-          <RefreshCw style={{ width: '18px', height: '18px' }} />
-          Refresh
-        </button>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <button
+            onClick={fetchIgnoredEmails}
+            style={{
+              padding: '10px 20px',
+              borderRadius: '6px',
+              border: 'none',
+              backgroundColor: '#3b82f6',
+              color: 'white',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '14px'
+            }}
+          >
+            <RefreshCw style={{ width: '18px', height: '18px' }} />
+            Refresh
+          </button>
+        </div>
       </div>
+
+      {/* Bulk Action Controls */}
+      {ignoredEmails.some(e => e.source === 'gmail') && (
+        <div style={{
+          backgroundColor: '#f9fafb',
+          border: '1px solid #e5e7eb',
+          borderRadius: '8px',
+          padding: '16px',
+          marginBottom: '24px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <button
+              onClick={selectAllGmailEmails}
+              disabled={ignoredEmails.filter(e => e.source === 'gmail').length === 0}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '6px',
+                border: '1px solid #d1d5db',
+                backgroundColor: 'white',
+                color: '#374151',
+                fontWeight: '500',
+                cursor: 'pointer',
+                fontSize: '14px',
+                opacity: ignoredEmails.filter(e => e.source === 'gmail').length === 0 ? 0.5 : 1
+              }}
+            >
+              Select All Gmail
+            </button>
+            <button
+              onClick={deselectAll}
+              disabled={selectedForDeletion.size === 0}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '6px',
+                border: '1px solid #d1d5db',
+                backgroundColor: 'white',
+                color: '#374151',
+                fontWeight: '500',
+                cursor: 'pointer',
+                fontSize: '14px',
+                opacity: selectedForDeletion.size === 0 ? 0.5 : 1
+              }}
+            >
+              Deselect All
+            </button>
+          </div>
+          <button
+            onClick={() => setShowConfirmDialog(true)}
+            disabled={selectedForDeletion.size === 0 || isDeleting}
+            style={{
+              padding: '10px 20px',
+              borderRadius: '6px',
+              border: 'none',
+              backgroundColor: selectedForDeletion.size === 0 || isDeleting ? '#9ca3af' : '#ef4444',
+              color: 'white',
+              fontWeight: '600',
+              cursor: selectedForDeletion.size === 0 || isDeleting ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '14px'
+            }}
+          >
+            <Trash2 style={{ width: '18px', height: '18px' }} />
+            {isDeleting ? 'Deleting...' : `Delete ${selectedForDeletion.size} from Gmail`}
+          </button>
+        </div>
+      )}
 
       {/* Error display */}
       {error && (
@@ -190,9 +326,10 @@ const IgnoredTab: React.FC = () => {
                   borderRadius: '6px',
                   border: '1px solid #e5e7eb',
                   cursor: 'pointer',
-                  transition: 'all 0.2s'
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  gap: '12px'
                 }}
-                onClick={() => setSelectedEmail(selectedEmail?.email_job_id === email.email_job_id ? null : email)}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = '#f3f4f6';
                   e.currentTarget.style.borderColor = '#d1d5db';
@@ -202,6 +339,27 @@ const IgnoredTab: React.FC = () => {
                   e.currentTarget.style.borderColor = '#e5e7eb';
                 }}
               >
+                {/* Checkbox for Gmail emails only */}
+                {email.source === 'gmail' && (
+                  <div
+                    style={{ display: 'flex', alignItems: 'flex-start', paddingTop: '2px' }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleEmailSelection(email.email_job_id);
+                    }}
+                  >
+                    {selectedForDeletion.has(email.email_job_id) ? (
+                      <CheckSquare style={{ width: '20px', height: '20px', color: '#3b82f6', cursor: 'pointer' }} />
+                    ) : (
+                      <Square style={{ width: '20px', height: '20px', color: '#9ca3af', cursor: 'pointer' }} />
+                    )}
+                  </div>
+                )}
+
+                <div
+                  style={{ flex: 1 }}
+                  onClick={() => setSelectedEmail(selectedEmail?.email_job_id === email.email_job_id ? null : email)}
+                >
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
@@ -338,8 +496,91 @@ const IgnoredTab: React.FC = () => {
                     )}
                   </div>
                 )}
+                </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Dialog */}
+      {showConfirmDialog && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            padding: '24px',
+            maxWidth: '500px',
+            width: '90%',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+          }}>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '20px', fontWeight: 'bold', color: '#111827' }}>
+              Confirm Deletion
+            </h3>
+            <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#6b7280', lineHeight: '1.5' }}>
+              Move {selectedForDeletion.size} email{selectedForDeletion.size !== 1 ? 's' : ''} to Gmail trash?
+              Emails will be removed from JobHunter. You can permanently delete them later in Gmail trash
+              (they will be recoverable for 30 days).
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowConfirmDialog(false)}
+                disabled={isDeleting}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '6px',
+                  border: '1px solid #d1d5db',
+                  backgroundColor: 'white',
+                  color: '#374151',
+                  fontWeight: '600',
+                  cursor: isDeleting ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  opacity: isDeleting ? 0.5 : 1
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                disabled={isDeleting}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  backgroundColor: isDeleting ? '#9ca3af' : '#ef4444',
+                  color: 'white',
+                  fontWeight: '600',
+                  cursor: isDeleting ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                {isDeleting ? (
+                  <>
+                    <RefreshCw style={{ width: '18px', height: '18px', animation: 'spin 1s linear infinite' }} />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 style={{ width: '18px', height: '18px' }} />
+                    Delete from Gmail
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
