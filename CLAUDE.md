@@ -386,6 +386,25 @@ The system centers around three main entities:
 
 ## Quick Reference: Where to Find Things
 
+**Document Organization**:
+
+The project uses a consistent structure for development and testing documentation:
+
+**Development Track:**
+- **Plans**: `docs/PHASE_*.md` - Detailed development plans for each phase
+- **Results**: `docs/PROJECT_STATUS.md` - Summary results + terse recent history
+- **Archive**: `docs/PROJECT_HISTORY.md` - Detailed milestone history (permanent record)
+
+**Testing Track:**
+- **Plan**: `README_auto-test-plan.md` - Comprehensive testing strategy
+- **Results**: `docs/TESTING_STATUS.md` - Latest test run + workspace for next round
+- **Archive**: `docs/TESTING_HISTORY.md` - Completed testing work history (permanent record)
+- **Guide**: `docs/TESTING_GUIDE.md` - Testing principles and investigation workflows
+
+**Key Pattern**: Plans → Results → Archive (with Results keeping only current state + terse history)
+
+---
+
 **Documentation by Type**:
 - **Phase Plans**: `docs/PHASE_*.md` - Major feature implementation plans
 - **Feature Plans**: `planning/*.md` - Specific feature designs
