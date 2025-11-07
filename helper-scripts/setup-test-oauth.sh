@@ -87,7 +87,7 @@ GMAIL_SCOPES="https://www.googleapis.com/auth/gmail.readonly https://www.googlea
 GMAIL_SCOPES_ENCODED=$(echo "$GMAIL_SCOPES" | sed 's/ /%20/g')
 
 # Generate Gmail OAuth URL
-GMAIL_REDIRECT_URI="http://localhost:8080/oauth/callback"
+GMAIL_REDIRECT_URI="http://localhost:8080/auth/gmail/callback"
 GMAIL_REDIRECT_URI_ENCODED=$(echo "$GMAIL_REDIRECT_URI" | sed 's/:/%3A/g; s|/|%2F|g')
 
 GMAIL_AUTH_URL="https://accounts.google.com/o/oauth2/v2/auth?client_id=$GMAIL_CLIENT_ID&redirect_uri=$GMAIL_REDIRECT_URI_ENCODED&response_type=code&scope=$GMAIL_SCOPES_ENCODED&access_type=offline&prompt=consent"
@@ -193,7 +193,7 @@ MSMAIL_SCOPES="https://graph.microsoft.com/Mail.Read https://graph.microsoft.com
 MSMAIL_SCOPES_ENCODED=$(echo "$MSMAIL_SCOPES" | sed 's/ /%20/g')
 
 # Generate Microsoft OAuth URL
-MSMAIL_REDIRECT_URI="http://localhost:8080/oauth/callback"
+MSMAIL_REDIRECT_URI="http://localhost:8080/api/email/microsoft/callback"
 MSMAIL_REDIRECT_URI_ENCODED=$(echo "$MSMAIL_REDIRECT_URI" | sed 's/:/%3A/g; s|/|%2F|g')
 
 MSMAIL_AUTH_URL="https://login.microsoftonline.com/$MSMAIL_TENANT_ID/oauth2/v2.0/authorize?client_id=$MSMAIL_CLIENT_ID&redirect_uri=$MSMAIL_REDIRECT_URI_ENCODED&response_type=code&scope=$MSMAIL_SCOPES_ENCODED&response_mode=query&prompt=consent"
