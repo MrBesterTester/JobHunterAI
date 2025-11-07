@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OAuth Setup - JobHunter Testing</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .container {
+            background: white;
+            padding: 3rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 600px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 0.5rem;
+            font-size: 2rem;
+        }
+        .subtitle {
+            color: #667eea;
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            font-weight: 500;
+        }
+        p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .oauth-button {
+            flex: 1;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+            font-size: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .gmail-button {
+            background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+            color: white;
+        }
+        .gmail-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(66, 133, 244, 0.4);
+        }
+        .microsoft-button {
+            background: linear-gradient(135deg, #0078d4 0%, #5c2d91 100%);
+            color: white;
+        }
+        .microsoft-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 120, 212, 0.4);
+        }
+        .icon {
+            font-size: 2rem;
+        }
+        .status {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 6px;
+            display: none;
+        }
+        .status.error {
+            color: #d32f2f;
+            background: #ffebee;
+            display: block;
+        }
+        .status.success {
+            color: #2e7d32;
+            background: #e8f5e9;
+            display: block;
+        }
+        .info-box {
+            background: #f5f5f5;
+            border-left: 4px solid #667eea;
+            padding: 1rem;
+            margin-top: 2rem;
+            text-align: left;
+            border-radius: 4px;
+        }
+        .info-box h3 {
+            margin-top: 0;
+            color: #667eea;
+            font-size: 1rem;
+        }
+        .info-box ul {
+            margin: 0;
+            padding-left: 1.5rem;
+        }
+        .info-box li {
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 OAuth Setup</h1>
+        <div class="subtitle">JobHunter Testing Environment</div>
+
+        <p>Click the buttons below to authorize JobHunter to access your email accounts. These tokens will be stored in <code>.env.test</code> for automated testing.</p>
+
+        <div class="button-group">
+            <button class="oauth-button gmail-button" onclick="authorizeGmail()">
+                <span class="icon">📧</span>
+                <span>Gmail OAuth</span>
+            </button>
+
+            <button class="oauth-button microsoft-button" onclick="authorizeMicrosoft()">
+                <span class="icon">🪟</span>
+                <span>Microsoft OAuth</span>
+            </button>
+        </div>
+
+        <div id="status" class="status"></div>
+
+        <div class="info-box">
+            <h3>📋 What this does:</h3>
+            <ul>
+                <li><strong>Gmail:</strong> Opens authorization flow → stores tokens in database → extracts to .env.test</li>
+                <li><strong>Microsoft:</strong> Opens authorization flow → stores tokens in database → extracts to .env.test</li>
+                <li><strong>Backend must be running</strong> on <code>http://localhost:8080</code></li>
+                <li><strong>After authorizing both</strong>, tokens are ready for comprehensive test suite</li>
+            </ul>
+        </div>
+
+        <div class="info-box" style="margin-top: 1rem; border-left-color: #4285f4;">
+            <h3>🔒 Permissions requested:</h3>
+            <ul>
+                <li><strong>Gmail:</strong> gmail.readonly, gmail.modify (read emails, manage labels)</li>
+                <li><strong>Microsoft:</strong> Mail.Read, Mail.ReadWrite (read emails, manage folders)</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = message;
+        }
+
+        async function authorizeGmail() {
+            try {
+                showStatus('Fetching Gmail authorization URL... <span class="loading"></span>', 'success');
+
+                const response = await fetch('http://localhost:8080/api/auth/gmail/url');
+
+                if (!response.ok) {
+                    throw new Error(`Backend returned ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                if (data.auth_url) {
+                    showStatus('Opening Gmail authorization page...', 'success');
+                    window.location.href = data.auth_url;
+                } else {
+                    throw new Error('No auth URL received from backend');
+                }
+            } catch (error) {
+                showStatus(
+                    `<strong>Gmail OAuth Error:</strong><br>${error.message}<br><br>` +
+                    'Make sure backend is running: <code>./helper-scripts/start.sh</code>',
+                    'error'
+                );
+                console.error('Gmail OAuth error:', error);
+            }
+        }
+
+        async function authorizeMicrosoft() {
+            try {
+                showStatus('Fetching Microsoft authorization URL... <span class="loading"></span>', 'success');
+
+                const response = await fetch('http://localhost:8080/api/email/microsoft/auth-url');
+
+                if (!response.ok) {
+                    throw new Error(`Backend returned ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                if (data.auth_url) {
+                    showStatus('Opening Microsoft authorization page...', 'success');
+                    window.location.href = data.auth_url;
+                } else {
+                    throw new Error('No auth URL received from backend');
+                }
+            } catch (error) {
+                showStatus(
+                    `<strong>Microsoft OAuth Error:</strong><br>${error.message}<br><br>` +
+                    'Make sure backend is running: <code>./helper-scripts/start.sh</code>',
+                    'error'
+                );
+                console.error('Microsoft OAuth error:', error);
+            }
+        }
+
+        // Check if we just returned from an OAuth callback
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('success')) {
+            const provider = urlParams.get('provider') || 'OAuth';
+            showStatus(`<strong>✓ ${provider} authorization successful!</strong><br>Tokens have been stored in the database.`, 'success');
+        } else if (urlParams.has('error')) {
+            const error = urlParams.get('error') || 'Unknown error';
+            showStatus(`<strong>Authorization failed:</strong><br>${error}`, 'error');
+        }
+    </script>
+</body>
+</html>
