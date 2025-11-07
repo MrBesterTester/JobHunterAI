@@ -1,11 +1,14 @@
 ---
 document_type: testing_status
-purpose: Current test suite results and planning workspace for next comprehensive testing round
-scope: Most recent comprehensive test run only
-update_policy: Replace old results with new comprehensive runs; archive phase-specific details to TESTING_HISTORY.md
+purpose: Results of executing the auto-test-plan and workspace for next comprehensive testing round
+scope: Most recent comprehensive test run results only
+relationship: Contains RESULTS of README_auto-test-plan.md execution; previous comprehensive results are archived to TESTING_HISTORY.md
+update_policy: Replace old results with new comprehensive runs; move previous comprehensive results to TESTING_HISTORY.md; archive phase-specific details to TESTING_HISTORY.md
 content_lifecycle: Latest results only - serves as "sounding board" for future testing rounds
 related_docs:
+  - README_auto-test-plan.md (the testing plan)
   - TESTING_HISTORY.md (historical archive)
+  - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-03 11:04:52 PST
 last_updated: 2025-11-07 12:47:47 PST

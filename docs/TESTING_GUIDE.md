@@ -1,3 +1,17 @@
+---
+document_type: testing_guide
+purpose: General testing principles, investigation workflows, and examples for all testing activities
+scope: Applies to all testing - whether from auto-test-plan, bugs, issues, or ad-hoc testing
+relationship: Reference guide used during execution of README_auto-test-plan.md or any testing work
+update_policy: Update when new testing patterns emerge or investigation techniques are discovered
+content_lifecycle: Living reference document - grows as testing practices evolve
+related_docs:
+  - README_auto-test-plan.md (testing plan)
+  - TESTING_STATUS.md (testing results)
+  - CLAUDE.md (core testing standards)
+last_updated: 2025-11-07
+---
+
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 

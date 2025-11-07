@@ -1,3 +1,17 @@
+---
+document_type: testing_plan
+purpose: Comprehensive testing plan and strategy for all test suite execution
+scope: Phase-by-phase testing coverage, infrastructure, and success criteria
+relationship: This is the PLAN; TESTING_STATUS.md contains RESULTS of executing this plan
+update_policy: Update as testing strategy evolves; tracks planned vs completed phases
+related_docs:
+  - TESTING_STATUS.md (results of this plan)
+  - TESTING_HISTORY.md (historical archive)
+  - TESTING_GUIDE.md (testing principles and investigation guide)
+  - PROJECT_STATUS.md (overall project status)
+last_updated: 2025-11-07 12:47:47 PST
+---
+
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 

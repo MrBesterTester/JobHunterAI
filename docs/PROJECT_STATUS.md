@@ -1,3 +1,19 @@
+---
+document_type: project_status
+purpose: Summary results of development work and overall project state
+scope: High-level status across all phases, recommended next steps, key metrics, and terse recent history
+relationship: Contains RESULTS summary; phase documents (PHASE_*.md) contain detailed PLANS; detailed milestone history archived to PROJECT_HISTORY.md
+update_policy: Update after significant milestones; summarize phase progress and next steps; move detailed milestone records to PROJECT_HISTORY.md
+content_lifecycle: Current state snapshot with terse history - detailed history archived to PROJECT_HISTORY.md
+related_docs:
+  - Phase documents (PHASE_*.md) - detailed development plans
+  - PROJECT_HISTORY.md (historical archive)
+  - TESTING_STATUS.md (testing results)
+  - README_auto-test-plan.md (testing plan)
+  - PRD.md (product requirements)
+last_updated: 2025-11-07 12:43:38 PST
+---
+
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
