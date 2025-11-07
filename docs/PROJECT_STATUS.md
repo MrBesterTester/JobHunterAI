@@ -39,7 +39,7 @@
 
 # JobHunter Project Status
 
-**Last Updated**: 2025-11-06 18:37:23 PST (Phase 2.10 complete with all E2E tests passing)
+**Last Updated**: 2025-11-07 12:43:38 PST (ISSUE-032 fixed - Rejected emails filtered from Ignored tab)
 
 ---
 
@@ -94,9 +94,8 @@ The software implements all core job hunting workflows defined in the Product Re
 
 **See**: [PROJECT_HISTORY.md](PROJECT_HISTORY.md) for detailed historical records
 
-**Open Issues**: 2 bugs/issues (all infrastructure and quality issues resolved!)
+**Open Issues**: 1 bug/issue (all infrastructure and quality issues resolved!)
 - ISSUE-010: CLAUDE.md token usage optimization (low)
-- ISSUE-032: Non-job emails with JobOps-OLD label appear in Ignored tab (medium, pre-existing)
 
 ---
 
@@ -573,7 +572,7 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 
 ## Bug Tracking
 
-**Total Bugs**: 41 (3 open, 5 mitigated, 33 fixed)
+**Total Bugs**: 41 (2 open, 5 mitigated, 34 fixed)
 
 **Priority Breakdown**:
 - Critical: 1
@@ -583,8 +582,7 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 - Unknown: 2
 
 **Recent Activity** (Last 7 days):
-- **FILED** [ISSUE-032](../bugs/open/ISSUE-032-rejected-non-job-emails-with-jobops-old-label-appear-in-ignored-tab-while-already-in-gmail-trash.md): Pre-existing classification bug (2025-11-06) - Discovered during Phase 2.10 manual testing, not caused by Phase 2.10 feature
-- **NOTE**: ISSUE-032 is a pre-existing data quality issue from earlier email processing, not a Phase 2.10 regression
+- **FIXED** [ISSUE-032](../bugs/fixed/ISSUE-032-rejected-non-job-emails-with-jobops-old-label-appear-in-ignored-tab-while-already-in-gmail-trash.md): Rejected emails filtered from Ignored tab (2025-11-07) - Gmail API filtering + database cleanup
 - **RESOLVED** [ISSUE-030](../bugs/mitigated/ISSUE-030-low-confidence-emails-appear-in-filtered-tab-instead-of-non-job-emails.md): Low-confidence email threshold fix (2025-11-04) - Mitigated
 - **FIXED** [BUG-0009](../bugs/fixed/BUG-0009-condensed-description-api-returns-placeholder-for-short-job-descriptions.md): Condensed description word count (2025-11-04) - Fixed
 
@@ -669,9 +667,17 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 
 ---
 
-**Last Updated**: 2025-11-06 18:37:23 PST (Phase 2.10 complete with all E2E tests passing)
+**Last Updated**: 2025-11-07 12:43:38 PST (ISSUE-032 fixed - Rejected emails filtered from Ignored tab)
 
 **Major Updates in This Revision**:
+- **ISSUE-032 FIXED** (2025-11-07 12:43:38 PST)
+  - ✅ Rejected emails with JobOps-OLD label now filtered from Ignored tab
+  - ✅ Backend: Added Gmail API filtering to get_ignored_emails endpoint
+  - ✅ Backend: Added helper functions for Gmail label queries
+  - ✅ Database: Cleaned up 1 orphaned rejected email record
+  - ✅ Cleanup Script: Created helper-scripts/cleanup-orphaned-rejected-emails.sh
+  - **Test Results**: Verified 2 genuinely ignored emails remain, 1 rejected email removed
+  - **Commits**: 370dd65 (fix implementation), 2df6468 (cleanup script + database cleanup)
 - **Phase 2.10 COMPLETE** (2025-11-06 18:37:23 PST)
   - ✅ Test Results: 10/10 tests passing (4 backend + 6 E2E)
   - ✅ E2E Runtime: 9.2 seconds for all 6 tests
