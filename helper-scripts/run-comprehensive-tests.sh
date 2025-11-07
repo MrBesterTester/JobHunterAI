@@ -130,7 +130,8 @@ check_database_selection() {
     log_section "PREFLIGHT: Database Selection"
 
     # Check which database is configured
-    local db_name=$(grep '^DATABASE_URL=' backend/.env 2>/dev/null | grep -o 'jobhunter[^?]*' || echo "unknown")
+    # Extract just the database name from DATABASE_URL (after last slash, before query params)
+    local db_name=$(grep '^DATABASE_URL=' backend/.env 2>/dev/null | sed -n 's#.*/\([^?]*\).*#\1#p' || echo "unknown")
 
     if [[ "$db_name" == "jobhunter_personal" ]]; then
         log_info "Database: jobhunter_personal (correct)"
