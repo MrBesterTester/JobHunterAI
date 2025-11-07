@@ -4630,10 +4630,10 @@ async fn process_gmail_messages(
 
     // Search for all unread emails, excluding those already tagged as JobOp
     // This allows the LLM to classify ALL emails, not just subject-matched ones
-    // Limited to 10 emails per sync to match RapidAPI/JSearch limit
+    // Limited to 30 emails per sync for better coverage of incoming job opportunities
     let query = "is:unread -label:JobOp";
     let url = format!(
-        "https://gmail.googleapis.com/gmail/v1/users/me/messages?q={}&maxResults=10",
+        "https://gmail.googleapis.com/gmail/v1/users/me/messages?q={}&maxResults=30",
         urlencoding::encode(query)
     );
 
@@ -4925,7 +4925,7 @@ async fn fetch_jsearch_jobs_rapidapi(
     let query = search_params["query"].as_str().unwrap_or("Software Test Engineer OR QA Engineer in Fremont, CA");
     let date_posted = search_params["date_posted"].as_str().unwrap_or("week");
     let remote_jobs_only = search_params["remote_jobs_only"].as_bool().unwrap_or(false);
-    let num_pages = search_params["num_pages"].as_str().unwrap_or("1"); // 1 page = ~10 jobs
+    let num_pages = search_params["num_pages"].as_str().unwrap_or("2"); // 2 pages = ~20 jobs (we'll take first 15)
     let page = search_params["page"].as_str().unwrap_or("1"); // Which page to start from (default: 1)
 
     log_debug(&format!("Fetching jobs from RapidAPI JSearch: query={}, num_pages={}, page={}, date_posted={}, remote_jobs_only={}",
@@ -5055,10 +5055,10 @@ async fn process_jsearch_jobs(
     let api_host = std::env::var("RAPIDAPI_HOST_JSEARCH")
         .map_err(|_| "RAPIDAPI_HOST_JSEARCH not configured. Set this environment variable to enable JSearch integration.")?;
 
-    // Fetch jobs from RapidAPI JSearch (limited to 10 via num_pages=1)
+    // Fetch jobs from RapidAPI JSearch (fetch ~20 via num_pages=2, process first 15)
     let listings = fetch_jsearch_jobs_rapidapi(&api_key, &api_host, &source.configuration).await?;
 
-    for listing in listings {
+    for listing in listings.iter().take(15) {
         metrics.discovered += 1;
 
         // Check if already processed (by external_job_id)

@@ -81,7 +81,7 @@ INSERT INTO job_sources (
     TRUE,
     200,
     1440,
-    '{"query": "software test automation", "location": "Fremont, CA", "radius": "45", "employment_types": "FULLTIME", "date_posted": "week", "test_mode": true}'::JSONB
+    '{"query": "software test automation", "location": "Fremont, CA", "radius": "45", "employment_types": "FULLTIME", "date_posted": "week", "num_pages": "2", "test_mode": true}'::JSONB
 ) ON CONFLICT (source_name) DO UPDATE SET
     is_active = TRUE,
     configuration = jsonb_set(
