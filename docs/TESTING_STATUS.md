@@ -94,7 +94,7 @@ last_updated: 2025-11-07 21:38:11 PST
 - E2E tests from previous comprehensive run (Nov 7 18:41). Backend/frontend tests from latest validation (Nov 7 19:51).
 - ¹**6 tests** from [ISSUE-033](../bugs/open/ISSUE-033-six-backend-tests-ignored-mock-and-integration.md): 4 mock tests (mockito issues) + 2 integration tests (isolation/config issues)
 - ²**2 tests** intentionally ignored: Real LLM API tests (`test_real_api_generate`, `test_real_api_with_invalid_key`) - require API key and cost money
-- ³**Warnings**: Tests that skip with informative warning messages explaining missing preconditions (e.g., backend service not configured). These are NOT test failures - they provide actionable guidance to enable the tests.
+- ³**Warnings**: Tests that skip due to unmet dependencies (e.g., backend service not configured). These are NOT passes - they represent incomplete testing and indicate more work needed to properly validate test dependencies.
 - ⁴**Pass Rate Formula**: `Passed / (Passed + Failed)` - Skipped/Ignored tests are excluded from denominator as they don't run
 - **E2E excluded (79+2+34 = 115 tests)**: 79 skipped (intentionally excluded), 2 interrupted (Mobile Chrome), 34 did not run
 - **E2E warnings (13 tests)**: Microsoft Email integration tests skip with warnings when backend sync service not configured ([ISSUE-035](../bugs/open/ISSUE-035-e2e-test-failures---92-tests-failing-808-pass-rate.md) Phase 4)
