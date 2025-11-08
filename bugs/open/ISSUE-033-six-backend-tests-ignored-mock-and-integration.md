@@ -1,17 +1,17 @@
 ---
 id: ISSUE-033
-title: Six backend tests marked as ignored - need investigation and fixes
+title: Six backend tests ignored - mock and integration
 status: open
 priority: medium
 severity: medium
 component: backend
 created: 2025-11-07
-updated: 2025-11-07
+updated: 2025-11-07 19:55
 affects: []
 related: []
 ---
 
-# ISSUE-033: Six backend tests marked as ignored - need investigation and fixes
+# ISSUE-033: Six backend tests ignored - mock and integration
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -42,7 +42,11 @@ related: []
 
 ## Summary
 
-Six backend tests are currently marked with #[ignore] due to mockito integration issues, quota tracking test isolation, and Microsoft configuration check failures
+Six backend tests are currently marked with #[ignore]: 4 mock-based tests (mockito integration issues) and 2 real integration tests (isolation and configuration issues)
+
+**Test Breakdown:**
+- **4 Mock Tests**: LLM mockito-based tests with mock server timeout issues
+- **2 Integration Tests**: Real API quota tracking (isolation) + MS Graph configuration validation
 
 ## Impact
 
@@ -74,6 +78,38 @@ Six backend tests are currently marked with #[ignore] due to mockito integration
 **Location**: `backend/tests/microsoft_email_tests.rs:380`
 
 6. `test_microsoft_source_configuration` - Microsoft Graph API configuration validation
+
+## Test Type Analysis
+
+**Important Distinction**: Not all 6 tests are mock tests. They fall into two categories:
+
+### Mock Tests (4 tests - Mockito-based)
+**Category**: Unit tests with mocked external dependencies
+**Framework**: Mockito mock server
+**Purpose**: Fast offline testing of LLM integration logic
+**Issue**: Mock server timeout/response issues
+**Coverage Impact**: **Low** - Real API tests provide equivalent coverage
+
+**Tests:**
+1. `test_generate_success`
+2. `test_generate_with_system_prompt`
+3. `test_generate_rate_limit_retry`
+4. `test_generate_empty_content`
+
+**Mitigation**: Real API tests (`test_real_api_generate`, `test_real_api_with_invalid_key`) already validate LLM functionality
+
+### Integration Tests (2 tests - Real APIs)
+**Category**: Integration tests with real external dependencies
+**Framework**: Standard Rust test framework with serial execution
+**Purpose**: Validate quota tracking accuracy and MS Graph configuration
+**Issue**: Test isolation (quota) and configuration validation (MS Graph)
+**Coverage Impact**: **Medium** - No equivalent coverage exists
+
+**Tests:**
+1. `test_rapidapi_quota_tracking` - Real RapidAPI quota state tracking
+2. `test_microsoft_source_configuration` - Real MS Graph API config validation
+
+**Mitigation**: Partial - production usage validates these, but no automated test coverage
 
 ## Steps to Reproduce
 
@@ -275,7 +311,8 @@ cargo test
 
 ## Status History
 
-- 2025-11-07: ISSUE-033 created and documented with full analysis
+- 2025-11-07 19:00: ISSUE-033 created and documented with full analysis
+- 2025-11-07 19:55: Updated with test type breakdown (4 mock tests vs 2 integration tests) and coverage impact analysis
 
 ## Notes
 
