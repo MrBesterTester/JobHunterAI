@@ -170,6 +170,80 @@ if check_process 'playwright test'; then
     fi
 fi
 
+# Check for orphaned cargo test processes
+if check_process 'cargo test'; then
+    ORPHANED_PROCESSES=true
+    CARGO_TEST_COUNT=$(count_processes 'cargo test')
+    echo "   Found $CARGO_TEST_COUNT orphaned cargo test process(es)"
+    pkill -f 'cargo test' 2>/dev/null || true
+    sleep 1
+
+    if ! check_process 'cargo test'; then
+        echo "   ✅ Cleaned up cargo test processes"
+    else
+        echo "   ⚠️  Some cargo test processes may still be running"
+    fi
+fi
+
+# Check for orphaned npm/jest test processes
+if check_process 'jest'; then
+    ORPHANED_PROCESSES=true
+    JEST_COUNT=$(count_processes 'jest')
+    echo "   Found $JEST_COUNT orphaned jest process(es)"
+    pkill -f 'jest' 2>/dev/null || true
+    sleep 1
+
+    if ! check_process 'jest'; then
+        echo "   ✅ Cleaned up jest processes"
+    else
+        echo "   ⚠️  Some jest processes may still be running"
+    fi
+fi
+
+# Check for orphaned Rust compiler processes (rustc, rust-analyzer)
+if check_process 'rustc.*jobhunter'; then
+    ORPHANED_PROCESSES=true
+    RUSTC_COUNT=$(count_processes 'rustc.*jobhunter')
+    echo "   Found $RUSTC_COUNT orphaned rustc process(es)"
+    pkill -f 'rustc.*jobhunter' 2>/dev/null || true
+    sleep 1
+
+    if ! check_process 'rustc.*jobhunter'; then
+        echo "   ✅ Cleaned up rustc processes"
+    else
+        echo "   ⚠️  Some rustc processes may still be running"
+    fi
+fi
+
+# Force kill anything still on ports 8080 or 3000 (last resort)
+if lsof -ti:8080 > /dev/null 2>&1; then
+    ORPHANED_PROCESSES=true
+    PORT_8080_PIDS=$(lsof -ti:8080 | tr '\n' ' ')
+    echo "   Found process(es) on port 8080: $PORT_8080_PIDS"
+    lsof -ti:8080 | xargs kill -9 2>/dev/null || true
+    sleep 1
+
+    if ! lsof -ti:8080 > /dev/null 2>&1; then
+        echo "   ✅ Cleaned up port 8080"
+    else
+        echo "   ⚠️  Port 8080 may still be occupied"
+    fi
+fi
+
+if lsof -ti:3000 > /dev/null 2>&1; then
+    ORPHANED_PROCESSES=true
+    PORT_3000_PIDS=$(lsof -ti:3000 | tr '\n' ' ')
+    echo "   Found process(es) on port 3000: $PORT_3000_PIDS"
+    lsof -ti:3000 | xargs kill -9 2>/dev/null || true
+    sleep 1
+
+    if ! lsof -ti:3000 > /dev/null 2>&1; then
+        echo "   ✅ Cleaned up port 3000"
+    else
+        echo "   ⚠️  Port 3000 may still be occupied"
+    fi
+fi
+
 if [ "$ORPHANED_PROCESSES" = false ]; then
     echo "ℹ️  No orphaned processes found"
 fi

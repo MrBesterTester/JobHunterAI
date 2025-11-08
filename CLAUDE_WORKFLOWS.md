@@ -18,6 +18,13 @@
     - [When to Mark Tests as Complete](#when-to-mark-tests-as-complete)
     - [User Accountability](#user-accountability)
   - [System Health Monitoring & Resource Management](#system-health-monitoring--resource-management)
+  - [Backend Development & Restart Workflow](#backend-development--restart-workflow)
+    - [When to Restart Backend](#when-to-restart-backend)
+    - [Required Restart Commands](#required-restart-commands)
+    - [Claude's Automatic Reminders](#claudes-automatic-reminders)
+    - [Integration with Testing Workflow](#integration-with-testing-workflow)
+    - [What stop.sh Cleans Up](#what-stopsh-cleans-up)
+    - [Consequences of Forgetting to Restart](#consequences-of-forgetting-to-restart)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -406,3 +413,99 @@ cd backend && cargo test
 **Jest resource limits**: `maxWorkers: 4` in `jest.config.js` (ISSUE-022) prevents system overload during parallel test execution.
 
 **Full documentation**: [README_dev.md - system-health-check.sh](README_dev.md#system-health-checksh) - includes usage examples, thresholds, and troubleshooting.
+
+---
+
+## Backend Development & Restart Workflow
+
+**✅ IMPLEMENTED**: Mandatory backend restart workflow to prevent stale process issues (created after recurring "forgot to restart" incidents)
+
+**CRITICAL RULE**: Always restart the backend after making code changes to Rust files or environment variables.
+
+### When to Restart Backend
+
+**REQUIRED restart scenarios:**
+1. **After modifying any Rust source files** (`backend/src/*.rs`)
+2. **After changing environment variables** (`backend/.env`)
+3. **Before running E2E tests** (ensures fresh backend state)
+4. **After database schema changes** (ensures ORM models are current)
+5. **When backend behavior seems stale or incorrect** (first troubleshooting step)
+
+**Optional restart scenarios:**
+- After long debugging sessions (to clear any cached state)
+- When switching between branches with different backend code
+- After system sleep/wake (ports may be stale)
+
+### Required Restart Commands
+
+**ALWAYS use this exact sequence:**
+```bash
+./helper-scripts/stop.sh    # Stop all processes + cleanup orphans
+./helper-scripts/start.sh   # Start backend with fresh environment
+```
+
+**Why this matters:**
+- `stop.sh` kills the old backend process **and** cleans up orphaned processes (Playwright, cargo test, npm test)
+- Starting a new backend without stopping first = **stale backend serving old code**
+- Environment variables are only loaded at backend startup
+- Tests will fail mysteriously if backend is serving old code
+
+### Claude's Automatic Reminders
+
+**Claude will automatically remind you to restart when:**
+- You make changes to `backend/src/*.rs` files
+- You run backend tests after making code changes
+- You're about to run E2E tests
+- You mention investigating backend behavior issues
+- User corrects Claude for forgetting to restart
+
+**Example reminder:**
+> "Before we run these tests, let me restart the backend to ensure we're testing the latest code:
+> ```bash
+> ./helper-scripts/stop.sh && ./helper-scripts/start.sh
+> ```"
+
+### Integration with Testing Workflow
+
+**E2E testing checklist** (from Testing Standards):
+1. ✅ **RESTART BACKEND** (`./helper-scripts/stop.sh && ./helper-scripts/start.sh`)
+2. ✅ Verify backend is running (`curl http://localhost:8080/api/jobs`)
+3. ✅ Run E2E tests
+4. ✅ Investigate any failures
+
+**Backend unit testing checklist**:
+1. ✅ **STOP BACKEND** (`./helper-scripts/stop.sh`) - unit tests run backend internally
+2. ✅ Run backend tests (`cd backend && cargo test`)
+3. ✅ If tests pass and you need to run E2E: **START BACKEND** (`./helper-scripts/start.sh`)
+
+### What stop.sh Cleans Up
+
+**Current orphan cleanup** (lines 154-176 in stop.sh):
+- ✅ Orphaned Playwright test processes
+- ✅ Backend processes (cargo run + jobhunter-backend binary)
+- ✅ Frontend processes (react-scripts + rsbuild)
+- ✅ Port occupation checks (8080, 3000)
+
+**Strengthened cleanup** (see next section):
+- ✅ Orphaned cargo test processes
+- ✅ Orphaned npm/jest test processes
+- ✅ Orphaned Rust compiler processes
+- ✅ Any process using ports 8080 or 3000 (even if not matching exact pattern)
+
+### Consequences of Forgetting to Restart
+
+**What happens:**
+- ❌ Backend serves old code with stale behavior
+- ❌ Environment variable changes are ignored
+- ❌ Tests fail mysteriously (testing old code, not new code)
+- ❌ Debugging wastes time (observing old behavior)
+- ❌ User gets frustrated correcting Claude
+
+**Historical incidents:**
+- ISSUE-035 Phase 5: Forgot to restart after fixing API deserialization bug
+- Multiple sessions: User had to remind Claude "you didn't restart the backend"
+
+**Prevention:**
+- This workflow document (you're reading it!)
+- Claude proactively reminds before test runs
+- Always use helper scripts (not manual `cargo run`)
