@@ -330,6 +330,7 @@ const IgnoredTab: React.FC = () => {
                   display: 'flex',
                   gap: '12px'
                 }}
+                onClick={() => setSelectedEmail(selectedEmail?.email_job_id === email.email_job_id ? null : email)}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = '#f3f4f6';
                   e.currentTarget.style.borderColor = '#d1d5db';
@@ -358,7 +359,6 @@ const IgnoredTab: React.FC = () => {
 
                 <div
                   style={{ flex: 1 }}
-                  onClick={() => setSelectedEmail(selectedEmail?.email_job_id === email.email_job_id ? null : email)}
                 >
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                   <div style={{ flex: 1 }}>

@@ -834,7 +834,7 @@ const JobDetails: React.FC<{
                 Approve
               </button>
               <button
-                onClick={() => { rejectJob(job.job_id); onClose(); }}
+                onClick={() => { updateJobStatus(job.job_id, 'rejected'); onClose(); }}
                 style={{
                   flex: 1,
                   backgroundColor: '#ef4444',
@@ -2422,7 +2422,7 @@ const JobHunterDashboard: React.FC = () => {
             Approve
           </button>
           <button
-            onClick={(e) => { e.stopPropagation(); rejectJob(job.job_id); }}
+            onClick={(e) => { e.stopPropagation(); updateJobStatus(job.job_id, 'rejected'); }}
             style={{
               flex: 1,
               backgroundColor: '#ef4444',
