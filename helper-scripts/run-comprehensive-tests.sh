@@ -24,6 +24,7 @@ NC='\033[0m' # No Color
 # Default behavior
 FAIL_FAST=false
 SKIP_PREFLIGHT=false
+SKIP_E2E=false
 
 # Results tracking
 PREFLIGHT_PASSED=true
@@ -57,12 +58,14 @@ QUALITY GATE (ALWAYS ENFORCED):
 OPTIONS:
     -f, --fail-fast       Stop on first TEST failure (build failures always stop)
     --skip-preflight      Skip preflight checks (not recommended)
+    --skip-e2e            Skip E2E tests (run only backend/frontend unit tests)
     -h, --help            Show this help message
 
 EXAMPLES:
     $(basename "$0")                  # Run all tests, report at end
     $(basename "$0") --fail-fast      # Stop at first test failure
     $(basename "$0") --skip-preflight # Skip preflight (use with caution)
+    $(basename "$0") --skip-e2e       # Run fast tests only (~4 min, no E2E)
 
 EOF
 }
@@ -75,6 +78,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --skip-preflight)
             SKIP_PREFLIGHT=true
+            shift
+            ;;
+        --skip-e2e)
+            SKIP_E2E=true
             shift
             ;;
         -h|--help)
@@ -481,7 +488,9 @@ generate_report() {
     fi
 
     # E2E Tests
-    if [ "$E2E_TESTS_PASSED" = true ]; then
+    if [ "$SKIP_E2E" = true ]; then
+        echo -e "E2E Tests                  ${YELLOW}SKIPPED${NC}     -"
+    elif [ "$E2E_TESTS_PASSED" = true ]; then
         echo -e "E2E Tests                  ${GREEN}PASSED${NC}      $E2E_TEST_TIME"
         ((total_passed++))
     else
@@ -493,10 +502,20 @@ generate_report() {
     echo -e "Total: ${total_passed} passed, ${total_failed} failed"
     echo ""
 
+    # E2E reminder if skipped
+    if [ "$SKIP_E2E" = true ]; then
+        log_warning "E2E tests were skipped. Run without --skip-e2e to execute them (~23 min)"
+    fi
+
     # Overall result
     if [ $total_failed -eq 0 ]; then
-        log_info "✅ ALL TESTS PASSED"
-        send_notification "Comprehensive Tests PASSED" "All phases completed successfully"
+        if [ "$SKIP_E2E" = true ]; then
+            log_info "✅ FAST TESTS PASSED (E2E skipped)"
+            send_notification "Fast Tests PASSED" "Backend and frontend tests completed successfully"
+        else
+            log_info "✅ ALL TESTS PASSED"
+            send_notification "Comprehensive Tests PASSED" "All phases completed successfully"
+        fi
         return 0
     else
         log_error "❌ SOME TESTS FAILED"
@@ -513,6 +532,7 @@ main() {
     echo "Start time: $(date '+%Y-%m-%d %H:%M:%S %Z')"
     echo "Fail-fast mode: $FAIL_FAST"
     echo "Skip preflight: $SKIP_PREFLIGHT"
+    echo "Skip E2E tests: $SKIP_E2E"
 
     # Preflight checks
     if [ "$SKIP_PREFLIGHT" = false ]; then
@@ -528,7 +548,13 @@ main() {
     # Test phase
     run_backend_tests
     run_frontend_tests
-    run_e2e_tests
+
+    if [ "$SKIP_E2E" = false ]; then
+        run_e2e_tests
+    else
+        log_warning "Skipping E2E tests (--skip-e2e flag set)"
+        E2E_TESTS_PASSED=false  # Mark as not run
+    fi
 
     # Generate report
     local end_time=$(date +%s)
