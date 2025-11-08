@@ -35,6 +35,8 @@ related: []
   - [Phase 2 Checklist (Investigation)](#phase-2-checklist-investigation)
   - [Phase 3 Checklist (Bulk Fixes)](#phase-3-checklist-bulk-fixes)
   - [Phase 4 Checklist](#phase-4-checklist)
+  - [Phase 5: Content Generation API Integration (2-4 hours)](#phase-5-content-generation-api-integration-2-4-hours)
+  - [Phase 5 Checklist](#phase-5-checklist)
 - [Testing](#testing)
 - [Status History](#status-history)
 - [Notes](#notes)
@@ -388,6 +390,65 @@ All 8 failures are in `05-phase-3.1.5-testing-refinement.spec.ts` and share the 
 - [ ] Run: `npx playwright test -g "email"`
 - [ ] Commit: "fix: E2E email integration test timing"
 
+### Phase 5: Content Generation API Integration (2-4 hours)
+
+**Description**: Fix 8 content generation tests - API timeout/failure issues
+
+**Root Cause** (discovered in Phase 3):
+- Content generation API calls timeout or fail after 45 seconds
+- Modal never renders because backend never returns content
+- NOT a selector issue - this is backend/API integration work
+
+**Failing Tests** (all in `05-phase-3.1.5-testing-refinement.spec.ts`):
+1. Quality Assessment: Relevance Scoring
+   - should generate content relevant to job title and domain
+   - should include job-specific technologies in generated content
+2. Quality Assessment: Personalization Scoring
+   - should personalize content with company name and job details
+3. Quality Assessment: Accuracy Scoring
+   - should not fabricate experience or claims
+4. Quality Assessment: Tone Scoring
+   - should maintain professional yet personable tone
+5. Cost Tracking & Monitoring
+   - should track cumulative cost across multiple generations
+   - should maintain consistent cost per generation
+6. Performance Benchmarks
+   - should complete 5 consecutive generations under 45s each
+
+**Investigation Steps**:
+```bash
+# Run one failing test with trace
+npx playwright test e2e/tests/05-phase-3.1.5-testing-refinement.spec.ts:30 --trace on
+
+# Check backend logs for API errors
+# Verify content generation API endpoint is working
+# Check if API keys/credentials are configured
+```
+
+**Pros**:
+- Critical workflow validation (resume/cover letter generation)
+- Achieves 95%+ goal if fixed
+- Real backend issue (not test infrastructure)
+
+**Cons**:
+- Requires backend investigation/fixes
+- May need API configuration changes
+- Could be LLM API rate limiting or timeout issues
+
+**Implementation Effort**: 2-4 hours (backend debugging + fixes)
+
+**Expected Result**: ~443 passing / ~14 failing (96.9% pass rate) ✅
+
+### Phase 5 Checklist
+
+- [ ] Run single failing test with trace: `npx playwright test e2e/tests/05-phase-3.1.5-testing-refinement.spec.ts:30 --trace on`
+- [ ] Investigate backend logs for content generation API errors
+- [ ] Verify API endpoint is reachable and responding
+- [ ] Check API credentials/rate limits
+- [ ] Fix backend issues identified
+- [ ] Re-run all 8 failing tests to verify fixes
+- [ ] Commit: "fix: Content generation API integration for E2E tests (ISSUE-035 Phase 5)"
+
 ## Testing
 
 **Test Commands:**
@@ -408,14 +469,19 @@ npx playwright test -g "email" --project=chromium
 ```
 
 **Verification:**
-- [ ] Phase 1: Pass rate 80.8% → 84.7% (22 tests skipped)
-- [ ] Phase 2-3: Pass rate 84.7% → 93.4% (~40-50 tests fixed)
-- [ ] Phase 4: Pass rate 93.4% → 95.2% (~6-8 tests fixed)
+- [x] Phase 1: Pass rate 80.8% → ~85% (53 tests skipped) ✅
+- [x] Phase 2-3: Tab selector fix resolved job details tests ✅
+- [ ] Phase 4: Email integration tests (~6-8 tests)
+- [ ] Phase 5: Content generation API tests (8 tests)
 - [ ] Final: 95%+ pass rate achieved (max 25 failures)
 
 ## Status History
 
 - 2025-11-07: ISSUE-035 created with comprehensive fix plan
+- 2025-11-07: Phase 1 completed - Skipped 53 unimplemented/deferred feature tests
+- 2025-11-07: Phase 2 completed - Fixed tab selectors in DashboardPage.ts (proof of concept)
+- 2025-11-07: Phase 3 completed - Verified tab fix resolved all job details UI tests
+- 2025-11-07: Phase 5 added - Discovered 8 content generation API failures during Phase 3 testing
 
 ## Notes
 
@@ -430,13 +496,14 @@ npx playwright test -g "email" --project=chromium
 
 **Success Metrics**:
 
-| Phase | Time | Pass Rate | Improvement |
-|-------|------|-----------|-------------|
-| Current | - | 80.8% | - |
-| Phase 1 | 15 min | 84.7% | +3.9% |
-| Phase 2-3 | 3-5 hrs | 93.4% | +8.7% |
-| Phase 4 | 2-3 hrs | 95.2% | +1.8% |
-| **Total** | **6-8 hrs** | **95.2%** | **+14.4%** |
+| Phase | Time | Pass Rate | Improvement | Status |
+|-------|------|-----------|-------------|--------|
+| Current | - | 80.8% | - | - |
+| Phase 1 | 15 min | ~85% | +4.2% | ✅ Complete (53 tests skipped) |
+| Phase 2-3 | 2 hrs | ~88% | +3% | ✅ Complete (7 tests fixed) |
+| Phase 4 | 2-3 hrs | ~90% | +2% | Pending (email integration) |
+| Phase 5 | 2-4 hrs | ~96.9% | +6.9% | Pending (content gen API) |
+| **Total** | **6-11 hrs** | **~97%** | **+16%** | **In Progress** |
 
 **Related Documentation**: Full detailed plan in `docs/E2E_TEST_FIX_PLAN.md`
 
