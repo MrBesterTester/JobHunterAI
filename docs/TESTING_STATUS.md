@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-07 19:14:34 PST
-last_updated: 2025-11-07 20:06:46 PST
+last_updated: 2025-11-07 20:10:40 PST
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -56,7 +56,7 @@ last_updated: 2025-11-07 20:06:46 PST
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-**Last Updated**: 2025-11-07 20:06:46 PST (Added backend test breakdown: 6 from ISSUE-033 + 2 intentionally ignored)
+**Last Updated**: 2025-11-07 20:10:40 PST (Added E2E test exclusion breakdown: 79 skipped + 2 interrupted + 34 did not run)
 
 **Purpose**: Current testing status and open issues requiring attention. This document tracks the most recent comprehensive test suite results and serves as a sounding board for planning and tracking future comprehensive testing rounds.
 
@@ -95,6 +95,7 @@ last_updated: 2025-11-07 20:06:46 PST
 - E2E tests from previous comprehensive run (Nov 7 18:41). Backend/frontend tests from latest validation (Nov 7 19:51).
 - ¹**6 tests** from [ISSUE-033](bugs/open/ISSUE-033-six-backend-tests-ignored-mock-and-integration.md): 4 mock tests (mockito issues) + 2 integration tests (isolation/config issues)
 - ²**2 tests** intentionally ignored: Real LLM API tests (`test_real_api_generate`, `test_real_api_with_invalid_key`) - require API key and cost money
+- **E2E excluded (79+2+34 = 115 tests)**: 79 skipped (intentionally excluded), 2 interrupted (Mobile Chrome), 34 did not run
 
 **Progress Since Last Update**:
 - ✅ Fixed all 11 remaining frontend unit tests (2025-11-07 19:51:48 PST)
