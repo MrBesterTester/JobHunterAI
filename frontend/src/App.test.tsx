@@ -1819,8 +1819,7 @@ describe('App (JobHunterDashboard)', () => {
       }, { timeout: 3000 });
 
       // Click new tab
-      const newElements = screen.getAllByText('New');
-      const newTabButton = newElements.find(el => el.closest('button'))?.closest('button');
+      const newTabButton = screen.getByTestId('new-tab-button');
       expect(newTabButton).toBeTruthy();
 
       if (newTabButton) {
@@ -1845,7 +1844,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Click approved tab
       const approvedElements = screen.getAllByText('Approved');
-      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'));
       expect(approvedTabButton).toBeTruthy();
 
       if (approvedTabButton) {
@@ -1870,7 +1869,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Click applied tab
       const appliedElements = screen.getAllByText('Applied');
-      const appliedTabButton = appliedElements.find(el => el.closest('button'))?.closest('button');
+      const appliedTabButton = appliedElements.find(el => el.closest('button'));
       expect(appliedTabButton).toBeTruthy();
 
       if (appliedTabButton) {
@@ -1946,7 +1945,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Click all tab
       const allElements = screen.getAllByText('All');
-      const allTabButton = allElements.find(el => el.closest('button'))?.closest('button');
+      const allTabButton = allElements.find(el => el.closest('button'));
       expect(allTabButton).toBeTruthy();
 
       if (allTabButton) {
@@ -1988,7 +1987,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Switch to approved tab
       const approvedElements = screen.getAllByText('Approved');
-      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'));
 
       if (approvedTabButton) {
         fireEvent.click(approvedTabButton);
@@ -2027,8 +2026,7 @@ describe('App (JobHunterDashboard)', () => {
       }, { timeout: 3000 });
 
       // Switch to new tab
-      const newElements = screen.getAllByText('New');
-      const newTabButton = newElements.find(el => el.closest('button'))?.closest('button');
+      const newTabButton = screen.getByTestId('new-tab-button');
 
       if (newTabButton) {
         fireEvent.click(newTabButton);
@@ -2052,7 +2050,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Switch to approved tab
       const approvedElements = screen.getAllByText('Approved');
-      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'));
 
       if (approvedTabButton) {
         fireEvent.click(approvedTabButton);
@@ -2075,7 +2073,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Switch to applied tab
       const appliedElements = screen.getAllByText('Applied');
-      const appliedTabButton = appliedElements.find(el => el.closest('button'))?.closest('button');
+      const appliedTabButton = appliedElements.find(el => el.closest('button'));
 
       if (appliedTabButton) {
         fireEvent.click(appliedTabButton);
@@ -2098,7 +2096,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Switch to all tab
       const allElements = screen.getAllByText('All');
-      const allTabButton = allElements.find(el => el.closest('button'))?.closest('button');
+      const allTabButton = allElements.find(el => el.closest('button'));
 
       if (allTabButton) {
         fireEvent.click(allTabButton);
@@ -5750,8 +5748,7 @@ describe('App (JobHunterDashboard)', () => {
         }, { timeout: 3000 });
 
         // Navigate to new tab
-        const newElements = screen.getAllByText('New');
-        const newTabButton = newElements.find(el => el.closest('button'))?.closest('button');
+        const newTabButton = screen.getByTestId('new-tab-button');
         expect(newTabButton).toBeTruthy();
 
         if (newTabButton) {
@@ -5826,7 +5823,7 @@ describe('App (JobHunterDashboard)', () => {
 
         // Navigate to approved tab
         const approvedElements = screen.getAllByText('Approved');
-        const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+        const approvedTabButton = approvedElements.find(el => el.closest('button'));
         expect(approvedTabButton).toBeTruthy();
 
         if (approvedTabButton) {
@@ -5901,7 +5898,7 @@ describe('App (JobHunterDashboard)', () => {
 
         // Navigate to applied tab
         const appliedElements = screen.getAllByText('Applied');
-        const appliedTabButton = appliedElements.find(el => el.closest('button'))?.closest('button');
+        const appliedTabButton = appliedElements.find(el => el.closest('button'));
         expect(appliedTabButton).toBeTruthy();
 
         if (appliedTabButton) {
@@ -6132,8 +6129,7 @@ describe('App (JobHunterDashboard)', () => {
         }, { timeout: 3000 });
 
         // Navigate to new tab
-        const newElements = screen.getAllByText('New');
-        const newTabButton = newElements.find(el => el.closest('button'))?.closest('button');
+        const newTabButton = screen.getByTestId('new-tab-button');
         expect(newTabButton).toBeTruthy();
 
         if (newTabButton) {
@@ -6213,8 +6209,7 @@ describe('App (JobHunterDashboard)', () => {
         }, { timeout: 3000 });
 
         // Navigate to new tab
-        const newElements = screen.getAllByText('New');
-        const newTabButton = newElements.find(el => el.closest('button'))?.closest('button');
+        const newTabButton = screen.getByTestId('new-tab-button');
         expect(newTabButton).toBeTruthy();
 
         if (newTabButton) {
@@ -6273,8 +6268,7 @@ describe('App (JobHunterDashboard)', () => {
         }, { timeout: 3000 });
 
         // Navigate to new tab
-        const newElements = screen.getAllByText('New');
-        const newTabButton = newElements.find(el => el.closest('button'))?.closest('button');
+        const newTabButton = screen.getByTestId('new-tab-button');
         expect(newTabButton).toBeTruthy();
 
         if (newTabButton) {
@@ -6332,7 +6326,7 @@ describe('App (JobHunterDashboard)', () => {
 
         // Navigate to approved tab
         const approvedElements = screen.getAllByText('Approved');
-        const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+        const approvedTabButton = approvedElements.find(el => el.closest('button'));
         expect(approvedTabButton).toBeTruthy();
 
         if (approvedTabButton) {
@@ -6390,7 +6384,7 @@ describe('App (JobHunterDashboard)', () => {
 
         // Navigate to applied tab
         const appliedElements = screen.getAllByText('Applied');
-        const appliedTabButton = appliedElements.find(el => el.closest('button'))?.closest('button');
+        const appliedTabButton = appliedElements.find(el => el.closest('button'));
         expect(appliedTabButton).toBeTruthy();
 
         if (appliedTabButton) {
@@ -6550,8 +6544,7 @@ describe('App (JobHunterDashboard)', () => {
         }, { timeout: 3000 });
 
         // Navigate to new tab
-        const newElements = screen.getAllByText('New');
-        const newTabButton = newElements.find(el => el.closest('button'))?.closest('button');
+        const newTabButton = screen.getByTestId('new-tab-button');
         expect(newTabButton).toBeTruthy();
 
         if (newTabButton) {
@@ -6623,8 +6616,7 @@ describe('App (JobHunterDashboard)', () => {
         }, { timeout: 3000 });
 
         // Navigate to new tab
-        const newElements = screen.getAllByText('New');
-        const newTabButton = newElements.find(el => el.closest('button'))?.closest('button');
+        const newTabButton = screen.getByTestId('new-tab-button');
         expect(newTabButton).toBeTruthy();
 
         if (newTabButton) {
@@ -6687,8 +6679,7 @@ describe('App (JobHunterDashboard)', () => {
         }, { timeout: 3000 });
 
         // Navigate to new tab
-        const newElements = screen.getAllByText('New');
-        const newTabButton = newElements.find(el => el.closest('button'))?.closest('button');
+        const newTabButton = screen.getByTestId('new-tab-button');
         expect(newTabButton).toBeTruthy();
 
         if (newTabButton) {
@@ -6761,8 +6752,7 @@ describe('App (JobHunterDashboard)', () => {
       }, { timeout: 3000 });
 
       // Navigate to New tab
-      const newElements = screen.getAllByText('New');
-      const newTabButton = newElements.find(el => el.closest('button'))?.closest('button');
+      const newTabButton = screen.getByTestId('new-tab-button');
       expect(newTabButton).toBeTruthy();
 
       if (newTabButton) {
@@ -6840,8 +6830,7 @@ describe('App (JobHunterDashboard)', () => {
       }, { timeout: 3000 });
 
       // Navigate to New tab
-      const newElements = screen.getAllByText('New');
-      const newTabButton = newElements.find(el => el.closest('button'))?.closest('button');
+      const newTabButton = screen.getByTestId('new-tab-button');
       expect(newTabButton).toBeTruthy();
 
       if (newTabButton) {
@@ -6872,7 +6861,7 @@ describe('App (JobHunterDashboard)', () => {
 
           // Navigate to Approved tab
           const approvedElements = screen.getAllByText('Approved');
-          const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+          const approvedTabButton = approvedElements.find(el => el.closest('button'));
 
           if (approvedTabButton) {
             fireEvent.click(approvedTabButton);
@@ -6940,8 +6929,7 @@ describe('App (JobHunterDashboard)', () => {
       }, { timeout: 3000 });
 
       // Navigate to New tab
-      const newElements = screen.getAllByText('New');
-      const newTabButton = newElements.find(el => el.closest('button'))?.closest('button');
+      const newTabButton = screen.getByTestId('new-tab-button');
 
       if (newTabButton) {
         fireEvent.click(newTabButton);
@@ -7018,8 +7006,7 @@ describe('App (JobHunterDashboard)', () => {
       }, { timeout: 3000 });
 
       // Navigate to New tab
-      const newElements = screen.getAllByText('New');
-      const newTabButton = newElements.find(el => el.closest('button'))?.closest('button');
+      const newTabButton = screen.getByTestId('new-tab-button');
 
       if (newTabButton) {
         fireEvent.click(newTabButton);
@@ -7107,8 +7094,7 @@ describe('App (JobHunterDashboard)', () => {
       const initialJobsApiCallCount = jobsApiCalls.length;
 
       // Navigate to New tab
-      const newElements = screen.getAllByText('New');
-      const newTabButton = newElements.find(el => el.closest('button'))?.closest('button');
+      const newTabButton = screen.getByTestId('new-tab-button');
 
       if (newTabButton) {
         fireEvent.click(newTabButton);
@@ -7188,8 +7174,7 @@ describe('App (JobHunterDashboard)', () => {
       }, { timeout: 3000 });
 
       // Navigate to New tab
-      const newElements = screen.getAllByText('New');
-      const newTabButton = newElements.find(el => el.closest('button'))?.closest('button');
+      const newTabButton = screen.getByTestId('new-tab-button');
 
       if (newTabButton) {
         fireEvent.click(newTabButton);
@@ -7275,7 +7260,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Navigate to Filtered tab
       const filteredElements = screen.getAllByText('Filtered');
-      const filteredTabButton = filteredElements.find(el => el.closest('button'))?.closest('button');
+      const filteredTabButton = filteredElements.find(el => el.closest('button'));
       expect(filteredTabButton).toBeTruthy();
 
       if (filteredTabButton) {
@@ -7315,7 +7300,7 @@ describe('App (JobHunterDashboard)', () => {
 
           // Navigate to Approved tab to verify job moved there
           const approvedElements = screen.getAllByText('Approved');
-          const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+          const approvedTabButton = approvedElements.find(el => el.closest('button'));
 
           if (approvedTabButton) {
             fireEvent.click(approvedTabButton);
@@ -7386,8 +7371,7 @@ describe('App (JobHunterDashboard)', () => {
       }, { timeout: 3000 });
 
       // Navigate to New tab
-      const newElements = screen.getAllByText('New');
-      const newTabButton = newElements.find(el => el.closest('button'))?.closest('button');
+      const newTabButton = screen.getByTestId('new-tab-button');
       expect(newTabButton).toBeTruthy();
 
       if (newTabButton) {
@@ -7465,8 +7449,7 @@ describe('App (JobHunterDashboard)', () => {
       }, { timeout: 3000 });
 
       // Navigate to New tab
-      const newElements = screen.getAllByText('New');
-      const newTabButton = newElements.find(el => el.closest('button'))?.closest('button');
+      const newTabButton = screen.getByTestId('new-tab-button');
       expect(newTabButton).toBeTruthy();
 
       if (newTabButton) {
@@ -7497,7 +7480,7 @@ describe('App (JobHunterDashboard)', () => {
 
           // Navigate to Filtered tab
           const filteredElements = screen.getAllByText('Filtered');
-          const filteredTabButton = filteredElements.find(el => el.closest('button'))?.closest('button');
+          const filteredTabButton = filteredElements.find(el => el.closest('button'));
 
           if (filteredTabButton) {
             fireEvent.click(filteredTabButton);
@@ -7565,8 +7548,7 @@ describe('App (JobHunterDashboard)', () => {
       }, { timeout: 3000 });
 
       // Navigate to New tab
-      const newElements = screen.getAllByText('New');
-      const newTabButton = newElements.find(el => el.closest('button'))?.closest('button');
+      const newTabButton = screen.getByTestId('new-tab-button');
 
       if (newTabButton) {
         fireEvent.click(newTabButton);
@@ -7643,8 +7625,7 @@ describe('App (JobHunterDashboard)', () => {
       }, { timeout: 3000 });
 
       // Navigate to New tab
-      const newElements = screen.getAllByText('New');
-      const newTabButton = newElements.find(el => el.closest('button'))?.closest('button');
+      const newTabButton = screen.getByTestId('new-tab-button');
 
       if (newTabButton) {
         fireEvent.click(newTabButton);
@@ -7732,8 +7713,7 @@ describe('App (JobHunterDashboard)', () => {
       const initialJobsApiCallCount = jobsApiCalls.length;
 
       // Navigate to New tab
-      const newElements = screen.getAllByText('New');
-      const newTabButton = newElements.find(el => el.closest('button'))?.closest('button');
+      const newTabButton = screen.getByTestId('new-tab-button');
 
       if (newTabButton) {
         fireEvent.click(newTabButton);
@@ -7813,8 +7793,7 @@ describe('App (JobHunterDashboard)', () => {
       }, { timeout: 3000 });
 
       // Navigate to New tab
-      const newElements = screen.getAllByText('New');
-      const newTabButton = newElements.find(el => el.closest('button'))?.closest('button');
+      const newTabButton = screen.getByTestId('new-tab-button');
 
       if (newTabButton) {
         fireEvent.click(newTabButton);
@@ -7900,7 +7879,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Navigate to Filtered tab
       const filteredElements = screen.getAllByText('Filtered');
-      const filteredTabButton = filteredElements.find(el => el.closest('button'))?.closest('button');
+      const filteredTabButton = filteredElements.find(el => el.closest('button'));
       expect(filteredTabButton).toBeTruthy();
 
       if (filteredTabButton) {
@@ -7940,7 +7919,7 @@ describe('App (JobHunterDashboard)', () => {
 
           // Navigate to Approved tab to verify job moved there
           const approvedElements = screen.getAllByText('Approved');
-          const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+          const approvedTabButton = approvedElements.find(el => el.closest('button'));
 
           if (approvedTabButton) {
             fireEvent.click(approvedTabButton);
@@ -8012,7 +7991,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Navigate to Approved tab
       const approvedElements = screen.getAllByText('Approved');
-      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'));
       expect(approvedTabButton).toBeTruthy();
 
       if (approvedTabButton) {
@@ -8098,7 +8077,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Navigate to Approved tab
       const approvedElements = screen.getAllByText('Approved');
-      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'));
       expect(approvedTabButton).toBeTruthy();
 
       if (approvedTabButton) {
@@ -8141,7 +8120,7 @@ describe('App (JobHunterDashboard)', () => {
 
         // Navigate to Applied tab
         const appliedElements = screen.getAllByText('Applied');
-        const appliedTabButton = appliedElements.find(el => el.closest('button'))?.closest('button');
+        const appliedTabButton = appliedElements.find(el => el.closest('button'));
 
         if (appliedTabButton) {
           fireEvent.click(appliedTabButton);
@@ -8205,7 +8184,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Navigate to Approved tab
       const approvedElements = screen.getAllByText('Approved');
-      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'));
 
       if (approvedTabButton) {
         fireEvent.click(approvedTabButton);
@@ -8279,7 +8258,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Navigate to Approved tab
       const approvedElements = screen.getAllByText('Approved');
-      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'));
 
       if (approvedTabButton) {
         fireEvent.click(approvedTabButton);
@@ -8344,7 +8323,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Navigate to Applied tab
       const appliedElements = screen.getAllByText('Applied');
-      const appliedTabButton = appliedElements.find(el => el.closest('button'))?.closest('button');
+      const appliedTabButton = appliedElements.find(el => el.closest('button'));
 
       if (appliedTabButton) {
         fireEvent.click(appliedTabButton);
@@ -8417,7 +8396,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Navigate to Approved tab
       const approvedElements = screen.getAllByText('Approved');
-      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'));
 
       if (approvedTabButton) {
         fireEvent.click(approvedTabButton);
@@ -8510,7 +8489,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Navigate to Approved tab
       const approvedElements = screen.getAllByText('Approved');
-      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'));
 
       if (approvedTabButton) {
         fireEvent.click(approvedTabButton);
@@ -8595,7 +8574,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Navigate to Approved tab
       const approvedElements = screen.getAllByText('Approved');
-      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'));
       expect(approvedTabButton).toBeTruthy();
 
       if (approvedTabButton) {
@@ -8664,7 +8643,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Navigate to Approved tab
       const approvedElements = screen.getAllByText('Approved');
-      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'));
 
       if (approvedTabButton) {
         fireEvent.click(approvedTabButton);
@@ -8742,7 +8721,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Navigate to Approved tab
       const approvedElements = screen.getAllByText('Approved');
-      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'));
 
       if (approvedTabButton) {
         fireEvent.click(approvedTabButton);
@@ -8816,7 +8795,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Navigate to Approved tab
       const approvedElements = screen.getAllByText('Approved');
-      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'));
 
       if (approvedTabButton) {
         fireEvent.click(approvedTabButton);
@@ -8903,7 +8882,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Navigate to Approved tab
       const approvedElements = screen.getAllByText('Approved');
-      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'));
 
       if (approvedTabButton) {
         fireEvent.click(approvedTabButton);
@@ -8989,7 +8968,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Navigate to Approved tab
       const approvedElements = screen.getAllByText('Approved');
-      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'));
 
       if (approvedTabButton) {
         fireEvent.click(approvedTabButton);
@@ -9066,7 +9045,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Navigate to Approved tab
       const approvedElements = screen.getAllByText('Approved');
-      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'));
 
       if (approvedTabButton) {
         fireEvent.click(approvedTabButton);
@@ -9141,7 +9120,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Navigate to Approved tab
       const approvedElements = screen.getAllByText('Approved');
-      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'));
 
       if (approvedTabButton) {
         fireEvent.click(approvedTabButton);
@@ -9225,7 +9204,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Navigate to Approved tab
       const approvedElements = screen.getAllByText('Approved');
-      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'));
 
       if (approvedTabButton) {
         fireEvent.click(approvedTabButton);
@@ -9315,7 +9294,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Navigate to Approved tab
       const approvedElements = screen.getAllByText('Approved');
-      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'));
 
       if (approvedTabButton) {
         fireEvent.click(approvedTabButton);
@@ -9383,8 +9362,7 @@ describe('App (JobHunterDashboard)', () => {
       }, { timeout: 3000 });
 
       // Navigate to New tab
-      const newElements = screen.getAllByText('New');
-      const newTabButton = newElements.find(el => el.closest('button'))?.closest('button');
+      const newTabButton = screen.getByTestId('new-tab-button');
 
       if (newTabButton) {
         fireEvent.click(newTabButton);
@@ -9450,7 +9428,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Navigate to Approved tab
       const approvedElements = screen.getAllByText('Approved');
-      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'));
 
       if (approvedTabButton) {
         fireEvent.click(approvedTabButton);
@@ -9516,7 +9494,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Navigate to Approved tab
       const approvedElements = screen.getAllByText('Approved');
-      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'));
 
       if (approvedTabButton) {
         fireEvent.click(approvedTabButton);
@@ -9593,7 +9571,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Navigate to Applied tab
       const appliedElements = screen.getAllByText('Applied');
-      const appliedTabButton = appliedElements.find(el => el.closest('button'))?.closest('button');
+      const appliedTabButton = appliedElements.find(el => el.closest('button'));
 
       if (appliedTabButton) {
         fireEvent.click(appliedTabButton);
@@ -9660,7 +9638,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Navigate to Approved tab
       const approvedElements = screen.getAllByText('Approved');
-      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'));
 
       if (approvedTabButton) {
         fireEvent.click(approvedTabButton);
@@ -9735,7 +9713,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Navigate to Approved tab
       const approvedElements = screen.getAllByText('Approved');
-      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'));
 
       if (approvedTabButton) {
         fireEvent.click(approvedTabButton);
@@ -9806,7 +9784,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Navigate to Approved tab
       const approvedElements = screen.getAllByText('Approved');
-      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'));
 
       if (approvedTabButton) {
         fireEvent.click(approvedTabButton);
@@ -9875,7 +9853,7 @@ describe('App (JobHunterDashboard)', () => {
 
       // Navigate to Approved tab
       const approvedElements = screen.getAllByText('Approved');
-      const approvedTabButton = approvedElements.find(el => el.closest('button'))?.closest('button');
+      const approvedTabButton = approvedElements.find(el => el.closest('button'));
 
       if (approvedTabButton) {
         fireEvent.click(approvedTabButton);
@@ -9950,8 +9928,7 @@ describe('App (JobHunterDashboard)', () => {
       }, { timeout: 3000 });
 
       // Navigate to New tab
-      const newElements = screen.getAllByText('New');
-      const newTabButton = newElements.find(el => el.closest('button'))?.closest('button');
+      const newTabButton = screen.getByTestId('new-tab-button');
 
       if (newTabButton) {
         fireEvent.click(newTabButton);
@@ -10021,8 +9998,7 @@ describe('App (JobHunterDashboard)', () => {
       }, { timeout: 3000 });
 
       // Navigate to New tab
-      const newElements = screen.getAllByText('New');
-      const newTabButton = newElements.find(el => el.closest('button'))?.closest('button');
+      const newTabButton = screen.getByTestId('new-tab-button');
 
       if (newTabButton) {
         fireEvent.click(newTabButton);
