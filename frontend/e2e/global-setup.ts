@@ -23,9 +23,11 @@ async function seedTestData(): Promise<void> {
   console.log('🌱 Seeding test data into jobhunter_dev database...');
 
   try {
-    // Run the seed script
-    const { stdout, stderr } = await execAsync('./helper-scripts/seed-test-data.sh', {
-      cwd: process.cwd().replace('/frontend', '')
+    // Run the seed script with --truncate to ensure clean state
+    // Automatically answer 'yes' to truncate confirmation
+    const { stdout, stderr } = await execAsync('echo "y" | ./helper-scripts/seed-test-data.sh --truncate', {
+      cwd: process.cwd().replace('/frontend', ''),
+      shell: '/bin/bash'
     });
 
     if (stderr && !stderr.includes('psql:')) {
