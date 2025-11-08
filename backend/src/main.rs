@@ -3291,7 +3291,7 @@ async fn handle_microsoft_oauth_callback(
 struct MicrosoftMessagesResponse {
     value: Vec<MicrosoftMessage>,
     #[serde(rename = "@odata.nextLink")]
-    next_link: Option<String>,
+    _next_link: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -3303,7 +3303,7 @@ struct MicrosoftMessage {
     #[serde(rename = "receivedDateTime")]
     received_date_time: String,
     #[serde(rename = "isRead")]
-    is_read: bool,
+    _is_read: bool,
     from: Option<MicrosoftEmailAddress>,
     body: Option<MicrosoftMessageBody>,
 }
@@ -3323,7 +3323,7 @@ struct MicrosoftEmailInfo {
 #[derive(Debug, Deserialize)]
 struct MicrosoftMessageBody {
     #[serde(rename = "contentType")]
-    content_type: Option<String>,
+    _content_type: Option<String>,
     content: Option<String>,
 }
 
@@ -3346,7 +3346,7 @@ struct MicrosoftFolder {
 struct MicrosoftFoldersResponse {
     value: Vec<MicrosoftFolder>,
     #[serde(rename = "@odata.nextLink")]
-    next_link: Option<String>,
+    _next_link: Option<String>,
 }
 
 async fn list_microsoft_folders(access_token: &str) -> std::result::Result<Vec<MicrosoftFolder>, Box<dyn std::error::Error + Send + Sync>> {
@@ -4398,7 +4398,7 @@ async fn get_message_ids_with_jobops_old_label(
     #[derive(Debug, Deserialize)]
     struct MessagesResponse {
         #[serde(default)]
-        messages: Vec<MessageInfo>,
+        _messages: Vec<MessageInfo>,
     }
 
     #[derive(Debug, Deserialize)]

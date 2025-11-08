@@ -3,9 +3,12 @@ set -euo pipefail
 
 # Comprehensive Test Suite Runner
 # Purpose: Local, on-demand comprehensive validation (informal CI/CD)
-# - Clean rebuild backend and frontend (zero warnings)
+# - Clean rebuild backend and frontend (zero warnings - ALWAYS ENFORCED)
 # - Run all test suites (backend, frontend unit, E2E)
 # - Report comprehensive results
+#
+# QUALITY GATE: Build/compilation warnings or errors ALWAYS stop execution
+# This ensures clean builds before running tests (not affected by --fail-fast)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -47,14 +50,18 @@ Run comprehensive test suite (local informal CI/CD):
   3. Run all test suites (backend, frontend unit, E2E)
   4. Report results with iPhone notification
 
+QUALITY GATE (ALWAYS ENFORCED):
+  Build warnings or compilation errors ALWAYS stop execution.
+  This ensures clean builds before running tests.
+
 OPTIONS:
-    -f, --fail-fast       Stop on first failure (default: run all and report)
+    -f, --fail-fast       Stop on first TEST failure (build failures always stop)
     --skip-preflight      Skip preflight checks (not recommended)
     -h, --help            Show this help message
 
 EXAMPLES:
     $(basename "$0")                  # Run all tests, report at end
-    $(basename "$0") --fail-fast      # Stop at first failure
+    $(basename "$0") --fail-fast      # Stop at first test failure
     $(basename "$0") --skip-preflight # Skip preflight (use with caution)
 
 EOF
@@ -104,8 +111,19 @@ log_error() {
 
 handle_failure() {
     local phase="$1"
+    local is_build_failure="${2:-false}"  # Second param indicates if this is a build/compilation failure
+
     log_error "$phase FAILED"
 
+    # Build/compilation failures ALWAYS stop (quality gate)
+    if [ "$is_build_failure" = true ]; then
+        log_error "Build/compilation failures are not allowed. Aborting."
+        log_error "Fix all warnings and errors before running tests."
+        send_notification "Comprehensive Tests FAILED" "$phase failed - fix build issues"
+        exit 1
+    fi
+
+    # Test failures respect fail-fast flag
     if [ "$FAIL_FAST" = true ]; then
         log_error "Fail-fast mode enabled. Aborting."
         send_notification "Comprehensive Tests FAILED" "$phase failed in fail-fast mode"
@@ -276,7 +294,7 @@ build_backend() {
         if grep -i "warning" /tmp/backend-build.log > /dev/null; then
             log_error "Backend build has warnings (zero-warning build required)"
             cat /tmp/backend-build.log | grep -i "warning"
-            handle_failure "Backend build"
+            handle_failure "Backend build" true
             BACKEND_BUILD_PASSED=false
         else
             local end_time=$(date +%s)
@@ -286,7 +304,7 @@ build_backend() {
         fi
     else
         log_error "Backend build FAILED"
-        handle_failure "Backend build"
+        handle_failure "Backend build" true
         BACKEND_BUILD_PASSED=false
     fi
 
@@ -305,7 +323,7 @@ build_frontend() {
         if grep -i "warning" /tmp/frontend-build.log > /dev/null; then
             log_error "Frontend build has warnings (zero-warning build required)"
             cat /tmp/frontend-build.log | grep -i "warning"
-            handle_failure "Frontend build"
+            handle_failure "Frontend build" true
             FRONTEND_BUILD_PASSED=false
         else
             local end_time=$(date +%s)
@@ -315,7 +333,7 @@ build_frontend() {
         fi
     else
         log_error "Frontend build FAILED"
-        handle_failure "Frontend build"
+        handle_failure "Frontend build" true
         FRONTEND_BUILD_PASSED=false
     fi
 
@@ -339,8 +357,18 @@ run_backend_tests() {
         log_info "$test_summary"
         BACKEND_TESTS_PASSED=true
     else
-        log_error "Backend tests FAILED"
-        handle_failure "Backend tests"
+        # Check if it's a compilation error (not a test failure)
+        if grep -i "error\[E[0-9]\+\]" /tmp/backend-test.log > /dev/null || \
+           grep -i "error: could not compile" /tmp/backend-test.log > /dev/null || \
+           grep -i "error returned from database" /tmp/backend-test.log > /dev/null; then
+            log_error "Backend test compilation FAILED"
+            log_error "Test code has compilation errors - fix before running tests"
+            cat /tmp/backend-test.log | grep -A 2 "error:"
+            handle_failure "Backend test compilation" true
+        else
+            log_error "Backend tests FAILED"
+            handle_failure "Backend tests" false
+        fi
         BACKEND_TESTS_PASSED=false
     fi
 
