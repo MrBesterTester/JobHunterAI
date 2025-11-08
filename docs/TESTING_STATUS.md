@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-07 19:14:34 PST
-last_updated: 2025-11-07 19:51:48 PST
+last_updated: 2025-11-07 20:06:46 PST
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -56,7 +56,7 @@ last_updated: 2025-11-07 19:51:48 PST
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-**Last Updated**: 2025-11-07 19:51:48 PST (Fixed all 11 failing frontend unit tests - 100% pass rate achieved)
+**Last Updated**: 2025-11-07 20:06:46 PST (Added backend test breakdown: 6 from ISSUE-033 + 2 intentionally ignored)
 
 **Purpose**: Current testing status and open issues requiring attention. This document tracks the most recent comprehensive test suite results and serves as a sounding board for planning and tracking future comprehensive testing rounds.
 
@@ -85,13 +85,16 @@ last_updated: 2025-11-07 19:51:48 PST
 | Component | Passed | Failed | Skipped/Ignored | Pass Rate | Runtime (Actual) | Status |
 |-----------|--------|--------|-----------------|-----------|------------------|--------|
 | **Backend Build** | 1 | 0 | 0 (0 warnings) | 100% | 4.5 sec | ✅ PASSED |
-| **Backend Tests** | 162 | 0 | 8 | 100% | 30 sec | ✅ PASSED |
+| **Backend Tests** | 162 | 0 | 8 (6¹ + 2²) | 100% | 30 sec | ✅ PASSED |
 | **Frontend Build** | 1 | 0 | 0 | 100% | 4 sec | ✅ PASSED |
 | **Frontend Unit (Jest)** | 516 | 0 | 1 | 100% | 12.3 sec | ✅ PASSED |
 | **E2E (Playwright)** | 387 | 92 | 79+2+34 | 80.8% | 20.0 min | ⚠️ 92 FAILURES |
 | **TOTAL (All Tests)** | **1065** | **92** | **124** | **92.0%** | **21 min** | ⚠️ PARTIAL |
 
-**Note**: E2E tests from previous comprehensive run (Nov 7 18:41). Backend/frontend tests from latest validation (Nov 7 19:51).
+**Notes**:
+- E2E tests from previous comprehensive run (Nov 7 18:41). Backend/frontend tests from latest validation (Nov 7 19:51).
+- ¹**6 tests** from [ISSUE-033](bugs/open/ISSUE-033-six-backend-tests-ignored-mock-and-integration.md): 4 mock tests (mockito issues) + 2 integration tests (isolation/config issues)
+- ²**2 tests** intentionally ignored: Real LLM API tests (`test_real_api_generate`, `test_real_api_with_invalid_key`) - require API key and cost money
 
 **Progress Since Last Update**:
 - ✅ Fixed all 11 remaining frontend unit tests (2025-11-07 19:51:48 PST)
