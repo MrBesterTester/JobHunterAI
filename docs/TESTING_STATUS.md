@@ -90,10 +90,10 @@ last_updated: 2025-11-07 19:34:37 PST
 | **Backend Tests** | 162 | 0 | 8 | 100% | 30 sec | ✅ PASSED |
 | **Frontend Build** | 1 | 0 | 0 | 100% | 4 sec | ✅ PASSED |
 | **Frontend Unit (Jest)** | 505 | 11 | 1 | 97.9% | 23 sec | ⚠️ 11 FAILURES |
-| **E2E (Playwright)** | N/A | N/A | N/A | N/A | Not run | ⏸️ PENDING |
-| **TOTAL (Unit Tests)** | **667** | **11** | **9** | **98.4%** | **53 sec** | ⚠️ PARTIAL |
+| **E2E (Playwright)** | 387 | 92 | 79+2+34 | 80.8% | 20.0 min | ⚠️ 92 FAILURES |
+| **TOTAL (All Tests)** | **1054** | **103** | **124** | **91.1%** | **21 min** | ⚠️ PARTIAL |
 
-**Note**: Actual measured runtimes from separate test runner scripts. E2E tests not included in this run.
+**Note**: E2E tests from previous comprehensive run (Nov 7 18:41). Backend/frontend tests from latest validation (Nov 7 19:24).
 
 **Progress Since Last Update**:
 - ✅ Fixed 6 frontend tests (tab button selector issue)
@@ -241,20 +241,21 @@ Failing tests:
 
 ### E2E Tests (⚠️ PARTIAL)
 
-**Duration**: 20 minutes
+**Test Run**: Nov 7 18:41 PST (from /tmp/comprehensive-test-run-final.log)
+**Duration**: 20.0 minutes
 **Test Framework**: Playwright
 **Browsers**: Chromium, Mobile Chrome
 
-| Status | Count | Percentage |
-|--------|-------|------------|
-| ✅ Passed | 387 | 66.4% |
-| ❌ Failed | 92 | 15.8% |
-| ⏸️ Interrupted | 2 | 0.3% |
-| ⏭️ Skipped | 79 | 13.6% |
-| 🚫 Did Not Run | 34 | 5.8% |
-| **Total** | **594** | **100%** |
+| Status | Count | Percentage | Notes |
+|--------|-------|------------|-------|
+| ✅ Passed | 387 | 66.4% | |
+| ❌ Failed | 92 | 15.8% | See breakdown below |
+| ⏸️ Interrupted | 2 | 0.3% | Mobile Chrome tests |
+| ⏭️ Skipped | 79 | 13.6% | Intentionally excluded |
+| 🚫 Did Not Run | 34 | 5.8% | Not executed |
+| **Total** | **594** | **100%** | |
 
-**Pass Rate** (executed tests): 387/481 = **80.5%**
+**Pass Rate** (executed tests): 387/479 = **80.8%** (excluding skipped/did not run)
 
 **Major Failure Categories**:
 
