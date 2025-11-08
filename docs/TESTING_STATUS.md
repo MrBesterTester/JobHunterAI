@@ -10,8 +10,8 @@ related_docs:
   - TESTING_HISTORY.md (historical archive)
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
-last_comprehensive_run: 2025-11-07 19:14:34 PST
-last_updated: 2025-11-08 08:47:26 PST
+last_comprehensive_run: 2025-11-08 09:14:33 PST
+last_updated: 2025-11-08 09:14:33 PST
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -55,7 +55,7 @@ last_updated: 2025-11-08 08:47:26 PST
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-**Last Updated**: 2025-11-08 08:47:26 PST (ISSUE-035 Phase 5 complete - content generation API fixed)
+**Last Updated**: 2025-11-08 09:14:33 PST (ISSUE-035 complete and moved to fixed; ISSUE-036 created for remaining 32 E2E failures)
 
 **Purpose**: Current testing status and open issues requiring attention. This document tracks the most recent comprehensive test suite results and serves as a sounding board for planning and tracking future comprehensive testing rounds.
 
@@ -67,9 +67,9 @@ last_updated: 2025-11-08 08:47:26 PST
 
 ## Latest Test Run Results (Full Suite)
 
-**Test Run Date/Time**: 2025-11-07 19:14:34 PST
-**Run Type**: Individual Test Suites (Backend + Frontend separate validation)
-**Total Runtime**: 52 seconds (30s backend + 22s frontend)
+**Test Run Date/Time**: 2025-11-08 09:14:33 PST
+**Run Type**: Comprehensive E2E Test Suite (Full validation of ISSUE-035 completion)
+**Total Runtime**: ~13.5 minutes (52s backend/frontend unit tests + 12.8min E2E tests)
 **Test Scripts Used**:
 - `./helper-scripts/run-backend-tests.sh` (✅ NEW)
 - `./helper-scripts/run-frontend-tests.sh` (✅ NEW)
@@ -87,23 +87,22 @@ last_updated: 2025-11-08 08:47:26 PST
 | **Backend Tests** | 162 | 0 | 0 | 8 (6¹ + 2²) | 100% | 30 sec | ✅ PASSED |
 | **Frontend Build** | 1 | 0 | 0 | 0 | 100% | 4 sec | ✅ PASSED |
 | **Frontend Unit (Jest)** | 516 | 0 | 0 | 1 | 100% | 12.3 sec | ✅ PASSED |
-| **E2E (Playwright)** | 405⁵ | 17⁵ | 13 | 172⁵ | 96.0%⁵ | ~20 min | ⚠️ 17 FAILURES |
-| **TOTAL (All Tests)** | **1085⁵** | **17⁵** | **13** | **181⁵** | **98.5%⁵** | **~21 min** | ⚠️ PARTIAL |
+| **E2E (Playwright)** | 378 | 32 | 0 | 166 | 92.2% | 12.8 min | ⚠️ 32 FAILURES |
+| **TOTAL (All Tests)** | **1056** | **32** | **0** | **175** | **97.1%** | **~13.5 min** | ⚠️ PARTIAL |
 
 **Notes**:
-- E2E tests from previous comprehensive run (Nov 7 18:41). Backend/frontend tests from latest validation (Nov 7 19:51).
+- All test suites run comprehensively on 2025-11-08. E2E tests: 12.8 min actual runtime (378 passed / 32 failed / 166 skipped).
 - ¹**6 tests** from [ISSUE-033](../bugs/open/ISSUE-033-six-backend-tests-ignored-mock-and-integration.md): 4 mock tests (mockito issues) + 2 integration tests (isolation/config issues)
 - ²**2 tests** intentionally ignored: Real LLM API tests (`test_real_api_generate`, `test_real_api_with_invalid_key`) - require API key and cost money
 - ³**Warnings**: Tests that skip due to unmet dependencies (e.g., backend service not configured). These are NOT passes - they represent incomplete testing and indicate more work needed to properly validate test dependencies.
 - ⁴**Pass Rate Formula**: `Passed / (Passed + Failed)` - Skipped/Ignored tests are excluded from denominator as they don't run
-- ⁵**Projected** based on [ISSUE-035](../bugs/open/ISSUE-035-e2e-test-failures---92-tests-failing-808-pass-rate.md) Phase 1-5 results (**ALL PHASES COMPLETE** ✅):
+- ⁵**Actual results** from comprehensive E2E run after [ISSUE-035](../bugs/fixed/ISSUE-035-e2e-test-failures---92-tests-failing-808-pass-rate.md) completion (✅ FIXED):
   - Phase 1: -53 failures (skipped unimplemented features)
   - Phase 2-3: -7 failures, +7 passes (fixed tab selectors)
   - Phase 4: -4 failures, +4 warnings (email integration preconditions)
   - Phase 5: -11 failures, +11 passes (fixed Anthropic API deserialization bug) ✅
-  - **Remaining**: ~17 failures (unimplemented features, edge cases)
-  - **Overall improvement**: 80.8% → 96.0% pass rate (+15.2% / 75 tests fixed or skipped properly)
-  - **Note**: Projected numbers will be validated when full comprehensive suite runs. Phase 5 validated with targeted test run (11/11 tests passing).
+  - **Result**: 378 passed / 32 failed (92.2% pass rate) - Remaining 32 failures tracked in [ISSUE-036](../bugs/open/ISSUE-036-e2e-test-failures---32-tests-failing-728-pass-rate.md)
+  - **Overall improvement**: 80.8% → 92.2% pass rate (+11.4% / 75 tests fixed or skipped properly)
 
 **Progress Since Last Update**:
 - ✅ **ISSUE-035 Phase 5 COMPLETE** (2025-11-08 08:47:26 PST) - Content generation API fixed ✅
