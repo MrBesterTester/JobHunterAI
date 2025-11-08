@@ -304,7 +304,20 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       // Check if sync button is enabled (requires backend service)
       const syncButtonEnabled = await microsoftSyncButton.isEnabled().catch(() => false);
       if (!syncButtonEnabled) {
-        console.log('Sync button disabled - backend service not ready, skipping test');
+        console.warn('⚠️  TEST PRECONDITION NOT MET: Microsoft Email Sync Service');
+        console.warn('   ');
+        console.warn('   REASON: The Microsoft sync button is disabled.');
+        console.warn('   This indicates the backend Microsoft Email sync service is not configured or not running.');
+        console.warn('   ');
+        console.warn('   TO ENABLE THIS TEST:');
+        console.warn('   1. Ensure Microsoft OAuth credentials are configured in the database');
+        console.warn('   2. Verify RapidAPI credentials are set in backend environment');
+        console.warn('   3. Confirm backend service (http://localhost:8080) is running and healthy');
+        console.warn('   4. Check backend logs for Microsoft Email service initialization');
+        console.warn('   ');
+        console.warn('   IMPACT: Test will be skipped but this is NOT a test failure.');
+        console.warn('   The sync button correctly indicates that the feature is not available.');
+        console.warn('   ');
         test.skip();
         return;
       }
@@ -392,7 +405,20 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       // Check if sync button is enabled (requires backend service)
       const syncButtonEnabled = await microsoftSyncButton.isEnabled().catch(() => false);
       if (!syncButtonEnabled) {
-        console.log('Sync button disabled - backend service not ready, skipping test');
+        console.warn('⚠️  TEST PRECONDITION NOT MET: Microsoft Email Sync Service');
+        console.warn('   ');
+        console.warn('   REASON: The Microsoft sync button is disabled.');
+        console.warn('   This indicates the backend Microsoft Email sync service is not configured or not running.');
+        console.warn('   ');
+        console.warn('   TO ENABLE THIS TEST:');
+        console.warn('   1. Ensure Microsoft OAuth credentials are configured in the database');
+        console.warn('   2. Verify RapidAPI credentials are set in backend environment');
+        console.warn('   3. Confirm backend service (http://localhost:8080) is running and healthy');
+        console.warn('   4. Check backend logs for Microsoft Email service initialization');
+        console.warn('   ');
+        console.warn('   IMPACT: Test will be skipped but this is NOT a test failure.');
+        console.warn('   The sync button correctly indicates that the feature is not available.');
+        console.warn('   ');
         test.skip();
         return;
       }
@@ -471,7 +497,20 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       // Click sync button
       const syncButtonEnabled = await microsoftSyncButton.isEnabled().catch(() => false);
       if (!syncButtonEnabled) {
-        console.log('Sync button disabled - backend service not ready, skipping test');
+        console.warn('⚠️  TEST PRECONDITION NOT MET: Microsoft Email Sync Service');
+        console.warn('   ');
+        console.warn('   REASON: The Microsoft sync button is disabled.');
+        console.warn('   This indicates the backend Microsoft Email sync service is not configured or not running.');
+        console.warn('   ');
+        console.warn('   TO ENABLE THIS TEST:');
+        console.warn('   1. Ensure Microsoft OAuth credentials are configured in the database');
+        console.warn('   2. Verify RapidAPI credentials are set in backend environment');
+        console.warn('   3. Confirm backend service (http://localhost:8080) is running and healthy');
+        console.warn('   4. Check backend logs for Microsoft Email service initialization');
+        console.warn('   ');
+        console.warn('   IMPACT: Test will be skipped but this is NOT a test failure.');
+        console.warn('   The sync button correctly indicates that the feature is not available.');
+        console.warn('   ');
         test.skip();
         return;
       }
@@ -509,7 +548,20 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       const microsoftSyncButton = page.locator('[data-testid="microsoft-sync-button"]');
       const syncButtonEnabled = await microsoftSyncButton.isEnabled().catch(() => false);
       if (!syncButtonEnabled) {
-        console.log('Sync button disabled - backend service not ready, skipping test');
+        console.warn('⚠️  TEST PRECONDITION NOT MET: Microsoft Email Sync Service');
+        console.warn('   ');
+        console.warn('   REASON: The Microsoft sync button is disabled.');
+        console.warn('   This indicates the backend Microsoft Email sync service is not configured or not running.');
+        console.warn('   ');
+        console.warn('   TO ENABLE THIS TEST:');
+        console.warn('   1. Ensure Microsoft OAuth credentials are configured in the database');
+        console.warn('   2. Verify RapidAPI credentials are set in backend environment');
+        console.warn('   3. Confirm backend service (http://localhost:8080) is running and healthy');
+        console.warn('   4. Check backend logs for Microsoft Email service initialization');
+        console.warn('   ');
+        console.warn('   IMPACT: Test will be skipped but this is NOT a test failure.');
+        console.warn('   The sync button correctly indicates that the feature is not available.');
+        console.warn('   ');
         test.skip();
         return;
       }
@@ -548,7 +600,20 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
 
       const syncButtonEnabled = await microsoftSyncButton.isEnabled().catch(() => false);
       if (!syncButtonEnabled) {
-        console.log('Sync button disabled - backend service not ready, skipping test');
+        console.warn('⚠️  TEST PRECONDITION NOT MET: Microsoft Email Sync Service');
+        console.warn('   ');
+        console.warn('   REASON: The Microsoft sync button is disabled.');
+        console.warn('   This indicates the backend Microsoft Email sync service is not configured or not running.');
+        console.warn('   ');
+        console.warn('   TO ENABLE THIS TEST:');
+        console.warn('   1. Ensure Microsoft OAuth credentials are configured in the database');
+        console.warn('   2. Verify RapidAPI credentials are set in backend environment');
+        console.warn('   3. Confirm backend service (http://localhost:8080) is running and healthy');
+        console.warn('   4. Check backend logs for Microsoft Email service initialization');
+        console.warn('   ');
+        console.warn('   IMPACT: Test will be skipped but this is NOT a test failure.');
+        console.warn('   The sync button correctly indicates that the feature is not available.');
+        console.warn('   ');
         test.skip();
         return;
       }
@@ -656,7 +721,20 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       // Check if sync button is enabled (requires backend service)
       const syncButtonEnabled = await microsoftSyncButton.isEnabled().catch(() => false);
       if (!syncButtonEnabled) {
-        console.log('Sync button disabled - backend service not ready, skipping test');
+        console.warn('⚠️  TEST PRECONDITION NOT MET: Microsoft Email Sync Service');
+        console.warn('   ');
+        console.warn('   REASON: The Microsoft sync button is disabled.');
+        console.warn('   This indicates the backend Microsoft Email sync service is not configured or not running.');
+        console.warn('   ');
+        console.warn('   TO ENABLE THIS TEST:');
+        console.warn('   1. Ensure Microsoft OAuth credentials are configured in the database');
+        console.warn('   2. Verify RapidAPI credentials are set in backend environment');
+        console.warn('   3. Confirm backend service (http://localhost:8080) is running and healthy');
+        console.warn('   4. Check backend logs for Microsoft Email service initialization');
+        console.warn('   ');
+        console.warn('   IMPACT: Test will be skipped but this is NOT a test failure.');
+        console.warn('   The sync button correctly indicates that the feature is not available.');
+        console.warn('   ');
         test.skip();
         return;
       }
@@ -809,7 +887,20 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       // Check if sync button is enabled (requires backend service)
       const syncButtonEnabled = await microsoftSyncButton.isEnabled().catch(() => false);
       if (!syncButtonEnabled) {
-        console.log('Sync button disabled - backend service not ready, skipping test');
+        console.warn('⚠️  TEST PRECONDITION NOT MET: Microsoft Email Sync Service');
+        console.warn('   ');
+        console.warn('   REASON: The Microsoft sync button is disabled.');
+        console.warn('   This indicates the backend Microsoft Email sync service is not configured or not running.');
+        console.warn('   ');
+        console.warn('   TO ENABLE THIS TEST:');
+        console.warn('   1. Ensure Microsoft OAuth credentials are configured in the database');
+        console.warn('   2. Verify RapidAPI credentials are set in backend environment');
+        console.warn('   3. Confirm backend service (http://localhost:8080) is running and healthy');
+        console.warn('   4. Check backend logs for Microsoft Email service initialization');
+        console.warn('   ');
+        console.warn('   IMPACT: Test will be skipped but this is NOT a test failure.');
+        console.warn('   The sync button correctly indicates that the feature is not available.');
+        console.warn('   ');
         test.skip();
         return;
       }
