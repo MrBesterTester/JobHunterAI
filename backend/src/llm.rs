@@ -56,10 +56,10 @@ struct Message {
 /// Response structure from Anthropic API
 #[derive(Debug, Deserialize)]
 struct MessagesResponse {
-    _id: String,
+    id: String,
     #[serde(rename = "type")]
     _response_type: String,
-    _role: String,
+    role: String,
     content: Vec<ContentBlock>,
     model: String,
     usage: Usage,
@@ -111,12 +111,12 @@ impl AnthropicClient {
             api_key,
             base_url,
             client: Client::builder()
-                .timeout(Duration::from_secs(30))
+                .timeout(Duration::from_secs(60))
                 .build()
                 .expect("Failed to build HTTP client"),
             model: "claude-3-5-haiku-20241022".to_string(),
             max_retries: 2,
-            timeout: Duration::from_secs(30),
+            timeout: Duration::from_secs(60),
         }
     }
 
@@ -163,11 +163,14 @@ impl AnthropicClient {
                     let should_retry = matches!(&e, AnthropicError::RateLimitExceeded(_) | AnthropicError::NetworkError(_) | AnthropicError::Timeout(_));
 
                     if should_retry && attempt < self.max_retries {
+                        // Log retry attempt with error details
+                        eprintln!("[LLM] Attempt {}/{} failed with error: {}. Retrying...", attempt, self.max_retries, e);
                         // Exponential backoff: 1s, 2s, 4s...
                         let delay = Duration::from_secs(2_u64.pow(attempt - 1));
                         tokio::time::sleep(delay).await;
                         continue;
                     } else if attempt >= self.max_retries {
+                        eprintln!("[LLM] Max retries exceeded. Last error: {}", e);
                         return Err(AnthropicError::MaxRetriesExceeded(self.max_retries));
                     } else {
                         return Err(e);
