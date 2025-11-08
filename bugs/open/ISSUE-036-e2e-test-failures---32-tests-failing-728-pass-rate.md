@@ -6,7 +6,7 @@ priority: medium
 severity: medium
 component: frontend
 created: 2025-11-08
-updated: 2025-11-08 19:30:00 PST
+updated: 2025-11-08 10:32:46 PST
 affects: []
 related: [ISSUE-035, ISSUE-037]
 ---
@@ -17,6 +17,7 @@ related: [ISSUE-035, ISSUE-037]
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Summary](#summary)
+- [Next Steps](#next-steps)
 - [Impact](#impact)
 - [Failing Tests (32 total)](#failing-tests-32-total)
   - [Category 1: Unimplemented Features (13 tests)](#category-1-unimplemented-features-13-tests)
@@ -70,6 +71,21 @@ After completing ISSUE-035 fixes which brought the E2E pass rate from 80.8% to 9
 - Test runtime: 12.8 minutes
 
 **Context:** This issue tracks the 32 remaining E2E test failures that are outside the scope of ISSUE-035. Many of these failures are related to unimplemented features (Timeline View, Intake Tab integrations, Debug Section), UI edge cases (modal scrolling, empty states), and test data issues (filtered job counts).
+
+## Next Steps
+
+**Phase 3: Bug Fixes** (estimated 2-3 hours)
+
+With Phase 1 (skip unimplemented features) and Phase 2 (test database infrastructure) complete, we're now ready to address the remaining bugs:
+
+1. **Fix console errors on page load** (1 test)
+2. **Fix job count badge synchronization** (1 test)
+3. **Fix accessibility labels for form inputs** (1 test)
+4. **Fix description quality/refresh issues** (2 tests)
+
+**Expected Impact**: +1.5% pass rate improvement (92.7% → 94.2% / 6 tests fixed)
+
+See [Implementation](#implementation) section below for detailed task breakdown and Phase 4 follow-up plans.
 
 ## Impact
 
