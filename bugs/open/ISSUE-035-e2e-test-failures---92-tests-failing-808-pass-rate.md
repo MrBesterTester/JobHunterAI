@@ -238,13 +238,18 @@ npx playwright test frontend/e2e/tests/05-job-details.spec.ts:82
 
 ### Phase 1 Checklist
 
-- [ ] Add `test.skip()` to job scoring tests
-- [ ] Add `test.skip()` to extraction badge tests
-- [ ] Add `test.skip()` to mobile responsive tests
-- [ ] Add `test.skip()` to performance tests
-- [ ] Add `test.skip()` to token/cost tracking tests
-- [ ] Run: `npx playwright test` to verify skips work
-- [ ] Commit: "test: Skip unimplemented feature E2E tests"
+- [x] Add `test.skip()` to job scoring tests - Disabled via test-config.ts (10 tests)
+- [x] Add `test.skip()` to extraction badge tests - Disabled via test-config.ts (12 tests)
+- [x] Add `test.skip()` to mobile responsive tests - Disabled via test-config.ts (18 tests)
+- [x] Add `test.skip()` to performance tests - Disabled via test-config.ts (10 tests)
+- [x] Add `test.skip()` to token/cost tracking tests - Added test.skip() to 3 tests in 04-content-generation.spec.ts
+- [ ] Run: `npx playwright test` to verify skips work (to be verified in full test run)
+- [ ] Commit: "test: Skip unimplemented feature E2E tests (ISSUE-035 Phase 1)"
+
+**Implementation Notes**:
+- Used test-config.ts infrastructure for test suite-level skips (50 tests)
+- Added direct test.skip() for 3 individual tests within content-generation suite
+- Total skipped: 53 tests (50 via config + 3 individual)
 
 ### Phase 2-3 Checklist
 

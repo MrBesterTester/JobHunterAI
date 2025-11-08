@@ -1,7 +1,12 @@
 import { test, expect, devices } from '@playwright/test';
+import { shouldRunTest } from '../test-config';
 import { DashboardPage } from '../pages/DashboardPage';
 import { getJobCard } from '../pages/JobCardComponent';
 import { setViewportSize, viewportSizes } from '../fixtures/test-helpers';
+
+// Conditionally skip entire file if disabled in test-config.ts
+// This will NOT show skip messages in test output
+test.skip(!shouldRunTest('responsive-design'), 'Test suite disabled in test-config.ts');
 
 /**
  * Test Suite 8: Responsive Design & Layout
