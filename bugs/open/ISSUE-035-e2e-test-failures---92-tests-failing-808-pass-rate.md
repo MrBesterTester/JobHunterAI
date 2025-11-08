@@ -505,8 +505,6 @@ npx playwright test -g "email" --project=chromium
 | Phase 5 | 2-4 hrs | ~96.9% | +6.9% | Pending (content gen API) |
 | **Total** | **6-11 hrs** | **~97%** | **+16%** | **In Progress** |
 
-**Related Documentation**: Full detailed plan in `docs/E2E_TEST_FIX_PLAN.md`
-
 ## Related Files
 
 **E2E Test Files:**
@@ -520,4 +518,4 @@ npx playwright test -g "email" --project=chromium
 
 **Configuration:**
 - `frontend/playwright.config.ts` - Playwright configuration
-- `docs/E2E_TEST_FIX_PLAN.md` - Full detailed fix plan
+- `frontend/e2e/test-config.ts` - Test suite enable/disable configuration
