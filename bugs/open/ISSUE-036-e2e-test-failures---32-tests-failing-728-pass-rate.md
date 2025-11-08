@@ -6,7 +6,7 @@ priority: medium
 severity: medium
 component: frontend
 created: 2025-11-08
-updated: 2025-11-08
+updated: 2025-11-08 18:30:00 PST
 affects: []
 related: [ISSUE-035]
 ---
@@ -317,9 +317,13 @@ This approach balances immediate test suite health improvement with pragmatic sc
 
 ## Implementation
 
-**Phase 1: Quick Triage (30 minutes)**
-- [ ] Skip 13 unimplemented feature tests with `.skip()` and documentation
-- [ ] Document skipped tests in test file comments
+**Phase 1: Quick Triage (30 minutes)** ✅ COMPLETE
+- [x] Skip 13 unimplemented feature tests with `.skip()` and documentation
+- [x] Document skipped tests in test file comments
+  - Timeline View (2 tests): `frontend/e2e/tests/14-timeline-view.spec.ts`
+  - Intake Tab (5 tests): `frontend/e2e/tests/15-intake-tab.spec.ts`
+  - Debug Section (6 tests): `frontend/e2e/tests/18-debug-section.spec.ts`
+  - Expected impact: Pass rate 92.2% → 95.3% (+3.1% / 13 tests)
 
 **Phase 2: Test Data Fixes (1 hour)**
 - [ ] Investigate filtered tab test data seeding issue
@@ -362,6 +366,11 @@ npx playwright test e2e/tests/99b-filtered-tab-test.spec.ts:13 --trace on
 
 - 2025-11-08: ISSUE created after comprehensive E2E test run post-ISSUE-035
 - 2025-11-08: Documented all 32 failing tests with categories and preliminary root cause analysis
+- 2025-11-08 18:30:00 PST: Phase 1 complete - Skipped 13 Category 1 tests (unimplemented features)
+  * Timeline View (2 tests), Intake Tab (5 tests), Debug Section (6 tests)
+  * Tests preserved with `.skip()` and documentation for future re-enablement
+  * Expected pass rate improvement: 92.2% → 95.3% (+3.1% / 13 tests)
+  * Commit: 60f2818
 
 ## Notes
 
