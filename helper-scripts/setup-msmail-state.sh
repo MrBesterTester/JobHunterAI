@@ -158,26 +158,29 @@ else
 fi
 
 # ============================================================================
-# Populate JobOps folder with test emails (optional)
+# Populate JobOps folder with test emails
 # ============================================================================
 
-log_warning "JobOps folder population skipped (no test email fixtures available)"
-log_warning "Manual testing: Move job opportunity emails to JobOps folder before running E2E tests"
+log_info "Seeding JobOps folder with test emails..."
 
-# NOTE: To populate JobOps with test emails, you would need to either:
-# 1. Create draft messages using MS Graph API (requires Mail.Send permission)
-# 2. Copy existing messages from Inbox to JobOps folder
-# 3. Manually move test emails to JobOps folder before running tests
-#
-# For now, we skip this step and rely on manual population or existing emails.
+# Call backend endpoint to seed test emails
+SEED_RESPONSE=$(curl -s -X POST "http://localhost:8080/api/test/seed-msmail")
+
+if echo "$SEED_RESPONSE" | jq -e '.created_count' > /dev/null 2>&1; then
+    CREATED_COUNT=$(echo "$SEED_RESPONSE" | jq -r '.created_count')
+    log_info "Created $CREATED_COUNT test email(s) in JobOps folder"
+else
+    log_error "Failed to seed test emails"
+    log_error "Response: $SEED_RESPONSE"
+    exit 1
+fi
 
 # ============================================================================
 # Summary
 # ============================================================================
 
 log_info "Microsoft Mail state configured successfully"
-log_info "  ✓ JobOps folder: empty and ready"
+log_info "  ✓ JobOps folder: seeded with $CREATED_COUNT test email(s)"
 log_info "  ✓ JobOps-OLD folder: empty"
-log_warning "  ⚠ Manual step: Move test job emails to JobOps folder before testing"
 
 exit 0

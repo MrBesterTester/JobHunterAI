@@ -3409,6 +3409,34 @@ async fn get_or_create_jobops_folder(access_token: &str) -> std::result::Result<
     Ok(new_folder.id)
 }
 
+async fn get_microsoft_user_email(access_token: &str) -> std::result::Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    let client = reqwest::Client::new();
+    let url = "https://graph.microsoft.com/v1.0/me?$select=mail,userPrincipalName";
+
+    let response = client
+        .get(url)
+        .bearer_auth(access_token)
+        .header("Accept", "application/json")
+        .send()
+        .await?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_default();
+        return Err(format!("Failed to get user email: {} - {}", status, error_text).into());
+    }
+
+    let user_response: serde_json::Value = response.json().await?;
+
+    // Try 'mail' first, fall back to 'userPrincipalName'
+    let email = user_response.get("mail")
+        .and_then(|v| v.as_str())
+        .or_else(|| user_response.get("userPrincipalName").and_then(|v| v.as_str()))
+        .ok_or("No email address found in user profile")?;
+
+    Ok(email.to_string())
+}
+
 async fn get_microsoft_folders(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     // Get Microsoft email source
     let source = sqlx::query_as::<_, JobSource>(
@@ -3457,6 +3485,180 @@ async fn get_microsoft_folders(pool: web::Data<PgPool>) -> Result<HttpResponse> 
             Err(actix_web::error::ErrorInternalServerError(format!("Failed to list folders: {}", e)))
         }
     }
+}
+
+async fn seed_microsoft_test_emails(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+    // Get Microsoft email source
+    let source = sqlx::query_as::<_, JobSource>(
+        "SELECT * FROM job_sources WHERE source_name = 'microsoft_email' AND is_active = true LIMIT 1"
+    )
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|_| actix_web::error::ErrorNotFound("Microsoft email source not found or inactive"))?;
+
+    // Get OAuth credentials
+    let credentials = sqlx::query_as::<_, OAuthCredential>(
+        "SELECT * FROM oauth_credentials WHERE source_id = $1 LIMIT 1"
+    )
+    .bind(source.source_id)
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|_| actix_web::error::ErrorNotFound("Microsoft credentials not found"))?;
+
+    let access_token = credentials.access_token.as_ref()
+        .ok_or_else(|| actix_web::error::ErrorUnauthorized("No access token available"))?.clone();
+
+    // Check if token is expired and refresh if needed
+    let token = if let Some(expires_at) = credentials.token_expires_at {
+        if chrono::Utc::now() > expires_at {
+            refresh_microsoft_token(&credentials, pool.get_ref()).await?
+        } else {
+            access_token
+        }
+    } else {
+        access_token
+    };
+
+    // Get or create JobOps folder
+    let folder_id = get_or_create_jobops_folder(&token).await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to access JobOps folder: {}", e)))?;
+
+    // Get user's email address
+    let user_email = get_microsoft_user_email(&token).await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to get user email: {}", e)))?;
+
+    // Create 3 test job opportunity emails
+    let test_emails = vec![
+        (
+            "Senior Software Test Engineer - Remote",
+            "TechCorp Inc",
+            r#"Hi there,
+
+We're looking for a Senior Software Test Engineer to join our remote team.
+
+Requirements:
+- 5+ years of test automation experience
+- Python, Selenium, pytest
+- CI/CD pipelines
+- Strong communication skills
+
+Compensation: $145,000 - $165,000
+Location: Remote (US)
+Employment: Full-time
+
+Apply here: https://techcorp.example.com/jobs/12345
+
+Best regards,
+TechCorp Recruiting Team"#
+        ),
+        (
+            "Test Automation Lead - AI/ML Focus",
+            "DataMind Solutions",
+            r#"Hello,
+
+DataMind Solutions is seeking a Test Automation Lead with AI/ML experience.
+
+What you'll do:
+- Lead test automation efforts for ML models
+- Build test frameworks for AI systems
+- Work with Gen AI applications
+- Mentor junior engineers
+
+Salary: $150,000 - $180,000
+Location: Hybrid (San Francisco)
+Type: Full-time permanent
+
+Interested? Apply at: https://datamind.example.com/careers/ai-test-lead
+
+Thanks,
+DataMind Recruiting"#
+        ),
+        (
+            "Principal QA Engineer - Generative AI Platform",
+            "AI Innovations Corp",
+            r#"Greetings,
+
+AI Innovations Corp is hiring a Principal QA Engineer for our Generative AI platform.
+
+Key responsibilities:
+- Design test strategies for LLM applications
+- Build automated testing frameworks
+- Ensure quality of AI-generated content
+- Work with cutting-edge Gen AI tech
+
+Compensation: $160,000 - $190,000
+Location: Remote-first (3 days/week in office optional)
+Benefits: Excellent health, 401k match, stock options
+
+Learn more: https://ai-innovations.example.com/jobs/principal-qa
+
+Regards,
+AI Innovations Talent Team"#
+        ),
+    ];
+
+    let client = reqwest::Client::new();
+    let mut created_count = 0;
+
+    for (subject, company, body) in test_emails {
+        // Create the email message directly in the JobOps folder
+        let email_payload = serde_json::json!({
+            "subject": subject,
+            "body": {
+                "contentType": "Text",
+                "content": body
+            },
+            "from": {
+                "emailAddress": {
+                    "address": "noreply@jobhunter-test.example.com",
+                    "name": company
+                }
+            },
+            "toRecipients": [
+                {
+                    "emailAddress": {
+                        "address": user_email
+                    }
+                }
+            ],
+            "receivedDateTime": chrono::Utc::now().to_rfc3339(),
+            "isRead": false
+        });
+
+        let url = format!("https://graph.microsoft.com/v1.0/me/mailFolders/{}/messages", folder_id);
+
+        match client.post(&url)
+            .bearer_auth(&token)
+            .header("Content-Type", "application/json")
+            .json(&email_payload)
+            .send()
+            .await
+        {
+            Ok(response) => {
+                if response.status().is_success() {
+                    created_count += 1;
+                    log_debug(&format!("Created test email: {}", subject));
+                } else {
+                    let status = response.status();
+                    let error_text = response.text().await.unwrap_or_default();
+                    log_debug(&format!("Failed to create test email '{}': {} - {}", subject, status, error_text));
+                }
+            }
+            Err(e) => {
+                log_debug(&format!("Error creating test email '{}': {}", subject, e));
+            }
+        }
+    }
+
+    if created_count == 0 {
+        return Err(actix_web::error::ErrorInternalServerError("Failed to create any test emails"));
+    }
+
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "message": format!("Created {} test email(s) in JobOps folder", created_count),
+        "created_count": created_count,
+        "folder_id": folder_id
+    })))
 }
 
 async fn sync_microsoft_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
@@ -8624,6 +8826,7 @@ async fn main() -> std::io::Result<()> {
             .route("/api/email/microsoft/auth-url", web::get().to(get_microsoft_oauth_url))
             .route("/api/email/microsoft/callback", web::get().to(handle_microsoft_oauth_callback))
             .route("/api/email/microsoft/folders", web::get().to(get_microsoft_folders))
+            .route("/api/test/seed-msmail", web::post().to(seed_microsoft_test_emails))
             .route("/api/intake/gmail/sync", web::post().to(sync_gmail_jobs))
             .route("/api/intake/microsoft/sync", web::post().to(sync_microsoft_jobs))
             .route("/api/intake/rapidapi/sync", web::post().to(sync_jsearch_jobs))
