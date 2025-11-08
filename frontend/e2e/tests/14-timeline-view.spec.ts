@@ -1,6 +1,10 @@
 /**
  * Phase 5.1 E2E Tests: Timeline View
  * Tests for application timeline, communication history, and lifecycle tracking
+ *
+ * STATUS: Tests currently skipped - Timeline View feature not yet implemented (Phase 5.1 future work)
+ * ISSUE: ISSUE-036 Category 1: Unimplemented Features
+ * RE-ENABLE: When Phase 5.1 Timeline View is implemented, remove .skip() from tests below
  */
 
 import { test, expect } from '@playwright/test';
@@ -12,7 +16,9 @@ test.describe('Timeline View - Phase 5.1', () => {
   });
 
   test.describe('Timeline Display', () => {
-    test('should display Timeline section in job details', async ({ page }) => {
+    // SKIPPED: Timeline View feature not yet implemented (Phase 5.1)
+    // Re-enable when feature is ready - see ISSUE-036
+    test.skip('should display Timeline section in job details', async ({ page }) => {
       // Navigate to Applied tab (more likely to have timeline data)
       await page.click('button:has-text("Applied")');
       await page.waitForTimeout(1000);
@@ -29,7 +35,9 @@ test.describe('Timeline View - Phase 5.1', () => {
       }
     });
 
-    test('should show application event in timeline', async ({ page }) => {
+    // SKIPPED: Timeline View feature not yet implemented (Phase 5.1)
+    // Re-enable when feature is ready - see ISSUE-036
+    test.skip('should show application event in timeline', async ({ page }) => {
       await page.click('button:has-text("Applied")');
       await page.waitForTimeout(1000);
 

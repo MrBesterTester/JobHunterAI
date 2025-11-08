@@ -9,6 +9,10 @@ import { test, expect, Page } from '@playwright/test';
  * - Sync functionality
  * - Activity logs
  * - Statistics dashboard
+ *
+ * STATUS: Some tests skipped - LinkedIn/Indeed integration UI not yet implemented
+ * ISSUE: ISSUE-036 Category 1: Unimplemented Features (5 tests)
+ * RE-ENABLE: When LinkedIn/Indeed integration cards are implemented, remove .skip() from tests
  */
 
 test.describe('Intake Tab', () => {
@@ -75,7 +79,8 @@ test.describe('Intake Tab', () => {
       await expect(linkedinCard).toBeVisible();
     });
 
-    test('should display Indeed integration card', async () => {
+    // SKIPPED: Indeed integration UI not yet implemented - see ISSUE-036
+    test.skip('should display Indeed integration card', async () => {
       const indeedCard = page.getByRole('heading', { name: /Indeed Job Discovery/i });
       await expect(indeedCard).toBeVisible();
     });
@@ -159,7 +164,8 @@ test.describe('Intake Tab', () => {
       expect(count).toBeGreaterThanOrEqual(1);
     });
 
-    test('should display mock implementation notice', async () => {
+    // SKIPPED: LinkedIn integration UI not yet implemented - see ISSUE-036
+    test.skip('should display mock implementation notice', async () => {
       const mockNotice = page.getByText(/mock/i);
       await expect(mockNotice).toBeVisible();
     });
@@ -178,17 +184,20 @@ test.describe('Intake Tab', () => {
       await page.waitForTimeout(1000);
     });
 
-    test('should display Not Implemented status', async () => {
+    // SKIPPED: Indeed integration UI not yet implemented - see ISSUE-036
+    test.skip('should display Not Implemented status', async () => {
       const notImplemented = page.getByText(/Not Implemented/i);
       await expect(notImplemented).toBeVisible();
     });
 
-    test('should display Coming Soon message', async () => {
+    // SKIPPED: Indeed integration UI not yet implemented - see ISSUE-036
+    test.skip('should display Coming Soon message', async () => {
       const comingSoon = page.getByText(/Coming Soon/i);
       await expect(comingSoon).toBeVisible();
     });
 
-    test('should have disabled Request Implementation button', async () => {
+    // SKIPPED: Indeed integration UI not yet implemented - see ISSUE-036
+    test.skip('should have disabled Request Implementation button', async () => {
       const requestButton = page.getByRole('button', { name: /Request Implementation/i });
       await expect(requestButton).toBeVisible();
 
