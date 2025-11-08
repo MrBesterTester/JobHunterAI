@@ -19,6 +19,27 @@ async function checkBackendHealth(maxAttempts = 30): Promise<boolean> {
   return false;
 }
 
+async function seedTestData(): Promise<void> {
+  console.log('🌱 Seeding test data into jobhunter_dev database...');
+
+  try {
+    // Run the seed script
+    const { stdout, stderr } = await execAsync('./helper-scripts/seed-test-data.sh', {
+      cwd: process.cwd().replace('/frontend', '')
+    });
+
+    if (stderr && !stderr.includes('psql:')) {
+      console.warn('Seed script warnings:', stderr);
+    }
+
+    console.log('✅ Test data seeding complete');
+  } catch (error: any) {
+    console.error('❌ Failed to seed test data:', error.message);
+    // Don't throw - some tests may work with existing data
+    console.warn('⚠️  Continuing with existing data (some tests may fail)');
+  }
+}
+
 async function calculateAllJobScores(): Promise<void> {
   console.log('📊 Calculating scores for all jobs...');
 
@@ -44,14 +65,29 @@ async function calculateAllJobScores(): Promise<void> {
 async function globalSetup() {
   console.log('🧪 Setting up test environment...');
 
+  // Switch to dev database for testing
+  console.log('🔄 Switching to dev database (jobhunter_dev)...');
+  try {
+    const projectRoot = process.cwd().replace('/frontend', '');
+    await execAsync('./switch-to-dev.sh', { cwd: projectRoot });
+    console.log('✅ Switched to jobhunter_dev database');
+  } catch (error: any) {
+    console.error('❌ Failed to switch database:', error.message);
+    console.warn('⚠️  Continuing with current database (tests may use wrong data)');
+  }
+
   // Check if backend is already running
   try {
     const response = await fetch('http://localhost:8080/api/jobs');
     if (response.ok) {
       console.log('✅ Backend already running on port 8080');
+      console.warn('⚠️  Note: Backend may be using wrong database. Restart recommended.');
 
       // Mark that we did NOT start the backend (so teardown won't kill it)
       process.env.E2E_STARTED_SERVICES = 'false';
+
+      // Seed test data before running tests
+      await seedTestData();
 
       // Calculate scores for all jobs to prevent 404 errors in E2E tests
       await calculateAllJobScores();
@@ -77,6 +113,9 @@ async function globalSetup() {
     if (!isReady) {
       throw new Error('Backend failed to start within 30 seconds');
     }
+
+    // Seed test data before running tests
+    await seedTestData();
 
     // Calculate scores for all jobs to prevent 404 errors in E2E tests
     await calculateAllJobScores();
