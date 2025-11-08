@@ -101,6 +101,7 @@ last_updated: 2025-11-07 21:48:06 PST
   - Phase 2-3: -7 failures, +7 passes (fixed tab selectors)
   - Phase 4: -4 failures, +4 warnings (email integration preconditions)
   - **Remaining**: ~28 failures (mostly Phase 5 content generation API issues)
+  - **Note**: Projected skipped count (172) may be off - some uncertainty in how Phase 2-3 affected "did not run" tests. Exact numbers will be validated when full comprehensive suite runs after Phase 5 completion.
 
 **Progress Since Last Update**:
 - ✅ Updated E2E numbers with ISSUE-035 Phase 1-4 projections (2025-11-07 21:48:06 PST)
