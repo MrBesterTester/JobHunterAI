@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-08 09:14:33 PST
-last_updated: 2025-11-08 09:14:33 PST
+last_updated: 2025-11-08 19:30:00 PST
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -22,6 +22,7 @@ last_updated: 2025-11-08 09:14:33 PST
     - [Quick Summary](#quick-summary)
   - [Next Steps](#next-steps)
     - [✅ ISSUE-035 Complete - E2E Test Suite Stabilized](#-issue-035-complete---e2e-test-suite-stabilized)
+    - [✅ ISSUE-036 Phase 2 Complete - Test Database Infrastructure](#-issue-036-phase-2-complete---test-database-infrastructure)
     - [Priority 1: Backend Test Issues (MEDIUM)](#priority-1-backend-test-issues-medium)
     - [Priority 2: Preflight Seeding Issue (MEDIUM)](#priority-2-preflight-seeding-issue-medium)
     - [New Testing Infrastructure](#new-testing-infrastructure)
@@ -55,7 +56,7 @@ last_updated: 2025-11-08 09:14:33 PST
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-**Last Updated**: 2025-11-08 09:14:33 PST (ISSUE-035 complete and moved to fixed; ISSUE-036 created for remaining 32 E2E failures)
+**Last Updated**: 2025-11-08 19:30:00 PST (ISSUE-036 Phase 2 complete - Test database infrastructure established)
 
 **Purpose**: Current testing status and open issues requiring attention. This document tracks the most recent comprehensive test suite results and serves as a sounding board for planning and tracking future comprehensive testing rounds.
 
@@ -129,7 +130,7 @@ last_updated: 2025-11-08 09:14:33 PST
 
 ### ✅ ISSUE-035 Complete - E2E Test Suite Stabilized
 
-**See [ISSUE-035](../bugs/open/ISSUE-035-e2e-test-failures---92-tests-failing-808-pass-rate.md) for complete details**
+**See [ISSUE-035](../bugs/fixed/ISSUE-035-e2e-test-failures---92-tests-failing-808-pass-rate.md) for complete details**
 
 **Final Status** (2025-11-08): ✅ **ALL 5 PHASES COMPLETE**
 - **Phase 1 ✅**: Skipped 53 unimplemented feature tests
@@ -148,6 +149,35 @@ last_updated: 2025-11-08 09:14:33 PST
 - Fix location: `backend/src/llm.rs:58-62` + timeout increase + retry logging
 - Result: Content generation fully operational (14-16s per generation, $0.001-0.002 cost)
 - Commit: c5fcfe5
+
+### ✅ ISSUE-036 Phase 2 Complete - Test Database Infrastructure
+
+**See [ISSUE-036](../bugs/open/ISSUE-036-e2e-test-failures---32-tests-failing-728-pass-rate.md) for complete details**
+
+**Status** (2025-11-08 19:30:00 PST): ✅ **PHASE 2 COMPLETE**
+- **Phase 1 ✅**: Skipped 13 unimplemented feature tests (Timeline, Intake Tab, Debug Section)
+- **Phase 2 ✅**: Established test database infrastructure (3.5 hours)
+  - **Phase 2a ✅**: Restored `jobhunter_dev` database schema (extraction_method, extraction_prompts)
+  - **Phase 2b ✅**: Created test data seeding system (45 test jobs: 30 filtered, 10 new, 5 approved)
+  - **Phase 2c ✅**: E2E auto-switch to dev database + auto-seed with truncate
+  - **Phase 2d ✅**: Verified Category 4 tests passing (4/4 tests)
+
+**Test Results**:
+- ✅ `99b-filtered-tab-test.spec.ts`: 2/2 passing (was 0/2 failing)
+- ✅ `99-extraction-method-badge-test.spec.ts`: 2/2 passing (was 0/2 failing)
+- **E2E pass rate**: 92.2% → 92.7% (+0.5% / 4 tests fixed)
+
+**Infrastructure Created**:
+- `database/seed_test_data.sql` (280 lines) - Idempotent test data seeding
+- `helper-scripts/seed-test-data.sh` - Seed script with `--truncate` and `--verify` flags
+- `frontend/e2e/global-setup.ts` - Auto-switch database and seed before tests
+- Test database isolation: `jobhunter_dev` for testing, `jobhunter_personal` for development
+
+**Key Achievement**: Established industry-standard test database separation with automatic seeding, ensuring clean and repeatable E2E test runs.
+
+**Commits**: 37093b9 (infrastructure), 6b6c2eb (truncate fix)
+
+**Next**: Phase 3 - Bug fixes (console errors, job count badges, accessibility)
 
 ### Priority 1: Backend Test Issues (MEDIUM)
 
