@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-07 19:14:34 PST
-last_updated: 2025-11-07 19:34:37 PST
+last_updated: 2025-11-07 19:51:48 PST
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -25,9 +25,7 @@ last_updated: 2025-11-07 19:34:37 PST
     - [Backend Build (✅ FIXED)](#backend-build--fixed)
     - [Backend Tests (✅ FIXED - Compiles Successfully)](#backend-tests--fixed---compiles-successfully)
     - [Frontend Build (✅ PASSED)](#frontend-build--passed)
-    - [Frontend Unit Tests (⚠️ PARTIAL - IMPROVED)](#frontend-unit-tests--partial---improved)
-      - [1. IgnoredTab Component Tests (4 failures)](#1-ignoredtab-component-tests-4-failures)
-      - [2. Job Rejection Workflow Tests (7 failures)](#2-job-rejection-workflow-tests-7-failures)
+    - [Frontend Unit Tests (✅ PASSED - ALL FIXED)](#frontend-unit-tests--passed---all-fixed)
     - [E2E Tests (⚠️ PARTIAL)](#e2e-tests--partial)
     - [Comparison to Previous Run](#comparison-to-previous-run)
     - [Key Observations](#key-observations)
@@ -58,7 +56,7 @@ last_updated: 2025-11-07 19:34:37 PST
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-**Last Updated**: 2025-11-07 19:34:37 PST (Fixed 6 frontend tests; 11 failures remaining)
+**Last Updated**: 2025-11-07 19:51:48 PST (Fixed all 11 failing frontend unit tests - 100% pass rate achieved)
 
 **Purpose**: Current testing status and open issues requiring attention. This document tracks the most recent comprehensive test suite results and serves as a sounding board for planning and tracking future comprehensive testing rounds.
 
@@ -89,18 +87,20 @@ last_updated: 2025-11-07 19:34:37 PST
 | **Backend Build** | 1 | 0 | 0 (0 warnings) | 100% | 4.5 sec | ✅ PASSED |
 | **Backend Tests** | 162 | 0 | 8 | 100% | 30 sec | ✅ PASSED |
 | **Frontend Build** | 1 | 0 | 0 | 100% | 4 sec | ✅ PASSED |
-| **Frontend Unit (Jest)** | 505 | 11 | 1 | 97.9% | 23 sec | ⚠️ 11 FAILURES |
+| **Frontend Unit (Jest)** | 516 | 0 | 1 | 100% | 12.3 sec | ✅ PASSED |
 | **E2E (Playwright)** | 387 | 92 | 79+2+34 | 80.8% | 20.0 min | ⚠️ 92 FAILURES |
-| **TOTAL (All Tests)** | **1054** | **103** | **124** | **91.1%** | **21 min** | ⚠️ PARTIAL |
+| **TOTAL (All Tests)** | **1065** | **92** | **124** | **92.0%** | **21 min** | ⚠️ PARTIAL |
 
-**Note**: E2E tests from previous comprehensive run (Nov 7 18:41). Backend/frontend tests from latest validation (Nov 7 19:24).
+**Note**: E2E tests from previous comprehensive run (Nov 7 18:41). Backend/frontend tests from latest validation (Nov 7 19:51).
 
 **Progress Since Last Update**:
-- ✅ Fixed 6 frontend tests (tab button selector issue)
-- 🔄 11 frontend tests still failing (unrelated to tab buttons)
-- Test pass rate improved: 96.7% → 97.9%
+- ✅ Fixed all 11 remaining frontend unit tests (2025-11-07 19:51:48 PST)
+  - Fixed 4 IgnoredTab tests (onClick handler on wrong element)
+  - Fixed 7 Job Rejection Workflow tests (inconsistent API call pattern)
+- Frontend unit test pass rate: 97.9% → 100% ✅
+- Overall test pass rate: 91.1% → 92.0%
 
-**Overall Assessment**: ⚠️ **Partial Success** - Backend fully passing, frontend improved but 11 failures remain
+**Overall Assessment**: ✅ **Frontend Complete** - All 516 frontend unit tests passing. Only E2E failures remain (92 tests).
 
 ### New Testing Infrastructure
 
@@ -189,55 +189,55 @@ Three new scripts enable targeted testing without running the full comprehensive
 **Build Tool**: RSBuild v1.5.17
 **Output Size**: 346.0 KB total (84.0 KB gzipped)
 
-### Frontend Unit Tests (⚠️ PARTIAL - IMPROVED)
+### Frontend Unit Tests (✅ PASSED - ALL FIXED)
 
-**Duration**: 23 seconds (latest run)
+**Duration**: 12.3 seconds (latest run)
 **Test Framework**: Jest
+**Last Run**: 2025-11-07 19:51:48 PST
 
 | Status | Count | Percentage |
 |--------|-------|------------|
-| ✅ Passed | 505 | 97.7% |
-| ❌ Failed | 11 | 2.1% |
+| ✅ Passed | 516 | 99.8% |
+| ❌ Failed | 0 | 0% |
 | ⏭️ Skipped | 1 | 0.2% |
 | **Total** | **517** | **100%** |
 
-**Test Suites**: 2 failed, 10 passed (12 total)
+**Test Suites**: 12 passed, 12 total ✅
 
-**Progress**: ✅ Fixed 6 tests (2025-11-07 19:34:37 PST)
+**Complete Fix History**:
+
+**Fix #1**: ✅ 6 tests fixed (2025-11-07 19:34:37 PST)
 - **Root Cause**: Tests searched for text "New" but actual button text is "New Jobs"
 - **Fix Applied**: Changed selectors from `screen.getAllByText('New').find()` to `screen.getByTestId('new-tab-button')`
 - **Commit**: `bfbbf44`
+- **Result**: 499 passed → 505 passed
 
-**Remaining 11 Failures** (2 categories):
+**Fix #2**: ✅ 4 IgnoredTab tests fixed (2025-11-07 19:51:48 PST)
+- **Test File**: `src/IgnoredTab.test.tsx`
+- **Root Cause**: onClick handler was on inner div, but `data-testid="ignored-email-card"` was on outer div
+- **Fix Applied**: Moved onClick handler from inner div (line 361) to outer div with testid (line 333)
+- **Tests Fixed**:
+  * `should expand email to show details when clicked`
+  * `should collapse email when clicked again`
+  * `should display all email details when expanded`
+  * `should display HTML body if text body not available`
 
-#### 1. IgnoredTab Component Tests (4 failures)
-**Test File**: `src/IgnoredTab.test.tsx`
-**Issue**: Unable to find email message IDs in rendered output
+**Fix #3**: ✅ 7 Job Rejection Workflow tests fixed (2025-11-07 19:51:48 PST)
+- **Test File**: `src/App.test.tsx` (Job Rejection Workflow - Phase 3B)
+- **Root Cause**: Reject button called `rejectJob()` using `/jobs/:id/reject` endpoint, but tests expected `updateJobStatus()` call to `/jobs/:id/status`
+- **Fix Applied**: Changed both Reject buttons to use `updateJobStatus(job.job_id, 'rejected')` (lines 837, 2425)
+- **Tests Fixed**:
+  * `rejects job when Reject button clicked on job card`
+  * `moves job from New tab to Filtered tab after rejection`
+  * `calls API with correct parameters when rejecting`
+  * `handles API errors gracefully when rejecting`
+  * `refreshes job list after successful rejection`
+  * `rejects job from JobDetails modal`
+  * `allows re-approving a rejected job back to approved status`
+- **Commit**: `195c5a9`
+- **Result**: 505 passed → 516 passed ✅
 
-Failing tests:
-- ❌ `should expand email to show details when clicked`
-- ❌ `should collapse email when clicked again`
-- ❌ `should display all email details when expanded`
-- ❌ `should display HTML body if text body not available`
-
-**Error**: `Unable to find an element with the text: msg-12345`
-**Root Cause**: TBD - needs investigation
-
-#### 2. Job Rejection Workflow Tests (7 failures)
-**Test File**: `src/App.test.tsx`
-**Test Suite**: Job Rejection Workflow (Phase 3B)
-**Issue**: Status update callback not being called correctly
-
-Failing tests:
-- ❌ `rejects job when Reject button clicked on job card`
-- ❌ `moves job from New tab to Filtered tab after rejection`
-- ❌ `calls API with correct parameters when rejecting`
-- ❌ `handles API errors gracefully when rejecting`
-- ❌ `refreshes job list after successful rejection`
-- ❌ `rejects job from JobDetails modal`
-
-**Error Pattern**: `expect(statusUpdateCalled).toBe(true)` - Received: false
-**Root Cause**: TBD - rejection callback not triggering properly in tests
+**Final Result**: 100% pass rate for all frontend unit tests!
 
 ### E2E Tests (⚠️ PARTIAL)
 
