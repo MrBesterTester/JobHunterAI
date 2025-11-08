@@ -3409,6 +3409,7 @@ async fn get_or_create_jobops_folder(access_token: &str) -> std::result::Result<
     Ok(new_folder.id)
 }
 
+#[allow(dead_code)]
 async fn get_microsoft_user_email(access_token: &str) -> std::result::Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let client = reqwest::Client::new();
     let url = "https://graph.microsoft.com/v1.0/me?$select=mail,userPrincipalName";

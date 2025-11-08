@@ -18,9 +18,10 @@
 
 set -e
 
-# Find the project root (directory containing this script)
+# Find the project root (one level up from helper-scripts)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$PROJECT_ROOT"
 
 # Colors for output
 RED='\033[0;31m'
@@ -287,7 +288,7 @@ echo ""
 
 # Regenerate bug index
 echo -e "${YELLOW}🔄 Regenerating bug index...${NC}"
-./regenerate-bug-index.sh
+./helper-scripts/regenerate-bug-index.sh
 echo -e "${GREEN}✅ Bug index regenerated${NC}"
 echo ""
 

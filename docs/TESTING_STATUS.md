@@ -10,8 +10,8 @@ related_docs:
   - TESTING_HISTORY.md (historical archive)
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
-last_comprehensive_run: 2025-11-07 17:06:28 PST
-last_updated: 2025-11-07 17:21:39 PST
+last_comprehensive_run: 2025-11-07 19:14:34 PST
+last_updated: 2025-11-07 19:14:34 PST
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -20,6 +20,7 @@ last_updated: 2025-11-07 17:21:39 PST
 - [Testing Status](#testing-status)
   - [Latest Test Run Results (Full Suite)](#latest-test-run-results-full-suite)
     - [Quick Summary](#quick-summary)
+    - [New Testing Infrastructure](#new-testing-infrastructure)
     - [Preflight Checks (✅ ALL PASSED)](#preflight-checks--all-passed)
     - [Backend Build (✅ FIXED)](#backend-build--fixed)
     - [Backend Tests (✅ FIXED - Compiles Successfully)](#backend-tests--fixed---compiles-successfully)
@@ -55,7 +56,7 @@ last_updated: 2025-11-07 17:21:39 PST
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-**Last Updated**: 2025-11-07 17:21:39 PST (Backend build and test compilation errors fixed)
+**Last Updated**: 2025-11-07 19:14:34 PST (Separate test runner scripts created and validated)
 
 **Purpose**: Current testing status and open issues requiring attention. This document tracks the most recent comprehensive test suite results and serves as a sounding board for planning and tracking future comprehensive testing rounds.
 
@@ -67,26 +68,59 @@ last_updated: 2025-11-07 17:21:39 PST
 
 ## Latest Test Run Results (Full Suite)
 
-**Test Run Date/Time**: 2025-11-07 17:06:28 PST
-**Run Type**: Comprehensive (Preflight + Backend Build/Test + Frontend Build/Test + E2E)
-**Total Runtime**: ~30 minutes (interrupted due to backend compilation errors)
-**Test Log**: `/tmp/comprehensive-test-run-final.log` (12,989 lines)
+**Test Run Date/Time**: 2025-11-07 19:14:34 PST
+**Run Type**: Individual Test Suites (Backend + Frontend separate validation)
+**Total Runtime**: 52 seconds (30s backend + 22s frontend)
+**Test Scripts Used**:
+- `./helper-scripts/run-backend-tests.sh` (✅ NEW)
+- `./helper-scripts/run-frontend-tests.sh` (✅ NEW)
+- `./helper-scripts/run-e2e-tests.sh` (✅ NEW - not yet run)
+
+**Test Logs**:
+- Backend: `/tmp/backend-test.log`
+- Frontend: `/tmp/frontend-test.log`
 
 ### Quick Summary
 
-| Component | Passed | Failed | Skipped/Other | Pass Rate | Runtime (Est) | Status |
-|-----------|--------|--------|---------------|-----------|---------------|--------|
-| **Preflight Checks** | 5/5 | 0 | 0 | 100% | ~2.5 min | ✅ PASSED |
-| **Backend Build** | 1 | 0 | 0 (0 warnings) | 100% | ~20 sec | ✅ FIXED |
-| **Backend Tests** | N/A | N/A | N/A | N/A | ~60 sec | ✅ FIXED (compiles) |
-| **Frontend Build** | 1 | 0 | 0 | 100% | ~10 sec | ✅ PASSED |
-| **Frontend Unit (Jest)** | 499 | 17 | 1 | 96.7% | ~25 sec | ⚠️ PARTIAL |
-| **E2E (Playwright)** | 387 | 92 | 81+34 | 80.8% | ~23 min | ⚠️ PARTIAL |
-| **TOTAL** | **886** | **109** | **116** | **89.0%** | **~27 min** | ⚠️ PARTIAL |
+| Component | Passed | Failed | Skipped/Ignored | Pass Rate | Runtime (Actual) | Status |
+|-----------|--------|--------|-----------------|-----------|------------------|--------|
+| **Backend Build** | 1 | 0 | 0 (0 warnings) | 100% | 4.5 sec | ✅ PASSED |
+| **Backend Tests** | 162 | 0 | 8 | 100% | 30 sec | ✅ PASSED |
+| **Frontend Build** | 1 | 0 | 0 | 100% | 4 sec | ✅ PASSED |
+| **Frontend Unit (Jest)** | 499 | 17 | 1 | 96.7% | 22 sec | ⚠️ 17 FAILURES |
+| **E2E (Playwright)** | N/A | N/A | N/A | N/A | Not run | ⏸️ PENDING |
+| **TOTAL (Unit Tests)** | **661** | **17** | **9** | **97.5%** | **52 sec** | ⚠️ PARTIAL |
 
-**Note**: Runtimes are estimates with 15% margin. Backend test runtime needs actual measurement (currently estimated).
+**Note**: Actual measured runtimes from separate test runner scripts. E2E tests not included in this run.
 
-**Overall Assessment**: ⚠️ **Partial Success** - Core functionality working but build issues and test failures require attention
+**Overall Assessment**: ⚠️ **Partial Success** - Backend fully passing, frontend has 17 test failures requiring attention
+
+### New Testing Infrastructure
+
+**Separate Test Runner Scripts** (✅ Created 2025-11-07):
+
+Three new scripts enable targeted testing without running the full comprehensive suite:
+
+1. **Backend Only**: `./helper-scripts/run-backend-tests.sh` (30s)
+   - Zero-warning build + cargo test
+   - Use for: Backend-only changes
+   - Options: `--no-build` to skip build phase
+
+2. **Frontend Only**: `./helper-scripts/run-frontend-tests.sh` (22s)
+   - TypeScript check + RSBuild + Jest unit tests
+   - Use for: Frontend-only changes
+   - Options: `--no-build` to skip build phase
+
+3. **E2E Only**: `./helper-scripts/run-e2e-tests.sh` (~20-25 min)
+   - Playwright end-to-end tests
+   - Use for: Final validation after unit tests pass
+   - Includes iPhone notification when complete
+
+4. **Comprehensive**: `./helper-scripts/run-comprehensive-tests.sh` (~30 min)
+   - Everything: preflight + all tests
+   - Use for: Pre-commit validation
+
+**Benefit**: Fast iteration - run only what changed (30s vs 30min)
 
 ### Preflight Checks (✅ ALL PASSED)
 

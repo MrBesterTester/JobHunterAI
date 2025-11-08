@@ -9,7 +9,7 @@ related_docs:
   - TESTING_HISTORY.md (historical archive)
   - TESTING_GUIDE.md (testing principles and investigation guide)
   - PROJECT_STATUS.md (overall project status)
-last_updated: 2025-11-07 18:08:25 PST (Added Preflight Requirement #0: Process Cleanup)
+last_updated: 2025-11-07 19:12:00 PST (Added separate test runner scripts for backend, frontend, and E2E)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -21,6 +21,11 @@ last_updated: 2025-11-07 18:08:25 PST (Added Preflight Requirement #0: Process C
   - [Current Implementation](#current-implementation)
     - [Global Configuration Parameters](#global-configuration-parameters)
     - [Comprehensive Test Suite Script](#comprehensive-test-suite-script)
+    - [Separate Test Runner Scripts](#separate-test-runner-scripts)
+      - [Backend Tests Only](#backend-tests-only)
+      - [Frontend Tests Only](#frontend-tests-only)
+      - [E2E Tests Only](#e2e-tests-only)
+    - [Recommended Test Workflow](#recommended-test-workflow)
     - [Preflight Requirements (HARD Requirements)](#preflight-requirements-hard-requirements)
       - [0. Process Cleanup ✅](#0-process-cleanup-)
       - [1. Git Status ✅](#1-git-status-)
@@ -288,6 +293,114 @@ This document outlines the comprehensive testing strategy for the JobHunter auto
 - **Frontend Unit**: ~25 sec (517 tests)
 - **E2E Tests**: ~23 min (594 tests - 85% of total time)
 - **TOTAL**: ~27 min (full suite) | ~4 min (with --skip-e2e)
+
+### Separate Test Runner Scripts
+
+For faster iteration and targeted testing, individual test suites can be run separately:
+
+#### Backend Tests Only
+
+**Script**: `./helper-scripts/run-backend-tests.sh`
+
+**Purpose**: Run only backend tests (build + cargo test)
+
+**Runtime**: ~2 minutes
+
+**Usage**:
+```bash
+# Build and test backend
+./helper-scripts/run-backend-tests.sh
+
+# Test only (skip build)
+./helper-scripts/run-backend-tests.sh --no-build
+```
+
+**What it does**:
+1. Builds backend with zero-warning requirement
+2. Runs `cargo test`
+3. Reports pass/fail with test summary
+
+**Use when**: Making backend-only changes (Rust code, API endpoints)
+
+---
+
+#### Frontend Tests Only
+
+**Script**: `./helper-scripts/run-frontend-tests.sh`
+
+**Purpose**: Run only frontend unit tests (build + jest)
+
+**Runtime**: ~30 seconds
+
+**Usage**:
+```bash
+# Build and test frontend
+./helper-scripts/run-frontend-tests.sh
+
+# Test only (skip build)
+./helper-scripts/run-frontend-tests.sh --no-build
+```
+
+**What it does**:
+1. Builds frontend (TypeScript check + RSBuild)
+2. Runs `npm test` (Jest unit tests)
+3. Reports test suite and individual test counts
+
+**Use when**: Making frontend-only changes (React components, TypeScript)
+
+---
+
+#### E2E Tests Only
+
+**Script**: `./helper-scripts/run-e2e-tests.sh`
+
+**Purpose**: Run only Playwright E2E tests
+
+**Runtime**: ~20-25 minutes
+
+**Usage**:
+```bash
+# Run E2E tests
+./helper-scripts/run-e2e-tests.sh
+```
+
+**What it does**:
+1. Runs `npm run test:e2e` (Playwright)
+2. Reports pass/fail counts
+3. Sends iPhone notification when complete
+
+**Use when**: Validating end-to-end workflows after backend/frontend tests pass
+
+---
+
+### Recommended Test Workflow
+
+**Fast Iteration** (2-3 minutes):
+```bash
+# 1. Backend changes
+./helper-scripts/run-backend-tests.sh --no-build
+
+# 2. Frontend changes
+./helper-scripts/run-frontend-tests.sh --no-build
+```
+
+**Full Validation** (25-30 minutes):
+```bash
+# 1. Fast tests first
+./helper-scripts/run-backend-tests.sh
+./helper-scripts/run-frontend-tests.sh
+
+# 2. E2E tests last (if fast tests pass)
+./helper-scripts/run-e2e-tests.sh
+```
+
+**Comprehensive Pre-commit** (30 minutes):
+```bash
+# Run everything with preflight checks
+./helper-scripts/run-comprehensive-tests.sh
+```
+
+---
 
 ### Preflight Requirements (HARD Requirements)
 
