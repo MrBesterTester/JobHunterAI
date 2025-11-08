@@ -8,7 +8,7 @@ component: frontend
 created: 2025-11-08
 updated: 2025-11-08 18:30:00 PST
 affects: []
-related: [ISSUE-035]
+related: [ISSUE-035, ISSUE-037]
 ---
 
 # ISSUE-036: E2E Test Failures - 32 tests failing (92.2% pass rate)
@@ -109,7 +109,7 @@ After completing ISSUE-035 fixes which brought the E2E pass rate from 80.8% to 9
 12. `e2e/tests/18-debug-section.spec.ts:132:7` - "should parse and validate JSON structure in raw_data"
 13. `e2e/tests/18-debug-section.spec.ts:181:7` - "should have proper styling for debug section"
 
-**Status:** Debug section feature may be partially implemented or hidden
+**Status:** Debug section feature not yet implemented - **see ISSUE-037 for comprehensive feature planning**
 
 ### Category 2: UI/Display Issues (10 tests)
 

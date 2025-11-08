@@ -11,7 +11,7 @@ related_docs:
   - TESTING_STATUS.md (testing results)
   - README_auto-test-plan.md (testing plan)
   - PRD.md (product requirements)
-last_updated: 2025-11-07 12:43:38 PST
+last_updated: 2025-11-08 09:37:25 PST
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -55,7 +55,7 @@ last_updated: 2025-11-07 12:43:38 PST
 
 # JobHunter Project Status
 
-**Last Updated**: 2025-11-07 12:43:38 PST (ISSUE-032 fixed - Rejected emails filtered from Ignored tab)
+**Last Updated**: 2025-11-08 09:37:25 PST (ISSUE-037 created - Debug Section Display feature planning)
 
 ---
 
@@ -110,8 +110,9 @@ The software implements all core job hunting workflows defined in the Product Re
 
 **See**: [PROJECT_HISTORY.md](PROJECT_HISTORY.md) for detailed historical records
 
-**Open Issues**: 1 bug/issue (all infrastructure and quality issues resolved!)
+**Open Issues**: 2 bugs/issues (all infrastructure and quality issues resolved!)
 - ISSUE-010: CLAUDE.md token usage optimization (low)
+- ISSUE-037: Debug Section Display - Job extraction debugging panel (medium/low)
 
 ---
 
@@ -588,7 +589,7 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 
 ## Bug Tracking
 
-**Total Bugs**: 41 (2 open, 5 mitigated, 34 fixed)
+**Total Bugs**: 42 (3 open, 5 mitigated, 34 fixed)
 
 **Priority Breakdown**:
 - Critical: 1
@@ -598,6 +599,7 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 - Unknown: 2
 
 **Recent Activity** (Last 7 days):
+- **OPENED** [ISSUE-037](../bugs/open/ISSUE-037-debug-section-display---job-extraction-debugging-panel.md): Debug Section Display - Job extraction debugging panel (2025-11-08) - Feature planning for developer debugging tools
 - **FIXED** [ISSUE-032](../bugs/fixed/ISSUE-032-rejected-non-job-emails-with-jobops-old-label-appear-in-ignored-tab-while-already-in-gmail-trash.md): Rejected emails filtered from Ignored tab (2025-11-07) - Gmail API filtering + database cleanup
 - **RESOLVED** [ISSUE-030](../bugs/mitigated/ISSUE-030-low-confidence-emails-appear-in-filtered-tab-instead-of-non-job-emails.md): Low-confidence email threshold fix (2025-11-04) - Mitigated
 - **FIXED** [BUG-0009](../bugs/fixed/BUG-0009-condensed-description-api-returns-placeholder-for-short-job-descriptions.md): Condensed description word count (2025-11-04) - Fixed
@@ -683,7 +685,7 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 
 ---
 
-**Last Updated**: 2025-11-07 12:43:38 PST (ISSUE-032 fixed - Rejected emails filtered from Ignored tab)
+**Last Updated**: 2025-11-08 09:37:25 PST (ISSUE-037 created - Debug Section Display feature planning)
 
 **Major Updates in This Revision**:
 - **ISSUE-032 FIXED** (2025-11-07 12:43:38 PST)
