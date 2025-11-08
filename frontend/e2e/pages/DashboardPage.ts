@@ -47,13 +47,13 @@ export class DashboardPage {
     this.appliedJobsCount = page.locator('[data-testid="stat-applied"], .stat-card').filter({ hasText: /applied/i }).first();
     this.filteredJobsCount = page.locator('[data-testid="stat-filtered"], .stat-card').filter({ hasText: /filtered/i }).first();
 
-    // Tabs - look for buttons or clickable elements with these labels
-    this.allTab = page.getByRole('button', { name: /^all$/i }).or(page.locator('[data-tab="all"]'));
+    // Tabs - use data-testid attributes (format: {tab}-tab-button)
+    this.allTab = page.getByTestId('all-tab-button');
     // 'inbox' in tests maps to 'new' tab in the UI
-    this.inboxTab = page.getByRole('button', { name: /^new$/i }).or(page.locator('[data-tab="new"]'));
-    this.approvedTab = page.getByRole('button', { name: /^approved$/i }).or(page.locator('[data-tab="approved"]'));
-    this.appliedTab = page.getByRole('button', { name: /^applied$/i }).or(page.locator('[data-tab="applied"]'));
-    this.filteredTab = page.getByRole('button', { name: /^filtered$/i }).or(page.locator('[data-tab="filtered"]'));
+    this.inboxTab = page.getByTestId('new-tab-button');
+    this.approvedTab = page.getByTestId('approved-tab-button');
+    this.appliedTab = page.getByTestId('applied-tab-button');
+    this.filteredTab = page.getByTestId('filtered-tab-button');
 
     // Job cards container
     this.jobCards = page.locator('[data-testid="job-card"], .job-card');
