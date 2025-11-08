@@ -25,13 +25,15 @@ related: []
 - [Evidence](#evidence)
 - [Proposed Solutions](#proposed-solutions)
   - [Phase 1: Skip Unimplemented Features (15 min)](#phase-1-skip-unimplemented-features-15-min)
-  - [Phase 2-3: Fix Job Details & UI (3-5 hours)](#phase-2-3-fix-job-details--ui-3-5-hours)
+  - [Phase 2: Investigation (1-2 hours)](#phase-2-investigation-1-2-hours)
+  - [Phase 3: Bulk Fixes (2-3 hours)](#phase-3-bulk-fixes-2-3-hours)
   - [Phase 4: Fix Email Integration (2-3 hours)](#phase-4-fix-email-integration-2-3-hours)
 - [Decision](#decision)
 - [Implementation](#implementation)
   - [Targeted Test Execution (Fast Iteration)](#targeted-test-execution-fast-iteration)
   - [Phase 1 Checklist](#phase-1-checklist)
-  - [Phase 2-3 Checklist](#phase-2-3-checklist)
+  - [Phase 2 Checklist (Investigation)](#phase-2-checklist-investigation)
+  - [Phase 3 Checklist (Bulk Fixes)](#phase-3-checklist-bulk-fixes)
   - [Phase 4 Checklist](#phase-4-checklist)
 - [Testing](#testing)
 - [Status History](#status-history)
@@ -153,17 +155,48 @@ Runtime: 20.0 minutes
 
 **Expected Result**: 387 passing / 70 failing (84.7% pass rate)
 
-### Phase 2-3: Fix Job Details & UI (3-5 hours)
+### Phase 2: Investigation (1-2 hours)
 
-**Description**: Fix 62 job details/UI tests - likely simple selector and timing issues
+**Description**: Identify common failure patterns in job details/UI tests
 
 **Approach**:
 1. Run single test file in UI mode: `npx playwright test --ui frontend/e2e/tests/05-job-details.spec.ts`
-2. Identify common patterns (similar to frontend unit test fixes)
-3. Fix selectors: use `data-testid` instead of text matching
-4. Add `waitFor()` for async operations
-5. Fix button visibility checks
-6. Apply fixes to all `05*.spec.ts` files
+2. Identify common patterns (similar to frontend unit test fixes just completed)
+3. Fix 5-10 tests as **proof of concept** to verify approach works
+4. Document patterns for bulk application in Phase 3
+
+**Expected Patterns** (based on similar frontend unit test fixes):
+- Selectors changed: use `data-testid` instead of text matching
+- Missing `waitFor()` for async operations
+- Button visibility checks incorrect
+- Modal interaction patterns need updating
+
+**Pros**:
+- Low-risk investigation phase before committing to bulk fixes
+- Validates fix approach with small sample
+- Fast iteration with UI mode (30 sec cycles vs 20 min full suite)
+
+**Implementation Effort**: 1-2 hours
+
+**Expected Result**: Patterns documented, 5-10 tests fixed as proof of concept
+
+---
+
+### Phase 3: Bulk Fixes (2-3 hours)
+
+**Description**: Apply Phase 2 patterns to all 62 job details/UI tests
+
+**Approach**:
+1. Apply documented patterns from Phase 2 to all test files
+2. Fix remaining ~52-57 tests in bulk using same patterns
+3. Run targeted tests: `npx playwright test frontend/e2e/tests/05*.spec.ts`
+4. Verify all fixes work together
+
+**Test Files**:
+- `05-job-details.spec.ts` (main file)
+- `05-phase-3.1.5-testing-refinement.spec.ts`
+- `05b-new-job-badges.spec.ts`
+- `03-job-status-updates.spec.ts` (related status update tests)
 
 **Pros**:
 - Largest impact category (62 tests, 67% of failures)
@@ -251,16 +284,24 @@ npx playwright test frontend/e2e/tests/05-job-details.spec.ts:82
 - Added direct test.skip() for 3 individual tests within content-generation suite
 - Total skipped: 53 tests (50 via config + 3 individual)
 
-### Phase 2-3 Checklist
+### Phase 2 Checklist (Investigation)
 
 - [ ] Run `05-job-details.spec.ts` in UI mode
-- [ ] Identify common failure patterns
-- [ ] Fix selectors (use `data-testid`)
-- [ ] Add `waitFor()` for async operations
-- [ ] Fix button visibility checks
-- [ ] Apply fixes to all `05*.spec.ts` files
-- [ ] Run: `npx playwright test frontend/e2e/tests/05*.spec.ts`
-- [ ] Commit: "fix: E2E test selectors and timing issues"
+- [ ] Identify first failing test and root cause
+- [ ] Document common patterns (selectors, timing, visibility)
+- [ ] Fix 5-10 tests as proof of concept
+- [ ] Verify proof of concept fixes work
+- [ ] Document findings for Phase 3 bulk application
+
+### Phase 3 Checklist (Bulk Fixes)
+
+- [ ] Apply Phase 2 patterns to remaining tests in `05-job-details.spec.ts`
+- [ ] Apply patterns to `05-phase-3.1.5-testing-refinement.spec.ts`
+- [ ] Apply patterns to `05b-new-job-badges.spec.ts`
+- [ ] Apply patterns to `03-job-status-updates.spec.ts`
+- [ ] Run: `npx playwright test frontend/e2e/tests/05*.spec.ts --project=chromium`
+- [ ] Run: `npx playwright test frontend/e2e/tests/03-job-status-updates.spec.ts --project=chromium`
+- [ ] Commit: "fix: E2E job details test selectors and timing (ISSUE-035 Phase 2-3)"
 
 ### Phase 4 Checklist
 
