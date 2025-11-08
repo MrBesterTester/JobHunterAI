@@ -20,6 +20,10 @@ last_updated: 2025-11-07 20:10:40 PST
 - [Testing Status](#testing-status)
   - [Latest Test Run Results (Full Suite)](#latest-test-run-results-full-suite)
     - [Quick Summary](#quick-summary)
+  - [Next Steps](#next-steps)
+    - [Priority 1: E2E Test Fixes (HIGH) ⚠️](#priority-1-e2e-test-fixes-high-)
+    - [Priority 2: Backend Test Issues (MEDIUM)](#priority-2-backend-test-issues-medium)
+    - [Priority 3: Preflight Seeding Issue (MEDIUM)](#priority-3-preflight-seeding-issue-medium)
     - [New Testing Infrastructure](#new-testing-infrastructure)
     - [Preflight Checks (✅ ALL PASSED)](#preflight-checks--all-passed)
     - [Backend Build (✅ FIXED)](#backend-build--fixed)
@@ -29,11 +33,6 @@ last_updated: 2025-11-07 20:10:40 PST
     - [E2E Tests (⚠️ PARTIAL)](#e2e-tests--partial)
     - [Comparison to Previous Run](#comparison-to-previous-run)
     - [Key Observations](#key-observations)
-  - [Next Steps](#next-steps)
-    - [Priority 1: Build Compliance (✅ COMPLETED - 2025-11-07 17:21:39 PST)](#priority-1-build-compliance--completed---2025-11-07-172139-pst)
-    - [Priority 2: Test Failures (HIGH)](#priority-2-test-failures-high)
-    - [Priority 3: Documentation & Cleanup (MEDIUM)](#priority-3-documentation--cleanup-medium)
-    - [Ready for Next Run When:](#ready-for-next-run-when)
   - [Executive Summary](#executive-summary)
     - [Test Exclusions](#test-exclusions)
     - [Unit Test Coverage](#unit-test-coverage)
@@ -105,6 +104,61 @@ last_updated: 2025-11-07 20:10:40 PST
 - Overall test pass rate: 91.1% → 92.0%
 
 **Overall Assessment**: ✅ **Frontend Complete** - All 516 frontend unit tests passing. Only E2E failures remain (92 tests).
+
+---
+
+## Next Steps
+
+### Priority 1: E2E Test Fixes (HIGH) ⚠️
+
+**See [ISSUE-035](../bugs/open/ISSUE-035-e2e-test-failures---92-tests-failing-808-pass-rate.md) for comprehensive fix plan**
+
+**Current Status**: 387 passing / 92 failing (80.8% pass rate)
+**Goal**: 95%+ pass rate (max 25 failures)
+
+**4-Phase Fix Plan** (6-8 hours total):
+
+1. **Phase 1**: Skip unimplemented features (15 min) → 84.7% pass rate
+   - Skip 22 tests for features not yet built (job scoring, extraction badges, performance tests)
+
+2. **Phase 2-3**: Fix Job Details & UI (3-5 hrs) → 93.4% pass rate
+   - Fix 62 tests (largest category) - likely simple selector/timing issues
+   - Similar to frontend unit test fixes just completed
+
+3. **Phase 4**: Fix Email Integration (2-3 hrs) → 95.2% pass rate ✅
+   - Fix 8 tests - sync workflow timing issues
+
+**Fast Iteration**: Use targeted test execution (30 sec) instead of full suite (20 min)
+- `npx playwright test --ui frontend/e2e/tests/05-job-details.spec.ts`
+- `npx playwright test -g "Job Details"`
+- `npx playwright test --last-failed`
+
+### Priority 2: Backend Test Issues (MEDIUM)
+
+**See [ISSUE-033](../bugs/open/ISSUE-033-six-backend-tests-ignored-mock-and-integration.md)**
+
+**Current Status**: 162 passing / 6 ignored (have issues) / 2 ignored (intentional)
+
+**6 Tests with Issues**:
+- 4 mock tests (mockito integration failures) - low impact, real API tests provide coverage
+- 2 integration tests (quota tracking isolation + MS config) - medium impact
+
+**Action**: Fix when bandwidth allows (4-6 hours estimated)
+
+### Priority 3: Preflight Seeding Issue (MEDIUM)
+
+**See [ISSUE-034](../bugs/open/ISSUE-034-ms-mail-preflight-seeding-requires-backend-to-be-running.md)**
+
+**Issue**: MS Mail preflight seeding calls backend API but preflight runs before backend starts
+
+**Workaround**: Use `--skip-preflight` flag for comprehensive tests
+
+**Action**: Implement one of:
+- Option 1: Seed via Graph API directly (no backend dependency)
+- Option 2: Start backend temporarily during preflight
+- Option 3: Move seeding to test setup phase
+
+---
 
 ### New Testing Infrastructure
 
@@ -350,71 +404,6 @@ Three new scripts enable targeted testing without running the full comprehensive
    - Mobile responsive design timeouts
    - Content generation cost tracking
 
----
-
-## Next Steps
-
-**Current Status**: ✅ **Build Compliance Achieved** - Backend ready for comprehensive test run
-
-### Priority 1: Build Compliance (✅ COMPLETED - 2025-11-07 17:21:39 PST)
-
-**Backend Build Warnings** (✅ FIXED):
-1. ~~Fix 5 unused struct field warnings in `backend/src/main.rs`~~ - **COMPLETED**
-   - All fields prefixed with underscore: `_next_link`, `_is_read`, `_content_type`, `_messages`
-   - Backend now builds with **ZERO warnings**
-
-**Backend Test Compilation** (✅ FIXED):
-2. ~~Remove or comment out job scoring tests in `tests/api_tests.rs`~~ - **COMPLETED**
-   - All 6 scoring tests commented out with TODO markers
-   - Tests now compile successfully
-   - Remaining 3 test warnings are acceptable (unused fields in test structs)
-
-### Priority 2: Test Failures (HIGH)
-
-**Frontend Unit Tests** (11 failures remaining):
-
-3. ~~Fix tab button selector issues in `frontend/src/App.test.tsx`~~ - **PARTIALLY COMPLETED** (2025-11-07 19:34:37 PST)
-   - ✅ Fixed 6 tests by using `getByTestId('new-tab-button')` instead of text search
-   - Root cause: Tests searched for "New" but button displays "New Jobs"
-   - Commit: `bfbbf44`
-
-4. **Fix IgnoredTab Component Tests** (4 failures) - **PENDING**
-   - File: `src/IgnoredTab.test.tsx`
-   - Issue: Cannot find email message IDs (msg-12345) in rendered output
-   - Error: `Unable to find an element with the text: msg-12345`
-   - Action: Investigate IgnoredTab rendering and test mocks
-   - Estimated effort: 1-2 hours
-
-5. **Fix Job Rejection Workflow Tests** (7 failures) - **PENDING**
-   - File: `src/App.test.tsx` (Phase 3B tests)
-   - Issue: Status update callback not being triggered
-   - Error: `expect(statusUpdateCalled).toBe(true)` - Received: false
-   - Action: Debug rejection callback propagation in test environment
-   - Estimated effort: 2-3 hours
-
-**E2E Test Categories** (92 failures):
-6. **Job Scoring System** (4 tests) - Mark as skipped until Phase 3.2 implemented
-7. **Extraction Method Badges** (6 tests) - Verify UI implementation or mark as skipped
-8. **Responsive Design Mobile** (4 tests) - Increase timeouts or fix tab rendering
-9. **Performance Tests** (5 tests) - Fix test infrastructure (memory leak, FPS monitoring)
-10. **Content Generation** (3 tests) - Implement token/cost tracking or skip
-11. **Email Integration** (8 tests) - Investigate sync reliability issues
-
-### Priority 3: Documentation & Cleanup (MEDIUM)
-
-12. Update test exclusion counts in `EXCLUDED_TESTS.md` if needed
-13. Archive completed test infrastructure work to `TESTING_HISTORY.md`
-14. Consider splitting unimplemented feature tests into separate test files
-
-### Ready for Next Run When:
-
-✅ Zero backend build warnings - **COMPLETED**
-✅ All backend tests compile and run - **COMPILES (162 passed, 8 ignored)**
-✅ Separate test runner scripts created - **COMPLETED** (backend, frontend, E2E)
-✅ Tab button selector issue fixed - **COMPLETED** (6/17 tests fixed)
-⚠️ Remaining frontend unit test failures fixed - **IN PROGRESS (11 remaining)**
-  - 4 IgnoredTab tests - PENDING
-  - 7 Job Rejection Workflow tests - PENDING
 ⚠️ E2E tests: >90% pass rate (currently 80.5%) - **PENDING (Priority 2)**
 
 **Estimated Effort**: 3-5 hours to address remaining Priority 2 items
