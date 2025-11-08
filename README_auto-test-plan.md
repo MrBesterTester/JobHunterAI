@@ -9,7 +9,7 @@ related_docs:
   - TESTING_HISTORY.md (historical archive)
   - TESTING_GUIDE.md (testing principles and investigation guide)
   - PROJECT_STATUS.md (overall project status)
-last_updated: 2025-11-07 15:10:00 PST (Added global configuration parameters section)
+last_updated: 2025-11-07 17:58:55 PST (Added --skip-e2e flag, MS Mail seeding, runtime tracking)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -26,7 +26,7 @@ last_updated: 2025-11-07 15:10:00 PST (Added global configuration parameters sec
       - [2. Database Selection ✅](#2-database-selection-)
       - [3. Database State 🔄](#3-database-state-)
       - [4. Gmail State ⚠️](#4-gmail-state-)
-      - [5. Microsoft Email State ⚠️](#5-microsoft-email-state-)
+      - [5. Microsoft Email State ✅](#5-microsoft-email-state-)
     - [OAuth Token Management Strategy](#oauth-token-management-strategy)
   - [Implementation Details](#implementation-details)
     - [File Structure](#file-structure)
@@ -264,8 +264,13 @@ This document outlines the comprehensive testing strategy for the JobHunter auto
 
 **Usage**:
 ```bash
-# Run all tests, report at end (default)
+# Run all tests, report at end (default) - ~27 min
 ./helper-scripts/run-comprehensive-tests.sh
+
+# Two-phase testing (fast tests only) - ~4 min
+./helper-scripts/run-comprehensive-tests.sh --skip-e2e
+# Runs: Preflight, Backend build/tests, Frontend build/unit tests
+# Skips: E2E tests (can run separately later)
 
 # Stop at first failure (fail-fast mode)
 ./helper-scripts/run-comprehensive-tests.sh --fail-fast
@@ -273,6 +278,15 @@ This document outlines the comprehensive testing strategy for the JobHunter auto
 # Skip preflight checks (not recommended)
 ./helper-scripts/run-comprehensive-tests.sh --skip-preflight
 ```
+
+**Runtime Estimates** (with 15% margin):
+- **Preflight**: ~2.5 min (OAuth refresh, database seed, email setup)
+- **Backend Build**: ~20 sec (zero-warning requirement)
+- **Backend Tests**: ~60 sec (estimate - needs actual measurement)
+- **Frontend Build**: ~10 sec
+- **Frontend Unit**: ~25 sec (517 tests)
+- **E2E Tests**: ~23 min (594 tests - 85% of total time)
+- **TOTAL**: ~27 min (full suite) | ~4 min (with --skip-e2e)
 
 ### Preflight Requirements (HARD Requirements)
 
@@ -313,18 +327,23 @@ All preflight checks are **HARD requirements** - the script aborts if any check 
   ```
 - **Status**: ⚠️ Implementation in progress
 
-#### 5. Microsoft Email State ⚠️
-- **Requirement**: JobOps-OLD folder empty, JobOps folder pre-populated
+#### 5. Microsoft Email State ✅
+- **Requirement**: JobOps-OLD folder empty, JobOps folder seeded with 3 test emails
 - **Why**: MS Email intake tests expect specific initial state
 - **Implementation**:
   ```bash
   ./helper-scripts/setup-msmail-state.sh
   # - Uses MS Graph API to manage folders
-  # - Empties JobOps-OLD folder
-  # - Populates JobOps with test emails from fixtures
+  # - Empties JobOps-OLD folder (delete all messages)
+  # - Empties JobOps folder (delete all messages)
+  # - Calls backend API to seed 3 test emails via MS Graph API
   # - Auto-refreshes OAuth tokens if needed
   ```
-- **Status**: ⚠️ Implementation in progress
+- **Test Emails Created** (via `POST /api/test/seed-msmail`):
+  1. Senior Software Test Engineer - Remote ($145k-$165k) - TechCorp Inc
+  2. Test Automation Lead - AI/ML Focus ($150k-$180k) - DataMind Solutions
+  3. Principal QA Engineer - Generative AI Platform ($160k-$190k) - AI Innovations Corp
+- **Status**: ✅ Fully implemented and working
 
 ### OAuth Token Management Strategy
 
@@ -443,15 +462,23 @@ Automated Gmail cleanup using Gmail API:
 ```
 
 #### 5. MS Mail State Script (`helper-scripts/setup-msmail-state.sh`)
-Automated MS Mail setup using MS Graph API:
+Automated MS Mail setup using MS Graph API + Backend API:
 ```bash
 #!/bin/bash
 # 1. Load access token from .env.test
-# 2. Empty "JobOps-OLD" folder (delete all messages)
-# 3. Empty "JobOps" folder (delete all messages)
-# 4. Populate "JobOps" with test emails from fixtures
-# 5. Verify state is correct
+# 2. Auto-refresh OAuth tokens if needed
+# 3. Get/create JobOps and JobOps-OLD folders
+# 4. Empty "JobOps-OLD" folder (delete all messages via MS Graph API)
+# 5. Empty "JobOps" folder (delete all messages via MS Graph API)
+# 6. Seed 3 test emails via backend API endpoint (POST /api/test/seed-msmail)
+# 7. Verify 3 emails created successfully
 ```
+
+**Backend API Endpoint** (`POST /api/test/seed-msmail`):
+- Creates 3 real test job opportunity emails via MS Graph API
+- Emails contain realistic job descriptions matching search criteria
+- Created directly in JobOps folder (no user email recipient needed)
+- Returns count of successfully created emails
 
 #### 6. Database Scripts
 ```bash
