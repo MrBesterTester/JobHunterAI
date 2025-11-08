@@ -9,7 +9,7 @@ related_docs:
   - TESTING_HISTORY.md (historical archive)
   - TESTING_GUIDE.md (testing principles and investigation guide)
   - PROJECT_STATUS.md (overall project status)
-last_updated: 2025-11-07 17:58:55 PST (Added --skip-e2e flag, MS Mail seeding, runtime tracking)
+last_updated: 2025-11-07 18:08:25 PST (Added Preflight Requirement #0: Process Cleanup)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -22,6 +22,7 @@ last_updated: 2025-11-07 17:58:55 PST (Added --skip-e2e flag, MS Mail seeding, r
     - [Global Configuration Parameters](#global-configuration-parameters)
     - [Comprehensive Test Suite Script](#comprehensive-test-suite-script)
     - [Preflight Requirements (HARD Requirements)](#preflight-requirements-hard-requirements)
+      - [0. Process Cleanup ✅](#0-process-cleanup-)
       - [1. Git Status ✅](#1-git-status-)
       - [2. Database Selection ✅](#2-database-selection-)
       - [3. Database State 🔄](#3-database-state-)
@@ -291,6 +292,29 @@ This document outlines the comprehensive testing strategy for the JobHunter auto
 ### Preflight Requirements (HARD Requirements)
 
 All preflight checks are **HARD requirements** - the script aborts if any check fails.
+
+#### 0. Process Cleanup ✅
+- **Requirement**: All application processes stopped, ports available
+- **Why**: Ensures clean resource state for accurate performance measurements and prevents port conflicts
+- **Implementation**:
+  ```bash
+  # Stop application servers and clean up orphaned processes
+  ./helper-scripts/stop.sh
+
+  # What this does:
+  # - Stops backend server (cargo run / jobhunter-backend)
+  # - Stops frontend server (npm start / rsbuild)
+  # - Cleans up orphaned Playwright test processes
+  # - Verifies ports 8080 and 3000 are available
+  # - Returns exit code 0 on success, 1 on failure
+  # - PostgreSQL remains running (tests need database access)
+  ```
+- **Port Verification**:
+  - Port 8080 (backend) must be available
+  - Port 3000 (frontend) must be available
+  - Script exits with error if ports are occupied
+- **Exit Codes**: Returns 0 on success (for preflight scripting), 1 on failure
+- **Status**: ✅ Fully implemented and integrated into stop.sh
 
 #### 1. Git Status ✅
 - **Requirement**: No uncommitted changes

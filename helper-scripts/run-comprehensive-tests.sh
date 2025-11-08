@@ -217,6 +217,22 @@ check_msmail_state() {
     return 0
 }
 
+check_process_cleanup() {
+    log_section "PREFLIGHT: Process Cleanup"
+
+    # Stop all application servers and clean up orphaned processes
+    log_info "Stopping application servers and cleaning up..."
+    if ! "$SCRIPT_DIR/stop.sh"; then
+        log_error "Failed to stop processes or ports are occupied"
+        log_error "Check manually: ps aux | grep -E '(cargo|rsbuild|playwright)'"
+        log_error "Check ports: lsof -ti:8080 or lsof -ti:3000"
+        return 1
+    fi
+
+    log_info "All processes stopped, ports available"
+    return 0
+}
+
 check_git_status() {
     log_section "PREFLIGHT: Git Status"
 
@@ -235,6 +251,11 @@ run_preflight_checks() {
     log_section "RUNNING PREFLIGHT CHECKS"
 
     local all_passed=true
+
+    # Process cleanup (HARD requirement - abort if fails)
+    if ! check_process_cleanup; then
+        all_passed=false
+    fi
 
     # Git status (HARD requirement - abort if fails)
     if ! check_git_status; then

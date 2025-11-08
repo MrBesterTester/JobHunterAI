@@ -88,33 +88,90 @@ fi
 
 echo ""
 
-# Try to stop frontend (react-scripts)
-echo "⚛️  Stopping frontend (React)..."
+# Try to stop frontend (react-scripts and rsbuild)
+echo "⚛️  Stopping frontend (React/RSBuild)..."
+FRONTEND_RUNNING=false
+
+# Check for react-scripts
 if check_process 'react-scripts'; then
+    FRONTEND_RUNNING=true
     FRONTEND_COUNT=$(count_processes 'react-scripts')
     pkill -f 'react-scripts' 2>/dev/null || true
     sleep 1
 
     # Check if it stopped
     if ! check_process 'react-scripts'; then
-        echo "✅ Frontend stopped gracefully ($FRONTEND_COUNT process(es))"
+        echo "✅ React frontend stopped gracefully ($FRONTEND_COUNT process(es))"
         FRONTEND_STOPPED=true
     else
         # Try force kill
-        echo "⚠️  Frontend didn't stop, trying force kill..."
+        echo "⚠️  React frontend didn't stop, trying force kill..."
         pkill -9 -f 'react-scripts' 2>/dev/null || true
         sleep 1
 
         if ! check_process 'react-scripts'; then
-            echo "✅ Frontend stopped (forced)"
+            echo "✅ React frontend stopped (forced)"
             FRONTEND_STOPPED=true
         else
-            echo "❌ Frontend still running (may need manual intervention)"
+            echo "❌ React frontend still running (may need manual intervention)"
         fi
     fi
-else
+fi
+
+# Check for rsbuild
+if check_process 'rsbuild'; then
+    FRONTEND_RUNNING=true
+    RSBUILD_COUNT=$(count_processes 'rsbuild')
+    pkill -f 'rsbuild' 2>/dev/null || true
+    sleep 1
+
+    # Check if it stopped
+    if ! check_process 'rsbuild'; then
+        echo "✅ RSBuild frontend stopped gracefully ($RSBUILD_COUNT process(es))"
+        FRONTEND_STOPPED=true
+    else
+        # Try force kill
+        echo "⚠️  RSBuild frontend didn't stop, trying force kill..."
+        pkill -9 -f 'rsbuild' 2>/dev/null || true
+        sleep 1
+
+        if ! check_process 'rsbuild'; then
+            echo "✅ RSBuild frontend stopped (forced)"
+            FRONTEND_STOPPED=true
+        else
+            echo "❌ RSBuild frontend still running (may need manual intervention)"
+        fi
+    fi
+fi
+
+if [ "$FRONTEND_RUNNING" = false ]; then
     echo "ℹ️  Frontend not running"
     FRONTEND_STOPPED=true
+fi
+
+echo ""
+
+# Clean up orphaned test processes
+echo "🧹 Cleaning up orphaned test processes..."
+ORPHANED_PROCESSES=false
+
+# Check for orphaned Playwright processes
+if check_process 'playwright test'; then
+    ORPHANED_PROCESSES=true
+    PLAYWRIGHT_COUNT=$(count_processes 'playwright test')
+    echo "   Found $PLAYWRIGHT_COUNT orphaned Playwright process(es)"
+    pkill -f 'playwright test' 2>/dev/null || true
+    sleep 1
+
+    if ! check_process 'playwright test'; then
+        echo "   ✅ Cleaned up Playwright processes"
+    else
+        echo "   ⚠️  Some Playwright processes may still be running"
+    fi
+fi
+
+if [ "$ORPHANED_PROCESSES" = false ]; then
+    echo "ℹ️  No orphaned processes found"
 fi
 
 echo ""
@@ -142,11 +199,36 @@ if [ "$STOP_POSTGRES" = true ]; then
     echo ""
 fi
 
+# Verify ports are available (for preflight use)
+echo "🔌 Verifying ports are available..."
+PORT_CHECK_FAILED=false
+
+# Check port 8080 (backend)
+if lsof -ti:8080 > /dev/null 2>&1; then
+    PORT_8080_PID=$(lsof -ti:8080)
+    echo "⚠️  Port 8080 still in use by PID $PORT_8080_PID"
+    PORT_CHECK_FAILED=true
+else
+    echo "✅ Port 8080 available"
+fi
+
+# Check port 3000 (frontend)
+if lsof -ti:3000 > /dev/null 2>&1; then
+    PORT_3000_PID=$(lsof -ti:3000)
+    echo "⚠️  Port 3000 still in use by PID $PORT_3000_PID"
+    PORT_CHECK_FAILED=true
+else
+    echo "✅ Port 3000 available"
+fi
+
+echo ""
+
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # Final status
-if [ "$BACKEND_STOPPED" = true ] && [ "$FRONTEND_STOPPED" = true ]; then
+if [ "$BACKEND_STOPPED" = true ] && [ "$FRONTEND_STOPPED" = true ] && [ "$PORT_CHECK_FAILED" = false ]; then
     echo "✨ JobHunter application stopped successfully"
+    echo "✅ All ports available for testing"
     echo ""
 
     if [ "$STOP_POSTGRES" = true ]; then
@@ -156,14 +238,22 @@ if [ "$BACKEND_STOPPED" = true ] && [ "$FRONTEND_STOPPED" = true ]; then
             echo "⚠️  PostgreSQL may still be running"
         fi
     else
-        echo "Note: PostgreSQL is still running"
+        echo "Note: PostgreSQL is still running (required for tests)"
         echo "To stop it: ./stop.sh --full  OR  brew services stop postgresql@14"
     fi
+
+    # Exit 0 for success (for preflight use)
+    exit 0
 else
-    echo "⚠️  Some processes may still be running"
+    echo "⚠️  Some processes may still be running or ports occupied"
     echo ""
     echo "Check manually with:"
-    echo "  ps aux | grep -E '(cargo run|react-scripts)'"
+    echo "  ps aux | grep -E '(cargo run|react-scripts|rsbuild|playwright)'"
+    echo "  lsof -ti:8080  # Check backend port"
+    echo "  lsof -ti:3000  # Check frontend port"
+
+    # Exit 1 for failure (for preflight use)
+    exit 1
 fi
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
