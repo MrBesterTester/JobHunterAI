@@ -36,7 +36,7 @@ related: [ISSUE-035, ISSUE-037]
     - [Gmail Integration (1 test)](#gmail-integration-1-test)
     - [Refresh Buttons (1 test)](#refresh-buttons-1-test)
     - [Description Quality (2 tests)](#description-quality-2-tests)
-  - [Category 4: Test Data Issues (3 tests)](#category-4-test-data-issues-3-tests)
+  - [Category 4: Test Data Issues (4 tests)](#category-4-test-data-issues-4-tests)
     - [Extraction Method Badge (2 tests)](#extraction-method-badge-2-tests)
     - [Filtered Tab (2 tests)](#filtered-tab-2-tests)
 - [Root Cause](#root-cause)
@@ -48,6 +48,7 @@ related: [ISSUE-035, ISSUE-037]
   - [Option 1: Triage and Categorize](#option-1-triage-and-categorize)
   - [Option 2: Focus on Quick Wins](#option-2-focus-on-quick-wins)
   - [Option 3: Comprehensive Fix Pass](#option-3-comprehensive-fix-pass)
+  - [Option 4: Proper Test Database Infrastructure (Category 4 Solution)](#option-4-proper-test-database-infrastructure-category-4-solution)
 - [Decision](#decision)
 - [Implementation](#implementation)
 - [Testing](#testing)
@@ -174,19 +175,30 @@ After completing ISSUE-035 fixes which brought the E2E pass rate from 80.8% to 9
 
 **Error:** Job descriptions may not be populating correctly or refreshing properly
 
-### Category 4: Test Data Issues (3 tests)
+### Category 4: Test Data Issues (4 tests)
 
 #### Extraction Method Badge (2 tests)
 29. `e2e/tests/99-extraction-method-badge-test.spec.ts:15:7` - "should display blue LLM badge for Expert Systems Architect job"
 30. `e2e/tests/99-extraction-method-badge-test.spec.ts:92:7` - "should verify job data via API"
 
-**Error:** Test data for "Expert Systems Architect" job may be missing or incorrectly configured
+**Error:** Test data for "Expert Systems Architect" job (ID: `94558e12-59db-4751-9556-f36edf9f6260`) does not exist in database
 
 #### Filtered Tab (2 tests)
 31. `e2e/tests/99b-filtered-tab-test.spec.ts:13:7` - "should show Expert Systems Architect job in Filtered tab"
 32. `e2e/tests/99b-filtered-tab-test.spec.ts:53:7` - "should verify API returns filtered jobs"
 
 **Error:** Expected 30 filtered jobs but only 1 returned - test data seeding issue
+
+**Root Cause Analysis (Category 4):**
+- Tests have hard-coded expectations: 30 filtered jobs, specific job ID `94558e12...`
+- E2E tests run against actual development database (currently `jobhunter_personal`)
+- No test data seeding infrastructure exists
+- Dev database (`jobhunter`) is outdated: missing `extraction_method` column, only 1 test job
+- Personal database has real user data, not controlled test data
+- Tests written for a scenario that never existed
+
+**Recommended Solution: Option C - Proper Test Database Infrastructure**
+See implementation plan in Proposed Solutions section below.
 
 ## Root Cause
 
@@ -303,17 +315,132 @@ This suggests test data seeding is not creating the expected 30 filtered jobs.
 
 **Maintenance:** Low once complete
 
+### Option 4: Proper Test Database Infrastructure (Category 4 Solution)
+
+**Description:** Revive dev database (`jobhunter`) for testing, create test data seeding system, and isolate test data from personal development work.
+
+**Current Problem:**
+- E2E tests run against personal database (`jobhunter_personal`) with real user data
+- Dev database (`jobhunter`) is outdated: missing `extraction_method` column (added in Phase 2.6)
+- Dev database has only 1 test job, personal database has 8 real jobs
+- No test data seeding infrastructure exists
+- Tests have hard-coded expectations that never matched reality
+
+**3-Phase Implementation Plan:**
+
+**Phase 1: Restore Dev Database Schema** (30 minutes)
+1. Add missing `extraction_method` column to dev database:
+   ```sql
+   ALTER TABLE jobs ADD COLUMN extraction_method VARCHAR(50);
+   ```
+2. Verify schema parity between `jobhunter` and `jobhunter_personal` databases
+3. Check for other missing columns/tables (job_intake_logs, etc.)
+4. Run schema migrations if needed
+
+**Phase 2: Create Test Data Seeding System** (2-3 hours)
+1. **Database Configuration**:
+   - Use `DATABASE_URL` env var to switch databases
+   - E2E tests use dev database: `postgresql://jobhunter_user:jobhunter_dev_password@localhost/jobhunter`
+   - Personal dev work continues using `jobhunter_personal`
+
+2. **Test Data Seed Script** (`database/seed_test_data.sql`):
+   - Clear existing test data: `TRUNCATE jobs, applications, communications CASCADE;`
+   - Seed 30 filtered jobs with variety (including "Expert Systems Architect" with ID `94558e12...`)
+   - Seed jobs for all statuses (new, approved, applied) with realistic data
+   - Seed related tables (applications, communications) for comprehensive testing
+   - Include extraction_method variations (LLM, REGEX, UNKNOWN)
+
+3. **Seeding Infrastructure**:
+   - Create `./helper-scripts/seed-test-data.sh` - Run seed script against dev database
+   - Update `frontend/e2e/global-setup.ts` - Call seeding before tests if using dev database
+   - Environment detection: Only seed if `DATABASE_URL` contains `jobhunter` (not `jobhunter_personal`)
+
+**Phase 3: Update E2E Configuration** (1 hour)
+1. **Update environment files**:
+   ```bash
+   # .env.development (personal work)
+   DATABASE_URL=postgresql://jobhunter_user:jobhunter_dev_password@localhost/jobhunter_personal
+
+   # .env.test (E2E tests) - NEW
+   DATABASE_URL=postgresql://jobhunter_user:jobhunter_dev_password@localhost/jobhunter
+   ```
+
+2. **Update `global-setup.ts`**:
+   ```typescript
+   async function seedTestData() {
+     const dbUrl = process.env.DATABASE_URL || '';
+     if (dbUrl.includes('jobhunter_personal')) {
+       console.log('⚠️  Skipping test data seeding - using personal database');
+       return;
+     }
+
+     console.log('🌱 Seeding test data into dev database...');
+     await execAsync('./helper-scripts/seed-test-data.sh');
+   }
+   ```
+
+3. **Update start scripts** to respect `DATABASE_URL` environment variable
+4. **Update switch scripts** (`./switch-to-personal.sh`, `./switch-to-dev.sh`) to set appropriate DATABASE_URL
+
+**Benefits:**
+- ✅ **Clean Separation**: Personal database for real work, dev database for testing
+- ✅ **Realistic Test Data**: Controlled, repeatable test scenarios
+- ✅ **No Pollution**: Personal database stays clean with real user data
+- ✅ **Standard Practice**: Follows industry best practice of test database isolation
+- ✅ **Flexible**: Can run tests against either database with env var switch
+- ✅ **Fixes All 4 Category 4 Tests**: Provides exact data they expect
+- ✅ **Future-Proof**: Easy to add more test data scenarios as needed
+
+**Considerations:**
+- **Existing E2E Tests Impact**: 378 passing E2E tests currently use `jobhunter_personal`
+  - Most tests are data-agnostic (use whatever jobs exist)
+  - Need to verify existing tests work against dev database with seeded data
+  - Tests that rely on specific personal data may need adjustment
+  - Migration strategy: Switch to dev database, run full E2E suite, fix any new failures
+
+- **OAuth Credentials**: Dev database may need Gmail/Microsoft OAuth credentials
+  - Can use same credentials as personal database (shared across databases)
+  - Or use test-specific credentials if needed for isolation
+
+**Pros:**
+- Proper software engineering practice (test isolation)
+- Fixes root cause of test data issues, not just symptoms
+- Enables reliable, repeatable E2E testing
+- Prevents pollution of personal development environment
+- Easy to add more test scenarios in the future
+- Other developers can run tests with same data
+
+**Cons:**
+- Requires initial infrastructure setup (3.5-4.5 hours)
+- Need to verify existing 378 passing E2E tests work with dev database
+- Requires maintaining seed script as schema evolves
+- Dev database needs periodic cleanup/reseed
+
+**Implementation Effort:** 3.5-4.5 hours total
+- Phase 1: 30 minutes
+- Phase 2: 2-3 hours
+- Phase 3: 1 hour
+
+**Maintenance:** Low - seed script needs occasional updates when schema changes
+
+**Migration Risk:** Medium - existing tests may fail initially when switched to dev database
+- Mitigation: Test incrementally, fix failures, document any test-specific data requirements
+
 ## Decision
 
-**Recommended Approach:** Option 1 (Triage and Categorize) + Option 2 (Quick Wins)
+**Recommended Approach:** Option 1 (Triage and Categorize) + Option 4 (Proper Test Database Infrastructure)
 
 **Rationale:**
-1. Skip unimplemented feature tests (13 tests) with proper documentation - this brings pass rate to 95.3%
-2. Fix test data seeding issues (3 tests) - quick win
-3. Investigate and fix obvious bugs (console errors, job count badges, accessibility) - 3-5 tests
-4. Create follow-up issues for modal scrolling and other complex UI edge cases
+1. ✅ **Phase 1 Complete**: Skip 13 unimplemented feature tests with proper documentation - brings pass rate to 95.3%
+2. 🔄 **Phase 2 (Updated)**: Implement Option 4 test database infrastructure (3.5-4.5 hours)
+   - Revive dev database with proper schema
+   - Create test data seeding system
+   - Fixes all 4 Category 4 tests properly
+   - Establishes standard testing practice going forward
+3. **Phase 3**: Investigate and fix obvious bugs (console errors, job count badges, accessibility) - 3-5 tests
+4. **Phase 4**: Create follow-up issues for modal scrolling and other complex UI edge cases
 
-This approach balances immediate test suite health improvement with pragmatic scoping of work.
+This approach balances immediate test suite health improvement with proper infrastructure investment for long-term test reliability.
 
 ## Implementation
 
@@ -325,10 +452,28 @@ This approach balances immediate test suite health improvement with pragmatic sc
   - Debug Section (6 tests): `frontend/e2e/tests/18-debug-section.spec.ts`
   - Expected impact: Pass rate 92.2% → 95.3% (+3.1% / 13 tests)
 
-**Phase 2: Test Data Fixes (1 hour)**
-- [ ] Investigate filtered tab test data seeding issue
-- [ ] Fix "Expert Systems Architect" job test data
-- [ ] Verify test data after fixes
+**Phase 2: Test Database Infrastructure (3.5-4.5 hours)** - See Option 4 above for detailed plan
+- [ ] **Phase 2a**: Restore dev database schema (30 minutes)
+  - [ ] Add `extraction_method` column to `jobhunter` database
+  - [ ] Verify schema parity with `jobhunter_personal`
+  - [ ] Check for other missing columns/tables
+  - [ ] Run schema migrations if needed
+- [ ] **Phase 2b**: Create test data seeding system (2-3 hours)
+  - [ ] Create `database/seed_test_data.sql` with 30+ filtered jobs
+  - [ ] Include "Expert Systems Architect" job with ID `94558e12...`
+  - [ ] Create `./helper-scripts/seed-test-data.sh` script
+  - [ ] Update `frontend/e2e/global-setup.ts` to call seeding
+  - [ ] Add environment detection logic
+- [ ] **Phase 2c**: Update E2E configuration (1 hour)
+  - [ ] Create `.env.test` with dev database URL
+  - [ ] Update switch scripts to set DATABASE_URL
+  - [ ] Update start scripts to respect DATABASE_URL
+  - [ ] Test seeding process end-to-end
+- [ ] **Phase 2d**: Verify existing tests (variable time)
+  - [ ] Switch to dev database
+  - [ ] Run full E2E suite (378 passing tests)
+  - [ ] Fix any new failures from database switch
+  - [ ] Document test-specific data requirements
 
 **Phase 3: Bug Fixes (2-3 hours)**
 - [ ] Fix console errors on page load
