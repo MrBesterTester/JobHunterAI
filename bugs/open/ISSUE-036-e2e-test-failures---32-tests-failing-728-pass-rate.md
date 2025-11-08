@@ -475,6 +475,137 @@ This approach balances immediate test suite health improvement with proper infra
   - [ ] Fix any new failures from database switch
   - [ ] Document test-specific data requirements
 
+**Phase 2 Discussion: Impact on Existing E2E Tests**
+
+**Current Situation:**
+- **All 378 passing E2E tests currently run against `jobhunter_personal`**
+- This happened because backend defaults to personal database (via switch-to-personal.sh at session start)
+- No database switching infrastructure exists for E2E tests
+- Tests were written to work with whatever data exists in the active database
+
+**How the Plan Provides Flexibility:**
+
+The environment variable approach allows easy switching:
+```bash
+# Backend uses DATABASE_URL to connect
+DATABASE_URL=postgresql://jobhunter_user:jobhunter_dev_password@localhost/[DATABASE_NAME]
+
+# For personal development work (current default):
+DATABASE_URL=...localhost/jobhunter_personal
+
+# For E2E testing (new test configuration):
+DATABASE_URL=...localhost/jobhunter
+```
+
+**Key Flexibility Features:**
+1. **Per-Session Configuration**: Easy switching via scripts
+   - `./switch-to-personal.sh` → Use `jobhunter_personal` for manual dev work
+   - `./switch-to-dev.sh` → Use `jobhunter` for testing
+
+2. **E2E Test Automation**: `global-setup.ts` detects which database and seeds accordingly
+   ```typescript
+   if (DATABASE_URL.includes('jobhunter_personal')) {
+     console.log('Using personal DB - no seeding');
+   } else if (DATABASE_URL.includes('jobhunter')) {
+     console.log('Using dev DB - seeding test data');
+     seedTestData();
+   }
+   ```
+
+3. **Backward Compatibility**: Can still run E2E tests against personal database if needed
+   - Just don't switch databases before running tests
+   - Tests work with whatever data exists (most are data-agnostic)
+
+**Expected Test Outcomes When Switching to Dev Database:**
+
+**Most tests will pass immediately** (estimated 90-95% / 340-360 tests):
+- Tab navigation tests (just check tabs exist and switch)
+- Modal tests (just check modals open/close)
+- UI component tests (just check elements exist)
+- API integration tests (work with whatever jobs exist)
+- Tests using Page Object Model patterns (abstract data dependencies)
+
+**Some tests may fail initially** (estimated 5-10% / 18-38 tests):
+- Tests expecting specific job counts (e.g., "should show at least 3 jobs")
+- Tests expecting specific statuses to have jobs (e.g., "Applied tab has jobs")
+- Tests requiring real OAuth credentials (Gmail/Microsoft sync tests)
+- Tests with hard-coded assumptions about data
+
+**Migration Strategy (Phase 2d):**
+
+1. **Iterative Testing Approach**:
+   ```bash
+   # Switch to dev database
+   ./switch-to-dev.sh
+
+   # Seed test data
+   ./helper-scripts/seed-test-data.sh
+
+   # Run E2E tests
+   cd frontend && npx playwright test
+
+   # Analyze failures
+   # - Categorize by root cause
+   # - Prioritize fixes
+
+   # Fix failures incrementally:
+   # - Update seed script with more data
+   # - Rewrite tests to be more flexible
+   # - Document OAuth requirements
+
+   # Repeat until stable
+   ```
+
+2. **Failure Analysis Process**:
+   - **Missing test data** → Add to `seed_test_data.sql`
+   - **Invalid assumption** → Rewrite test to be data-agnostic
+   - **Missing OAuth creds** → Document requirement or skip test in dev database
+   - **Real bug exposed** → Fix the bug, keep the test
+
+3. **Documentation**: Create `README_e2e-test-data-requirements.md`:
+   - What test data is needed for each test suite
+   - Which tests require OAuth credentials
+   - How to add new test scenarios to seed script
+   - How to switch between databases for different workflows
+
+**Risk Assessment:**
+
+| Risk | Likelihood | Impact | Mitigation |
+|------|-----------|--------|-----------|
+| Existing tests break when switched | Medium (10-20 tests) | Low (just need fixes) | Iterative fix approach, document requirements |
+| OAuth credentials needed | High (Gmail/MS tests) | Medium (tests won't work) | Share creds across DBs, or skip tests, or create test creds |
+| Dev database gets stale | Low (have seed script) | Low (just reseed) | Document reseeding, make it easy |
+| Personal data accidentally used | Low (env var checks) | High (test pollution) | Clear documentation, env var validation |
+
+**Advantages of This Approach:**
+
+✅ **Clean Separation**:
+- Personal database: Real user data, safe from test pollution
+- Dev database: Controlled test data, can be wiped/reseeded anytime
+
+✅ **Repeatable Testing**:
+- Every developer gets same test data
+- CI/CD can run tests reliably
+- No "works on my machine" issues
+
+✅ **Safe Experimentation**:
+- Can blow away dev database and reseed anytime
+- No risk of losing real user data
+- Easy to test database migrations
+
+✅ **Standard Practice**:
+- Industry norm: separate test database
+- Makes onboarding new developers easier
+- Aligns with professional development workflows
+
+**Rollback Plan:**
+
+If migration proves too problematic:
+1. Keep personal database as default
+2. Use dev database only for specific test suites (Category 4 tests)
+3. Continue development on personal database
+4. Revisit full migration later with more test refactoring
+
 **Phase 3: Bug Fixes (2-3 hours)**
 - [ ] Fix console errors on page load
 - [ ] Fix job count badge synchronization
