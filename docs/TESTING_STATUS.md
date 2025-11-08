@@ -74,15 +74,17 @@ last_updated: 2025-11-07 17:21:39 PST
 
 ### Quick Summary
 
-| Component | Passed | Failed | Skipped/Other | Pass Rate | Status |
-|-----------|--------|--------|---------------|-----------|--------|
-| **Preflight Checks** | 5/5 | 0 | 0 | 100% | ✅ PASSED |
-| **Backend Build** | 1 | 0 | 0 (0 warnings) | 100% | ✅ FIXED |
-| **Backend Tests** | N/A | N/A | N/A | N/A | ✅ FIXED (compiles) |
-| **Frontend Build** | 1 | 0 | 0 | 100% | ✅ PASSED |
-| **Frontend Unit (Jest)** | 499 | 17 | 1 | 96.7% | ⚠️ PARTIAL |
-| **E2E (Playwright)** | 387 | 92 | 81+34 | 80.8% | ⚠️ PARTIAL |
-| **TOTAL (excl. build)** | **886** | **109** | **116** | **89.0%** | ⚠️ PARTIAL |
+| Component | Passed | Failed | Skipped/Other | Pass Rate | Runtime (Est) | Status |
+|-----------|--------|--------|---------------|-----------|---------------|--------|
+| **Preflight Checks** | 5/5 | 0 | 0 | 100% | ~2.5 min | ✅ PASSED |
+| **Backend Build** | 1 | 0 | 0 (0 warnings) | 100% | ~20 sec | ✅ FIXED |
+| **Backend Tests** | N/A | N/A | N/A | N/A | ~60 sec | ✅ FIXED (compiles) |
+| **Frontend Build** | 1 | 0 | 0 | 100% | ~10 sec | ✅ PASSED |
+| **Frontend Unit (Jest)** | 499 | 17 | 1 | 96.7% | ~25 sec | ⚠️ PARTIAL |
+| **E2E (Playwright)** | 387 | 92 | 81+34 | 80.8% | ~23 min | ⚠️ PARTIAL |
+| **TOTAL** | **886** | **109** | **116** | **89.0%** | **~27 min** | ⚠️ PARTIAL |
+
+**Note**: Runtimes are estimates with 15% margin. Backend test runtime needs actual measurement (currently estimated).
 
 **Overall Assessment**: ⚠️ **Partial Success** - Core functionality working but build issues and test failures require attention
 

@@ -3523,10 +3523,6 @@ async fn seed_microsoft_test_emails(pool: web::Data<PgPool>) -> Result<HttpRespo
     let folder_id = get_or_create_jobops_folder(&token).await
         .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to access JobOps folder: {}", e)))?;
 
-    // Get user's email address
-    let user_email = get_microsoft_user_email(&token).await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to get user email: {}", e)))?;
-
     // Create 3 test job opportunity emails
     let test_emails = vec![
         (
@@ -3614,13 +3610,6 @@ AI Innovations Talent Team"#
                     "name": company
                 }
             },
-            "toRecipients": [
-                {
-                    "emailAddress": {
-                        "address": user_email
-                    }
-                }
-            ],
             "receivedDateTime": chrono::Utc::now().to_rfc3339(),
             "isRead": false
         });
