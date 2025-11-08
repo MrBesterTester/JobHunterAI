@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-07 19:14:34 PST
-last_updated: 2025-11-07 19:14:34 PST
+last_updated: 2025-11-07 19:34:37 PST
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -25,7 +25,9 @@ last_updated: 2025-11-07 19:14:34 PST
     - [Backend Build (✅ FIXED)](#backend-build--fixed)
     - [Backend Tests (✅ FIXED - Compiles Successfully)](#backend-tests--fixed---compiles-successfully)
     - [Frontend Build (✅ PASSED)](#frontend-build--passed)
-    - [Frontend Unit Tests (⚠️ PARTIAL)](#frontend-unit-tests--partial)
+    - [Frontend Unit Tests (⚠️ PARTIAL - IMPROVED)](#frontend-unit-tests--partial---improved)
+      - [1. IgnoredTab Component Tests (4 failures)](#1-ignoredtab-component-tests-4-failures)
+      - [2. Job Rejection Workflow Tests (7 failures)](#2-job-rejection-workflow-tests-7-failures)
     - [E2E Tests (⚠️ PARTIAL)](#e2e-tests--partial)
     - [Comparison to Previous Run](#comparison-to-previous-run)
     - [Key Observations](#key-observations)
@@ -56,7 +58,7 @@ last_updated: 2025-11-07 19:14:34 PST
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-**Last Updated**: 2025-11-07 19:14:34 PST (Separate test runner scripts created and validated)
+**Last Updated**: 2025-11-07 19:34:37 PST (Fixed 6 frontend tests; 11 failures remaining)
 
 **Purpose**: Current testing status and open issues requiring attention. This document tracks the most recent comprehensive test suite results and serves as a sounding board for planning and tracking future comprehensive testing rounds.
 
@@ -87,13 +89,18 @@ last_updated: 2025-11-07 19:14:34 PST
 | **Backend Build** | 1 | 0 | 0 (0 warnings) | 100% | 4.5 sec | ✅ PASSED |
 | **Backend Tests** | 162 | 0 | 8 | 100% | 30 sec | ✅ PASSED |
 | **Frontend Build** | 1 | 0 | 0 | 100% | 4 sec | ✅ PASSED |
-| **Frontend Unit (Jest)** | 499 | 17 | 1 | 96.7% | 22 sec | ⚠️ 17 FAILURES |
+| **Frontend Unit (Jest)** | 505 | 11 | 1 | 97.9% | 23 sec | ⚠️ 11 FAILURES |
 | **E2E (Playwright)** | N/A | N/A | N/A | N/A | Not run | ⏸️ PENDING |
-| **TOTAL (Unit Tests)** | **661** | **17** | **9** | **97.5%** | **52 sec** | ⚠️ PARTIAL |
+| **TOTAL (Unit Tests)** | **667** | **11** | **9** | **98.4%** | **53 sec** | ⚠️ PARTIAL |
 
 **Note**: Actual measured runtimes from separate test runner scripts. E2E tests not included in this run.
 
-**Overall Assessment**: ⚠️ **Partial Success** - Backend fully passing, frontend has 17 test failures requiring attention
+**Progress Since Last Update**:
+- ✅ Fixed 6 frontend tests (tab button selector issue)
+- 🔄 11 frontend tests still failing (unrelated to tab buttons)
+- Test pass rate improved: 96.7% → 97.9%
+
+**Overall Assessment**: ⚠️ **Partial Success** - Backend fully passing, frontend improved but 11 failures remain
 
 ### New Testing Infrastructure
 
@@ -182,24 +189,55 @@ Three new scripts enable targeted testing without running the full comprehensive
 **Build Tool**: RSBuild v1.5.17
 **Output Size**: 346.0 KB total (84.0 KB gzipped)
 
-### Frontend Unit Tests (⚠️ PARTIAL)
+### Frontend Unit Tests (⚠️ PARTIAL - IMPROVED)
 
-**Duration**: 18.3 seconds
+**Duration**: 23 seconds (latest run)
 **Test Framework**: Jest
 
 | Status | Count | Percentage |
 |--------|-------|------------|
-| ✅ Passed | 499 | 96.5% |
-| ❌ Failed | 17 | 3.3% |
+| ✅ Passed | 505 | 97.7% |
+| ❌ Failed | 11 | 2.1% |
 | ⏭️ Skipped | 1 | 0.2% |
 | **Total** | **517** | **100%** |
 
 **Test Suites**: 2 failed, 10 passed (12 total)
 
-**Failure Pattern**: All 17 failures related to tab button selectors
-- **Issue**: Unable to find "New" tab button using `screen.getAllByText('New')`
-- **Affected Tests**: Job approval/rejection workflow tests
-- **Example Error**: `expect(newTabButton).toBeTruthy()` - Received: undefined
+**Progress**: ✅ Fixed 6 tests (2025-11-07 19:34:37 PST)
+- **Root Cause**: Tests searched for text "New" but actual button text is "New Jobs"
+- **Fix Applied**: Changed selectors from `screen.getAllByText('New').find()` to `screen.getByTestId('new-tab-button')`
+- **Commit**: `bfbbf44`
+
+**Remaining 11 Failures** (2 categories):
+
+#### 1. IgnoredTab Component Tests (4 failures)
+**Test File**: `src/IgnoredTab.test.tsx`
+**Issue**: Unable to find email message IDs in rendered output
+
+Failing tests:
+- ❌ `should expand email to show details when clicked`
+- ❌ `should collapse email when clicked again`
+- ❌ `should display all email details when expanded`
+- ❌ `should display HTML body if text body not available`
+
+**Error**: `Unable to find an element with the text: msg-12345`
+**Root Cause**: TBD - needs investigation
+
+#### 2. Job Rejection Workflow Tests (7 failures)
+**Test File**: `src/App.test.tsx`
+**Test Suite**: Job Rejection Workflow (Phase 3B)
+**Issue**: Status update callback not being called correctly
+
+Failing tests:
+- ❌ `rejects job when Reject button clicked on job card`
+- ❌ `moves job from New tab to Filtered tab after rejection`
+- ❌ `calls API with correct parameters when rejecting`
+- ❌ `handles API errors gracefully when rejecting`
+- ❌ `refreshes job list after successful rejection`
+- ❌ `rejects job from JobDetails modal`
+
+**Error Pattern**: `expect(statusUpdateCalled).toBe(true)` - Received: false
+**Root Cause**: TBD - rejection callback not triggering properly in tests
 
 ### E2E Tests (⚠️ PARTIAL)
 
@@ -328,34 +366,53 @@ Three new scripts enable targeted testing without running the full comprehensive
 
 ### Priority 2: Test Failures (HIGH)
 
-**Frontend Unit Tests** (17 failures):
-3. Fix tab button selector issues in `frontend/src/App.test.tsx`:
-   - All failures: Cannot find "New" tab button
-   - Likely caused by selector changes or React state batching
-   - Investigate: `screen.getAllByText('New').find(el => el.closest('button'))`
+**Frontend Unit Tests** (11 failures remaining):
+
+3. ~~Fix tab button selector issues in `frontend/src/App.test.tsx`~~ - **PARTIALLY COMPLETED** (2025-11-07 19:34:37 PST)
+   - ✅ Fixed 6 tests by using `getByTestId('new-tab-button')` instead of text search
+   - Root cause: Tests searched for "New" but button displays "New Jobs"
+   - Commit: `bfbbf44`
+
+4. **Fix IgnoredTab Component Tests** (4 failures) - **PENDING**
+   - File: `src/IgnoredTab.test.tsx`
+   - Issue: Cannot find email message IDs (msg-12345) in rendered output
+   - Error: `Unable to find an element with the text: msg-12345`
+   - Action: Investigate IgnoredTab rendering and test mocks
+   - Estimated effort: 1-2 hours
+
+5. **Fix Job Rejection Workflow Tests** (7 failures) - **PENDING**
+   - File: `src/App.test.tsx` (Phase 3B tests)
+   - Issue: Status update callback not being triggered
+   - Error: `expect(statusUpdateCalled).toBe(true)` - Received: false
+   - Action: Debug rejection callback propagation in test environment
+   - Estimated effort: 2-3 hours
 
 **E2E Test Categories** (92 failures):
-4. **Job Scoring System** (4 tests) - Mark as skipped until Phase 3.2 implemented
-5. **Extraction Method Badges** (6 tests) - Verify UI implementation or mark as skipped
-6. **Responsive Design Mobile** (4 tests) - Increase timeouts or fix tab rendering
-7. **Performance Tests** (5 tests) - Fix test infrastructure (memory leak, FPS monitoring)
-8. **Content Generation** (3 tests) - Implement token/cost tracking or skip
-9. **Email Integration** (8 tests) - Investigate sync reliability issues
+6. **Job Scoring System** (4 tests) - Mark as skipped until Phase 3.2 implemented
+7. **Extraction Method Badges** (6 tests) - Verify UI implementation or mark as skipped
+8. **Responsive Design Mobile** (4 tests) - Increase timeouts or fix tab rendering
+9. **Performance Tests** (5 tests) - Fix test infrastructure (memory leak, FPS monitoring)
+10. **Content Generation** (3 tests) - Implement token/cost tracking or skip
+11. **Email Integration** (8 tests) - Investigate sync reliability issues
 
 ### Priority 3: Documentation & Cleanup (MEDIUM)
 
-10. Update test exclusion counts in `EXCLUDED_TESTS.md` if needed
-11. Archive 2025-11-03 results to `TESTING_HISTORY.md`
-12. Consider splitting unimplemented feature tests into separate test files
+12. Update test exclusion counts in `EXCLUDED_TESTS.md` if needed
+13. Archive completed test infrastructure work to `TESTING_HISTORY.md`
+14. Consider splitting unimplemented feature tests into separate test files
 
 ### Ready for Next Run When:
 
 ✅ Zero backend build warnings - **COMPLETED**
-✅ All backend tests compile and run - **COMPILES (runtime tests pending)**
-⚠️ Frontend unit test failures investigated/fixed - **PENDING (Priority 2)**
+✅ All backend tests compile and run - **COMPILES (162 passed, 8 ignored)**
+✅ Separate test runner scripts created - **COMPLETED** (backend, frontend, E2E)
+✅ Tab button selector issue fixed - **COMPLETED** (6/17 tests fixed)
+⚠️ Remaining frontend unit test failures fixed - **IN PROGRESS (11 remaining)**
+  - 4 IgnoredTab tests - PENDING
+  - 7 Job Rejection Workflow tests - PENDING
 ⚠️ E2E tests: >90% pass rate (currently 80.5%) - **PENDING (Priority 2)**
 
-**Estimated Effort**: 1-3 hours to address Priority 2 items (Priority 1 complete)
+**Estimated Effort**: 3-5 hours to address remaining Priority 2 items
 
 ---
 
