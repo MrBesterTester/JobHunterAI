@@ -6,7 +6,7 @@ priority: medium
 severity: medium
 component: frontend
 created: 2025-11-08
-updated: 2025-11-10 14:17:00 PST
+updated: 2025-11-10 15:30:00 PST
 affects: []
 related: [ISSUE-035, ISSUE-037, ISSUE-038]
 ---
@@ -74,6 +74,15 @@ After completing ISSUE-035 fixes which brought the E2E pass rate from 80.8% to 9
 
 ## Next Steps
 
+**ISSUE-038 Resolution (2025-11-10):**
+- ✅ **Fixed**: Description quality tests (2 tests) - `e2e/tests/23-description-quality.spec.ts:79,136`
+  - Root cause: Same generic DOM selector issue as Phase 4 refresh buttons test
+  - Tests were using `.filter({ hasText: 'Condensed Description' })` matching wrong element
+  - Fix: Applied same specific selector pattern to 3 locations (lines 93, 154, 166)
+  - Both tests now passing: "should show actual job content" (4.5s), "refresh should regenerate" (9.0s)
+  - Related commits: d8fba16 (fix), 696f58e (move to fixed)
+- **Pass rate improvement**: 93.7% → 94.2% (+0.5% / 2 tests fixed)
+
 **Phase 4 Completed (2025-11-10):**
 - ✅ **Fixed**: Gmail Integration - approve workflow (1 test) - `e2e/tests/16-gmail-sync-integration.spec.ts:210`
   - Root cause: Test was looking for non-existent "inbox" tab and using wrong navigation pattern
@@ -89,19 +98,19 @@ After completing ISSUE-035 fixes which brought the E2E pass rate from 80.8% to 9
 - ✅ **Fixed**: Console errors on page load (1 test) - Applied missing job_scores migration
 - ✅ **Fixed**: Job count badge synchronization (1 test) - Increased test timeout to 60s
 - ✅ **Fixed**: Accessibility labels (1 test) - Already passing, no changes needed
-- ⏸️ **Deferred**: Description quality tests (2 tests) - Documented in ISSUE-038 for investigation
-- **Pass rate improvement**: 92.2% → 93.2% (+1.0% / 3 tests fixed)
+- ✅ **Fixed** (via ISSUE-038): Description quality tests (2 tests) - Generic selector issue resolved
+- **Pass rate improvement**: 92.2% → 93.2% (+1.0% / 3 tests fixed initially, +2 tests via ISSUE-038)
 
 **Phase 5: Category 2 UI/Display Issues** (estimated 3-4 hours)
 
-After Phase 4, address remaining Category 2 edge cases (9 tests):
+Address remaining Category 2 edge cases (9 tests):
 1. Empty state handling (1 test)
 2. Dashboard statistics display (1 test)
 3. Non-job emails / Ignored tab counter (1 test)
 4. Job card summary display (1 test)
 5. Modal scrolling stability (5 tests)
 
-**Expected Impact**: +2.2% pass rate improvement (93.7% → 95.9% / 9 tests fixed)
+**Expected Impact**: +2.2% pass rate improvement (94.2% → 96.4% / 9 tests fixed)
 
 See [Implementation](#implementation) section below for detailed phase history and task breakdown.
 
@@ -713,6 +722,15 @@ npx playwright test e2e/tests/99b-filtered-tab-test.spec.ts:13 --trace on
     - `database/migrations/003_add_job_scoring_tables.sql` - Applied to jobhunter_dev
     - `frontend/e2e/tests/02-tab-navigation.spec.ts:128` - Added test.setTimeout(60000)
     - `database/seed_test_data.sql` - Updated with long job descriptions for testing
+- 2025-11-10 15:30:00 PST: ISSUE-038 resolved - Description quality tests fixed
+  * **Root cause identified**: Same generic DOM selector issue as Phase 4 refresh buttons test
+  * User's hunch about similarity between issues was correct - saved hours of investigation
+  * **Fix applied**: Updated 3 selector locations to use specific `<strong>Condensed Description</strong>` → xpath `../..` pattern
+  * **Tests fixed**: `e2e/tests/23-description-quality.spec.ts:79` (should show actual job content - 4.5s)
+  * **Tests fixed**: `e2e/tests/23-description-quality.spec.ts:136` (refresh should regenerate - 9.0s)
+  * Pass rate improvement: 93.7% → 94.2% (+0.5% / 2 tests fixed)
+  * Commits: d8fba16 (fix), 696f58e (move to fixed)
+  * ISSUE-038 moved from bugs/open → bugs/fixed
 
 ## Notes
 
