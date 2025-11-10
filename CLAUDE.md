@@ -93,13 +93,29 @@ At the start of every Claude Code session, a SessionStart hook automatically:
 
 **Hook configuration**: `.claude/session-start-hook.sh` (runs automatically)
 
+**Current database**: `jobhunter_personal` (used for development AND testing)
+
+**Database Usage:**
+- `jobhunter_personal` - Used for:
+  - Manual development work
+  - E2E test execution (with test data seeding)
+  - Backend API testing
+  - OAuth credentials stored here (needed for email ingestion tests)
+- `jobhunter_dev` - Legacy database, not actively used
+  - Exists but no longer part of standard workflow
+  - Decision: Single database (personal) is simpler and avoids OAuth credential sync issues
+
+**Test Data Seeding:**
+- E2E tests seed controlled test data into `jobhunter_personal` before running
+- Seeding uses `ON CONFLICT DO NOTHING` - non-destructive, safe to run repeatedly
+- Test jobs mix with personal data but are clearly identifiable by content
+- See: `database/seed_test_data.sql` and `./helper-scripts/seed-test-data.sh`
+
 **Manual database switching** (if needed):
 ```bash
 ./switch-to-personal.sh    # Switch to personal database (default)
-./switch-to-dev.sh          # Switch to shared dev database
+./switch-to-dev.sh          # Switch to dev database (not recommended)
 ```
-
-**Current database**: `jobhunter_personal` (automatically set at session start)
 
 ### Notifications
 

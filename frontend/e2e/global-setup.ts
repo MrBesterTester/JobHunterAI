@@ -20,7 +20,7 @@ async function checkBackendHealth(maxAttempts = 30): Promise<boolean> {
 }
 
 async function seedTestData(): Promise<void> {
-  console.log('🌱 Seeding test data into jobhunter_dev database...');
+  console.log('🌱 Seeding test data into current database...');
 
   try {
     // Run the seed script with --truncate to ensure clean state
@@ -67,23 +67,15 @@ async function calculateAllJobScores(): Promise<void> {
 async function globalSetup() {
   console.log('🧪 Setting up test environment...');
 
-  // Switch to dev database for testing
-  console.log('🔄 Switching to dev database (jobhunter_dev)...');
-  try {
-    const projectRoot = process.cwd().replace('/frontend', '');
-    await execAsync('./switch-to-dev.sh', { cwd: projectRoot });
-    console.log('✅ Switched to jobhunter_dev database');
-  } catch (error: any) {
-    console.error('❌ Failed to switch database:', error.message);
-    console.warn('⚠️  Continuing with current database (tests may use wrong data)');
-  }
+  // Note: E2E tests use jobhunter_personal database (set by SessionStart hook)
+  // Decision: Single database is simpler and avoids OAuth credential sync issues
+  // Test data will be seeded into personal database alongside real data
 
   // Check if backend is already running
   try {
     const response = await fetch('http://localhost:8080/api/jobs');
     if (response.ok) {
       console.log('✅ Backend already running on port 8080');
-      console.warn('⚠️  Note: Backend may be using wrong database. Restart recommended.');
 
       // Mark that we did NOT start the backend (so teardown won't kill it)
       process.env.E2E_STARTED_SERVICES = 'false';
