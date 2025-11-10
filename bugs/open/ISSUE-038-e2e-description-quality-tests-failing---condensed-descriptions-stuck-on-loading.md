@@ -1,14 +1,15 @@
 ---
 id: ISSUE-038
 title: E2E description quality tests failing - condensed descriptions stuck on 'Loading...'
-status: open
+status: fixed
 priority: medium
 severity: medium
 component: frontend
 created: 2025-11-10
 updated: 2025-11-10
+fixed: 2025-11-10
 affects: []
-related: [ISSUE-036]
+related: [ISSUE-036, ISSUE-022]
 ---
 
 # ISSUE-038: E2E description quality tests failing - condensed descriptions stuck on 'Loading...'
@@ -28,6 +29,7 @@ related: [ISSUE-036]
   - [Option 2: Pre-generate Condensed Descriptions in Seed Data](#option-2-pre-generate-condensed-descriptions-in-seed-data)
   - [Option 3: Skip These Tests Temporarily](#option-3-skip-these-tests-temporarily)
 - [Decision](#decision)
+- [Resolution](#resolution)
 - [Implementation](#implementation)
 - [Testing](#testing)
 - [Status History](#status-history)
@@ -76,17 +78,24 @@ Two E2E tests in `23-description-quality.spec.ts` fail because condensed descrip
 
 ## Root Cause
 
-**Under investigation**. Backend API works correctly when tested manually:
-- `curl http://localhost:8080/api/jobs/{id}/condense-description` returns valid 111-word descriptions in ~3 seconds
-- Backend is connected to correct database (`jobhunter_dev`)
-- Seed data has proper long descriptions (1890 chars, 283 words)
-- Frontend code looks correct (calls API via useEffect when cards render)
+**IDENTIFIED**: Test was using a generic DOM selector that matched the wrong element.
 
-**Possible causes:**
-1. Concurrent API calls (10 jobs × 3 seconds = 30 seconds) may be hitting rate limits or timing out
-2. E2E test environment may have network/timing issues preventing API calls
-3. Frontend may not be making API calls in test environment due to race conditions
-4. Playwright may be blocking/intercepting API requests
+The tests were stuck on "Loading description..." because the selector was finding the wrong DOM element (the job card header container instead of the description content div):
+
+**Problematic selector (lines 93, 154, 165):**
+```typescript
+const descriptionContainer = card.locator('div')
+  .filter({ hasText: 'Condensed Description' })
+  .locator('div').last();
+```
+
+**Why this failed:**
+- `.filter({ hasText: 'Condensed Description' })` matches any ancestor div containing that text
+- This would match the outer job card container, not the specific description section
+- The subsequent `.locator('div').last()` would then select the last div inside the card, which was the job header, not the description
+
+**Root cause connection:**
+This is the same selector issue discovered and fixed in ISSUE-036 Phase 4 for the refresh buttons test (22-refresh-buttons.spec.ts:59). The pattern occurred in three locations in the description quality tests.
 
 ## Evidence
 
@@ -161,9 +170,48 @@ Two E2E tests in `23-description-quality.spec.ts` fail because condensed descrip
 - Can investigate these 2 failing tests separately without blocking progress
 - ISSUE-038 documents the problem for future investigation
 
+## Resolution
+
+**Fixed in ISSUE-036 Phase 4 follow-up work** (2025-11-10)
+
+After fixing the refresh buttons test in Phase 4 using a more specific selector pattern, the same issue was identified in the description quality tests. Applied the same fix to all three selector occurrences.
+
+**Fix applied:**
+```typescript
+// OLD (problematic - matches wrong element):
+const descriptionContainer = card.locator('div')
+  .filter({ hasText: 'Condensed Description' })
+  .locator('div').last();
+
+// NEW (specific - matches correct element):
+const descriptionSection = card.locator('strong:has-text("Condensed Description")')
+  .locator('xpath=../..');  // Navigate up to section container
+const descriptionContainer = descriptionSection.locator('> div').last();
+```
+
+**Locations fixed:**
+- Line 93-95: First test "should show actual job content" (temp selector in loop)
+- Line 154-155: Second test "refresh should regenerate" (temp selector in loop)
+- Line 166-167: Second test "refresh should regenerate" (final selector assignment)
+
+**Test results:**
+- ✅ "should show actual job content" - PASSED (4.5s)
+- ✅ "refresh should regenerate description" - PASSED (9.0s)
+
+**Verification:**
+```bash
+cd frontend
+npx playwright test e2e/tests/23-description-quality.spec.ts \
+  --grep "should show actual job content|refresh should regenerate" \
+  --project=chromium
+# Result: 2 passed (10.5s)
+```
+
 ## Implementation
 
-Tests will be marked with `.skip()` and reference this ISSUE number.
+~~Tests will be marked with `.skip()` and reference this ISSUE number.~~
+
+**Actual implementation**: Fixed test selectors to properly target condensed description content div.
 
 ## Testing
 
@@ -190,6 +238,7 @@ psql -U jobhunter_user -d jobhunter_dev -c "SELECT COUNT(*) FROM jobs WHERE stat
 
 - 2025-11-10: ISSUE created and documented during ISSUE-036 Phase 3 work
 - 2025-11-10: Investigated for ~2 hours, backend confirmed working, tests still fail in E2E environment
+- 2025-11-10: **FIXED** - Root cause identified as generic DOM selector matching wrong element. Applied same fix from ISSUE-036 Phase 4 refresh buttons test. All 2 tests now passing (10.5s runtime).
 
 ## Notes
 

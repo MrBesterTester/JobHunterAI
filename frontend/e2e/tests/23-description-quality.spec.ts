@@ -90,7 +90,9 @@ test.describe('Condensed Description Quality', () => {
 
     for (let i = 0; i < count; i++) {
       const card = jobCards.nth(i);
-      const descriptionContainer = card.locator('div').filter({ hasText: 'Condensed Description' }).locator('div').last();
+      // Find the condensed description section by looking for the strong tag with exact text
+      const descriptionSection = card.locator('strong:has-text("Condensed Description")').locator('xpath=../..');
+      const descriptionContainer = descriptionSection.locator('> div').last();
 
       await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
 
@@ -149,7 +151,8 @@ test.describe('Condensed Description Quality', () => {
 
     for (let i = 0; i < count; i++) {
       const card = jobCards.nth(i);
-      const tempDescContainer = card.locator('div').filter({ hasText: 'Condensed Description' }).locator('div').last();
+      const tempDescSection = card.locator('strong:has-text("Condensed Description")').locator('xpath=../..');
+      const tempDescContainer = tempDescSection.locator('> div').last();
 
       await expect(tempDescContainer).not.toHaveText('Loading description...', { timeout: 15000 });
 
@@ -160,7 +163,8 @@ test.describe('Condensed Description Quality', () => {
       if (wordCount > 20 && descText !== 'No job description to be extracted.') {
         jobId = await card.getAttribute('data-job-id');
         jobCard = page.locator(`[data-testid="job-card"][data-job-id="${jobId}"]`);
-        descriptionContainer = jobCard.locator('div').filter({ hasText: 'Condensed Description' }).locator('div').last();
+        const finalDescSection = jobCard.locator('strong:has-text("Condensed Description")').locator('xpath=../..');
+        descriptionContainer = finalDescSection.locator('> div').last();
         break;
       }
     }
