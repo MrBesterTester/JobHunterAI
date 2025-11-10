@@ -57,16 +57,20 @@ test.describe('Refresh Buttons', () => {
     await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
-    const descriptionSection = jobCard.locator('div:has-text("Condensed Description")').first();
+
+    // Find the condensed description section by looking for the strong tag with exact text
+    const descriptionSection = jobCard.locator('strong:has-text("Condensed Description")').locator('xpath=../..'); // Go up two levels to the section div
+
+    // The description text is in the last div child of the section
+    const descriptionContainer = descriptionSection.locator('> div').last();
 
     // Wait for initial description to load
-    const descriptionContainer = descriptionSection.locator('div').nth(1); // Second div is the content div
     await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
 
     // Get initial description text
     const initialDescription = await descriptionContainer.textContent();
 
-    // Find and click the refresh button
+    // Find and click the refresh button (in the header div)
     const refreshButton = descriptionSection.locator('button').first();
     await refreshButton.click();
 

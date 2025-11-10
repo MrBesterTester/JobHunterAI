@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
+import { switchToTab } from '../helpers/tab-navigation';
 
 /**
  * Test Suite 16: Gmail Sync Integration Tests
@@ -207,17 +208,15 @@ test.describe('Gmail Sync Integration', () => {
   });
 
   test('should allow approving jobs synced from Gmail', async () => {
-    // Navigate to Inbox tab
-    const inboxTab = page.getByRole('button', { name: /^inbox$/i });
-    await inboxTab.click();
-    await page.waitForTimeout(1000);
+    // Navigate to New Jobs tab (jobs awaiting approval)
+    await switchToTab(page, 'new');
 
     // Check if there are any jobs
     const jobCards = page.getByTestId('job-card');
     const jobCount = await jobCards.count();
 
     if (jobCount === 0) {
-      console.log('No jobs in inbox - skipping approval test');
+      console.log('No jobs in New Jobs tab - skipping approval test');
       test.skip();
       return;
     }
@@ -239,7 +238,19 @@ test.describe('Gmail Sync Integration', () => {
 
     // Click approve
     await approveButton.click();
-    await page.waitForTimeout(1000);
+
+    // Wait for approved count to increase (with timeout to avoid hanging)
+    await page.waitForFunction(
+      (expectedCount) => {
+        const statElement = document.querySelector('[data-testid="stat-approved"]');
+        if (!statElement) return false;
+        const match = statElement.textContent?.match(/\d+/);
+        const currentCount = match ? parseInt(match[0]) : 0;
+        return currentCount >= expectedCount;
+      },
+      initialApprovedCount + 1,
+      { timeout: 5000 }
+    );
 
     // Verify approved count increased
     const newApprovedText = await page.getByTestId('stat-approved').textContent();

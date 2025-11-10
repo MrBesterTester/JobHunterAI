@@ -6,7 +6,7 @@ priority: medium
 severity: medium
 component: frontend
 created: 2025-11-08
-updated: 2025-11-10 13:39:54 PST
+updated: 2025-11-10 14:17:00 PST
 affects: []
 related: [ISSUE-035, ISSUE-037, ISSUE-038]
 ---
@@ -74,9 +74,16 @@ After completing ISSUE-035 fixes which brought the E2E pass rate from 80.8% to 9
 
 ## Next Steps
 
-**Phase 4: Category 3 Feature-Specific Issues** (estimated 2-3 hours)
-
-With Phase 1 (skip unimplemented features), Phase 2 (test database infrastructure), and Phase 3 (bug fixes) complete, Phase 4 will address remaining Category 3 feature-specific issues:
+**Phase 4 Completed (2025-11-10):**
+- ✅ **Fixed**: Gmail Integration - approve workflow (1 test) - `e2e/tests/16-gmail-sync-integration.spec.ts:210`
+  - Root cause: Test was looking for non-existent "inbox" tab and using wrong navigation pattern
+  - Fix 1: Changed from `inbox` to `new` tab (jobs awaiting approval)
+  - Fix 2: Used `switchToTab(page, 'new')` helper instead of manual button clicking
+  - Fix 3: Added `waitForFunction()` to wait for approved count to actually increase (race condition fix)
+- ✅ **Fixed**: Refresh Buttons - per-job description refresh (1 test) - `e2e/tests/22-refresh-buttons.spec.ts:55`
+  - Root cause: Generic DOM selector was matching wrong element (job card header instead of description content)
+  - Fix: Used specific selector via `<strong>Condensed Description</strong>` → xpath `../..` → `.last()` child
+- **Pass rate improvement**: 93.2% → 93.7% (+0.5% / 2 tests fixed)
 
 **Phase 3 Completed (2025-11-10):**
 - ✅ **Fixed**: Console errors on page load (1 test) - Applied missing job_scores migration
@@ -84,14 +91,6 @@ With Phase 1 (skip unimplemented features), Phase 2 (test database infrastructur
 - ✅ **Fixed**: Accessibility labels (1 test) - Already passing, no changes needed
 - ⏸️ **Deferred**: Description quality tests (2 tests) - Documented in ISSUE-038 for investigation
 - **Pass rate improvement**: 92.2% → 93.2% (+1.0% / 3 tests fixed)
-
-**Phase 4 Tasks** (2 remaining Category 3 tests):
-1. **Gmail Integration** (1 test) - `e2e/tests/16-gmail-sync-integration.spec.ts:209:7`
-   - Fix: Approve workflow for Gmail-synced jobs
-2. **Refresh Buttons** (1 test) - `e2e/tests/22-refresh-buttons.spec.ts:55:7`
-   - Fix: Per-job description refresh functionality
-
-**Expected Impact**: +0.5% pass rate improvement (93.2% → 93.7% / 2 tests fixed)
 
 **Phase 5: Category 2 UI/Display Issues** (estimated 3-4 hours)
 
