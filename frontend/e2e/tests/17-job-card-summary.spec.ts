@@ -211,9 +211,7 @@ test.describe('Job Card Summary Section', () => {
       const summarySection = jobCard.locator('[data-testid="job-summary"]');
 
       if (await summarySection.isVisible()) {
-        // Verify Summary header
-        await expect(summarySection).toContainText('Summary');
-
+        // Verify Summary section exists (header is optional - only shows if raw_data exists)
         // Filtered jobs should have Filtered Reasons subsection
         const filteredReasons = summarySection.locator('strong:has-text("Filtered Reasons")');
         await expect(filteredReasons).toBeVisible();

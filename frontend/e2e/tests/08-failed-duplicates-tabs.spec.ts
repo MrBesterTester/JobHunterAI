@@ -149,8 +149,8 @@ test.describe('Failed and Duplicates Tabs', () => {
 
     console.log(`Non-Job Emails counter shows: ${counterValue}`);
 
-    // Navigate to Non-Job Emails tab
-    const ignoredTab = page.locator('button', { hasText: 'Non-Job Emails' });
+    // Navigate to Ignored tab
+    const ignoredTab = page.locator('button', { hasText: 'Ignored' });
     await ignoredTab.click();
 
     // Wait for the tab content to load
