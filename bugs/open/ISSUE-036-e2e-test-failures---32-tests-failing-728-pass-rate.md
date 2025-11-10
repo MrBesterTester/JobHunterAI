@@ -74,9 +74,9 @@ After completing ISSUE-035 fixes which brought the E2E pass rate from 80.8% to 9
 
 ## Next Steps
 
-**Phase 4: Follow-up Issues** (estimated 30 minutes)
+**Phase 4: Category 3 Feature-Specific Issues** (estimated 2-3 hours)
 
-With Phase 1 (skip unimplemented features), Phase 2 (test database infrastructure), and Phase 3 (bug fixes) complete, we're now ready to create follow-up issues for remaining edge cases:
+With Phase 1 (skip unimplemented features), Phase 2 (test database infrastructure), and Phase 3 (bug fixes) complete, Phase 4 will address remaining Category 3 feature-specific issues:
 
 **Phase 3 Completed (2025-11-10):**
 - ✅ **Fixed**: Console errors on page load (1 test) - Applied missing job_scores migration
@@ -85,15 +85,24 @@ With Phase 1 (skip unimplemented features), Phase 2 (test database infrastructur
 - ⏸️ **Deferred**: Description quality tests (2 tests) - Documented in ISSUE-038 for investigation
 - **Pass rate improvement**: 92.2% → 93.2% (+1.0% / 3 tests fixed)
 
-**Phase 4 Tasks:**
-1. **Create follow-up issues** for remaining Category 2 edge cases:
-   - Modal scrolling stability (5 tests)
-   - Dashboard statistics display (1 test)
-   - Empty state handling (1 test)
-   - Job card summary display (1 test)
-   - Non-job emails / Ignored tab (1 test)
+**Phase 4 Tasks** (2 remaining Category 3 tests):
+1. **Gmail Integration** (1 test) - `e2e/tests/16-gmail-sync-integration.spec.ts:209:7`
+   - Fix: Approve workflow for Gmail-synced jobs
+2. **Refresh Buttons** (1 test) - `e2e/tests/22-refresh-buttons.spec.ts:55:7`
+   - Fix: Per-job description refresh functionality
 
-**Expected Impact**: No immediate pass rate change (issues created for future work)
+**Expected Impact**: +0.5% pass rate improvement (93.2% → 93.7% / 2 tests fixed)
+
+**Phase 5: Category 2 UI/Display Issues** (estimated 3-4 hours)
+
+After Phase 4, address remaining Category 2 edge cases (9 tests):
+1. Empty state handling (1 test)
+2. Dashboard statistics display (1 test)
+3. Non-job emails / Ignored tab counter (1 test)
+4. Job card summary display (1 test)
+5. Modal scrolling stability (5 tests)
+
+**Expected Impact**: +2.2% pass rate improvement (93.7% → 95.9% / 9 tests fixed)
 
 See [Implementation](#implementation) section below for detailed phase history and task breakdown.
 
