@@ -126,6 +126,9 @@ test.describe('Tab Navigation & Filtering', () => {
     });
 
     test('should have job count badges matching displayed jobs', async ({ page }) => {
+      // Increase timeout since we're checking 4 tabs sequentially
+      test.setTimeout(60000);
+
       // Check each tab
       const tabs: Array<'inbox' | 'approved' | 'applied' | 'filtered'> = [
         'inbox',

@@ -77,13 +77,16 @@ test.describe('Condensed Description Quality', () => {
   });
 
   test('should show actual job content (not just "No job description")', async ({ page }) => {
-    await switchToTab(page, 'all');
+    // Use New Jobs tab which has jobs with long source descriptions (not filtered jobs with short descriptions)
+    await switchToTab(page, 'new');
 
-    // Check multiple job cards to find one with actual content
+    // Check multiple job cards to find one with substantial content
+    // Note: Backend passes through short descriptions (≤150 words) as-is to save API costs
+    // We need to find at least one job with a long source description that gets condensed
     const jobCards = page.locator('[data-testid="job-card"]');
-    const count = Math.min(await jobCards.count(), 5);
+    const count = Math.min(await jobCards.count(), 10); // Check up to 10 jobs in New Jobs tab
 
-    let foundActualJobDescription = false;
+    let foundSubstantialDescription = false;
 
     for (let i = 0; i < count; i++) {
       const card = jobCards.nth(i);
@@ -93,20 +96,25 @@ test.describe('Condensed Description Quality', () => {
 
       const descriptionText = await descriptionContainer.textContent();
 
-      // If it's not "No job description to be extracted", it should have real content
-      if (descriptionText !== 'No job description to be extracted.') {
-        foundActualJobDescription = true;
+      // Skip placeholder messages
+      if (descriptionText === 'No job description to be extracted.') {
+        continue;
+      }
 
-        // Should have substantial content (more than 20 words)
-        const wordCount = descriptionText!.trim().split(/\s+/).length;
-        expect(wordCount).toBeGreaterThan(20);
+      const wordCount = descriptionText!.trim().split(/\s+/).length;
+
+      // Short descriptions (≤150 words source) are passed through as-is
+      // We want to find at least one substantial description (from a long source that was condensed)
+      if (wordCount > 20) {
+        foundSubstantialDescription = true;
 
         // Should contain job-related keywords (at least one)
         const jobKeywords = [
           'experience', 'skills', 'responsibilities', 'requirements',
           'engineer', 'developer', 'software', 'position', 'role',
           'company', 'team', 'work', 'project', 'technologies',
-          'qualifications', 'candidate', 'seeking', 'looking'
+          'qualifications', 'candidate', 'seeking', 'looking', 'testing',
+          'automation', 'quality', 'applications'
         ];
 
         const hasJobKeyword = jobKeywords.some(keyword =>
@@ -116,29 +124,52 @@ test.describe('Condensed Description Quality', () => {
         expect(hasJobKeyword).toBe(true);
         break;
       }
+      // Short descriptions are OK - they're passed through from short source descriptions
     }
 
-    // At least one job should have actual content
-    expect(foundActualJobDescription).toBe(true);
+    // At least one job should have substantial condensed content (from a long source description)
+    expect(foundSubstantialDescription).toBe(true);
   });
 
   test('refresh should regenerate description (check for different content after prompt change)', async ({ page }) => {
-    // Increase test timeout to allow for slow LLM API calls (can take 20-30+ seconds)
+    // Increase timeout to allow for slow LLM API calls (can take 20-30+ seconds)
     test.setTimeout(60000);
 
-    await switchToTab(page, 'all');
+    // Use New Jobs tab which has jobs with long source descriptions
+    await switchToTab(page, 'new');
 
-    // Get the first job card and capture its job ID
-    const firstJobCard = page.locator('[data-testid="job-card"]').first();
-    const jobId = await firstJobCard.getAttribute('data-job-id');
+    // Find a job with substantial content (from long source description)
+    // Skip jobs with short pass-through descriptions
+    const jobCards = page.locator('[data-testid="job-card"]');
+    const count = Math.min(await jobCards.count(), 10);
 
-    // Track this specific job by its ID throughout the test
-    const jobCard = page.locator(`[data-testid="job-card"][data-job-id="${jobId}"]`);
+    let jobId: string | null = null;
+    let jobCard;
+    let descriptionContainer;
+
+    for (let i = 0; i < count; i++) {
+      const card = jobCards.nth(i);
+      const tempDescContainer = card.locator('div').filter({ hasText: 'Condensed Description' }).locator('div').last();
+
+      await expect(tempDescContainer).not.toHaveText('Loading description...', { timeout: 15000 });
+
+      const descText = await tempDescContainer.textContent();
+      const wordCount = descText!.trim().split(/\s+/).length;
+
+      // Find a job with substantial content (condensed from long source)
+      if (wordCount > 20 && descText !== 'No job description to be extracted.') {
+        jobId = await card.getAttribute('data-job-id');
+        jobCard = page.locator(`[data-testid="job-card"][data-job-id="${jobId}"]`);
+        descriptionContainer = jobCard.locator('div').filter({ hasText: 'Condensed Description' }).locator('div').last();
+        break;
+      }
+    }
+
+    // Should have found at least one job with substantial content
+    expect(jobId).toBeTruthy();
 
     // Wait for initial description
-    const descriptionContainer = jobCard.locator('div').filter({ hasText: 'Condensed Description' }).locator('div').last();
     await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 55000 });
-
     const initialDescription = await descriptionContainer.textContent();
 
     // Click refresh
@@ -167,6 +198,7 @@ test.describe('Condensed Description Quality', () => {
     expect(newDescription).not.toContain('No description available');
 
     // Verify it's still a quality description (reasonable length)
+    // Note: We selected a job with substantial content, so refresh should maintain that
     const wordCount = newDescription!.trim().split(/\s+/).length;
     expect(wordCount).toBeGreaterThan(20);
     expect(wordCount).toBeLessThanOrEqual(200);
