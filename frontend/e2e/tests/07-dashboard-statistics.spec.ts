@@ -158,7 +158,7 @@ test.describe('Dashboard Statistics', () => {
   test('stat labels should be correctly named', async ({ page }) => {
     const expectations = [
       { testId: 'stat-filtered', label: 'Filtered' },
-      { testId: 'stat-ignored', label: 'Non-Job Emails' },
+      { testId: 'stat-ignored', label: 'Ignored' },
       { testId: 'stat-failed', label: 'Failed' },
       { testId: 'stat-duplicated', label: 'Duplicates' },
       { testId: 'stat-created', label: 'Processed' },
