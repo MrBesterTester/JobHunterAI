@@ -111,6 +111,11 @@
   - [Development Tools](#development-tools)
     - [Debug Mode](#debug-mode)
       - [How to Get Claude Code to Use the Debug Tool](#how-to-get-claude-code-to-use-the-debug-tool)
+  - [Testing & Quality Assurance](#testing--quality-assurance)
+    - [Backend Testing (100% Coverage)](#backend-testing-100%25-coverage)
+    - [Frontend E2E Testing (94.1% Coverage)](#frontend-e2e-testing-941%25-coverage)
+    - [Testing Architecture](#testing-architecture)
+    - [Key Testing Achievements](#key-testing-achievements)
   - [Browser & Testing Strategy](#browser--testing-strategy)
     - [Development & Testing Browser: Chrome](#development--testing-browser-chrome)
     - [Cross-Browser Compatibility](#cross-browser-compatibility)
@@ -3359,6 +3364,50 @@ Result: <1 minute, 1 round trip ✅
 - Implementation details: `bugs/open/ISSUE-037-debug-section-display---job-extraction-debugging-panel.md`
 - Claude Code integration: `CLAUDE.md` (Quick Reference > Debugging Extraction Issues)
 - Manual debug tool: `frontend/debug-script.js` (Playwright script for troubleshooting)
+
+#### Debug Section Cheat Sheet
+
+**Quick Enable:**
+```bash
+echo "REACT_APP_DEBUG_MODE=true" >> frontend/.env.development.local
+cd frontend && npm start
+```
+
+**How to Get Claude Code to Help:**
+
+Just say one of these phrases:
+- "This job extraction looks wrong"
+- "The salary/location wasn't extracted correctly"
+- "This job should have been filtered"
+- "Gmail sync broke" / "Jobs are missing fields"
+- "LLM extraction isn't working"
+
+Claude Code will automatically respond:
+> "Screenshot the 🔧 Debug Info section (amber box at bottom of job card) and share it here"
+
+**What the Badges Mean:**
+
+| Badge | Meaning |
+|-------|---------|
+| 🔵 **Blue "LLM"** | LLM extraction succeeded |
+| 🟢 **Green "REGEX"** | LLM failed, used regex fallback |
+| ⚪ **Gray "UNKNOWN"** | Both methods failed |
+
+**Time Savings:**
+
+| Old Way | New Way |
+|---------|---------|
+| 5-10 minutes | <1 minute |
+| Database queries | Screenshot |
+| 3-5 round trips | 1 round trip |
+
+**Disable Debug Mode:**
+```bash
+# Remove REACT_APP_DEBUG_MODE from frontend/.env.development.local
+cd frontend && npm start
+```
+
+**That's it!** Just say a trigger phrase, screenshot the amber debug box, and Claude Code will analyze it instantly.
 
 ## Testing & Quality Assurance
 
