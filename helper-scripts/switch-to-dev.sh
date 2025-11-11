@@ -2,12 +2,34 @@
 
 # Switch to Development Database
 # Updates backend/.env to use jobhunter_dev database
+#
+# ⚠️  DEPRECATED (ISSUE-040): This script is deprecated.
+# The project now uses a single-database architecture with jobhunter_personal.
+# - E2E tests run against jobhunter_personal (uses seed-test-data.sh --truncate with automatic backup)
+# - Use restore-from-backup.sh to recover from test runs
+# - The jobhunter_dev database is no longer used
+#
+# This script remains for backward compatibility only.
+# See ISSUE-040 for full details: bugs/fixed/ISSUE-040-database-architecture-simplification...
 
 set -e
 
 ENV_FILE="./backend/.env"
 DEV_DB_URL="postgresql://jobhunter_user:jobhunter_dev_password@localhost/jobhunter_dev"
 
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "⚠️  DEPRECATION WARNING"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "This script is deprecated (ISSUE-040)."
+echo "The project now uses jobhunter_personal for all development and testing."
+echo ""
+echo "To seed test data: ./helper-scripts/seed-test-data.sh --truncate"
+echo "To restore backup: ./helper-scripts/restore-from-backup.sh"
+echo ""
+echo "Press Ctrl+C to cancel, or Enter to continue anyway..."
+read -r
+echo ""
 echo "🔄 Switching to Development Database..."
 echo ""
 

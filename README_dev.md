@@ -1363,9 +1363,20 @@ Graceful error handling throughout:
 
 ## Configuration, Setups and Development Helper Scripts
 
-JobHunter provides database management scripts to keep your personal data separate from test data. These scripts help you maintain two databases:
-- **`jobhunter_dev`** - Development database with test data (safe to share/reset)
-- **`jobhunter_personal`** - Your personal production database (private, never committed to Git)
+**⚠️ UPDATED (ISSUE-040)**: JobHunter now uses a single-database architecture for simplicity.
+
+**Database Architecture:**
+- **`jobhunter_personal`** - Single database for development and testing (private, never committed to Git)
+  - All development work uses this database
+  - E2E tests seed controlled test data into this database (with automatic backup/restore)
+  - OAuth credentials stored here (needed for email integration tests)
+- **`jobhunter_dev`** - ⚠️ DEPRECATED - Legacy database, no longer actively used
+
+**Backup/Restore Workflow (NEW):**
+- Before truncating database for tests, automatic backup is created
+- Backups stored in `/tmp/jobhunter_backups/` (keeps last 5)
+- Use `./helper-scripts/restore-from-backup.sh` to recover from test runs
+- See: `seed-test-data.sh --truncate` and `restore-from-backup.sh`
 
 ### Database Configuration
 

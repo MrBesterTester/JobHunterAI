@@ -3,14 +3,19 @@
 # =====================================================
 # Test Data Seeding Script
 # =====================================================
-# Seeds the jobhunter_dev (dev) database with test data
+# Seeds the jobhunter_personal database with test data
 # for E2E testing.
+#
+# IMPORTANT: Uses single-database architecture (ISSUE-040)
+# - E2E tests run against jobhunter_personal (real dev database)
+# - Automatically backs up database before truncating
+# - Use restore-from-backup.sh to recover if needed
 #
 # Usage:
 #   ./helper-scripts/seed-test-data.sh
 #
 # Options:
-#   --truncate    Clear all existing jobs before seeding
+#   --truncate    Clear all existing jobs before seeding (creates backup)
 #   --verify      Only verify seed status, don't seed
 # =====================================================
 
@@ -19,7 +24,12 @@ set -e  # Exit on error
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 SEED_FILE="$PROJECT_ROOT/database/seed_test_data.sql"
-DATABASE_NAME="jobhunter_dev"
+DATABASE_NAME="jobhunter_personal"
+
+# Backup infrastructure
+BACKUP_DIR="/tmp/jobhunter_backups"
+BACKUP_FILE="$BACKUP_DIR/jobhunter_personal_$(date +%Y%m%d_%H%M%S).sql"
+LAST_BACKUP_FILE="/tmp/jobhunter_last_backup.txt"
 
 # Parse arguments
 TRUNCATE=false
@@ -97,15 +107,47 @@ if [ "$VERIFY_ONLY" = true ]; then
     exit 0
 fi
 
-# Optional truncate
+# Optional truncate (with automatic backup)
 if [ "$TRUNCATE" = true ]; then
     echo "⚠️  WARNING: About to delete ALL jobs from $DATABASE_NAME database"
+    echo "   A backup will be created automatically for safety"
     echo "   Press Ctrl+C to cancel, or Enter to continue..."
     read -r
+    echo ""
 
-    echo "Truncating jobs table..."
+    # Create backup directory
+    mkdir -p "$BACKUP_DIR"
+
+    # Backup current state
+    echo "📦 Backing up database to:"
+    echo "   $BACKUP_FILE"
+    if pg_dump -U jobhunter_user -d "$DATABASE_NAME" > "$BACKUP_FILE"; then
+        # Store backup path for potential restore
+        echo "$BACKUP_FILE" > "$LAST_BACKUP_FILE"
+        echo "✅ Backup saved successfully"
+        echo ""
+
+        # Clean up old backups (keep last 5)
+        BACKUP_COUNT=$(ls -1 "$BACKUP_DIR"/*.sql 2>/dev/null | wc -l | xargs)
+        if [ "$BACKUP_COUNT" -gt 5 ]; then
+            echo "🧹 Cleaning up old backups (keeping last 5)..."
+            ls -t "$BACKUP_DIR"/*.sql | tail -n +6 | xargs rm -f
+            echo "✅ Old backups removed"
+            echo ""
+        fi
+    else
+        echo "❌ ERROR: Backup failed! Aborting truncate."
+        echo "   Your data is safe (nothing was deleted)"
+        exit 1
+    fi
+
+    # Now safe to truncate
+    echo "🗑️  Truncating jobs table..."
     psql -U jobhunter_user -d "$DATABASE_NAME" -c "TRUNCATE TABLE jobs CASCADE;"
     echo "✅ Jobs table truncated"
+    echo ""
+    echo "ℹ️  To restore from backup, run:"
+    echo "   ./helper-scripts/restore-from-backup.sh"
     echo ""
 fi
 

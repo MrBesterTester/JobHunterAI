@@ -2,6 +2,12 @@
 
 # Session Start Hook - Switch to Personal Development Database
 # This hook runs at the start of every Claude Code session
+#
+# IMPORTANT (ISSUE-040): Single-database architecture
+# - All development and E2E testing uses jobhunter_personal
+# - E2E tests use seed-test-data.sh --truncate (with automatic backup)
+# - Use restore-from-backup.sh to recover from test runs
+# - The jobhunter_dev database is deprecated
 
 set -e
 

@@ -105,16 +105,18 @@ At the start of every Claude Code session, a SessionStart hook automatically:
   - Exists but no longer part of standard workflow
   - Decision: Single database (personal) is simpler and avoids OAuth credential sync issues
 
-**Test Data Seeding:**
+**Test Data Seeding (ISSUE-040):**
 - E2E tests seed controlled test data into `jobhunter_personal` before running
-- Seeding uses `ON CONFLICT DO NOTHING` - non-destructive, safe to run repeatedly
-- Test jobs mix with personal data but are clearly identifiable by content
-- See: `database/seed_test_data.sql` and `./helper-scripts/seed-test-data.sh`
+- Use `./helper-scripts/seed-test-data.sh --truncate` to clear and reseed database
+- **Automatic Backup**: Creates timestamped backup before truncating (stored in `/tmp/jobhunter_backups/`)
+- **Recovery**: Use `./helper-scripts/restore-from-backup.sh` to restore from most recent backup
+- Backups are automatically cleaned up (keeps last 5)
+- See: `database/seed_test_data.sql`, `seed-test-data.sh`, `restore-from-backup.sh`
 
 **Manual database switching** (if needed):
 ```bash
 ./switch-to-personal.sh    # Switch to personal database (default)
-./switch-to-dev.sh          # Switch to dev database (not recommended)
+./switch-to-dev.sh          # ⚠️ DEPRECATED (ISSUE-040) - legacy only
 ```
 
 ### Notifications

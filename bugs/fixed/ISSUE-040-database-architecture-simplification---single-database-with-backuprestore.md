@@ -1,12 +1,13 @@
 ---
 id: ISSUE-040
 title: Database Architecture Simplification - Single Database with Backup/Restore
-status: open
+status: fixed
 priority: high
 severity: medium
 component: infrastructure
 created: 2025-11-10
 updated: 2025-11-10
+fixed: 2025-11-10
 affects: []
 related: [ISSUE-039]
 ---
