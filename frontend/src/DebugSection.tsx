@@ -15,7 +15,7 @@ export const DebugSection: React.FC<DebugSectionProps> = ({ job }) => {
   }
 
   // Get extraction method badge styling (case-insensitive)
-  const getBadgeStyle = (method?: string) => {
+  const getBadgeStyle = (method?: string | null) => {
     const normalizedMethod = method?.toUpperCase();
     switch (normalizedMethod) {
       case 'LLM':
