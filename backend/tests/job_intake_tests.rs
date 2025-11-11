@@ -31,7 +31,11 @@ mod job_intake_tests {
         let _ = sqlx::query!("DELETE FROM api_job_sources WHERE external_job_id LIKE '%test%'")
             .execute(pool)
             .await;
-        let _ = sqlx::query!("DELETE FROM job_intake_logs WHERE sync_status = 'test'")
+        // Delete ALL job_intake_logs for test sources (not just those with sync_status = 'test')
+        // This fixes ISSUE-033: test_rapidapi_quota_tracking isolation issue
+        let _ = sqlx::query!(
+            "DELETE FROM job_intake_logs WHERE source_id IN (SELECT source_id FROM job_sources WHERE source_name LIKE '%_test')"
+        )
             .execute(pool)
             .await;
         let _ = sqlx::query!("DELETE FROM job_sources WHERE source_name LIKE '%_test'")
@@ -824,7 +828,6 @@ mod job_intake_tests {
 
     #[tokio::test]
     #[serial]
-    #[ignore] // TODO: Fix quota tracking count mismatch (expects 10, gets 8) - test isolation issue
     async fn test_rapidapi_quota_tracking() {
         let pool = create_test_pool().await;
         cleanup_test_data(&pool).await;

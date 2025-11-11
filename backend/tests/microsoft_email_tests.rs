@@ -379,7 +379,6 @@ mod microsoft_email_tests {
 
     #[tokio::test]
     #[serial]
-    #[ignore] // TODO: Fix Microsoft Graph API configuration check test failure
     async fn test_microsoft_source_configuration() {
         let pool = create_test_pool().await;
 
@@ -401,11 +400,17 @@ mod microsoft_email_tests {
         assert_eq!(src.source_type, "email");
         assert_eq!(src.is_active, Some(true), "Microsoft email source should be active");
 
-        // Verify configuration contains Graph API settings
+        // Verify configuration contains Microsoft Mail settings
         if let Some(config) = src.configuration {
             let config_str = config.to_string();
-            assert!(config_str.contains("graph.microsoft.com"),
-                   "Configuration should reference Microsoft Graph API");
+            // Check for Mail.Read scope (required for MS Graph email access)
+            assert!(config_str.contains("Mail.Read"),
+                   "Configuration should contain Mail.Read scope for Microsoft Graph API");
+            // Check for folder name configuration
+            assert!(config_str.contains("folder_name") || config_str.contains("JobOps"),
+                   "Configuration should contain folder_name for email organization");
+        } else {
+            panic!("Microsoft email source should have configuration");
         }
     }
 
