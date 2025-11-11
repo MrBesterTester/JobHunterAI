@@ -72,9 +72,9 @@
       - [`helper-scripts/clear-job-data.sh`](#helper-scriptsclear-job-datash)
       - [`backend/tests/test_mece_counters.sh`](#backendteststest_mece_counterssh)
       - [`helper-scripts/switch-to-personal.sh`](#helper-scriptsswitch-to-personalsh)
-      - [`helper-scripts/switch-to-dev.sh`](#helper-scriptsswitch-to-devsh)
+      - [`helper-scripts/switch-to-dev.sh` ⚠️ DEPRECATED](#helper-scriptsswitch-to-devsh--deprecated)
       - [`helper-scripts/restart-db.sh`](#helper-scriptsrestart-dbsh)
-      - [`helper-scripts/reset-dev-db.sh`](#helper-scriptsreset-dev-dbsh)
+      - [`helper-scripts/reset-dev-db.sh` ⚠️ DEPRECATED](#helper-scriptsreset-dev-dbsh--deprecated)
       - [`helper-scripts/backup-personal-db.sh`](#helper-scriptsbackup-personal-dbsh)
       - [`helper-scripts/restore-personal-db.sh`](#helper-scriptsrestore-personal-dbsh)
       - [`helper-scripts/sync-extraction-prompt-to-db.sh`](#helper-scriptssync-extraction-prompt-to-dbsh)
@@ -1373,7 +1373,8 @@ Graceful error handling throughout:
   - All development work uses this database
   - E2E tests seed controlled test data into this database (with automatic backup/restore)
   - OAuth credentials stored here (needed for email integration tests)
-- **`jobhunter_dev`** - ⚠️ DEPRECATED - Legacy database, no longer actively used
+
+**Note:** Previous versions used a separate `jobhunter_dev` database, but this has been deprecated in favor of a single database with backup/restore capabilities (see ISSUE-040).
 
 **Backup/Restore Workflow (NEW):**
 - Before truncating database for tests, automatic backup is created
@@ -1982,43 +1983,33 @@ export DEBUG_EXTRACTION=false
 
 > **Note**: These commands use your macOS username as the PostgreSQL superuser. On macOS with Homebrew PostgreSQL, your system username (e.g., `sam`) is the default superuser, not `postgres`.
 
-**1. Create both databases:**
+**1. Create database:**
 ```bash
 # Create personal database (connects as your macOS user)
 psql -d postgres -c "CREATE DATABASE jobhunter_personal;"
 psql -d postgres -c "GRANT ALL PRIVILEGES ON DATABASE jobhunter_personal TO jobhunter_user;"
-
-# Rename existing database to dev (if you have one), or create fresh dev database
-psql -d postgres -c "ALTER DATABASE jobhunter RENAME TO jobhunter_dev;"
-# OR create fresh: psql -d postgres -c "CREATE DATABASE jobhunter_dev;"
 ```
 
-**2. Initialize personal database (schema only, no test data):**
+**2. Initialize database (schema only, no test data):**
 ```bash
 psql -U jobhunter_user -d jobhunter_personal -f database/schema.sql
 psql -U jobhunter_user -d jobhunter_personal -f database/migration_phase5.1.sql
 ```
 
-**3. Switch to personal database:**
+**3. Configure backend to use the database:**
 ```bash
-./switch-to-personal.sh
+./helper-scripts/switch-to-personal.sh
 ```
 
 ### Understanding Your Workflow: Setup vs. Daily Use
 
-JobHunter uses a persistent PostgreSQL database that has a "split personality" by design - you maintain two separate databases to keep your real job data separate from test data.
+JobHunter uses a persistent PostgreSQL database (`jobhunter_personal`) for development and testing. E2E tests use automatic backup/restore to safely seed test data.
 
 #### One-Time Setup (Do This Once)
 
-**Option A: Simple single database**
 1. Follow "Initial Setup (First Time Only)" in the [Quick Start](#quick-start) section above
-2. Done! Database `jobhunter` exists with schema loaded
-
-**Option B: Dev/Personal database separation** (Recommended)
-1. Follow "Initial Setup (First Time Only)" in the [Quick Start](#quick-start) section above
-2. Follow "Quick Start: Database Setup" above (creates `jobhunter_personal` and `jobhunter_dev`)
-3. Run `./switch-to-personal.sh` or `./switch-to-dev.sh` to choose which database to use
-4. Done! Both databases exist with schemas loaded
+2. Follow "Quick Start: Database Setup" above (creates `jobhunter_personal`)
+3. Done! Database exists with schema loaded
 
 #### Daily Use (Every Time You Start the App)
 
@@ -2130,32 +2121,28 @@ If you're using the personal database separation feature, the correct startup se
 
 **Starting fresh (PostgreSQL not running):**
 ```bash
-./switch-to-personal.sh
+./helper-scripts/switch-to-personal.sh  # Ensures correct database configuration
 ./start.sh
 ```
 
-**If the app is already running with the wrong database:**
+**If the app is already running:**
 ```bash
 ./stop.sh
-./switch-to-personal.sh
 ./start.sh
 ```
 
-**Key Point**: Always run `switch-to-personal.sh` **before** `start.sh`, not after. The backend loads the database configuration when it starts, so switching after startup has no effect until you restart.
-
-**Why this matters**: Running `./start.sh` first, then `./switch-to-personal.sh` will leave your backend connected to the wrong database until you restart. This is a common mistake that leads to confusion about which data you're seeing.
+**Note**: The SessionStart hook automatically runs `switch-to-personal.sh` at the beginning of each Claude Code session, so manual switching is rarely needed.
 
 #### When to Use Database Commands Again
 
 You only need to run database commands in these scenarios:
 
-- **Switching databases**: `./switch-to-dev.sh` or `./switch-to-personal.sh` (then restart backend)
-- **Resetting dev data**: `./reset-dev-db.sh` (reloads test data)
-- **Backing up personal data**: `./backup-personal-db.sh`
-- **Restoring from backup**: `./restore-personal-db.sh`
-- **Restarting PostgreSQL**: `./restart-db.sh` (if database becomes unresponsive)
+- **Seeding test data**: `./helper-scripts/seed-test-data.sh --truncate` (for E2E tests)
+- **Restoring from backup**: `./helper-scripts/restore-from-backup.sh` (after test runs)
+- **Clearing job data**: `./helper-scripts/clear-jobs.sh` (removes jobs while keeping schema)
+- **Restarting PostgreSQL**: `./helper-scripts/restart-db.sh` (if database becomes unresponsive)
 
-**The databases persist on disk** - once created, they're there until you explicitly delete them. The data survives app restarts, computer reboots, etc.
+**The database persists on disk** - once created, it's there until you explicitly delete it. The data survives app restarts, computer reboots, etc.
 
 ### Understanding Your Workflow: Properly Managing Your PostgreSQL Database
 
@@ -2276,7 +2263,7 @@ This script:
 - Clearing test data from your personal database
 - Resetting after testing features
 
-**Note:** This is safer than `reset-dev-db.sh` because it only clears job data without dropping/recreating the entire database. Works with both `jobhunter_personal` and `jobhunter_dev`.
+**Note:** This only clears job data without dropping/recreating the entire database, preserving OAuth credentials and other configuration. Works with `jobhunter_personal`.
 
 #### [`backend/tests/test_mece_counters.sh`](backend/tests/test_mece_counters.sh)
 Tests and validates the MECE (Mutually Exclusive and Collectively Exhaustive) counter system.
@@ -2331,24 +2318,26 @@ Validation:
 - Python 3 installed for JSON parsing
 
 #### [`helper-scripts/switch-to-personal.sh`](helper-scripts/switch-to-personal.sh)
-Switches your environment to use the personal database for real job hunting.
+Configures your environment to use the personal database.
 
 **Usage:**
 ```bash
 ./helper-scripts/switch-to-personal.sh
 ```
 
-Updates `backend/.env` to point to `jobhunter_personal`. Restart the backend server after switching.
+Updates `backend/.env` to point to `jobhunter_personal`. Restart the backend server after running.
 
-#### [`helper-scripts/switch-to-dev.sh`](helper-scripts/switch-to-dev.sh)
-Switches your environment to use the development database for testing with test data.
+**Note:** This script is automatically run by the SessionStart hook at the beginning of each Claude Code session.
+
+#### [`helper-scripts/switch-to-dev.sh`](helper-scripts/switch-to-dev.sh) ⚠️ DEPRECATED
+Legacy script for switching to a separate development database. No longer needed with single-database architecture (see ISSUE-040).
 
 **Usage:**
 ```bash
 ./helper-scripts/switch-to-dev.sh
 ```
 
-Updates `backend/.env` to point to `jobhunter_dev`. Restart the backend server after switching.
+This script is maintained for backwards compatibility only.
 
 #### [`helper-scripts/restart-db.sh`](helper-scripts/restart-db.sh)
 Restarts the PostgreSQL database service.
@@ -2365,18 +2354,15 @@ Use this script to restart the PostgreSQL@14 service via Homebrew. This is usefu
 
 The script will verify that PostgreSQL started successfully after restarting.
 
-#### [`helper-scripts/reset-dev-db.sh`](helper-scripts/reset-dev-db.sh)
-Resets the development database to a clean state with fresh test data. **WARNING**: This will delete all data in `jobhunter_dev`!
+#### [`helper-scripts/reset-dev-db.sh`](helper-scripts/reset-dev-db.sh) ⚠️ DEPRECATED
+Legacy script for resetting a separate development database. Replaced by `seed-test-data.sh --truncate` with automatic backup/restore (see ISSUE-040).
 
 **Usage:**
 ```bash
 ./helper-scripts/reset-dev-db.sh
 ```
 
-This script will:
-- Drop and recreate the `jobhunter_dev` database
-- Load the schema and migrations
-- Load all test seed data (103 test jobs)
+This script is maintained for backwards compatibility only. **Use `./helper-scripts/seed-test-data.sh --truncate` instead**, which provides automatic backup before clearing data.
 
 Perfect for when you want to start fresh with clean test data.
 
