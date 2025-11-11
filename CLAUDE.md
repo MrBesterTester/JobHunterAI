@@ -478,6 +478,73 @@ The project uses a consistent structure for development and testing documentatio
 
 ---
 
+**Debugging Extraction Issues (CLAUDE CODE PREFERRED WORKFLOW)**
+
+**⚠️ IMPORTANT**: When user reports extraction problems, **ALWAYS suggest debug mode screenshot FIRST** before database queries.
+
+**Trigger Phrases (suggest debug mode immediately when user says):**
+- "This job extraction looks wrong"
+- "The salary/location wasn't extracted correctly"
+- "This job should have been filtered"
+- "Gmail sync broke" / "Jobs are missing fields"
+- "LLM extraction isn't working"
+- "Why was this job extracted this way?"
+
+**Response Template:**
+```
+Let me help you debug this extraction issue. Can you enable debug mode and provide a screenshot?
+
+Enable debug mode (if not already enabled):
+```bash
+echo "REACT_APP_DEBUG_MODE=true" >> frontend/.env.development.local
+cd frontend && npm start  # Restart if needed
+```
+
+Then:
+1. Navigate to the job card with the issue
+2. Screenshot the "🔧 Debug Info" section (amber box at bottom of card)
+3. Share the screenshot here
+
+This will show me:
+- Extraction method used (LLM vs REGEX fallback)
+- Complete raw extraction data
+- All fields extracted from the job posting
+
+This is much faster than database queries! (5-10 min → <1 min)
+```
+
+**Debug Section Analysis Guide:**
+
+**1. Extraction Method Badge:**
+- **Blue "LLM"** → LLM extraction succeeded, check raw data for accuracy
+- **Green "REGEX"** → LLM failed, regex fallback used (investigate LLM prompt/response)
+- **Gray "UNKNOWN"** → Both methods failed (critical extraction issue)
+
+**2. Raw Data JSON:**
+- Check for null/missing fields: `"salary": null` → Field not in original posting
+- Verify extracted values match job posting
+- Look for malformed data: `"salary": "N/A"` vs `"salary": null`
+- Identify parsing errors or unexpected data formats
+
+**3. Common Diagnostic Patterns:**
+- **Badge: "REGEX" + User reports wrong data** → LLM extraction failed, needs prompt improvement
+- **Badge: "LLM" + Raw data has wrong values** → LLM extracted incorrectly, review prompt engineering
+- **Badge: "LLM" + Raw data has null fields** → Field genuinely missing from original posting
+- **Badge: "UNKNOWN"** → Both extraction methods failed, critical issue
+
+**Fallback (if debug mode unavailable):**
+```sql
+SELECT job_id, extraction_method, raw_data
+FROM jobs
+WHERE job_id = 'TARGET_JOB_ID';
+```
+
+**Time Savings:** Debug mode reduces debugging time from 5-10 minutes (database queries, multiple round trips) to <1 minute (single screenshot). Always prefer visual debugging when available.
+
+**Related:** See ISSUE-037 for complete feature documentation and ROI analysis.
+
+---
+
 ## File Structure
 ```
 backend/src/main.rs    # Single Rust file with full backend implementation

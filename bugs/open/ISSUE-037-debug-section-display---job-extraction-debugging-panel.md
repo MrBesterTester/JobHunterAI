@@ -48,6 +48,10 @@ related: [ISSUE-036]
     - [Files Changed](#files-changed)
     - [Restart Required](#restart-required)
     - [Completion Status](#completion-status)
+  - [Claude Code AI Integration Plan (2025-11-11 21:30 PST)](#claude-code-ai-integration-plan-2025-11-11-2130-pst)
+    - [Behavioral Changes for Claude Code](#behavioral-changes-for-claude-code)
+    - [Trigger Phrases → Proactive Response Pattern](#trigger-phrases-%E2%86%92-proactive-response-pattern)
+    - [Expected ROI Impact](#expected-roi-impact)
   - [Phase 1: Create DebugSection Component](#phase-1-create-debugsection-component)
   - [Phase 2: Integrate into JobCard Component](#phase-2-integrate-into-jobcard-component)
   - [Phase 3: Environment Configuration](#phase-3-environment-configuration)
@@ -636,6 +640,157 @@ NO_BROWSER=1 ./helper-scripts/start.sh
 - ROI value proposition validated (5-10 minute debugging time reduced to <1 minute)
 
 **Recommendation:** Move ISSUE-037 to `bugs/fixed/` directory - feature is fully implemented and verified.
+
+---
+
+### Claude Code AI Integration Plan (2025-11-11 21:30 PST)
+
+**Purpose:** Define how Claude Code (AI assistant) should proactively use the debug section as a diagnostic tool.
+
+#### Behavioral Changes for Claude Code
+
+**BEFORE Integration:**
+- Default to asking for database queries (`psql` commands)
+- Multiple round trips to gather extraction information
+- User context-switches between terminal and browser
+- 5-10 minutes per debugging session
+
+**AFTER Integration:**
+- Proactively suggest debug mode screenshot as **first diagnostic tool**
+- Single round trip to get complete extraction information
+- User stays in browser, faster workflow
+- <1 minute per debugging session
+- Visual confirmation of styling/display issues as bonus
+
+#### Trigger Phrases → Proactive Response Pattern
+
+When user says any of these phrases, Claude Code should **immediately suggest debug mode screenshot**:
+
+**Trigger Phrases:**
+- "This job extraction looks wrong"
+- "The salary/location wasn't extracted correctly"
+- "This job should have been filtered"
+- "Gmail sync broke"
+- "Jobs are missing fields"
+- "LLM extraction isn't working"
+- "Why was this job extracted this way?"
+
+**Claude Code Response Template:**
+```
+Let me help you debug this extraction issue. Can you enable debug mode and provide a screenshot?
+
+Enable debug mode (if not already enabled):
+```bash
+echo "REACT_APP_DEBUG_MODE=true" >> frontend/.env.development.local
+cd frontend && npm start  # Restart if needed
+```
+
+Then:
+1. Navigate to the job card with the issue
+2. Screenshot the "🔧 Debug Info" section (amber box at bottom of card)
+3. Share the screenshot here
+
+This will show me:
+- Extraction method used (LLM vs REGEX fallback)
+- Complete raw extraction data
+- All fields extracted from the job posting
+
+This is much faster than database queries! (5-10 min → <1 min)
+```
+
+#### Analysis Workflow for Debug Section Information
+
+**What Claude Code Should Look For:**
+
+1. **Extraction Method Badge Analysis:**
+   - Blue "LLM" badge → LLM extraction succeeded, check raw data for accuracy
+   - Green "REGEX" badge → LLM failed, regex fallback used (investigate LLM prompt/response)
+   - Gray "UNKNOWN" badge → Both methods failed (critical extraction issue)
+
+2. **Raw Data JSON Analysis:**
+   - Check for null/missing fields: `"salary": null` → Field not in original posting
+   - Verify extracted values match job posting
+   - Look for malformed data: `"salary": "N/A"` vs `"salary": null`
+   - Identify parsing errors: Unexpected data formats
+
+3. **Common Diagnostic Patterns:**
+   - **Badge: "REGEX" + User reports wrong data** → LLM extraction failed, needs prompt improvement
+   - **Badge: "LLM" + Raw data has wrong values** → LLM extracted incorrectly, review prompt engineering
+   - **Badge: "LLM" + Raw data has null fields** → Field genuinely missing from original posting
+   - **Badge: "UNKNOWN"** → Both extraction methods failed, critical issue
+
+#### Time Savings Examples
+
+**Scenario 1: Job Salary Not Extracted**
+
+**Old Workflow (5-10 minutes):**
+1. User: "This job's salary is showing as null"
+2. Claude: "Can you run: `SELECT job_id, raw_data FROM jobs WHERE job_id = 'xxx'`?"
+3. User: [runs query, pastes output]
+4. Claude: "Can you also check extraction_method?"
+5. User: [runs another query]
+6. Claude: [analyzes, sees REGEX fallback]
+7. Claude: "Can you check if salary was in the original email?"
+8. User: [checks email, reports back]
+9. **Total:** 4+ round trips, 5-10 minutes
+
+**New Workflow (<1 minute):**
+1. User: "This job's salary is showing as null"
+2. Claude: "Enable debug mode and screenshot the job card"
+3. User: [provides screenshot showing Green "REGEX" badge + raw_data: {salary: null}]
+4. Claude: "I see LLM extraction failed (REGEX fallback). The raw data shows salary wasn't extracted. Let me check the LLM prompt for salary extraction..."
+5. **Total:** 1 round trip, <1 minute
+
+**Scenario 2: Jobs Incorrectly Filtered**
+
+**Old Workflow (5-10 minutes):**
+1. User: "This remote job was filtered out, but I wanted to see it"
+2. Claude: "Let me query the database to see the extracted location..."
+3. User: [runs query]
+4. Claude: "Can you show me the raw_data field?"
+5. User: [runs another query]
+6. Claude: [spots issue in extraction]
+7. **Total:** 3+ round trips, 5-10 minutes
+
+**New Workflow (<1 minute):**
+1. User: "This remote job was filtered out, but I wanted to see it"
+2. Claude: "Screenshot the debug section on that job card"
+3. User: [screenshot shows raw_data: {location: "United States"}]
+4. Claude: "I see the issue - location was extracted as 'United States' (not 'Remote'), so filter logic marked it as non-remote. This is expected behavior for this extraction."
+5. **Total:** 1 round trip, <1 minute
+
+#### Integration into CLAUDE.md
+
+**Location:** Add new section under "Quick Reference: Where to Find Things"
+
+**Section Title:** "Debugging Extraction Issues (CLAUDE CODE PREFERRED WORKFLOW)"
+
+**Key Principle:** Debug mode screenshot is Claude Code's **first diagnostic tool** for extraction issues, not last resort.
+
+**Fallback Strategy:** If debug mode unavailable or user prefers database queries, fall back to SQL:
+```sql
+SELECT job_id, extraction_method, raw_data
+FROM jobs
+WHERE job_id = 'TARGET_JOB_ID';
+```
+
+#### Expected ROI Impact
+
+**Time Savings:**
+- Per debugging session: 5-10 minutes → <1 minute (80-90% reduction)
+- Claude Code workflow: 3-5 round trips → 1 round trip
+- User experience: Context switching eliminated, stays in browser
+
+**Long-term Value:**
+- Faster issue resolution → higher user satisfaction
+- More efficient Claude Code interactions → better conversation flow
+- Visual debugging → catches UI/styling issues simultaneously
+
+**Breakeven Analysis:**
+- Feature already implemented (sunk cost)
+- CLAUDE.md integration: ~30 minutes documentation
+- Expected debugging sessions: 3-5 per month
+- First month ROI: 15-50 minutes saved (breaks even immediately)
 
 ---
 
