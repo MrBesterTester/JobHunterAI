@@ -1,12 +1,13 @@
 ---
 id: ISSUE-037
 title: Debug Section Display - Job extraction debugging panel
-status: open
+status: fixed
 priority: medium
 severity: low
 component: frontend
 created: 2025-11-08
-updated: 2025-11-08
+updated: 2025-11-11
+fixed: 2025-11-11
 affects: []
 related: [ISSUE-036]
 ---
