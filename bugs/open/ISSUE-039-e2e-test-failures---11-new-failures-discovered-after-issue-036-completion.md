@@ -8,10 +8,14 @@ component: frontend
 created: 2025-11-10
 updated: 2025-11-10
 affects: []
-related: [ISSUE-036]
+related: [ISSUE-036, ISSUE-040]
 ---
 
 # ISSUE-039: E2E test failures - 11 new failures discovered after ISSUE-036 completion
+
+**⚠️ BLOCKED BY ISSUE-040**: This issue is currently blocked by [ISSUE-040 (Database Architecture Simplification)](ISSUE-040-database-architecture-simplification---single-database-with-backuprestore.md). Investigation revealed that the root cause of these test failures is database configuration confusion. ISSUE-040 must be implemented first to establish correct database architecture, then ISSUE-039 investigation can resume.
+
+---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
