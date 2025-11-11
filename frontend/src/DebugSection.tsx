@@ -3,7 +3,7 @@ import React from 'react';
 interface DebugSectionProps {
   job: {
     job_id: string;
-    extraction_method?: 'LLM' | 'REGEX' | 'UNKNOWN';
+    extraction_method?: 'llm' | 'regex' | null;
     raw_data?: any;
   };
 }
