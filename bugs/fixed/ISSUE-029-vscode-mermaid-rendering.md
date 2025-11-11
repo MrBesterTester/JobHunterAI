@@ -1,12 +1,13 @@
 ---
 id: ISSUE-029
 title: VSCode Mermaid Diagram Rendering Support
-status: open
+status: fixed
 priority: low
 severity: low
 component: docs
 created: 2025-10-31
-updated: 2025-10-31
+updated: 2025-11-11
+fixed: 2025-11-11
 affects: []
 related: [ISSUE-028]
 ---
@@ -164,15 +165,17 @@ This is an intentional design choice, not a defect. Extensions provide flexibili
 
 ## Decision
 
-**Recommendation**: Option 1 - Install "Markdown Preview Mermaid Support"
+**RESOLVED: No Action Required - Staying with Cursor**
+
+**Decision Date**: 2025-11-11
 
 **Rationale:**
-- Official Microsoft extension, best integration
-- Simplest solution for basic mermaid rendering
-- Most widely used (5M+ downloads)
-- Lightweight and focused
+- Team decided to continue using Cursor editor
+- Cursor has built-in mermaid support (no extension needed)
+- No need to pursue VSCode mermaid extensions
+- Issue no longer relevant to project
 
-**Result:** VSCode will have full mermaid diagram support, achieving feature parity with Cursor
+**Result:** Issue closed as "won't fix" - not applicable since VSCode not being adopted
 
 ## Implementation
 
@@ -227,6 +230,7 @@ code ./README.md
 ## Status History
 
 - 2025-10-31: ISSUE created, split from ISSUE-028 for focused documentation
+- 2025-11-11: RESOLVED as "won't fix" - team decided to continue using Cursor instead of VSCode
 
 ## Notes
 
