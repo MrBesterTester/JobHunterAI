@@ -11,7 +11,7 @@ related_docs:
   - TESTING_STATUS.md (testing results)
   - README_auto-test-plan.md (testing plan)
   - PRD.md (product requirements)
-last_updated: 2025-11-08 09:37:25 PST
+last_updated: 2025-11-10 18:36:50 PST
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -55,7 +55,7 @@ last_updated: 2025-11-08 09:37:25 PST
 
 # JobHunter Project Status
 
-**Last Updated**: 2025-11-08 09:37:25 PST (ISSUE-037 created - Debug Section Display feature planning)
+**Last Updated**: 2025-11-10 18:36:50 PST (ISSUE-040 completed - Database Architecture Simplification)
 
 ---
 
@@ -92,7 +92,8 @@ The software implements all core job hunting workflows defined in the Product Re
 - E2E Runtime: 11 min wall clock / 15.9 min Playwright reported
 - All 12 components above 75% coverage (none below 60%)
 
-**Recent Achievements** (Last 14 days - since 2025-10-20):
+**Recent Achievements** (Last 14 days - since 2025-10-27):
+- ✅ ISSUE-040 COMPLETE (2025-11-10) - Database Architecture Simplification: Single database with backup/restore
 - ✅ Phase 2.10 COMPLETE (2025-11-06 18:37:23 PST) - Gmail junk cleanup with 10/10 tests passing (4 backend + 6 E2E)
 - ✅ Phase 2.8.1 COMPLETE (2025-11-06 17:20:00 PST) - Microsoft folder behavior aligned with Gmail (backend + E2E test updates)
 - ✅ Phase 2.9 COMPLETE (2025-11-06 15:53:05 PST) - Gmail label management with 12/12 tests passing (including manual production validation)
@@ -106,13 +107,13 @@ The software implements all core job hunting workflows defined in the Product Re
 - ✅ ISSUE-012: Zero-warning builds (2025-10-31) - All 90 Rust warnings eliminated
 - ✅ BUG-0008: Phase 2.4 E2E tests (2025-10-31) - 98.6% pass rate
 - ✅ ISSUE-026: RSBuild migration (2025-10-29) - 5x build speed improvement
-- ✅ Testing infrastructure (ISSUE-018, 023, 024, 025) - All complete
 
 **See**: [PROJECT_HISTORY.md](PROJECT_HISTORY.md) for detailed historical records
 
 **Open Issues**: 2 bugs/issues (all infrastructure and quality issues resolved!)
 - ISSUE-010: CLAUDE.md token usage optimization (low)
 - ISSUE-037: Debug Section Display - Job extraction debugging panel (medium/low)
+- ISSUE-039: E2E test failures - 11 new failures discovered (high) - **✅ UNBLOCKED** by ISSUE-040 completion
 
 ---
 
@@ -589,20 +590,20 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 
 ## Bug Tracking
 
-**Total Bugs**: 42 (3 open, 5 mitigated, 34 fixed)
+**Total Bugs**: 43 (3 open, 5 mitigated, 35 fixed)
 
 **Priority Breakdown**:
 - Critical: 1
-- High: 7
+- High: 8
 - Medium: 19
 - Low: 11
 - Unknown: 2
 
 **Recent Activity** (Last 7 days):
+- **FIXED** [ISSUE-040](../bugs/fixed/ISSUE-040-database-architecture-simplification---single-database-with-backuprestore.md): Database Architecture Simplification (2025-11-10) - Single database with backup/restore, unblocks ISSUE-039
+- **UNBLOCKED** [ISSUE-039](../bugs/open/ISSUE-039-e2e-test-failures---11-new-failures-discovered-after-issue-036-completion.md): E2E test failures (2025-11-10) - 11 new failures, now unblocked by ISSUE-040 completion
 - **OPENED** [ISSUE-037](../bugs/open/ISSUE-037-debug-section-display---job-extraction-debugging-panel.md): Debug Section Display - Job extraction debugging panel (2025-11-08) - Feature planning for developer debugging tools
 - **FIXED** [ISSUE-032](../bugs/fixed/ISSUE-032-rejected-non-job-emails-with-jobops-old-label-appear-in-ignored-tab-while-already-in-gmail-trash.md): Rejected emails filtered from Ignored tab (2025-11-07) - Gmail API filtering + database cleanup
-- **RESOLVED** [ISSUE-030](../bugs/mitigated/ISSUE-030-low-confidence-emails-appear-in-filtered-tab-instead-of-non-job-emails.md): Low-confidence email threshold fix (2025-11-04) - Mitigated
-- **FIXED** [BUG-0009](../bugs/fixed/BUG-0009-condensed-description-api-returns-placeholder-for-short-job-descriptions.md): Condensed description word count (2025-11-04) - Fixed
 
 **Recent Fixes** (Last 14 days):
 - ISSUE-012: Zero-warning builds (2025-10-31) - All 90 Rust warnings fixed
@@ -685,9 +686,24 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 
 ---
 
-**Last Updated**: 2025-11-08 09:37:25 PST (ISSUE-037 created - Debug Section Display feature planning)
+**Last Updated**: 2025-11-10 18:36:50 PST (ISSUE-040 completed - Database Architecture Simplification)
 
 **Major Updates in This Revision**:
+- **ISSUE-040 COMPLETE** (2025-11-10 18:36:50 PST)
+  - ✅ Database architecture simplified to single database (`jobhunter_personal`)
+  - ✅ Automatic backup/restore functionality implemented
+  - ✅ Helper scripts: `seed-test-data.sh` (with backup), `restore-from-backup.sh`
+  - ✅ Backup location: `/tmp/jobhunter_backups/` (keeps last 5 backups)
+  - ✅ SessionStart hook updated to reflect single-database architecture
+  - ✅ Documentation updated: CLAUDE.md database configuration section
+  - **Implementation**: 5 phases complete (backup/restore infrastructure, script updates, documentation, testing, sanitization planning)
+  - **Result**: Eliminates database switching complexity, protects dev data during testing
+  - **Impact**: Unblocks ISSUE-039 (11 E2E test failures) - tests now run against correct database with proper test data
+- **ISSUE-039 UNBLOCKED** (2025-11-10)
+  - **Status**: Now unblocked by ISSUE-040 completion, ready for investigation
+  - **Impact**: 11 E2E test failures discovered after ISSUE-036 completion
+  - **Root Cause**: Database configuration confusion (tests configured for `jobhunter_personal` but seed script targeted `jobhunter_dev`)
+  - **Next Steps**: Resume investigation with corrected database architecture
 - **ISSUE-032 FIXED** (2025-11-07 12:43:38 PST)
   - ✅ Rejected emails with JobOps-OLD label now filtered from Ignored tab
   - ✅ Backend: Added Gmail API filtering to get_ignored_emails endpoint
