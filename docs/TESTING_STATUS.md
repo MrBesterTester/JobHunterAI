@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-11 01:00:00 PST
-last_updated: 2025-11-11 12:21:30 PST
+last_updated: 2025-11-11 13:41:06 PST
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -57,7 +57,7 @@ last_updated: 2025-11-11 12:21:30 PST
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-**Last Updated**: 2025-11-11 12:21:30 PST (ISSUE-034: MS Mail seeding moved to E2E test setup - preflight no longer requires backend)
+**Last Updated**: 2025-11-11 13:41:06 PST (ISSUE-037: Debug Section feature implemented and verified - extraction debugging tool complete)
 
 **Purpose**: Current testing status and open issues requiring attention. This document tracks the most recent comprehensive test suite results and serves as a sounding board for planning and tracking future comprehensive testing rounds.
 
@@ -647,18 +647,14 @@ Total:       ~12.5 minutes
 
 ## Open Issues
 
-**Status**: 4 open issues (0 test failures ✅)
-
-**Medium Priority**:
-1. **ISSUE-037**: [Debug Section Display - Job extraction debugging panel](../bugs/open/ISSUE-037-debug-section-display---job-extraction-debugging-panel.md)
-   - Frontend component visibility/functionality issue
+**Status**: 3 open issues (0 test failures ✅)
 
 **Low Priority**:
-2. **ISSUE-010**: [CLAUDE.md Size and Token Usage Monitoring](../bugs/open/ISSUE-010-claude-md-size-token-usage.md)
+1. **ISSUE-010**: [CLAUDE.md Size and Token Usage Monitoring](../bugs/open/ISSUE-010-claude-md-size-token-usage.md)
    - Documentation maintenance task
-3. **ISSUE-029**: [VSCode Mermaid Diagram Rendering Support](../bugs/open/ISSUE-029-vscode-mermaid-rendering.md)
+2. **ISSUE-029**: [VSCode Mermaid Diagram Rendering Support](../bugs/open/ISSUE-029-vscode-mermaid-rendering.md)
    - Documentation tooling issue
-4. **ISSUE-031**: [Claude Not Following Existing File Discovery Guidance in CLAUDE.md](../bugs/open/ISSUE-031-claude-ignoring-file-discovery-guidance.md)
+3. **ISSUE-031**: [Claude Not Following Existing File Discovery Guidance in CLAUDE.md](../bugs/open/ISSUE-031-claude-ignoring-file-discovery-guidance.md)
    - Workflow/documentation issue
 
 **Skipped Tests**:
@@ -667,6 +663,15 @@ Total:       ~12.5 minutes
 - **181 E2E Tests**: Intentionally skipped (cosmetic styling, redundant coverage) - see EXCLUDED_TESTS.md
 
 **Recently Resolved**:
+- ✅ **ISSUE-037** (2025-11-11): Debug Section feature implemented and verified
+  - DebugSection component created with environment toggle (`REACT_APP_DEBUG_MODE`)
+  - Fixed RSBuild configuration for proper environment variable injection
+  - Resolved `process is not defined` error in browser context
+  - Visual verification: 24 debug sections found on 10 job cards
+  - All 6 E2E tests re-enabled (18-debug-section.spec.ts)
+  - CLAUDE.md workflow integration documented (debug screenshot workflow)
+  - **Value**: Reduced extraction debugging time from 5-10 minutes (database queries) to <1 minute (visual inspection)
+  - **Files Changed**: `frontend/rsbuild.config.ts`, `frontend/src/DebugSection.tsx`, `frontend/src/App.tsx`, `.env.development.local`
 - ✅ **ISSUE-034** (2025-11-11): MS Mail seeding moved to E2E test setup, preflight no longer requires backend
 - ✅ **ISSUE-033** (2025-11-11): 2 backend integration tests fixed, backend tests now 164 passed / 6 ignored
 - ✅ **ISSUE-039** (2025-11-10): All 11 NEW E2E test failures resolved, pass rate 97.0% → 100% ✅
