@@ -16,24 +16,41 @@ last_updated: 2025-11-07 19:12:00 PST (Added separate test runner scripts for ba
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Comprehensive Automated Test Suite Plan - JobHunter](#comprehensive-automated-test-suite-plan---jobhunter)
-  - [Table of Contents](#table-of-contents)
   - [Overview](#overview)
   - [Current Implementation](#current-implementation)
     - [Global Configuration Parameters](#global-configuration-parameters)
     - [Comprehensive Test Suite Script](#comprehensive-test-suite-script)
+    - [Notification System](#notification-system)
+      - [Why Dialog Boxes with Sound?](#why-dialog-boxes-with-sound)
+      - [Implementation](#implementation)
+      - [When Notifications Are Sent](#when-notifications-are-sent)
+      - [Message Format](#message-format)
+      - [Cross-Reference](#cross-reference)
     - [Separate Test Runner Scripts](#separate-test-runner-scripts)
       - [Backend Tests Only](#backend-tests-only)
       - [Frontend Tests Only](#frontend-tests-only)
       - [E2E Tests Only](#e2e-tests-only)
     - [Recommended Test Workflow](#recommended-test-workflow)
+    - [Quality Gates & Error Handling](#quality-gates--error-handling)
+      - [Build/Compilation Failures (ALWAYS STOP ⛔)](#buildcompilation-failures-always-stop-)
+      - [Test Failures (RESPECTS --fail-fast FLAG ⚠️)](#test-failures-respects---fail-fast-flag-)
+      - [Preflight Failures (ALWAYS ABORT 🚫)](#preflight-failures-always-abort-)
+      - [Error Handling Summary](#error-handling-summary)
     - [Preflight Requirements (HARD Requirements)](#preflight-requirements-hard-requirements)
       - [0. Process Cleanup ✅](#0-process-cleanup-)
       - [1. Git Status ✅](#1-git-status-)
       - [2. Database Selection ✅](#2-database-selection-)
       - [3. Database State 🔄](#3-database-state-)
+        - [Database Backup & Restore](#database-backup--restore)
       - [4. Gmail State ⚠️](#4-gmail-state-)
       - [5. Microsoft Email State ✅](#5-microsoft-email-state-)
     - [OAuth Token Management Strategy](#oauth-token-management-strategy)
+    - [Test Result Documentation](#test-result-documentation)
+      - [What to Update](#what-to-update)
+      - [Timestamp Format Requirements](#timestamp-format-requirements)
+      - [Update Workflow Example](#update-workflow-example)
+      - [What to Document](#what-to-document)
+      - [Cross-References](#cross-references)
   - [Implementation Details](#implementation-details)
     - [File Structure](#file-structure)
     - [Components to Implement](#components-to-implement)
@@ -189,28 +206,6 @@ last_updated: 2025-11-07 19:12:00 PST (Added separate test runner scripts for ba
 
 # Comprehensive Automated Test Suite Plan - JobHunter
 
-## Table of Contents
-
-- [Overview](#overview)
-- [Test Architecture](#test-architecture)
-- [Phase-by-Phase Testing Coverage](#phase-by-phase-testing-coverage)
-- [Test Infrastructure & Dependencies](#test-infrastructure--dependencies)
-- [Test Database Setup](#test-database-setup)
-- [Performance & Security Testing](#performance--security-testing)
-- [CI/CD Integration](#cicd-integration)
-- [Test Categories & Scenarios](#test-categories--scenarios)
-- [Success Criteria](#success-criteria)
-- [Manual Frontend Testing Checklist](#manual-frontend-testing-checklist)
-- [Maintenance & Evolution](#maintenance--evolution)
-- [🔧 Test Failure Remediation Plan (October 15, 2025)](#-test-failure-remediation-plan-october-15-2025)
-  - [Progress Tracking](#progress-tracking)
-  - [TIER 1: QUICK WINS ✅ COMPLETE](#tier-1-quick-wins--complete-15-minutes)
-  - [TIER 2: MODERATE COMPLEXITY](#tier-2-moderate-complexity-60-90-minutes)
-  - [TIER 3: COMPLEX ISSUES](#tier-3-complex-issues-30-60-minutes)
-  - [TIER 4: LOW PRIORITY](#tier-4-low-priority-optional---15-minutes)
-  - [📋 Recommended Fix Order](#-recommended-fix-order)
-  - [🎯 Success Criteria](#-success-criteria)
-
 ## Overview
 
 This document outlines the comprehensive testing strategy for the JobHunter autonomous job application management system. Our testing approach ensures reliability, performance, and correctness across all 4 phases of the platform, from core functionality through automated job intake and content generation.
@@ -293,6 +288,77 @@ This document outlines the comprehensive testing strategy for the JobHunter auto
 - **Frontend Unit**: ~25 sec (517 tests)
 - **E2E Tests**: ~23 min (594 tests - 85% of total time)
 - **TOTAL**: ~27 min (full suite) | ~4 min (with --skip-e2e)
+
+**Latest actual runtimes**: See [TESTING_STATUS.md - Comprehensive Test Suite Runtime](docs/TESTING_STATUS.md#comprehensive-test-suite-runtime) for measured values from recent test runs.
+
+---
+
+### Notification System
+
+The test scripts use **macOS dialog boxes with sound alerts** to notify when long-running tasks complete. This approach is more reliable than macOS Notification Center for ensuring awareness of test completion.
+
+#### Why Dialog Boxes with Sound?
+
+**Advantages over Notification Center**:
+- ✅ **Front and center**: Dialog appears as modal window (not hidden in sidebar)
+- ✅ **Requires acknowledgment**: User must click OK (not just dismissible)
+- ✅ **Not affected by Focus mode**: Works even when notifications are silenced
+- ✅ **Immediate audio alert**: Sound plays instantly when task completes
+- ✅ **Always visible**: Can't be missed or ignored like banner notifications
+
+#### Implementation
+
+**Command syntax**:
+```bash
+afplay /System/Library/Sounds/Glass.aiff && osascript -e "display dialog \"Test Results: 1077/1077 passed (100%)\" with title \"Claude Code\" buttons {\"OK\"} default button \"OK\" with icon note"
+```
+
+**Components**:
+1. `afplay /System/Library/Sounds/Glass.aiff` - Plays system sound (Glass for success, Basso for failure)
+2. `osascript -e` - Runs AppleScript command
+3. `display dialog` - Creates modal dialog box
+4. `with title "Claude Code"` - Sets dialog title
+5. `buttons {"OK"}` - Adds OK button (user must click)
+6. `with icon note` - Shows informational icon
+
+**Note**: Must use **double quotes** on outside with **escaped quotes** (`\"`) inside. Single quotes don't work with curly braces in AppleScript.
+
+#### When Notifications Are Sent
+
+**Notifications sent** (tasks >30 seconds):
+- ✅ `run-comprehensive-tests.sh` - After full test suite completes (~27 min)
+- ✅ `run-e2e-tests.sh` - After E2E tests complete (~20-25 min)
+
+**No notifications** (tasks <30 seconds):
+- ❌ `run-backend-tests.sh` - Too fast (~1-2 min)
+- ❌ `run-frontend-tests.sh` - Too fast (~30 sec)
+
+**Rationale**: Only send notifications for tasks where user is likely to context-switch away from terminal while waiting.
+
+#### Message Format
+
+**Success notification**:
+```bash
+afplay /System/Library/Sounds/Glass.aiff && osascript -e "display dialog \"✅ All Tests Passed!\n\nBackend: 162/162\nFrontend: 516/516\nE2E: 399/399\n\nTotal: 1077/1077 (100%)\nRuntime: 12.5 minutes\" with title \"Test Suite Complete\" buttons {\"OK\"} default button \"OK\" with icon note"
+```
+
+**Failure notification**:
+```bash
+afplay /System/Library/Sounds/Basso.aiff && osascript -e "display dialog \"❌ Tests Failed\n\nBackend: 160/162 (2 failed)\nFrontend: 516/516\nE2E: 395/399 (4 failed)\n\nCheck logs in /tmp/ for details\" with title \"Test Suite Failed\" buttons {\"OK\"} default button \"OK\" with icon caution"
+```
+
+**Key differences for failures**:
+- Sound: `Basso.aiff` (lower, more urgent tone)
+- Icon: `caution` (warning icon instead of note)
+- Message includes failed test counts and log file location
+
+#### Cross-Reference
+
+**Developer preferences**: See [CLAUDE.md - Notifications](../CLAUDE.md#notifications) for full notification requirements and setup details.
+
+**Test result reporting**: See [Test Result Documentation](#test-result-documentation) section below for requirements to update TESTING_STATUS.md after comprehensive test runs.
+
+---
 
 ### Separate Test Runner Scripts
 
@@ -402,6 +468,116 @@ For faster iteration and targeted testing, individual test suites can be run sep
 
 ---
 
+### Quality Gates & Error Handling
+
+The comprehensive test script enforces different failure policies depending on the type of failure. Understanding this distinction is critical for effective debugging.
+
+#### Build/Compilation Failures (ALWAYS STOP ⛔)
+
+**Build and compilation failures are quality gates that ALWAYS stop execution**, regardless of the `--fail-fast` flag.
+
+**What qualifies as a build failure:**
+- Rust compilation errors (`error[E0123]`)
+- Rust compiler warnings (zero-warning requirement)
+- TypeScript compilation errors
+- Frontend build warnings (RSBuild/webpack)
+- Missing dependencies or configuration errors
+
+**Behavior:**
+```bash
+# Backend build failure
+cargo build 2>&1 | tee /tmp/backend-build.log
+# ❌ If warnings found: Script aborts immediately
+# Error message: "Build/compilation failures are not allowed. Aborting."
+
+# Frontend build failure
+npm run build 2>&1 | tee /tmp/frontend-build.log
+# ❌ If warnings found: Script aborts immediately
+```
+
+**Why this is enforced:**
+- Ensures clean, production-ready code quality
+- Prevents test failures caused by broken builds
+- Catches configuration issues early
+- Maintains zero-warning standard across codebase
+
+**Recovery:**
+1. Check log files: `/tmp/backend-build.log` or `/tmp/frontend-build.log`
+2. Fix all warnings and compilation errors
+3. Re-run comprehensive tests from scratch
+
+---
+
+#### Test Failures (RESPECTS --fail-fast FLAG ⚠️)
+
+**Test failures follow the `--fail-fast` flag policy:**
+
+**Default behavior (no --fail-fast):**
+- All tests run regardless of failures
+- Comprehensive results collected
+- Notification shows aggregate pass/fail counts
+
+**With --fail-fast flag:**
+- Execution stops at first test failure
+- Remaining tests NOT executed
+- Faster feedback for debugging
+
+**Detection for backend tests:**
+The script differentiates between compilation errors during test runs (treated as build failures) and actual test failures:
+
+```bash
+# Compilation error during test run (ALWAYS STOP):
+error[E0425]: cannot find value `foo` in this scope
+
+# Test failure (respects --fail-fast):
+test test_job_filtering ... FAILED
+```
+
+**Why this matters:**
+- Compilation errors = code is broken (can't proceed)
+- Test failures = logic errors (can continue collecting data)
+
+---
+
+#### Preflight Failures (ALWAYS ABORT 🚫)
+
+**All preflight checks are HARD requirements** - any failure aborts the entire test run before tests begin.
+
+**Examples:**
+- Uncommitted git changes
+- Wrong database selected (`jobhunter_dev` instead of `jobhunter_personal`)
+- OAuth token refresh failed
+- Database clear/seed failed
+- Gmail/MS Mail state clear failed
+- Processes still running on required ports
+
+**Recovery:**
+1. Fix the specific preflight failure
+2. Re-run comprehensive tests (preflight runs again)
+
+**See**: [Preflight Requirements](#preflight-requirements-hard-requirements) section below for detailed requirements
+
+---
+
+#### Error Handling Summary
+
+| Failure Type | Behavior | Affected by --fail-fast? | Recovery |
+|--------------|----------|-------------------------|----------|
+| **Build/Compilation** | ⛔ ALWAYS STOP | ❌ No (always stops) | Fix code, re-run |
+| **Test Failures** | ⚠️ Configurable | ✅ Yes | Investigate, fix logic |
+| **Preflight Checks** | 🚫 ABORT | ❌ No (always aborts) | Fix environment, re-run |
+
+**Log file locations:**
+- Backend build: `/tmp/backend-build.log`
+- Frontend build: `/tmp/frontend-build.log`
+- Backend tests: `/tmp/backend-test.log`
+- Frontend tests: `/tmp/frontend-test.log`
+- E2E tests: `/tmp/e2e-test.log`
+
+**Cross-reference:** See `./helper-scripts/run-comprehensive-tests.sh` lines 119-141 for implementation details
+
+---
+
 ### Preflight Requirements (HARD Requirements)
 
 All preflight checks are **HARD requirements** - the script aborts if any check fails.
@@ -451,6 +627,78 @@ All preflight checks are **HARD requirements** - the script aborts if any check 
   ./helper-scripts/seed-database.sh
   ```
 - **Status**: ⚠️ Implementation in progress (see "Components to Implement" below)
+
+##### Database Backup & Restore
+
+**Critical**: E2E tests truncate and seed test data into `jobhunter_personal` database. Automatic backups protect your development data from loss.
+
+**Automatic Backup Creation**:
+```bash
+# Seed test data with automatic backup
+./helper-scripts/seed-test-data.sh --truncate
+
+# What happens:
+# 1. Prompts user to confirm truncation
+# 2. Creates backup: /tmp/jobhunter_backups/jobhunter_personal_YYYYMMDD_HHMMSS.sql
+# 3. Saves backup path to: /tmp/jobhunter_last_backup.txt
+# 4. Cleans up old backups (keeps last 5)
+# 5. Truncates jobs table with CASCADE
+# 6. Seeds test data from database/seed_test_data.sql
+```
+
+**Safety Features**:
+- ✅ **Backup MUST succeed before truncate** - If backup fails, truncate is aborted (data is safe)
+- ✅ **Confirmation required** - User must explicitly confirm destructive operation
+- ✅ **Clear recovery instructions** - Shows restore command if something goes wrong
+- ✅ **Automatic cleanup** - Old backups cleaned up (keeps last 5 to save disk space)
+
+**Manual Restore**:
+```bash
+# Restore most recent backup
+./helper-scripts/restore-from-backup.sh
+
+# List all available backups
+./helper-scripts/restore-from-backup.sh --list
+
+# Restore specific backup
+./helper-scripts/restore-from-backup.sh --file /tmp/jobhunter_backups/jobhunter_personal_20251111_140522.sql
+```
+
+**Restore Process**:
+1. Locates most recent backup (from `/tmp/jobhunter_last_backup.txt` or latest in directory)
+2. Shows current database state (jobs, applications, sources)
+3. Prompts user to confirm restore (warns about data loss)
+4. Drops all existing data
+5. Restores from backup SQL file
+6. Shows restored database state
+
+**Backup Storage**:
+- **Location**: `/tmp/jobhunter_backups/` (outside git repository)
+- **Naming**: `jobhunter_personal_YYYYMMDD_HHMMSS.sql`
+- **Retention**: Last 5 backups kept automatically
+- **Cleanup**: Older backups automatically deleted to save disk space
+- **Persistence**: Lives in `/tmp/` so survives reboots but not system shutdown
+
+**When Backups Are Created**:
+- ✅ **Automatically during test data seeding** (`seed-test-data.sh --truncate`)
+- ✅ **Before comprehensive test runs** (via preflight checks)
+- ❌ **NOT during normal development** (only when seeding test data)
+
+**When Restore Is Needed**:
+- ❌ **NOT automatically** - Restore requires explicit user action (safety mechanism)
+- ✅ **User-initiated recovery** - When development data needs to be restored
+- ✅ **After catastrophic data loss** - If something goes wrong during testing
+- ✅ **Rolling back test data** - Return to pre-test state
+
+**Architecture Note (ISSUE-040)**:
+- **Single database architecture**: `jobhunter_personal` used for BOTH development AND testing
+- **Test data seeding**: E2E tests seed controlled test data before running
+- **No separate test database**: Simplified architecture reduces configuration complexity
+- **Backup/restore safety net**: Protects development data during testing
+
+**Cross-reference**: See [CLAUDE_WORKFLOWS.md - Database Backup & Restore Procedures](../CLAUDE_WORKFLOWS.md#database-backup--restore-procedures) for detailed workflows and troubleshooting.
+
+---
 
 #### 4. Gmail State ⚠️
 - **Requirement**: No unread emails, no JobOps or JobOps-OLD labels
@@ -517,6 +765,115 @@ All preflight checks are **HARD requirements** - the script aborts if any check 
 - ✅ Secure: No tokens committed to git repository
 - ✅ Automated: No manual intervention per test run
 - ✅ Low maintenance: Refresh tokens last months/years
+
+---
+
+### Test Result Documentation
+
+**REQUIRED**: After running comprehensive tests, update `docs/TESTING_STATUS.md` with full test results and timestamps.
+
+#### What to Update
+
+**Primary document**: [`docs/TESTING_STATUS.md`](docs/TESTING_STATUS.md)
+
+**Sections to update**:
+
+1. **Latest Test Run Results** (top of document):
+   - Full timestamp: `YYYY-MM-DD HH:MM:SS TZ` (e.g., "2025-11-11 01:00:00 PST")
+   - Run type (Comprehensive, Backend only, E2E only, etc.)
+   - Total runtime (wall clock time, not CPU time)
+   - Quick summary table with all test suites
+   - Detailed breakdown of results
+   - Comparison to previous run
+   - Key observations
+
+2. **Comprehensive Test Suite Runtime** section:
+   - Update "Latest Actual Runtime" with timestamp
+   - Update all tables with actual results (not estimates)
+   - Document variance from estimates with explanations
+   - Update "Last Runtime Verification" timestamp
+
+3. **"Last Updated" timestamp** (at top of file):
+   - Format: `YYYY-MM-DD HH:MM:SS TZ (description)`
+   - Example: `2025-11-11 09:11:27 PST (Comprehensive test suite execution completed)`
+
+#### Timestamp Format Requirements
+
+**CRITICAL**: All status documents MUST use full timestamps:
+
+**Required format**: `YYYY-MM-DD HH:MM:SS TZ (optional description)`
+
+**Examples**:
+- `2025-11-11 09:52:20 PST`
+- `2025-11-11 09:52:20 PST (Bug tracking synchronized)`
+
+**Get current timestamp**:
+```bash
+date "+%Y-%m-%d %H:%M:%S %Z"  # Full timestamp with timezone
+```
+
+**Why full timestamps matter**:
+- Provides precise point-in-time references for all documentation
+- Enables exact correlation between doc updates and git commits
+- Tracks historical changes with minute-level precision
+- Prevents ambiguity when multiple updates happen same day
+
+#### Update Workflow Example
+
+```bash
+# 1. Run comprehensive tests and capture results
+./helper-scripts/run-comprehensive-tests.sh 2>&1 | tee /tmp/comprehensive-test-run.log
+
+# 2. Get current timestamp
+TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S %Z")
+echo "Test run completed at: $TIMESTAMP"
+
+# 3. Update TESTING_STATUS.md with:
+#    - Latest Test Run Results section (with $TIMESTAMP)
+#    - Actual test counts from logs
+#    - Runtime data (wall clock time)
+#    - Comparison to previous run
+#    - Key observations
+
+# 4. Commit the update
+git add docs/TESTING_STATUS.md
+git commit -m "docs: Update TESTING_STATUS.md with test results ($TIMESTAMP)"
+```
+
+#### What to Document
+
+**Test counts**:
+- Backend: X/X tests passing (Y ignored)
+- Frontend Unit: X/X tests passing (Y skipped)
+- E2E: X/X tests passing (Y skipped)
+- Total: X/X tests passing across all suites
+
+**Runtime breakdown** (wall clock time):
+- Preflight: X min
+- Backend build + tests: X sec
+- Frontend build + unit tests: X sec
+- E2E tests: X min
+- **Total**: X min (actual elapsed time)
+
+**Comparison to previous run**:
+- Pass rate changes: X% → Y% (+/- Z%)
+- New failures discovered: N tests
+- Previous failures fixed: N tests
+- Runtime variance: Previous X min → Current Y min (+/- Z min)
+
+**Key observations**:
+- Notable improvements or regressions
+- New test infrastructure changes
+- Performance improvements
+- Issues discovered
+
+#### Cross-References
+
+**Testing status requirements**: See [CLAUDE.md - Testing Status Update Requirements](../CLAUDE.md#testing-status-update-requirements) for complete documentation standards.
+
+**Documentation timestamp standards**: See [CLAUDE.md - Documentation Timestamp Standards](../CLAUDE.md#documentation-timestamp-standards) for timestamp format requirements across all status documents.
+
+**Testing history archive**: Previous comprehensive test results are archived to [`docs/TESTING_HISTORY.md`](docs/TESTING_HISTORY.md) when a new comprehensive run completes.
 
 ---
 
