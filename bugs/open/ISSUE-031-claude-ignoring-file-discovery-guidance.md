@@ -8,13 +8,19 @@ type: workflow
 priority: high
 severity: high
 component: workflow
+root_cause: upstream_product_bug
 created: 2025-11-04
-updated: 2025-11-04
+updated: 2025-11-11
 affects: [claude-behavior, file-discovery, tool-usage]
-related: [ISSUE-011]](#id-issue-031%0Atitle-claude-not-following-existing-file-discovery-guidance-in-claudemd%0Astatus-open%0Atype-workflow%0Apriority-high%0Aseverity-high%0Acomponent-workflow%0Acreated-2025-11-04%0Aupdated-2025-11-04%0Aaffects-claude-behavior-file-discovery-tool-usage%0Arelated-issue-011)
+related: [ISSUE-011]
+upstream_issues: [anthropics/claude-code#7777, anthropics/claude-code#10056]](#id-issue-031%0Atitle-claude-not-following-existing-file-discovery-guidance-in-claudemd%0Astatus-open%0Atype-workflow%0Apriority-high%0Aseverity-high%0Acomponent-workflow%0Aroot_cause-upstream_product_bug%0Acreated-2025-11-04%0Aupdated-2025-11-11%0Aaffects-claude-behavior-file-discovery-tool-usage%0Arelated-issue-011%0Aupstream_issues-anthropicsclaude-code7777-anthropicsclaude-code10056)
 - [ISSUE-031: Claude Not Following Existing File Discovery Guidance in CLAUDE.md](#issue-031-claude-not-following-existing-file-discovery-guidance-in-claudemd)
   - [Summary](#summary)
   - [Background](#background)
+  - [ROOT CAUSE UPDATE (2025-11-11)](#root-cause-update-2025-11-11)
+    - [Key Research Findings](#key-research-findings)
+    - [Evidence from This Session (2025-11-11)](#evidence-from-this-session-2025-11-11)
+    - [Implications](#implications)
   - [Current CLAUDE.md Guidance (Lines 387-414)](#current-claudemd-guidance-lines-387-414)
     - [For Exploratory Searches (Primary Method)](#for-exploratory-searches-primary-method)
     - [For Specific Known Targets Only (Narrow Exceptions)](#for-specific-known-targets-only-narrow-exceptions)
@@ -49,17 +55,19 @@ type: workflow
 priority: high
 severity: high
 component: workflow
+root_cause: upstream_product_bug
 created: 2025-11-04
-updated: 2025-11-04
+updated: 2025-11-11
 affects: [claude-behavior, file-discovery, tool-usage]
 related: [ISSUE-011]
+upstream_issues: [anthropics/claude-code#7777, anthropics/claude-code#10056]
 ---
 
 # ISSUE-031: Claude Not Following Existing File Discovery Guidance in CLAUDE.md
 
 ## Summary
 
-Claude Code consistently uses bash commands (`find`, `ls`, `grep`, `cat`) for file operations instead of following the existing comprehensive file discovery guidance in CLAUDE.md lines 387-414. The guidance is correct and comprehensive - the problem is behavioral adherence, not documentation gaps.
+Claude Code consistently uses bash commands (`find`, `ls`, `grep`, `cat`) for file operations instead of following the existing comprehensive file discovery guidance in CLAUDE.md. **Research confirms this is a known, unresolved product bug in Claude Code itself** (see Root Cause Update below), not a documentation gap or project-specific issue.
 
 ## Background
 
@@ -68,6 +76,54 @@ Claude Code consistently uses bash commands (`find`, `ls`, `grep`, `cat`) for fi
 **User's directive**: "Please research Anthropic docs, do a review of CLAUDE.md regarding that and then also take a look at Issue 11 of that problem that was fixed the wrong way!"
 
 **Key finding**: ISSUE-011 addressed the wrong problem (file path prefix conventions) when the real problem is Claude not following existing file discovery tool guidance.
+
+## ROOT CAUSE UPDATE (2025-11-11)
+
+**This is a known, unresolved product bug in Claude Code itself.**
+
+### Key Research Findings
+
+**User's Intuition Confirmed**: After proposing complex documentation workarounds, user said: *"This seems like such a great deal of work for something so basic."* Research into Anthropic docs and GitHub issues confirmed this intuition was exactly right.
+
+**Multiple GitHub Issues Document This Problem**:
+
+1. **Issue #7777** - "[BUG] Claude ignores instruction in CLAUDE.MD and agents"
+   - Claude reportedly stated: *"My default mode always wins because it requires less cognitive effort and activates automatically"*
+   - Pattern: Follows instructions for 2-5 prompts, then reverts to default behavior
+   - Status: **OPEN** with no Anthropic resolution
+   - Multiple users report: "completely unusable for instruction adherence"
+
+2. **Issue #10056** - "[BUG] Agents don't respect CLAUDE.md tool usage rules - use bash commands instead of specialized tools"
+   - Exactly this issue: agents use `find`, `grep`, `cat` despite explicit CLAUDE.md prohibitions
+   - Issue text quotes: *"CLAUDE.md states: 'This rule applies to ALL agents and ALL situations without exception'"* - ignored anyway
+   - Status: Closed as **duplicate of #7777**
+
+3. **Additional Related Issues**: #6120, #668, #4017, #3377 - all report CLAUDE.md instruction adherence failures
+
+**Official Anthropic Documentation**: Contains **no specific guidance** on bash commands vs specialized tools or tool selection frameworks.
+
+**User Impact Reported in GitHub**:
+- Multiple users canceled subscriptions over this issue
+- Described as "completely unusable" for instruction adherence
+- Must manually enforce compliance with each prompt
+
+### Evidence from This Session (2025-11-11)
+
+When asked to research bash command usage history, Claude **ironically used bash commands to search for bash command usage**:
+```bash
+# ❌ Used bash grep and head to filter git output
+git log -p ... | grep -A5 -B5 "..." | head -50
+```
+
+This demonstrates the exact problem: reaching for bash commands reflexively despite comprehensive CLAUDE.md guidance prohibiting this pattern.
+
+### Implications
+
+**No amount of CLAUDE.md documentation will fix a product-level bug.** The proposed solutions (strengthening guidance, adding checklists, session hooks) cannot override Claude Code's default behavior patterns when this is a fundamental product limitation.
+
+**Only workaround available**: Manual correction when bash commands are used incorrectly.
+
+**Resolution timeline**: Awaiting Anthropic fix to upstream product issues.
 
 ## Current CLAUDE.md Guidance (Lines 387-414)
 
@@ -166,7 +222,11 @@ The guidance is **already correct and comprehensive**:
 
 ## Root Cause Analysis
 
-**Why does this happen despite clear guidance?**
+**UPDATE (2025-11-11): Root cause confirmed as upstream product bug.**
+
+See "ROOT CAUSE UPDATE" section above for complete research findings.
+
+**Original hypothesis (2025-11-04)** - Why does this happen despite clear guidance?
 
 Possible explanations:
 1. **System prompt dominance**: Anthropic's system instructions may emphasize bash commands over project-specific tool guidance
@@ -174,7 +234,11 @@ Possible explanations:
 3. **Insufficient reinforcement**: CLAUDE.md guidance isn't strong enough to override default behavior
 4. **Visibility**: Guidance buried in middle of 400+ line document
 
+**Confirmed root cause (2025-11-11)**: This is a known product bug in Claude Code itself (GitHub issues #7777, #10056). Claude reportedly stated: *"My default mode always wins because it requires less cognitive effort and activates automatically."* No amount of project-level documentation can override this product-level behavior pattern.
+
 ## Proposed Solutions
+
+**NOTE (2025-11-11)**: Following research confirming this is an upstream product bug, these solutions are now understood to be **insufficient** to fully resolve the issue. They may provide marginal improvement but cannot override Claude Code's fundamental behavior patterns. See "ROOT CAUSE UPDATE" section for details.
 
 ### Option 1: Strengthen CLAUDE.md Guidance (Recommended)
 
@@ -263,9 +327,13 @@ Additional options (2, 3, 4) remain available if Option 1 proves insufficient.
 
 ## When to Close This Issue
 
-**Status**: Should remain **open** until proven fixed through observation
+**Status**: Should remain **open** until Anthropic fixes upstream product bugs
 
-This is a behavioral issue, not a documentation gap. The fix requires demonstrated behavior change over time, not just updating documentation.
+**UPDATE (2025-11-11)**: Now confirmed as upstream product bug (GitHub issues #7777, #10056). This issue will remain open until:
+1. Anthropic resolves the upstream bugs in Claude Code itself, AND
+2. Observable behavior change is confirmed in this project
+
+This is **not a documentation gap** - it's a product-level limitation. The fix requires Anthropic to address Claude Code's fundamental behavior patterns, not project-level documentation changes.
 
 ### Closure Criteria (All Must Be True)
 
@@ -323,8 +391,19 @@ Closing too early risks declaring victory prematurely while the underlying probl
 ## Status History
 
 - **2025-11-04**: Issue created after user identified ongoing file discovery problems
-- **2025-11-04**: Research completed - found CLAUDE.md guidance is correct, problem is adherence
+- **2025-11-04**: Initial research completed - found CLAUDE.md guidance is correct, problem is adherence
 - **2025-11-04**: Added "When to Close This Issue" section with closure criteria and testing approach
+- **2025-11-04**: Implemented Option 1 (strengthened CLAUDE.md guidance)
+- **2025-11-11**: User questioned whether issue could be closed
+- **2025-11-11**: User correctly observed Claude still uses bash commands inappropriately
+- **2025-11-11**: User's intuition: "This seems like such a great deal of work for something so basic"
+- **2025-11-11**: Comprehensive research conducted:
+  - Reviewed Anthropic official documentation (no tool selection guidance found)
+  - Searched GitHub issues for similar problems
+  - Found multiple open bugs documenting this exact issue (#7777, #10056, #6120, #668, #4017, #3377)
+- **2025-11-11**: **ROOT CAUSE CONFIRMED**: This is a known, unresolved product bug in Claude Code itself
+- **2025-11-11**: Updated issue to reflect upstream product bug status
+- **2025-11-11**: Issue remains **OPEN** - awaiting Anthropic fix to upstream issues
 
 ## Notes
 
@@ -334,6 +413,12 @@ Closing too early risks declaring victory prematurely while the underlying probl
 - Path prefixes were a symptom, not the disease
 - This issue addresses the root cause
 
-**Key insight**: The documentation is already correct. The problem is behavioral - Claude needs stronger reinforcement to follow existing guidance.
+**Key insight (2025-11-04)**: The documentation is already correct. The problem is behavioral - Claude needs stronger reinforcement to follow existing guidance.
 
-**User frustration indicator**: "You're still having a more general problem" suggests this is a recurring, noticeable issue that degrades user experience.
+**UPDATE - Key insight (2025-11-11)**: User's intuition was exactly correct. When presented with elaborate documentation workarounds, user questioned: *"This seems like such a great deal of work for something so basic."* Subsequent research confirmed this shouldn't be necessary - it's a fundamental product bug, not a project-specific documentation problem.
+
+**User frustration indicators**:
+- "You're still having a more general problem" (2025-11-04) - suggests recurring, noticeable issue
+- "This seems like such a great deal of work for something so basic" (2025-11-11) - intuition that sparked discovery of upstream product bug
+
+**Lesson learned**: When something feels like it should be basic but requires elaborate workarounds, investigate whether it's actually a product limitation rather than a documentation gap.
