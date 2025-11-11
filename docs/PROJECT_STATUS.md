@@ -11,7 +11,7 @@ related_docs:
   - TESTING_STATUS.md (testing results)
   - README_auto-test-plan.md (testing plan)
   - PRD.md (product requirements)
-last_updated: 2025-11-11 11:32:33 PST
+last_updated: 2025-11-11 11:40:10 PST
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -22,6 +22,7 @@ last_updated: 2025-11-11 11:32:33 PST
   - [⚠️ Important: Phase Execution Order](#-important-phase-execution-order)
   - [Current State](#current-state)
   - [🔒 GitHub Publication Security](#-github-publication-security)
+    - [Security by Design vs Security by Accident](#security-by-design-vs-security-by-accident)
   - [Recommended Next Steps](#recommended-next-steps)
     - [Immediate: Begin Using The Application](#immediate-begin-using-the-application)
     - [✅ Complete: Email Management Refinements (Phase 2.10)](#-complete-email-management-refinements-phase-210)
@@ -56,7 +57,7 @@ last_updated: 2025-11-11 11:32:33 PST
 
 # JobHunter Project Status
 
-**Last Updated**: 2025-11-11 11:32:33 PST (GitHub Publication Security documented - ISSUE-040 Phase 5 complete)
+**Last Updated**: 2025-11-11 11:40:10 PST (Security by Design vs Accident discussion added)
 
 ---
 
@@ -184,6 +185,35 @@ git grep -i "client_secret|access_token|refresh_token" -- '*.sql' '*.md'
 ```
 
 **Result**: Repository is secure for public GitHub publication. All credentials protected, git history clean, sanitization workflow documented and tested.
+
+### Security by Design vs Security by Accident
+
+**Important Context**: The git repository has **NEVER had security leaks** - this has been verified through comprehensive git history audits.
+
+**What Was Implicit (Security by Accident)**:
+- ✅ `.gitignore` blocking sensitive files (good practice from project start)
+- ✅ Backups stored in `/tmp/` outside repo (design choice, but not explicitly for security)
+- ✅ No credentials ever committed (good development practices, but not documented policy)
+- ❌ **No documented workflow** for safe database schema publication
+- ❌ **No verification procedures** to audit git history for leaks
+- ❌ **No sanitization tooling** to actively strip credentials before publication
+
+**What Is Now Explicit (Security by Design)**:
+- ✅ **New tool**: `sanitize-database.sh` - Active mechanism to strip credentials before publication
+- ✅ **Documented workflow**: CLAUDE.md "GitHub Publication Workflow" section
+- ✅ **Verification commands**: How to audit git history for leaks
+- ✅ **Security section**: PROJECT_STATUS.md documenting what's protected and why
+- ✅ **Git history audit procedure**: Documented commands to verify safety before publication
+- ✅ **Pre-publication checklist**: Step-by-step process to ensure safe publication
+
+**Key Insight**: The repository was always safe (zero leaks in history), but safety was achieved through **implicit good practices** rather than **explicit security design**. This documentation effort transforms implicit safety into deliberate, documented, verifiable security procedures.
+
+**Why This Matters**:
+- **Before**: Safe by accident - if someone made a mistake, no safety net
+- **After**: Safe by design - multiple layers of documentation, tooling, and verification
+- **Benefit**: Future contributors have clear guidance; mistakes are prevented by tooling
+
+This work completes ISSUE-040 Phase 5, transforming accidental security into deliberate security architecture.
 
 ---
 
