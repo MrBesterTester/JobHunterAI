@@ -21,6 +21,7 @@ last_updated: 2025-11-11 11:32:33 PST
   - [🎯 **CORE WORKFLOWS COMPLETE - ALL EMAIL MANAGEMENT REFINEMENTS DONE**](#-core-workflows-complete---all-email-management-refinements-done)
   - [⚠️ Important: Phase Execution Order](#-important-phase-execution-order)
   - [Current State](#current-state)
+  - [🔒 GitHub Publication Security](#-github-publication-security)
   - [Recommended Next Steps](#recommended-next-steps)
     - [Immediate: Begin Using The Application](#immediate-begin-using-the-application)
     - [✅ Complete: Email Management Refinements (Phase 2.10)](#-complete-email-management-refinements-phase-210)
@@ -42,7 +43,6 @@ last_updated: 2025-11-11 11:32:33 PST
   - [Testing Status](#testing-status)
   - [Bug Tracking](#bug-tracking)
   - [Project Metrics](#project-metrics)
-  - [GitHub Publication Security](#github-publication-security)
   - [Related Documentation](#related-documentation)
     - [Primary Documents](#primary-documents)
     - [Phase Plans (By Execution Order)](#phase-plans-by-execution-order)
@@ -116,6 +116,74 @@ The software implements all core job hunting workflows defined in the Product Re
 - ISSUE-010: CLAUDE.md token usage optimization (low)
 - ISSUE-037: Debug Section Display - Job extraction debugging panel (medium/low)
 - ISSUE-039: E2E test failures - 11 new failures discovered (high) - **✅ UNBLOCKED** by ISSUE-040 completion
+
+---
+
+## 🔒 GitHub Publication Security
+
+**✅ IMPLEMENTED**: Secure repository publication workflow (ISSUE-040 Phase 5)
+
+**Status**: Ready for public GitHub publication with comprehensive security safeguards in place.
+
+**Security Analysis Findings** (2025-11-11):
+
+**What's Protected** ✅:
+- Database backups stored in `/tmp/jobhunter_backups/` (outside git repo)
+- All `.env*` files blocked by `.gitignore` (OAuth tokens, API keys)
+- `database/backups/` directory blocked by `.gitignore`
+- All `*.db`, `*.sqlite` files blocked by `.gitignore`
+- OAuth credentials table sanitization script implemented
+
+**Git History Audit** ✅:
+- **Verified**: Zero database dumps ever committed to git history
+- **Verified**: Backups stored in `/tmp/` (outside repo, cleared on reboot)
+- **Verified**: Only schema files committed (no data, no credentials)
+- **Command used**: `git log --all --oneline -- "/tmp/**" "/database/backups/**" "*.dump"` (returned 0 results)
+
+**Pre-Publication Workflow** ✅:
+```bash
+# 1. Sanitize database (removes OAuth credentials)
+./helper-scripts/sanitize-database.sh
+
+# 2. Review sanitized export
+cat database/schema_with_sanitized_data.sql
+
+# 3. Commit sanitized schema
+git add database/schema_with_sanitized_data.sql
+git commit -m "chore: Update sanitized database schema for publication"
+
+# 4. Push to GitHub
+git push origin main
+```
+
+**What Gets Sanitized**:
+- OAuth credentials (`client_id`, `client_secret`, `access_token`, `refresh_token`)
+- All rows from `oauth_credentials` table cleared
+- Warning header added to SQL file
+
+**Never Committed**:
+- ❌ `backend/.env` (contains DATABASE_URL and runtime secrets)
+- ❌ `.env.test` (contains test OAuth tokens)
+- ❌ Database backups from `/tmp/jobhunter_backups/`
+- ❌ Any files with actual OAuth tokens or API keys
+
+**Documentation**:
+- Full workflow documented in [CLAUDE.md - GitHub Publication Workflow](../CLAUDE.md#github-publication-workflow)
+- Implementation details in [ISSUE-040 Phase 5](../bugs/fixed/ISSUE-040-database-architecture-simplification---single-database-with-backuprestore.md#phase-5-database-sanitization-for-github-publication-1-hour)
+
+**Security Verification Commands**:
+```bash
+# Check git history for leaked credentials (should return 0)
+git log --all --oneline -- "/tmp/**" "/database/backups/**" "*.dump" | wc -l
+
+# Verify .gitignore blocks sensitive files
+git check-ignore backend/.env .env.test database/backups/test.sql
+
+# Search for potential credential leaks in committed files
+git grep -i "client_secret|access_token|refresh_token" -- '*.sql' '*.md'
+```
+
+**Result**: Repository is secure for public GitHub publication. All credentials protected, git history clean, sanitization workflow documented and tested.
 
 ---
 
@@ -649,74 +717,6 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 - Tests Created: 481 unit tests (from zero)
 - Code Quality: Zero-warning builds achieved
 - Features Completed: 2 major phases (2.4, 2.5)
-
----
-
-## GitHub Publication Security
-
-**✅ IMPLEMENTED**: Secure repository publication workflow (ISSUE-040 Phase 5)
-
-**Status**: Ready for public GitHub publication with comprehensive security safeguards in place.
-
-**Security Analysis Findings** (2025-11-11):
-
-**What's Protected** ✅:
-- Database backups stored in `/tmp/jobhunter_backups/` (outside git repo)
-- All `.env*` files blocked by `.gitignore` (OAuth tokens, API keys)
-- `database/backups/` directory blocked by `.gitignore`
-- All `*.db`, `*.sqlite` files blocked by `.gitignore`
-- OAuth credentials table sanitization script implemented
-
-**Git History Audit** ✅:
-- **Verified**: Zero database dumps ever committed to git history
-- **Verified**: Backups stored in `/tmp/` (outside repo, cleared on reboot)
-- **Verified**: Only schema files committed (no data, no credentials)
-- **Command used**: `git log --all --oneline -- "/tmp/**" "/database/backups/**" "*.dump"` (returned 0 results)
-
-**Pre-Publication Workflow** ✅:
-```bash
-# 1. Sanitize database (removes OAuth credentials)
-./helper-scripts/sanitize-database.sh
-
-# 2. Review sanitized export
-cat database/schema_with_sanitized_data.sql
-
-# 3. Commit sanitized schema
-git add database/schema_with_sanitized_data.sql
-git commit -m "chore: Update sanitized database schema for publication"
-
-# 4. Push to GitHub
-git push origin main
-```
-
-**What Gets Sanitized**:
-- OAuth credentials (`client_id`, `client_secret`, `access_token`, `refresh_token`)
-- All rows from `oauth_credentials` table cleared
-- Warning header added to SQL file
-
-**Never Committed**:
-- ❌ `backend/.env` (contains DATABASE_URL and runtime secrets)
-- ❌ `.env.test` (contains test OAuth tokens)
-- ❌ Database backups from `/tmp/jobhunter_backups/`
-- ❌ Any files with actual OAuth tokens or API keys
-
-**Documentation**:
-- Full workflow documented in [CLAUDE.md - GitHub Publication Workflow](../CLAUDE.md#github-publication-workflow)
-- Implementation details in [ISSUE-040 Phase 5](../bugs/fixed/ISSUE-040-database-architecture-simplification---single-database-with-backuprestore.md#phase-5-database-sanitization-for-github-publication-1-hour)
-
-**Security Verification Commands**:
-```bash
-# Check git history for leaked credentials (should return 0)
-git log --all --oneline -- "/tmp/**" "/database/backups/**" "*.dump" | wc -l
-
-# Verify .gitignore blocks sensitive files
-git check-ignore backend/.env .env.test database/backups/test.sql
-
-# Search for potential credential leaks in committed files
-git grep -i "client_secret|access_token|refresh_token" -- '*.sql' '*.md'
-```
-
-**Result**: Repository is secure for public GitHub publication. All credentials protected, git history clean, sanitization workflow documented and tested.
 
 ---
 
