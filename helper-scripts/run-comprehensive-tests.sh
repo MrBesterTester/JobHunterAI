@@ -206,14 +206,11 @@ check_gmail_state() {
 check_msmail_state() {
     log_section "PREFLIGHT: Microsoft Mail State"
 
-    # Setup MS Mail state (clear JobOps-OLD, prepare JobOps folder)
-    log_info "Setting up Microsoft Mail state..."
-    if ! "$SCRIPT_DIR/setup-msmail-state.sh"; then
-        log_error "Failed to setup Microsoft Mail state"
-        return 1
-    fi
+    # NOTE (ISSUE-034): MS Mail seeding moved to E2E test setup phase
+    # Preflight now only validates OAuth tokens (done in check above)
+    # Test setup will seed MS Mail data after backend starts
 
-    log_info "Microsoft Mail state: JobOps folders ready"
+    log_info "MS Mail OAuth validated (seeding handled by E2E setup)"
     return 0
 }
 

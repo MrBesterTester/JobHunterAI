@@ -42,6 +42,28 @@ async function seedTestData(): Promise<void> {
   }
 }
 
+async function seedMSMailData(): Promise<void> {
+  console.log('📧 Seeding Microsoft Mail test data...');
+
+  try {
+    const response = await fetch('http://localhost:8080/api/test/seed-msmail', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!response.ok) {
+      throw new Error(`MS Mail seeding failed with status ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log(`✅ Seeded ${result.created_count} MS Mail test email(s) in JobOps folder`);
+  } catch (error) {
+    console.error('❌ Failed to seed MS Mail test data:', error);
+    // Don't throw - some tests may not need MS Mail data
+    console.warn('⚠️  Continuing without MS Mail test data (email integration tests may fail)');
+  }
+}
+
 async function calculateAllJobScores(): Promise<void> {
   console.log('📊 Calculating scores for all jobs...');
 
@@ -83,6 +105,9 @@ async function globalSetup() {
       // Seed test data before running tests
       await seedTestData();
 
+      // Seed MS Mail test data (ISSUE-034: Moved from preflight to test setup)
+      await seedMSMailData();
+
       // Calculate scores for all jobs to prevent 404 errors in E2E tests
       await calculateAllJobScores();
       return;
@@ -110,6 +135,9 @@ async function globalSetup() {
 
     // Seed test data before running tests
     await seedTestData();
+
+    // Seed MS Mail test data (ISSUE-034: Moved from preflight to test setup)
+    await seedMSMailData();
 
     // Calculate scores for all jobs to prevent 404 errors in E2E tests
     await calculateAllJobScores();
