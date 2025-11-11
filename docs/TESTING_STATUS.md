@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-11 01:00:00 PST
-last_updated: 2025-11-10 19:19:08 PST
+last_updated: 2025-11-11 11:23:30 PST
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -57,7 +57,7 @@ last_updated: 2025-11-10 19:19:08 PST
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-**Last Updated**: 2025-11-10 19:19:08 PST (✅ ISSUE-039 COMPLETE - All 11/11 E2E test failures resolved, 100% pass rate)
+**Last Updated**: 2025-11-11 11:23:30 PST (Documentation clarification: Added wall clock time vs run time explanation)
 
 **Purpose**: Current testing status and open issues requiring attention. This document tracks the most recent comprehensive test suite results and serves as a sounding board for planning and tracking future comprehensive testing rounds.
 
@@ -588,6 +588,15 @@ Three new scripts enable targeted testing without running the full comprehensive
 | **Frontend Unit** | 516 | ~12.3 seconds | ~2% | 17 seconds |
 | **E2E (Playwright)** | 594 | 11.8 minutes | ~94% | 15.9 minutes |
 | **Total** | 1,272 | **12.5 minutes** | 100% | 17 minutes |
+
+**⏱️ Wall Clock Time vs Run Time (CPU Time)**:
+- **All runtime values in this document are "wall clock time"** (actual elapsed time measured with a stopwatch)
+- **Wall Clock Time**: Time you actually wait = 12.5 minutes total
+- **Run Time (CPU Time)**: Total cumulative execution time across all parallel workers
+  - Example: E2E tests run with 4 parallel workers
+  - Wall clock: 11.8 minutes (what you measure)
+  - Run time: ~40-50 minutes of cumulative CPU work (4 workers × 11.8 min)
+- **Why they differ**: Parallel execution allows multiple tests to run simultaneously, reducing wall clock time while maintaining high CPU utilization
 
 ### Detailed Breakdown (Actual Results)
 
