@@ -1,4 +1,4 @@
-import { defineConfig } from '@rsbuild/core';
+import { defineConfig, loadEnv } from '@rsbuild/core';
 import { pluginReact } from '@rsbuild/plugin-react';
 
 export default defineConfig({
@@ -6,6 +6,12 @@ export default defineConfig({
   source: {
     entry: {
       index: './src/index.tsx',
+    },
+    define: {
+      // Inject REACT_APP_DEBUG_MODE environment variable into the bundle
+      'process.env.REACT_APP_DEBUG_MODE': JSON.stringify(
+        process.env.REACT_APP_DEBUG_MODE || 'false'
+      ),
     },
   },
   html: {

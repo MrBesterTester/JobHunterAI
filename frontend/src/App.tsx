@@ -9,6 +9,7 @@ import FailedTab from './FailedTab';
 import DuplicatesTab from './DuplicatesTab';
 import RankedJobsTab from './RankedJobsTab';
 import EmailComposer from './EmailComposer';
+import { DebugSection } from './DebugSection';
 
 const API_URL = 'http://localhost:8080/api';
 
@@ -2491,6 +2492,9 @@ const JobHunterDashboard: React.FC = () => {
         </div>
       )}
       </div>
+
+      {/* Debug Section - Only visible when REACT_APP_DEBUG_MODE=true */}
+      <DebugSection job={job} />
     </div>
   );
   };

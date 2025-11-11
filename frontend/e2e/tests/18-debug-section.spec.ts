@@ -29,8 +29,7 @@ test.describe('Job Card Debug Section', () => {
     await page.waitForLoadState('networkidle');
   });
 
-  // SKIPPED: Debug Section feature not yet implemented - see ISSUE-036
-  test.skip('should display debug section on job cards', async ({ page }) => {
+  test('should display debug section on job cards', async ({ page }) => {
     // Navigate to All tab to see job cards
     await switchToTab(page, 'all');
 
@@ -42,8 +41,7 @@ test.describe('Job Card Debug Section', () => {
     await expect(debugSection).toBeVisible();
   });
 
-  // SKIPPED: Debug Section feature not yet implemented - see ISSUE-036
-  test.skip('should display extraction method in debug section', async ({ page }) => {
+  test('should display extraction method in debug section', async ({ page }) => {
     await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
@@ -57,8 +55,7 @@ test.describe('Job Card Debug Section', () => {
     await expect(extractionMethodValue).toBeVisible();
   });
 
-  // SKIPPED: Debug Section feature not yet implemented - see ISSUE-036
-  test.skip('should display raw data JSON in debug section', async ({ page }) => {
+  test('should display raw data JSON in debug section', async ({ page }) => {
     await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
@@ -122,8 +119,7 @@ test.describe('Job Card Debug Section', () => {
     }
   });
 
-  // SKIPPED: Debug Section feature not yet implemented - see ISSUE-036
-  test.skip('should have scrollable JSON content when data is large', async ({ page }) => {
+  test('should have scrollable JSON content when data is large', async ({ page }) => {
     await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
@@ -137,8 +133,7 @@ test.describe('Job Card Debug Section', () => {
     expect(overflow).toBe('auto');
   });
 
-  // SKIPPED: Debug Section feature not yet implemented - see ISSUE-036
-  test.skip('should parse and validate JSON structure in raw_data', async ({ page }) => {
+  test('should parse and validate JSON structure in raw_data', async ({ page }) => {
     await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
@@ -187,8 +182,7 @@ test.describe('Job Card Debug Section', () => {
     }
   });
 
-  // SKIPPED: Debug Section feature not yet implemented - see ISSUE-036
-  test.skip('should have proper styling for debug section', async ({ page }) => {
+  test('should have proper styling for debug section', async ({ page }) => {
     await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();

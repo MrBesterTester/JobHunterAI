@@ -108,6 +108,8 @@
     - [Code Quality & Architecture](#code-quality--architecture)
     - [Feature Completeness](#feature-completeness)
     - [Development Stats](#development-stats)
+  - [Development Tools](#development-tools)
+    - [Debug Mode](#debug-mode)
   - [Testing & Quality Assurance](#testing--quality-assurance)
     - [Backend Testing (100% Coverage)](#backend-testing-100%25-coverage)
     - [Frontend E2E Testing (94.1% Coverage)](#frontend-e2e-testing-941%25-coverage)
@@ -3196,6 +3198,46 @@ Both prompts use **Claude 3.5 Haiku** for fast, cost-effective processing (<$0.0
 - **Multi-source Processing**: Unified intake system with comprehensive error handling and logging
 - **Live Prompt Editing**: Real-time prompt updates without backend restart
 - **Zero Runtime Errors**: Comprehensive error handling and validation across all systems
+
+## Development Tools
+
+### Debug Mode
+
+JobHunter includes a powerful debug mode for troubleshooting job extraction issues without needing database access.
+
+**Enable debug mode:**
+```bash
+echo "REACT_APP_DEBUG_MODE=true" >> frontend/.env.development.local
+cd frontend
+npm start  # Restart frontend to apply changes
+```
+
+**Features when enabled:**
+- 🔧 **Debug Info section** appears on all job cards
+- **Extraction Method Badge**: Shows whether job was extracted via LLM, REGEX, or UNKNOWN
+  - LLM: Blue badge (indicates successful AI extraction)
+  - REGEX: Green badge (indicates fallback to regex extraction)
+  - UNKNOWN: Gray badge (indicates extraction method not recorded)
+- **Raw Data JSON**: Complete extraction metadata in scrollable format (200px max height)
+  - All extracted fields (title, company, location, salary, employment type, etc.)
+  - Original extraction response from LLM or regex parser
+  - Any error messages or fallback information
+- Helps troubleshoot extraction issues without needing `psql` database access
+
+**Disable debug mode:**
+```bash
+# Remove or comment out REACT_APP_DEBUG_MODE in .env.development.local
+cd frontend
+npm start  # Restart frontend
+```
+
+**Note:** Debug mode is automatically disabled in production builds (environment variable not included in build).
+
+**Value Proposition:**
+- **Time savings**: Reduces debugging time from 5-10 minutes (database queries) to <1 minute (visual inspection)
+- **No database access needed**: View extraction metadata directly in the UI
+- **Visual comparison**: Easily compare LLM vs REGEX extraction quality across multiple job cards
+- **Troubleshooting workflow**: Screenshot debug section and share with team or Claude Code for analysis
 
 ## Testing & Quality Assurance
 
