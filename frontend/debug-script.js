@@ -1,3 +1,30 @@
+/**
+ * DEBUG TOOL: Manual Debug Section Verification Script
+ *
+ * PURPOSE: This is a DEBUGGING TOOL, not an automated test.
+ * Used to manually verify the debug section feature and capture console errors.
+ *
+ * WHEN TO USE:
+ * - When debug section is not displaying correctly on job cards
+ * - To capture browser console errors that don't show in E2E tests
+ * - To visually verify styling and layout issues
+ * - For manual smoke testing after major changes
+ *
+ * AUTOMATED TESTS: See frontend/e2e/tests/18-debug-section.spec.ts
+ * - 8 automated E2E tests cover debug section functionality
+ * - Tests run as part of comprehensive test suite (test-config.ts line 65)
+ * - Use this script only for manual debugging/troubleshooting
+ *
+ * USAGE:
+ *   cd frontend
+ *   node debug-script.js
+ *
+ * RELATED:
+ * - ISSUE-037: Debug section implementation
+ * - Created: 2025-11-11 to diagnose "process is not defined" error
+ * - Result: Identified RSBuild config issue with environment variable injection
+ */
+
 const { chromium } = require('playwright');
 
 (async () => {
