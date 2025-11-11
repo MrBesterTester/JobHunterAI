@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-11 01:00:00 PST
-last_updated: 2025-11-11 11:52:12 PST
+last_updated: 2025-11-11 12:21:30 PST
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -25,7 +25,7 @@ last_updated: 2025-11-11 11:52:12 PST
     - [✅ ISSUE-036 COMPLETE - All 32 Original E2E Test Failures Resolved](#-issue-036-complete---all-32-original-e2e-test-failures-resolved)
     - [✅ ISSUE-039 COMPLETE - All E2E Test Failures Resolved (11/11 tests)](#-issue-039-complete---all-e2e-test-failures-resolved-1111-tests)
     - [✅ Priority 1 RESOLVED: Backend Test Issues - ISSUE-033 (2025-11-11)](#-priority-1-resolved-backend-test-issues---issue-033-2025-11-11)
-    - [Priority 2: Preflight Seeding Issue (MEDIUM)](#priority-2-preflight-seeding-issue-medium)
+    - [✅ Priority 2 RESOLVED: Preflight Seeding Issue - ISSUE-034 (2025-11-11)](#-priority-2-resolved-preflight-seeding-issue---issue-034-2025-11-11)
     - [New Testing Infrastructure](#new-testing-infrastructure)
     - [Preflight Checks (✅ ALL PASSED)](#preflight-checks--all-passed)
     - [Backend Build (✅ FIXED)](#backend-build--fixed)
@@ -57,7 +57,7 @@ last_updated: 2025-11-11 11:52:12 PST
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-**Last Updated**: 2025-11-11 11:52:12 PST (ISSUE-033: Fixed 2 integration tests - backend tests now 164 passed / 6 ignored)
+**Last Updated**: 2025-11-11 12:21:30 PST (ISSUE-034: MS Mail seeding moved to E2E test setup - preflight no longer requires backend)
 
 **Purpose**: Current testing status and open issues requiring attention. This document tracks the most recent comprehensive test suite results and serves as a sounding board for planning and tracking future comprehensive testing rounds.
 
@@ -224,18 +224,24 @@ last_updated: 2025-11-11 11:52:12 PST
 
 **Decision**: Mock tests (4) remain ignored - redundant coverage since real API tests exist. Real API tests (2) remain ignored - require API keys and cost money.
 
-### Priority 2: Preflight Seeding Issue (MEDIUM)
+### ✅ Priority 2 RESOLVED: Preflight Seeding Issue - ISSUE-034 (2025-11-11)
 
-**See [ISSUE-034](../bugs/open/ISSUE-034-ms-mail-preflight-seeding-requires-backend-to-be-running.md)**
+**See [ISSUE-034](../bugs/fixed/ISSUE-034-ms-mail-preflight-seeding-requires-backend-to-be-running.md)** (moved to fixed/)
 
-**Issue**: MS Mail preflight seeding calls backend API but preflight runs before backend starts
+**Resolution Status** (2025-11-11 12:21:30 PST): ✅ **MS Mail seeding moved to E2E test setup**
 
-**Workaround**: Use `--skip-preflight` flag for comprehensive tests
+**What was done**:
+- ✅ Added `seedMSMailData()` function to `frontend/e2e/global-setup.ts`
+- ✅ Updated `check_msmail_state()` in `helper-scripts/run-comprehensive-tests.sh`
+- ✅ Preflight no longer requires backend running (chicken-and-egg problem resolved)
+- ✅ `--skip-preflight` workaround no longer needed
 
-**Action**: Implement one of:
-- Option 1: Seed via Graph API directly (no backend dependency)
-- Option 2: Start backend temporarily during preflight
-- Option 3: Move seeding to test setup phase
+**Architectural Benefits**:
+- Clean separation of concerns: Preflight validates, test setup creates data
+- No backend dependency during preflight phase
+- Single source of truth for seeding logic (backend API)
+- Tests own their data setup with no hidden dependencies
+- Graceful degradation when OAuth credentials unavailable
 
 ---
 
@@ -641,20 +647,18 @@ Total:       ~12.5 minutes
 
 ## Open Issues
 
-**Status**: 5 open issues (0 test failures ✅)
+**Status**: 4 open issues (0 test failures ✅)
 
 **Medium Priority**:
-1. **ISSUE-034**: [MS Mail preflight seeding requires backend to be running](../bugs/open/ISSUE-034-ms-mail-preflight-seeding-requires-backend-to-be-running.md)
-   - Workaround available: Use `--skip-preflight` flag for comprehensive tests
-2. **ISSUE-037**: [Debug Section Display - Job extraction debugging panel](../bugs/open/ISSUE-037-debug-section-display---job-extraction-debugging-panel.md)
+1. **ISSUE-037**: [Debug Section Display - Job extraction debugging panel](../bugs/open/ISSUE-037-debug-section-display---job-extraction-debugging-panel.md)
    - Frontend component visibility/functionality issue
 
 **Low Priority**:
-3. **ISSUE-010**: [CLAUDE.md Size and Token Usage Monitoring](../bugs/open/ISSUE-010-claude-md-size-token-usage.md)
+2. **ISSUE-010**: [CLAUDE.md Size and Token Usage Monitoring](../bugs/open/ISSUE-010-claude-md-size-token-usage.md)
    - Documentation maintenance task
-4. **ISSUE-029**: [VSCode Mermaid Diagram Rendering Support](../bugs/open/ISSUE-029-vscode-mermaid-rendering.md)
+3. **ISSUE-029**: [VSCode Mermaid Diagram Rendering Support](../bugs/open/ISSUE-029-vscode-mermaid-rendering.md)
    - Documentation tooling issue
-5. **ISSUE-031**: [Claude Not Following Existing File Discovery Guidance in CLAUDE.md](../bugs/open/ISSUE-031-claude-ignoring-file-discovery-guidance.md)
+4. **ISSUE-031**: [Claude Not Following Existing File Discovery Guidance in CLAUDE.md](../bugs/open/ISSUE-031-claude-ignoring-file-discovery-guidance.md)
    - Workflow/documentation issue
 
 **Skipped Tests**:
@@ -663,6 +667,7 @@ Total:       ~12.5 minutes
 - **181 E2E Tests**: Intentionally skipped (cosmetic styling, redundant coverage) - see EXCLUDED_TESTS.md
 
 **Recently Resolved**:
+- ✅ **ISSUE-034** (2025-11-11): MS Mail seeding moved to E2E test setup, preflight no longer requires backend
 - ✅ **ISSUE-033** (2025-11-11): 2 backend integration tests fixed, backend tests now 164 passed / 6 ignored
 - ✅ **ISSUE-039** (2025-11-10): All 11 NEW E2E test failures resolved, pass rate 97.0% → 100% ✅
 - ✅ **ISSUE-036** (2025-11-11): All 32 original E2E test failures resolved, pass rate 92.2% → 97.0%
