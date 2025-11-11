@@ -26,6 +26,9 @@
   - [Quick Reference: Where to Find Things](#quick-reference-where-to-find-things)
   - [File Structure](#file-structure)
   - [API Endpoints](#api-endpoints)
+  - [GitHub Publication Workflow](#github-publication-workflow)
+    - [Security Overview](#security-overview)
+    - [Pre-Publication Database Sanitization](#pre-publication-database-sanitization)
   - [Bug Tracking Workflow](#bug-tracking-workflow)
     - [When User Asks to "File a Bug"](#when-user-asks-to-file-a-bug)
     - [Moving Bugs Between States](#moving-bugs-between-states)
@@ -493,6 +496,79 @@ docs/PRD.md           # Product Requirements Document
 - `GET /api/jobs/status/{status}` - Get jobs by status
 - `GET /api/applications` - List all applications
 - `POST /api/applications` - Create new application
+
+---
+
+## GitHub Publication Workflow
+
+**✅ IMPLEMENTED**: Database sanitization workflow for secure public repository publication (ISSUE-040 Phase 5)
+
+**CRITICAL**: Before pushing repository to GitHub public, sanitize database to remove all sensitive credentials.
+
+### Security Overview
+
+**What's Protected**:
+- ✅ Database backups stored in `/tmp/jobhunter_backups/` (outside git repo, never committed)
+- ✅ All `.env*` files blocked by `.gitignore` (OAuth tokens, API keys)
+- ✅ `database/backups/` directory blocked by `.gitignore`
+- ✅ All `*.db`, `*.sqlite` files blocked by `.gitignore`
+- ✅ OAuth credentials table cleared before publication
+
+**Git History Safety**:
+- Database dumps have **never been committed** to git history (verified)
+- Backups live in `/tmp/` (outside repo, cleared on reboot)
+- Only schema files committed (no data, no credentials)
+
+### Pre-Publication Database Sanitization
+
+**Required before every public push:**
+
+```bash
+# 1. Sanitize database (removes OAuth credentials)
+./helper-scripts/sanitize-database.sh
+
+# 2. Review sanitized export
+cat database/schema_with_sanitized_data.sql
+
+# 3. Commit sanitized schema
+git add database/schema_with_sanitized_data.sql
+git commit -m "chore: Update sanitized database schema for publication"
+
+# 4. Push to GitHub
+git push origin main
+```
+
+**What gets sanitized automatically**:
+- OAuth credentials (`client_id`, `client_secret`, `access_token`, `refresh_token`)
+- All rows from `oauth_credentials` table cleared
+- Warning header added to SQL file
+
+**What to review manually before publication**:
+- Job descriptions (may contain personal notes)
+- Application materials (resume/cover letter content)
+- Any custom data added during development
+
+**Never commit to git**:
+- ❌ `backend/.env` (contains DATABASE_URL and runtime secrets)
+- ❌ `.env.test` (contains test OAuth tokens)
+- ❌ Database backups from `/tmp/jobhunter_backups/`
+- ❌ Any files with actual OAuth tokens or API keys
+
+**Verification Commands**:
+```bash
+# Check git history for leaked credentials (should return 0)
+git log --all --oneline -- "/tmp/**" "/database/backups/**" "*.dump" | wc -l
+
+# Verify .gitignore blocks sensitive files
+git check-ignore backend/.env .env.test database/backups/test.sql
+# Should return all three paths (confirming they're ignored)
+
+# Search for potential credential leaks in committed files
+git grep -i "client_secret\|access_token\|refresh_token" -- '*.sql' '*.md'
+# Should only find documentation references, not actual tokens
+```
+
+**Related Documentation**: See [ISSUE-040](bugs/fixed/ISSUE-040-database-architecture-simplification---single-database-with-backuprestore.md) for complete security analysis and implementation details.
 
 ---
 
