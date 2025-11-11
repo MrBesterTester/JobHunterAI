@@ -34,6 +34,7 @@ related: [ISSUE-039]
   - [Phase 2: Script Updates (1 hour)](#phase-2-script-updates-1-hour)
   - [Phase 3: Documentation Updates (30 minutes)](#phase-3-documentation-updates-30-minutes)
   - [Phase 4: Testing and Verification (30 minutes)](#phase-4-testing-and-verification-30-minutes)
+  - [Phase 5: Database Sanitization for GitHub Publication (1 hour)](#phase-5-database-sanitization-for-github-publication-1-hour)
 - [Testing](#testing)
 - [Relationship to ISSUE-039](#relationship-to-issue-039)
 - [Status History](#status-history)
@@ -214,11 +215,12 @@ DATABASE_NAME="jobhunter_dev"  # Wrong database!
 - Need to implement backup/restore scripts
 - Requires disk space for backup dumps (minimal, ~1-10MB)
 
-**Implementation Effort:** 3-4 hours total
+**Implementation Effort:** 4-5 hours total
 - Backup/restore infrastructure: 1-2 hours
 - Script updates: 1 hour
 - Documentation: 30 minutes
 - Testing: 30 minutes
+- Database sanitization: 1 hour
 
 **Maintenance:** Low - once implemented, just works
 
@@ -418,6 +420,170 @@ npx playwright test e2e/tests/99-extraction-method-badge-test.spec.ts --project=
 # Should pass now (test data in correct database)
 ```
 
+### Phase 5: Database Sanitization for GitHub Publication (1 hour)
+
+**Purpose**: Before publishing repository to GitHub, sanitize database to remove all sensitive credentials (OAuth tokens, API keys, secrets).
+
+**5.1 Create `helper-scripts/sanitize-database.sh`:**
+
+```bash
+#!/bin/bash
+# Sanitize database for GitHub publication
+# Removes all sensitive credentials and tokens
+
+set -e
+
+DATABASE_NAME="jobhunter_personal"
+SANITIZED_FILE="database/schema_with_sanitized_data.sql"
+
+echo "🧹 Sanitizing database for GitHub publication..."
+echo ""
+
+# 1. Clear OAuth credentials table
+echo "1️⃣  Clearing OAuth credentials..."
+psql -U jobhunter_user -d "$DATABASE_NAME" -c "TRUNCATE TABLE oauth_credentials CASCADE;"
+echo "✅ OAuth credentials cleared"
+echo ""
+
+# 2. Verify no sensitive data remains
+echo "2️⃣  Verifying no sensitive data..."
+OAUTH_COUNT=$(psql -U jobhunter_user -d "$DATABASE_NAME" -t -c "SELECT COUNT(*) FROM oauth_credentials;" | xargs)
+if [ "$OAUTH_COUNT" != "0" ]; then
+    echo "❌ ERROR: OAuth credentials still present!"
+    exit 1
+fi
+echo "✅ No OAuth credentials found"
+echo ""
+
+# 3. Export sanitized database
+echo "3️⃣  Exporting sanitized database..."
+pg_dump -U jobhunter_user -d "$DATABASE_NAME" \
+    --clean \
+    --if-exists \
+    --no-owner \
+    --no-privileges \
+    > "$SANITIZED_FILE"
+echo "✅ Sanitized database exported to: $SANITIZED_FILE"
+echo ""
+
+# 4. Add warning header to file
+echo "4️⃣  Adding sanitization notice..."
+TEMP_FILE=$(mktemp)
+cat > "$TEMP_FILE" <<'EOF'
+--
+-- JobHunter Database Schema with Sanitized Data
+--
+-- WARNING: This database dump has been sanitized for public distribution
+-- All OAuth credentials, API tokens, and secrets have been removed
+-- Before using this database:
+--   1. Set up OAuth credentials for Gmail/Microsoft
+--   2. Run authentication flow to populate oauth_credentials table
+--
+-- Generated: $(date "+%Y-%m-%d %H:%M:%S %Z")
+--
+
+EOF
+cat "$SANITIZED_FILE" >> "$TEMP_FILE"
+mv "$TEMP_FILE" "$SANITIZED_FILE"
+echo "✅ Sanitization notice added"
+echo ""
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "✅ Database sanitization complete!"
+echo ""
+echo "📄 Sanitized file: $SANITIZED_FILE"
+echo "🔒 OAuth credentials: REMOVED"
+echo ""
+echo "Next steps before GitHub publication:"
+echo "  1. Review $SANITIZED_FILE for any remaining sensitive data"
+echo "  2. Test schema can be loaded: psql -f $SANITIZED_FILE"
+echo "  3. Commit sanitized file to repository"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+```
+
+**5.2 Sensitive Data Inventory:**
+
+Tables containing sensitive data:
+- **`oauth_credentials`** (PRIMARY CONCERN):
+  - `client_id` - OAuth application client ID
+  - `client_secret` - OAuth application secret
+  - `access_token` - Current access token
+  - `refresh_token` - Refresh token for token renewal
+  - **Action**: Truncate entire table before export
+
+Potentially sensitive data in other tables:
+- **`jobs`** table:
+  - `raw_data` JSONB field may contain email content
+  - `description_refined` may contain personal notes
+  - **Action**: Review before publication, may need to sanitize or use test data only
+
+- **`applications`** table:
+  - `resume_version`, `cover_letter_content` - Personal application materials
+  - **Action**: Consider truncating or using example data only
+
+**5.3 Update CLAUDE.md with Sanitization Workflow:**
+
+Add new section to CLAUDE.md:
+
+```markdown
+## GitHub Publication Workflow
+
+**CRITICAL**: Before pushing repository to GitHub public, sanitize database to remove credentials.
+
+### Database Sanitization
+
+**Required before every public push:**
+
+```bash
+# 1. Sanitize database (removes OAuth credentials)
+./helper-scripts/sanitize-database.sh
+
+# 2. Review sanitized export
+cat database/schema_with_sanitized_data.sql
+
+# 3. Commit sanitized schema
+git add database/schema_with_sanitized_data.sql
+git commit -m "chore: Update sanitized database schema for publication"
+
+# 4. Push to GitHub
+git push origin main
+```
+
+**What gets sanitized:**
+- OAuth credentials (client_id, client_secret, access_token, refresh_token)
+- All rows from `oauth_credentials` table
+
+**What to review manually:**
+- Job descriptions (may contain personal notes)
+- Application materials (resume/cover letter content)
+- Any custom data added during development
+
+**Never commit:**
+- `backend/.env` (contains DATABASE_URL and runtime secrets)
+- `.env.test` (contains test OAuth tokens)
+- Database backups from `/tmp/jobhunter_backups/`
+```
+
+**5.4 Pre-commit Hook (Optional Enhancement):**
+
+Create `.git/hooks/pre-commit` to enforce sanitization check:
+
+```bash
+#!/bin/bash
+# Pre-commit hook to prevent committing unsanitized database
+
+if git diff --cached --name-only | grep -q "database/.*\.sql"; then
+    echo "⚠️  Database SQL file being committed"
+    echo ""
+    echo "Have you sanitized the database? (y/n)"
+    read -r response
+    if [[ ! "$response" =~ ^[Yy]$ ]]; then
+        echo "❌ Commit cancelled. Run ./helper-scripts/sanitize-database.sh first"
+        exit 1
+    fi
+fi
+```
+
 ## Testing
 
 **Test Commands:**
@@ -464,6 +630,7 @@ ISSUE-039 tracks 11 E2E test failures discovered after ISSUE-036 completion. Inv
 
 - 2025-11-10: ISSUE created with comprehensive analysis and implementation plan
 - 2025-11-10: Decision made: Option B (Single Database with Backup/Restore)
+- 2025-11-10: Added Phase 5 for database sanitization (GitHub publication workflow)
 
 ## Notes
 
@@ -483,6 +650,13 @@ ISSUE-039 tracks 11 E2E test failures discovered after ISSUE-036 completion. Inv
 - Could add `--no-backup` flag for truly destructive operations (if needed)
 - Could add backup to permanent location (if needed)
 - For now: Keep it simple
+
+**GitHub Publication Security:**
+- **CRITICAL**: Always run `sanitize-database.sh` before pushing to public GitHub
+- OAuth credentials (`oauth_credentials` table) contain sensitive API tokens
+- Never commit `.env`, `.env.test`, or database backups
+- Review all SQL dumps for personal information before publication
+- Consider adding pre-commit hook to enforce sanitization checks
 
 ## Related Files
 
