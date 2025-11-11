@@ -263,8 +263,8 @@ test.describe('Tab Navigation & Filtering', () => {
         const reasons = await firstFilteredJob.getFilteredReasons();
         expect(reasons.length).toBeGreaterThan(0);
 
-        // Verify reasons are specific
-        const reasonsText = reasons.join(' ');
+        // Verify reasons are specific (case-insensitive check)
+        const reasonsText = reasons.join(' ').toLowerCase();
         const hasSpecificReason =
           reasonsText.includes('salary') ||
           reasonsText.includes('commute') ||

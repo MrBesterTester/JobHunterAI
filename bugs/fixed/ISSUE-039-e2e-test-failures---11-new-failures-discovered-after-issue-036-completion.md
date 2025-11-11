@@ -1,12 +1,13 @@
 ---
 id: ISSUE-039
 title: E2E test failures - 11 new failures discovered after ISSUE-036 completion
-status: mitigated
+status: fixed
 priority: low
 severity: low
 component: frontend
 created: 2025-11-10
 updated: 2025-11-10
+fixed: 2025-11-10
 mitigated: 2025-11-10
 affects: []
 related: [ISSUE-036, ISSUE-040]
@@ -14,23 +15,28 @@ related: [ISSUE-036, ISSUE-040]
 
 # ISSUE-039: E2E test failures - 11 new failures discovered after ISSUE-036 completion
 
-**✅ RESOLVED**: **10 out of 11 tests now passing (91% resolution)!** ISSUE-040's database architecture fix successfully resolved the root cause. Only 1 minor UI display issue remains.
+**✅ FIXED**: **All 11 tests now passing (100% resolution)!**
 
 **Resolution Summary**:
-- **Root Cause**: Database configuration confusion (ISSUE-040) - tests expected data in `jobhunter_personal` but seed script was populating `jobhunter_dev`
-- **Fix Applied**: Single database architecture with automatic backup/restore (ISSUE-040 complete)
-- **Result**: 10/11 tests now passing (91% pass rate)
-- **Remaining Issue**: 1 test failing due to minor filtered reasons display issue
+- **Phase 1 (10/11 tests)**: Database configuration confusion (ISSUE-040) - tests expected data in `jobhunter_personal` but seed script was populating `jobhunter_dev`
+  - **Fix**: Single database architecture with automatic backup/restore (ISSUE-040 complete)
+  - **Result**: 10/11 tests passing (91% pass rate)
+- **Phase 2 (1/1 remaining test)**: Test case-sensitivity issue - test was checking for lowercase keywords but filter reasons used mixed case
+  - **Root Cause**: Test was doing case-sensitive string matching on filter reasons like "Salary below..." but checking for lowercase "salary"
+  - **Fix**: Updated test to convert filter reasons to lowercase before checking (line 267 in `02-tab-navigation.spec.ts`)
+  - **Result**: 11/11 tests now passing (100% pass rate) ✅
 
-**Test Results** (2025-11-10 18:58:37 PST):
+**Final Test Results** (2025-11-10 19:20:00 PST):
 - ✅ Category 1: Console Errors (1/1 passing)
-- ✅ Category 2: Tab Navigation (1/2 passing)
+- ✅ Category 2: Tab Navigation (2/2 passing) ⭐ **Fixed!**
 - ✅ Category 3: Gmail Integration (1/1 passing)
 - ✅ Category 4: Refresh Functionality (1/1 passing)
 - ✅ Category 5: Description Quality (2/2 passing)
-- ✅ Category 6: Test Data Infrastructure (4/4 passing) ⭐
+- ✅ Category 6: Test Data Infrastructure (4/4 passing)
 
-See: [ISSUE-040 (Database Architecture Simplification)](../fixed/ISSUE-040-database-architecture-simplification---single-database-with-backuprestore.md) for details on the database fix.
+**Commit**: `fix: Make filtered reasons test case-insensitive in 02-tab-navigation.spec.ts`
+
+See: [ISSUE-040 (Database Architecture Simplification)](ISSUE-040-database-architecture-simplification---single-database-with-backuprestore.md) for details on the database fix.
 
 ---
 
