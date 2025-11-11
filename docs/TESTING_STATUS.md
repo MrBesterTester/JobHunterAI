@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-11 01:00:00 PST
-last_updated: 2025-11-11 13:41:06 PST
+last_updated: 2025-11-11 13:57:17 PST
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -57,7 +57,7 @@ last_updated: 2025-11-11 13:41:06 PST
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-**Last Updated**: 2025-11-11 13:41:06 PST (ISSUE-037: Debug Section feature implemented and verified - extraction debugging tool complete)
+**Last Updated**: 2025-11-11 13:57:17 PST (ISSUE-010 mitigated: CLAUDE.md refactored, reduced by 19% to 573 lines, back under critical threshold)
 
 **Purpose**: Current testing status and open issues requiring attention. This document tracks the most recent comprehensive test suite results and serves as a sounding board for planning and tracking future comprehensive testing rounds.
 
@@ -647,14 +647,12 @@ Total:       ~12.5 minutes
 
 ## Open Issues
 
-**Status**: 3 open issues (0 test failures ✅)
+**Status**: 2 open issues (0 test failures ✅)
 
 **Low Priority**:
-1. **ISSUE-010**: [CLAUDE.md Size and Token Usage Monitoring](../bugs/open/ISSUE-010-claude-md-size-token-usage.md)
-   - Documentation maintenance task
-2. **ISSUE-029**: [VSCode Mermaid Diagram Rendering Support](../bugs/open/ISSUE-029-vscode-mermaid-rendering.md)
+1. **ISSUE-029**: [VSCode Mermaid Diagram Rendering Support](../bugs/open/ISSUE-029-vscode-mermaid-rendering.md)
    - Documentation tooling issue
-3. **ISSUE-031**: [Claude Not Following Existing File Discovery Guidance in CLAUDE.md](../bugs/open/ISSUE-031-claude-ignoring-file-discovery-guidance.md)
+2. **ISSUE-031**: [Claude Not Following Existing File Discovery Guidance in CLAUDE.md](../bugs/open/ISSUE-031-claude-ignoring-file-discovery-guidance.md)
    - Workflow/documentation issue
 
 **Skipped Tests**:
@@ -663,6 +661,14 @@ Total:       ~12.5 minutes
 - **181 E2E Tests**: Intentionally skipped (cosmetic styling, redundant coverage) - see EXCLUDED_TESTS.md
 
 **Recently Resolved**:
+- ⚠️ **ISSUE-010** (2025-11-11): CLAUDE.md size monitoring - **MITIGATED**
+  - **Problem**: CLAUDE.md grew to 708 lines (4,650 tokens), exceeding critical threshold of 600 lines
+  - **Solution**: Refactored procedural workflows to CLAUDE_WORKFLOWS.md
+  - **Results**: CLAUDE.md reduced to 573 lines (3,647 tokens, -19.1%, -21.6% tokens)
+  - **Sections moved**: Debugging extraction issues, file discovery guidance, database backup/restore, GitHub publication workflow
+  - **Status**: Back under critical threshold, ongoing monitoring continues
+  - **Files Changed**: `CLAUDE.md`, `CLAUDE_WORKFLOWS.md`
+  - **Backup**: Created at `./backups/issue-010-refactoring-20251111-135013/`
 - ✅ **ISSUE-037** (2025-11-11): Debug Section feature implemented and verified
   - DebugSection component created with environment toggle (`REACT_APP_DEBUG_MODE`)
   - Fixed RSBuild configuration for proper environment variable injection

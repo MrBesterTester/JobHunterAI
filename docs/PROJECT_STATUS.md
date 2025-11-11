@@ -11,7 +11,7 @@ related_docs:
   - TESTING_STATUS.md (testing results)
   - README_auto-test-plan.md (testing plan)
   - PRD.md (product requirements)
-last_updated: 2025-11-11 13:42:42 PST
+last_updated: 2025-11-11 13:57:17 PST
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -57,7 +57,7 @@ last_updated: 2025-11-11 13:42:42 PST
 
 # JobHunter Project Status
 
-**Last Updated**: 2025-11-11 13:42:42 PST (ISSUE-037 Debug Section feature complete - extraction debugging tool)
+**Last Updated**: 2025-11-11 13:57:17 PST (ISSUE-010 mitigated - CLAUDE.md refactored, documentation size optimized)
 
 ---
 
@@ -95,6 +95,14 @@ The software implements all core job hunting workflows defined in the Product Re
 - Total: 1077/1077 tests passing (100%) across all test suites ✅
 
 **Recent Achievements** (Last 14 days - since 2025-10-27):
+- ⚠️ ISSUE-010 MITIGATED (2025-11-11 13:57:17 PST) - CLAUDE.md size monitoring and refactoring
+  - **Problem**: CLAUDE.md grew to 708 lines (4,650 tokens, 2.33% of budget), exceeding critical threshold
+  - **Solution**: Refactored procedural workflows to CLAUDE_WORKFLOWS.md
+  - **Results**: Reduced CLAUDE.md to 573 lines (3,647 tokens, -19.1%, -21.6% tokens)
+  - **Sections moved**: Debugging extraction workflow, file discovery guidance, database backup/restore, GitHub publication workflow
+  - **Impact**: Back under critical threshold (600 lines), improved token efficiency for all sessions
+  - **Files Changed**: `CLAUDE.md`, `CLAUDE_WORKFLOWS.md`
+  - **Status**: Mitigated (ongoing monitoring continues)
 - ✅ ISSUE-037 COMPLETE (2025-11-11 13:42:42 PST) - Debug Section feature implemented and verified
   - Developer tool for visual extraction debugging (🔧 Debug Info panel)
   - DebugSection component with environment toggle (`REACT_APP_DEBUG_MODE`)
@@ -705,16 +713,17 @@ See [PHASE_EXECUTION_ORDER.md](PHASE_EXECUTION_ORDER.md) for visual dependency c
 
 ## Bug Tracking
 
-**Total Bugs**: 49 (3 open, 5 mitigated, 41 fixed)
+**Total Bugs**: 49 (2 open, 6 mitigated, 41 fixed)
 
 **Priority Breakdown**:
 - Critical: 1
 - High: 8
-- Medium: 19
-- Low: 11
+- Medium: 20 (ISSUE-010 elevated from low to medium)
+- Low: 10
 - Unknown: 10
 
 **Recent Activity** (Last 7 days):
+- **MITIGATED** [ISSUE-010](../bugs/mitigated/ISSUE-010-claude-md-size-token-usage.md): CLAUDE.md size monitoring (2025-11-11) - Refactored to 573 lines (-19%), back under critical threshold, ongoing monitoring continues
 - **FIXED** [ISSUE-037](../bugs/fixed/ISSUE-037-debug-section-display---job-extraction-debugging-panel.md): Debug Section feature implemented (2025-11-11) - Extraction debugging tool with <1 min debug time vs 5-10 min database queries
 - **FIXED** [ISSUE-039](../bugs/fixed/ISSUE-039-e2e-test-failures---11-new-failures-discovered-after-issue-036-completion.md): All 11 E2E test failures resolved (2025-11-10) - 100% pass rate achieved via database fix + test case-sensitivity fix
 - **FIXED** [ISSUE-040](../bugs/fixed/ISSUE-040-database-architecture-simplification---single-database-with-backuprestore.md): Database Architecture Simplification (2025-11-10) - Single database with backup/restore

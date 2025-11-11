@@ -27,6 +27,8 @@
   - [File Structure](#file-structure)
   - [API Endpoints](#api-endpoints)
   - [GitHub Publication Workflow](#github-publication-workflow)
+    - [Security Overview](#security-overview)
+    - [Pre-Publication Database Sanitization](#pre-publication-database-sanitization)
   - [Bug Tracking Workflow](#bug-tracking-workflow)
     - [When User Asks to "File a Bug"](#when-user-asks-to-file-a-bug)
     - [Moving Bugs Between States](#moving-bugs-between-states)
@@ -109,7 +111,10 @@ At the start of every Claude Code session, a SessionStart hook automatically:
 **Test Data Seeding (ISSUE-040):**
 - E2E tests seed controlled test data into `jobhunter_personal` before running
 - Use `./helper-scripts/seed-test-data.sh --truncate` to clear and reseed database
-- **Automatic backup/restore available** - see [CLAUDE_WORKFLOWS.md - Database Backup & Restore](CLAUDE_WORKFLOWS.md#database-backup--restore-procedures)
+- **Automatic Backup**: Creates timestamped backup before truncating (stored in `/tmp/jobhunter_backups/`)
+- **Recovery**: Use `./helper-scripts/restore-from-backup.sh` to restore from most recent backup
+- Backups are automatically cleaned up (keeps last 5)
+- See: `database/seed_test_data.sql`, `seed-test-data.sh`, `restore-from-backup.sh`
 
 **Manual database switching** (if needed):
 ```bash
@@ -443,19 +448,100 @@ The project uses a consistent structure for development and testing documentatio
 - Use `@docs/TESTING_HISTORY.md` for completed testing work history
 - All file paths use `./` prefix convention (ISSUE-011)
 
-**Efficient File Discovery**:
-- Use **Task tool with subagent_type=Explore** for exploratory searches (NOT Glob/Grep directly)
-- Use **Glob/Grep/Read** only for specific known targets
-- Never use bash `find`, `grep`, `cat` for file operations
-- **Full details**: See [CLAUDE_WORKFLOWS.md - File Discovery & Code Navigation](CLAUDE_WORKFLOWS.md#file-discovery--code-navigation)
+**Efficient File Discovery** (per Anthropic system instructions):
+
+**For exploratory searches** (primary method for file discovery):
+- **Use Task tool with subagent_type=Explore** - NOT Glob/Grep directly
+- This reduces context usage and provides better search results
+- **When to use**:
+  - "Where are errors from the client handled?"
+  - "How does authentication work in this codebase?"
+  - "Find files that implement feature X"
+  - "What is the codebase structure?"
+  - Any open-ended search requiring multiple rounds of discovery
+
+**For specific known targets only** (narrow exceptions):
+- **Glob tool**: When you know the exact file pattern you're looking for
+  - Example: `Glob: bugs/**/*ISSUE-018*.md` (looking for specific issue file)
+  - Use case: You know the file naming pattern and just need to find it
+- **Grep tool**: When searching within a specific file or 2-3 known files
+  - Example: `Grep: "class Foo" path: ./src/auth.ts` (finding specific class definition)
+  - Use case: Narrow search in known locations
+- **Read tool**: When you know the exact file path
+  - Always preferred over bash commands like `cat`, `head`, `tail`
+  - Use case: Direct access to known file
+
+**CRITICAL: Always avoid**:
+- Using bash `find`, `grep`, `cat` commands for file operations
+- Using Glob/Grep for exploratory searches (use Task/Explore instead)
+- Guessing file paths instead of searching properly
 
 ---
 
-**Debugging Extraction Issues**:
-- ⚠️ **ALWAYS suggest debug mode screenshot FIRST** when user reports extraction problems
-- Enable with: `echo "REACT_APP_DEBUG_MODE=true" >> frontend/.env.development.local`
-- Reduces debugging time: 5-10 min → <1 min (visual inspection vs database queries)
-- **Full workflow**: See [CLAUDE_WORKFLOWS.md - Debugging Extraction Issues](CLAUDE_WORKFLOWS.md#debugging-extraction-issues-workflow)
+**Debugging Extraction Issues (CLAUDE CODE PREFERRED WORKFLOW)**
+
+**⚠️ IMPORTANT**: When user reports extraction problems, **ALWAYS suggest debug mode screenshot FIRST** before database queries.
+
+**Trigger Phrases (suggest debug mode immediately when user says):**
+- "This job extraction looks wrong"
+- "The salary/location wasn't extracted correctly"
+- "This job should have been filtered"
+- "Gmail sync broke" / "Jobs are missing fields"
+- "LLM extraction isn't working"
+- "Why was this job extracted this way?"
+
+**Response Template:**
+```
+Let me help you debug this extraction issue. Can you enable debug mode and provide a screenshot?
+
+Enable debug mode (if not already enabled):
+```bash
+echo "REACT_APP_DEBUG_MODE=true" >> frontend/.env.development.local
+cd frontend && npm start  # Restart if needed
+```
+
+Then:
+1. Navigate to the job card with the issue
+2. Screenshot the "🔧 Debug Info" section (amber box at bottom of card)
+3. Share the screenshot here
+
+This will show me:
+- Extraction method used (LLM vs REGEX fallback)
+- Complete raw extraction data
+- All fields extracted from the job posting
+
+This is much faster than database queries! (5-10 min → <1 min)
+```
+
+**Debug Section Analysis Guide:**
+
+**1. Extraction Method Badge:**
+- **Blue "LLM"** → LLM extraction succeeded, check raw data for accuracy
+- **Green "REGEX"** → LLM failed, regex fallback used (investigate LLM prompt/response)
+- **Gray "UNKNOWN"** → Both methods failed (critical extraction issue)
+
+**2. Raw Data JSON:**
+- Check for null/missing fields: `"salary": null` → Field not in original posting
+- Verify extracted values match job posting
+- Look for malformed data: `"salary": "N/A"` vs `"salary": null`
+- Identify parsing errors or unexpected data formats
+
+**3. Common Diagnostic Patterns:**
+- **Badge: "REGEX" + User reports wrong data** → LLM extraction failed, needs prompt improvement
+- **Badge: "LLM" + Raw data has wrong values** → LLM extracted incorrectly, review prompt engineering
+- **Badge: "LLM" + Raw data has null fields** → Field genuinely missing from original posting
+- **Badge: "UNKNOWN"** → Both extraction methods failed, critical issue
+
+**Fallback (if debug mode unavailable):**
+```sql
+SELECT job_id, extraction_method, raw_data
+FROM jobs
+WHERE job_id = 'TARGET_JOB_ID';
+```
+
+**Time Savings:** Debug mode reduces debugging time from 5-10 minutes (database queries, multiple round trips) to <1 minute (single screenshot). Always prefer visual debugging when available.
+
+**Related:** See ISSUE-037 for complete feature documentation and ROI analysis.
 
 ---
 
@@ -486,19 +572,70 @@ docs/PRD.md           # Product Requirements Document
 
 **CRITICAL**: Before pushing repository to GitHub public, sanitize database to remove all sensitive credentials.
 
-**Quick Start**:
-```bash
-./helper-scripts/sanitize-database.sh    # Step 1: Sanitize OAuth credentials
-# Review output, commit sanitized schema, then push
-```
+### Security Overview
 
 **What's Protected**:
-- OAuth credentials automatically cleared
-- `.env*` files blocked by `.gitignore`
-- Database backups stored outside repo (`/tmp/`)
-- Git history verified clean (no credential leaks)
+- ✅ Database backups stored in `/tmp/jobhunter_backups/` (outside git repo, never committed)
+- ✅ All `.env*` files blocked by `.gitignore` (OAuth tokens, API keys)
+- ✅ `database/backups/` directory blocked by `.gitignore`
+- ✅ All `*.db`, `*.sqlite` files blocked by `.gitignore`
+- ✅ OAuth credentials table cleared before publication
 
-**Full procedure and verification commands**: See [CLAUDE_WORKFLOWS.md - GitHub Publication Workflow](CLAUDE_WORKFLOWS.md#github-publication-workflow)
+**Git History Safety**:
+- Database dumps have **never been committed** to git history (verified)
+- Backups live in `/tmp/` (outside repo, cleared on reboot)
+- Only schema files committed (no data, no credentials)
+
+### Pre-Publication Database Sanitization
+
+**Required before every public push:**
+
+```bash
+# 1. Sanitize database (removes OAuth credentials)
+./helper-scripts/sanitize-database.sh
+
+# 2. Review sanitized export
+cat database/schema_with_sanitized_data.sql
+
+# 3. Commit sanitized schema
+git add database/schema_with_sanitized_data.sql
+git commit -m "chore: Update sanitized database schema for publication"
+
+# 4. Push to GitHub
+git push origin main
+```
+
+**What gets sanitized automatically**:
+- OAuth credentials (`client_id`, `client_secret`, `access_token`, `refresh_token`)
+- All rows from `oauth_credentials` table cleared
+- Warning header added to SQL file
+
+**What to review manually before publication**:
+- Job descriptions (may contain personal notes)
+- Application materials (resume/cover letter content)
+- Any custom data added during development
+
+**Never commit to git**:
+- ❌ `backend/.env` (contains DATABASE_URL and runtime secrets)
+- ❌ `.env.test` (contains test OAuth tokens)
+- ❌ Database backups from `/tmp/jobhunter_backups/`
+- ❌ Any files with actual OAuth tokens or API keys
+
+**Verification Commands**:
+```bash
+# Check git history for leaked credentials (should return 0)
+git log --all --oneline -- "/tmp/**" "/database/backups/**" "*.dump" | wc -l
+
+# Verify .gitignore blocks sensitive files
+git check-ignore backend/.env .env.test database/backups/test.sql
+# Should return all three paths (confirming they're ignored)
+
+# Search for potential credential leaks in committed files
+git grep -i "client_secret\|access_token\|refresh_token" -- '*.sql' '*.md'
+# Should only find documentation references, not actual tokens
+```
+
+**Related Documentation**: See [ISSUE-040](bugs/fixed/ISSUE-040-database-architecture-simplification---single-database-with-backuprestore.md) for complete security analysis and implementation details.
 
 ---
 
