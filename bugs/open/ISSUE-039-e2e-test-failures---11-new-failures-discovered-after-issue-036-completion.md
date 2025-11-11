@@ -13,7 +13,9 @@ related: [ISSUE-036, ISSUE-040]
 
 # ISSUE-039: E2E test failures - 11 new failures discovered after ISSUE-036 completion
 
-**⚠️ BLOCKED BY ISSUE-040**: This issue is currently blocked by [ISSUE-040 (Database Architecture Simplification)](ISSUE-040-database-architecture-simplification---single-database-with-backuprestore.md). Investigation revealed that the root cause of these test failures is database configuration confusion. ISSUE-040 must be implemented first to establish correct database architecture, then ISSUE-039 investigation can resume.
+**✅ UNBLOCKED**: ISSUE-040 is now complete! The database architecture has been simplified to use a single database (`jobhunter_personal`) with automatic backup/restore for testing. The root cause of these test failures was database configuration confusion - tests were configured for `jobhunter_personal` but the seed script was targeting `jobhunter_dev`. With the corrected architecture in place, we can now resume investigation of these 11 test failures.
+
+See: [ISSUE-040 (Database Architecture Simplification)](../fixed/ISSUE-040-database-architecture-simplification---single-database-with-backuprestore.md) for full details.
 
 ---
 
