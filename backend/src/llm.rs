@@ -56,9 +56,11 @@ struct Message {
 /// Response structure from Anthropic API
 #[derive(Debug, Deserialize)]
 struct MessagesResponse {
+    #[allow(dead_code)]
     id: String,
     #[serde(rename = "type")]
     _response_type: String,
+    #[allow(dead_code)]
     role: String,
     content: Vec<ContentBlock>,
     model: String,
