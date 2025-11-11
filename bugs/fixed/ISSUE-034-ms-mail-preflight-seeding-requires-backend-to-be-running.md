@@ -1,12 +1,13 @@
 ---
 id: ISSUE-034
 title: MS Mail preflight seeding requires backend to be running
-status: open
+status: fixed
 priority: medium
 severity: medium
 component: infrastructure
 created: 2025-11-07
-updated: 2025-11-07
+updated: 2025-11-11
+fixed: 2025-11-11
 affects: []
 related: []
 ---
