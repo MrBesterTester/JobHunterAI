@@ -28,7 +28,7 @@ export default defineConfig({
   workers: process.env.CI ? 4 : 4, // 4 parallel workers
   retries: process.env.CI ? 2 : 1, // Retry flaky tests
   reporter: [
-    ['html'],
+    ['html', { open: 'never' }],  // Generate HTML report but don't auto-serve it
     ['list'],
     ['json', { outputFile: 'test-results/results.json' }]
   ],
