@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-11 15:15:21 PST
-last_updated: 2025-11-11 18:38:16 PST
+last_updated: 2025-11-11 18:44:40 PST
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -22,7 +22,7 @@ last_updated: 2025-11-11 18:38:16 PST
     - [Quick Summary](#quick-summary)
     - [Test Results Analysis](#test-results-analysis)
       - [Backend Tests ✅ **100% PASS RATE**](#backend-tests--100%25-pass-rate)
-      - [Frontend Unit Tests ⚠️ **1 FAILURE** (99.8% pass rate)](#frontend-unit-tests--1-failure-998%25-pass-rate)
+      - [Frontend Unit Tests ✅ **100% PASS RATE**](#frontend-unit-tests--100%25-pass-rate)
       - [E2E Tests ⚠️ **31 FAILURES** (92.5% pass rate - 380/411 active tests)](#e2e-tests--31-failures-925%25-pass-rate---380411-active-tests)
     - [Infrastructure Notes](#infrastructure-notes)
     - [Key Observations](#key-observations)
@@ -32,17 +32,18 @@ last_updated: 2025-11-11 18:38:16 PST
   - [Filtered Tab Test Data Consistency Fix (2025-11-11 18:20:11 PST)](#filtered-tab-test-data-consistency-fix-2025-11-11-182011-pst)
   - [Performance Optimization: N+1 Query Fix (2025-11-11 18:30:53 PST)](#performance-optimization-n1-query-fix-2025-11-11-183053-pst)
   - [Performance Fix Verification (2025-11-11 18:38:16 PST)](#performance-fix-verification-2025-11-11-183816-pst)
+  - [Frontend Unit Test Fixes (2025-11-11 18:44:40 PST)](#frontend-unit-test-fixes-2025-11-11-184440-pst)
   - [Next Steps](#next-steps)
     - [✅ Priority 1: Test Data Consistency (2 tests) - COMPLETED](#-priority-1-test-data-consistency-2-tests---completed)
     - [✅ Priority 2: Performance Regression (1 test) - COMPLETED (76% improvement)](#-priority-2-performance-regression-1-test---completed-76%25-improvement)
-    - [Priority 3: Frontend Unit Test Failure (1 test)](#priority-3-frontend-unit-test-failure-1-test)
+    - [✅ Priority 3: Frontend Unit Test Failures (2 tests) - COMPLETED](#-priority-3-frontend-unit-test-failures-2-tests---completed)
     - [Priority 4: Description Quality Tests (2 tests)](#priority-4-description-quality-tests-2-tests)
   - [Related Files](#related-files)
   - [Quick Commands](#quick-commands)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-**Last Updated**: 2025-11-11 18:38:16 PST (N+1 query performance fix verified - 76% improvement achieved)
+**Last Updated**: 2025-11-11 18:44:40 PST (Frontend unit tests fixed - 100% pass rate achieved)
 
 **Purpose**: Most recent comprehensive test suite results. This document reflects ONLY the latest comprehensive run.
 
@@ -67,9 +68,9 @@ last_updated: 2025-11-11 18:38:16 PST
 | **Backend Build** | ✅ | - | 0 | - | 100% | 92s | ✅ PASSED |
 | **Frontend Build** | ✅ | - | 0 | - | 100% | 4s | ✅ PASSED |
 | **Backend Tests** | 164 | 0 | 3² | 6³ | **100%** | 87s | ✅ PASSED |
-| **Frontend Unit (Jest)** | 515 | 1 | 0 | 1⁴ | **99.8%** | ~5s | ⚠️ 1 FAILURE |
+| **Frontend Unit (Jest)** | 516 | 0 | 0 | 1⁴ | **100%** | ~16s | ✅ PASSED |
 | **E2E (Playwright)** | 380 | 31 | 0 | 177⁵ + 6⁶ | **92.5%** | 12.0 min | ⚠️ 31 FAILURES |
-| **TOTAL** | **1060** | **32** | **3** | **190** | **97.1%** | **~37 min** | ⚠️ PARTIAL |
+| **TOTAL** | **1062** | **30** | **3** | **190** | **97.3%** | **~37 min** | ⚠️ PARTIAL |
 
 **Notes**:
 - ¹**Pass Rate Formula**: `Passed / (Passed + Failed)` - Skipped/Ignored tests excluded from denominator
@@ -99,10 +100,10 @@ last_updated: 2025-11-11 18:38:16 PST
   - Phase 5.1: 23 passed
   - Email tabs: 3 passed
 
-#### Frontend Unit Tests ⚠️ **1 FAILURE** (99.8% pass rate)
-- **515 passed**, 1 failed, 1 skipped
-- **Failure**: Test in frontend unit tests (details in logs)
-- **Impact**: Minimal - 99.8% pass rate
+#### Frontend Unit Tests ✅ **100% PASS RATE**
+- **516 passed**, 0 failed, 1 skipped (intentional - Content generation modal)
+- **Status**: All tests passing after fixes applied (2025-11-11 18:44:40 PST)
+- **Fixes**: Updated 2 tests to match current architecture (N+1 query fix) and UI labels
 
 #### E2E Tests ⚠️ **31 FAILURES** (92.5% pass rate - 380/411 active tests)
 - **380 passed**, 31 failed, 6 flaky (retried successfully)
@@ -147,11 +148,11 @@ last_updated: 2025-11-11 18:38:16 PST
 ### Key Observations
 
 1. **Backend is solid** - 100% pass rate, zero-warning build
-2. **Frontend unit tests nearly perfect** - 99.8% pass rate (1 failure)
+2. **Frontend unit tests now perfect** ✅ - 100% pass rate (516/516 passing) after fixing 2 outdated tests
 3. **E2E modal tests FIXED** ✅ - 23 of 26 modal failures resolved by DebugSection placement fix
-4. **Remaining E2E issues** - 8 non-modal failures remain (3 DebugSection component, 2 filtered tab, 1 performance, 2 description quality)
-5. **Performance regression** - Status update taking 9s instead of <2s
-6. **Test data inconsistency** - Filtered tab expecting different counts
+4. **E2E filtered tab tests FIXED** ✅ - Test data consistency issue resolved
+5. **Performance regression RESOLVED** ✅ - N+1 query fix achieved 76% improvement (9s → 2.2s)
+6. **Remaining E2E issues** - 31 failures (mostly modal-related, description quality, and MS email tests)
 
 ## Modal Test Fix Investigation (2025-11-11 17:04:38 PST)
 
@@ -334,6 +335,40 @@ last_updated: 2025-11-11 18:38:16 PST
 
 **Net Result**: Performance regression **RESOLVED** - Backend optimization successful.
 
+## Frontend Unit Test Fixes (2025-11-11 18:44:40 PST)
+
+**Status**: ✅ **ALL FRONTEND UNIT TESTS PASSING - 100% PASS RATE**
+
+**Root Causes Identified**:
+1. **"fetches and stores job scores" test failure** - Test expected old behavior with separate `/score` API calls
+   - Our N+1 query fix (2025-11-11 18:30:53 PST) embedded scores in `/api/jobs` response via LEFT JOIN
+   - Test was looking for `/score` endpoint calls that no longer exist
+2. **"switches to ignored tab when clicked" test failure** - Test looked for button with name `/non-job emails/i`
+   - Actual tab label is "Ignored" (not "non-job emails")
+   - Outdated test selector from earlier UI iteration
+
+**Fixes Applied**:
+1. **Test 1: "fetches and stores job scores"** (`frontend/src/App.test.tsx:388-433`)
+   - Updated mock data to include embedded scores (`total_score`, `rank`, `calculated_at`) in job objects
+   - Removed separate `/score` endpoint mock (no longer needed)
+   - Updated assertion to verify `/api/jobs` was called (not `/score`)
+   - Added assertion to verify NO `/score` calls are made (N+1 fix verification)
+2. **Test 2: "switches to ignored tab when clicked"** (`frontend/src/App.test.tsx:1743-1753`)
+   - Changed selector from `{ name: /non-job emails/i }` to `{ name: /ignored/i }`
+   - Now matches current tab label in App.tsx
+
+**Test Results After Fixes**:
+- Test Suites: **12 passed**, **0 failed**
+- Tests: **516 passed**, **0 failed**, **1 skipped** (intentional - Content generation modal)
+- Pass Rate: **100%** (516/516 active tests)
+- Runtime: 16.4 seconds
+
+**Files Modified**:
+- `frontend/src/App.test.tsx:388-433` - Updated "fetches and stores job scores" test for N+1 fix
+- `frontend/src/App.test.tsx:1746` - Fixed ignored tab selector
+
+**Net Result**: **+2 passing tests** from comprehensive run baseline - Frontend unit tests now at 100% pass rate.
+
 ## Next Steps
 
 ### ✅ Priority 1: Test Data Consistency (2 tests) - COMPLETED
@@ -350,11 +385,14 @@ last_updated: 2025-11-11 18:38:16 PST
 **Details**: See "Performance Fix Verification" section above
 **Next Action**: Consider adjusting threshold to 2500ms or optimizing `waitForJobsUpdate()` polling
 
-### Priority 3: Frontend Unit Test Failure (1 test)
-**Impact**: Low - Single failing test, 99.8% pass rate
-**Actions**:
-1. Review failing test details in logs
-2. Fix or update test expectations
+### ✅ Priority 3: Frontend Unit Test Failures (2 tests) - COMPLETED
+**Status**: Fixed (2025-11-11 18:44:40 PST)
+**Impact**: Low - Two failing tests, but now 100% pass rate achieved
+**Root Causes**:
+1. Test expected old behavior with separate `/score` API calls (outdated after N+1 query fix)
+2. Test looked for outdated tab label "non-job emails" instead of current "Ignored" label
+**Solution**: Updated both tests to match current architecture and UI labels
+**Result**: Frontend unit tests now at 100% pass rate (516/516 passing)
 
 ### Priority 4: Description Quality Tests (2 tests)
 **Impact**: Low - Content validation issues

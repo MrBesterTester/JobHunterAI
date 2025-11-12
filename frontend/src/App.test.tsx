@@ -386,7 +386,8 @@ describe('App (JobHunterDashboard)', () => {
 
   describe('Data Loading and State', () => {
     it('fetches and stores job scores', async () => {
-      const mockJobs = [
+      // After N+1 query fix, scores are included in the /api/jobs response
+      const mockJobsWithScores = [
         {
           job_id: '1',
           title: 'Engineer',
@@ -394,29 +395,16 @@ describe('App (JobHunterDashboard)', () => {
           status: 'new',
           source: 'linkedin',
           date_email_sent: new Date().toISOString(),
+          // Scores now embedded in job response
+          total_score: 87.5,
+          rank: 1,
+          calculated_at: new Date().toISOString(),
         },
       ];
 
-      const mockScore = {
-        job_id: '1',
-        compensation_score: 85,
-        relationship_score: 90,
-        remote_work_score: 95,
-        domain_fit_score: 80,
-        flexibility_score: 85,
-        benefits_score: 90,
-        industry_score: 88,
-        total_score: 87.5,
-        rank: 1,
-        calculated_at: new Date().toISOString(),
-      };
-
       (fetch as jest.Mock).mockImplementation((url: string) => {
-        if (url.includes('/api/jobs') && !url.includes('/score') && !url.includes('/stats')) {
-          return mockFetchSuccess(mockJobs);
-        }
-        if (url.includes('/score')) {
-          return mockFetchSuccess(mockScore);
+        if (url.includes('/api/jobs') && !url.includes('/stats')) {
+          return mockFetchSuccess(mockJobsWithScores);
         }
         if (url.includes('/api/jobs/stats')) {
           return mockFetchSuccess({ new: 1 });
@@ -432,9 +420,16 @@ describe('App (JobHunterDashboard)', () => {
 
       render(<App />);
 
+      // Verify jobs are fetched with embedded scores (no separate /score call needed)
       await waitFor(() => {
-        expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/score'));
+        expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/api/jobs'));
       });
+
+      // Verify NO separate /score calls are made (N+1 query fix)
+      const scoreCalls = (fetch as jest.Mock).mock.calls.filter(
+        call => call[0].includes('/score')
+      );
+      expect(scoreCalls.length).toBe(0);
     });
 
     it('fetches criteria configuration', async () => {
@@ -1748,7 +1743,7 @@ describe('App (JobHunterDashboard)', () => {
       }, { timeout: 3000 });
 
       // Click ignored tab
-      const ignoredTabButton = screen.getByRole('button', { name: /non-job emails/i });
+      const ignoredTabButton = screen.getByRole('button', { name: /ignored/i });
       fireEvent.click(ignoredTabButton);
 
       // Verify tab is now active
