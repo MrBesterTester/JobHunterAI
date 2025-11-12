@@ -47,7 +47,7 @@ export const ENABLED_TEST_SUITES = {
   // Non-functional requirements still worth testing
 
   'responsive-design': false,            // 18 tests - Mobile/tablet compatibility (ISSUE-035 Phase 1: Mobile testing deferred)
-  'performance': false,                  // 10 tests - Performance benchmarks (ISSUE-035 Phase 1: Infrastructure not ready)
+  'performance': true,                   // 10 tests - Performance benchmarks (TEMPORARILY ENABLED for N+1 query verification)
   'accessibility': true,                 // 16 tests - A11y compliance
   'modal-scrolling': true,               // 7 tests - Modal scroll UX (20-modal-scrolling.spec.ts)
   'scroll-stability': true,              // 5 tests - Scroll position stability (21-scroll-stability.spec.ts)
