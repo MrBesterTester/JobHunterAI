@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-11 15:15:21 PST
-last_updated: 2025-11-11 18:44:40 PST
+last_updated: 2025-11-11 18:50:25 PST
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -33,17 +33,18 @@ last_updated: 2025-11-11 18:44:40 PST
   - [Performance Optimization: N+1 Query Fix (2025-11-11 18:30:53 PST)](#performance-optimization-n1-query-fix-2025-11-11-183053-pst)
   - [Performance Fix Verification (2025-11-11 18:38:16 PST)](#performance-fix-verification-2025-11-11-183816-pst)
   - [Frontend Unit Test Fixes (2025-11-11 18:44:40 PST)](#frontend-unit-test-fixes-2025-11-11-184440-pst)
+  - [Description Quality Test Investigation (2025-11-11 18:50:25 PST)](#description-quality-test-investigation-2025-11-11-185025-pst)
   - [Next Steps](#next-steps)
     - [✅ Priority 1: Test Data Consistency (2 tests) - COMPLETED](#-priority-1-test-data-consistency-2-tests---completed)
     - [✅ Priority 2: Performance Regression (1 test) - COMPLETED (76% improvement)](#-priority-2-performance-regression-1-test---completed-76%25-improvement)
     - [✅ Priority 3: Frontend Unit Test Failures (2 tests) - COMPLETED](#-priority-3-frontend-unit-test-failures-2-tests---completed)
-    - [Priority 4: Description Quality Tests (2 tests)](#priority-4-description-quality-tests-2-tests)
+    - [Priority 4: Description Quality Tests (2 tests) - INVESTIGATION COMPLETE](#priority-4-description-quality-tests-2-tests---investigation-complete)
   - [Related Files](#related-files)
   - [Quick Commands](#quick-commands)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-**Last Updated**: 2025-11-11 18:44:40 PST (Frontend unit tests fixed - 100% pass rate achieved)
+**Last Updated**: 2025-11-11 18:50:25 PST (Description quality test investigation - all pass in isolation)
 
 **Purpose**: Most recent comprehensive test suite results. This document reflects ONLY the latest comprehensive run.
 
@@ -369,6 +370,41 @@ last_updated: 2025-11-11 18:44:40 PST
 
 **Net Result**: **+2 passing tests** from comprehensive run baseline - Frontend unit tests now at 100% pass rate.
 
+## Description Quality Test Investigation (2025-11-11 18:50:25 PST)
+
+**Status**: ✅ **ALL 7 TESTS PASSING** (in isolation)
+
+**Context**: Comprehensive test run (2025-11-11 15:15:21 PST) reported 2 description quality test failures. Investigation launched to identify root cause.
+
+**Isolation Test Results**:
+- Test Suite: `e2e/tests/23-description-quality.spec.ts`
+- Tests: **7 passed**, **0 failed**
+- Runtime: 13.1 seconds
+- All tests passing when run in isolation with fresh database seed
+
+**Tests Verified**:
+1. ✅ "should NOT contain apologetic language like 'I apologize'" (2.8s)
+2. ✅ "should NOT contain verbose meta-commentary" (2.7s)
+3. ✅ "should be reasonably concise (under 200 words)" (2.9s)
+4. ✅ "should show actual job content (not just 'No job description')" (5.2s)
+5. ✅ "refresh should regenerate description" (8.7s)
+6. ✅ "should not have empty or error messages in description" (1.7s)
+7. ✅ "description should be direct and to-the-point" (1.7s)
+
+**Analysis**:
+- Tests pass consistently when run in isolation
+- Original failures in comprehensive run may have been:
+  - **Test data variation**: LLM-generated descriptions are non-deterministic
+  - **Flaky tests**: Tests depend on specific LLM output characteristics
+  - **Test interdependency**: Earlier tests may have affected description state
+
+**Recommendation**:
+- Need full comprehensive test run to verify current status
+- Must use `./helper-scripts/run-comprehensive-tests.sh` (not isolated test runs)
+- This ensures proper preflight checks, database backup, and test environment setup
+
+**Next Action**: Run comprehensive test suite to get accurate baseline of remaining failures.
+
 ## Next Steps
 
 ### ✅ Priority 1: Test Data Consistency (2 tests) - COMPLETED
@@ -394,11 +430,16 @@ last_updated: 2025-11-11 18:44:40 PST
 **Solution**: Updated both tests to match current architecture and UI labels
 **Result**: Frontend unit tests now at 100% pass rate (516/516 passing)
 
-### Priority 4: Description Quality Tests (2 tests)
-**Impact**: Low - Content validation issues
-**Actions**:
-1. Review what content validation expects
-2. Update tests or fix content generation
+### Priority 4: Description Quality Tests (2 tests) - INVESTIGATION COMPLETE
+**Status**: Tests pass in isolation (2025-11-11 18:50:25 PST)
+**Impact**: Low - Content validation issues may be flaky/non-deterministic
+**Investigation Results**:
+- All 7 description quality tests pass when run in isolation (13.1s)
+- Original failures likely due to test data variation or LLM non-determinism
+- Comprehensive test run needed to verify actual status
+**Next Action**:
+- Run `./helper-scripts/run-comprehensive-tests.sh` to get accurate baseline
+- This was previously skipped - proper procedure requires using comprehensive script
 
 ## Related Files
 
