@@ -1,8 +1,22 @@
+---
+document_type: testing_status
+purpose: Results of most recent comprehensive test suite execution
+scope: Latest comprehensive test run only
+relationship: Contains RESULTS of README_auto-test-plan.md execution; previous runs archived to TESTING_HISTORY.md
+update_policy: Replace with each new comprehensive run; move previous results to TESTING_HISTORY.md
+content_lifecycle: Latest snapshot only - workspace for current testing status
+related_docs:
+  - README_auto-test-plan.md (the testing plan)
+  - TESTING_HISTORY.md (historical archive)
+  - TESTING_GUIDE.md (testing principles)
+  - PROJECT_STATUS.md (overall project status)
+last_comprehensive_run: 2025-11-11 15:15:21 PST
+last_updated: 2025-11-11 17:45:08 PST
+---
+
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-  - [last_comprehensive_run: 2025-11-11 15:15:21 PST
-last_updated: 2025-11-11 17:45:08 PST](#last_comprehensive_run-2025-11-11-151521-pst%0Alast_updated-2025-11-11-174508-pst)
 - [Testing Status](#testing-status)
   - [Latest Comprehensive Test Run](#latest-comprehensive-test-run)
     - [Quick Summary](#quick-summary)
@@ -24,22 +38,6 @@ last_updated: 2025-11-11 17:45:08 PST](#last_comprehensive_run-2025-11-11-151521
   - [Quick Commands](#quick-commands)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
----
-document_type: testing_status
-purpose: Results of most recent comprehensive test suite execution
-scope: Latest comprehensive test run only
-relationship: Contains RESULTS of README_auto-test-plan.md execution; previous runs archived to TESTING_HISTORY.md
-update_policy: Replace with each new comprehensive run; move previous results to TESTING_HISTORY.md
-content_lifecycle: Latest snapshot only - workspace for current testing status
-related_docs:
-  - README_auto-test-plan.md (the testing plan)
-  - TESTING_HISTORY.md (historical archive)
-  - TESTING_GUIDE.md (testing principles)
-  - PROJECT_STATUS.md (overall project status)
-last_comprehensive_run: 2025-11-11 15:15:21 PST
-last_updated: 2025-11-11 17:45:08 PST
----
 
 **Last Updated**: 2025-11-11 17:45:08 PST (Overflow:hidden investigation - modal tests remain stable)
 
