@@ -2491,10 +2491,10 @@ const JobHunterDashboard: React.FC = () => {
           )}
         </div>
       )}
-      </div>
 
       {/* Debug Section - Only visible when REACT_APP_DEBUG_MODE=true */}
       <DebugSection job={job} />
+      </div>
     </div>
   );
   };
