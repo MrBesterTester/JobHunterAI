@@ -171,10 +171,45 @@ check_database_selection() {
 check_database_state() {
     log_section "PREFLIGHT: Database State"
 
-    # Clear database
+    # Backup infrastructure (per README_auto-test-plan.md requirements)
+    local BACKUP_DIR="/tmp/jobhunter_backups"
+    local TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+    local BACKUP_FILE="$BACKUP_DIR/jobhunter_personal_${TIMESTAMP}.sql"
+    local LAST_BACKUP_FILE="/tmp/jobhunter_last_backup.txt"
+
+    # Create backup directory
+    mkdir -p "$BACKUP_DIR"
+
+    # Create automatic backup before clearing database
+    # CRITICAL REQUIREMENT: Backup MUST succeed before truncate (per plan)
+    log_info "Creating automatic database backup..."
+    log_info "Backup location: $BACKUP_FILE"
+
+    if pg_dump -U jobhunter_user -d jobhunter_personal > "$BACKUP_FILE" 2>&1; then
+        # Store backup path for potential restore
+        echo "$BACKUP_FILE" > "$LAST_BACKUP_FILE"
+
+        local BACKUP_SIZE=$(ls -lh "$BACKUP_FILE" | awk '{print $5}')
+        log_info "Backup created successfully ($BACKUP_SIZE)"
+        log_info "To restore: ./helper-scripts/restore-from-backup.sh"
+
+        # Clean up old backups (keep last 5)
+        local BACKUP_COUNT=$(ls -1 "$BACKUP_DIR"/*.sql 2>/dev/null | wc -l | xargs)
+        if [ "$BACKUP_COUNT" -gt 5 ]; then
+            log_info "Cleaning up old backups (keeping last 5)..."
+            ls -t "$BACKUP_DIR"/*.sql | tail -n +6 | xargs rm -f
+        fi
+    else
+        log_error "Backup failed! Aborting database clear."
+        log_error "Your data is safe (nothing was deleted)"
+        return 1
+    fi
+
+    # Clear database (safe now that backup exists)
     log_info "Clearing database..."
     if ! "$SCRIPT_DIR/clear-database.sh"; then
         log_error "Failed to clear database"
+        log_error "Backup available: $BACKUP_FILE"
         return 1
     fi
 
@@ -182,10 +217,11 @@ check_database_state() {
     log_info "Seeding database with test fixtures..."
     if ! "$SCRIPT_DIR/seed-database.sh"; then
         log_error "Failed to seed database"
+        log_error "To restore backup: ./helper-scripts/restore-from-backup.sh"
         return 1
     fi
 
-    log_info "Database state: cleared and seeded"
+    log_info "Database state: backed up, cleared, and seeded"
     return 0
 }
 

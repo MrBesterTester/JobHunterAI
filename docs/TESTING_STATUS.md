@@ -1,6 +1,8 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
+  - [last_comprehensive_run: 2025-11-11 15:15:21 PST
+last_updated: 2025-11-11 16:02:10 PST](#last_comprehensive_run-2025-11-11-151521-pst%0Alast_updated-2025-11-11-160210-pst)
 - [Testing Status](#testing-status)
   - [Latest Comprehensive Test Run](#latest-comprehensive-test-run)
     - [Quick Summary](#quick-summary)
@@ -131,10 +133,13 @@ last_updated: 2025-11-11 16:02:10 PST
 
 ### Infrastructure Notes
 
-**Database Backup/Restore**: ❌ **NOT IMPLEMENTED**
-- Current approach: `clear-database.sh` + `seed-database.sh`
-- Planned approach: `backup-database.sh` + `restore-from-backup.sh` (not yet integrated)
-- See README_auto-test-plan.md section "Database Backup & Restore" for implementation plan
+**Database Backup/Restore**: ✅ **NOW IMPLEMENTED** (as of 2025-11-11)
+- Automatic backup created before database clear (per README_auto-test-plan.md requirement)
+- Backup location: `/tmp/jobhunter_backups/jobhunter_personal_YYYYMMDD_HHMMSS.sql`
+- Safety: Backup MUST succeed before truncate proceeds
+- Retention: Keeps last 5 backups automatically
+- Restore command: `./helper-scripts/restore-from-backup.sh`
+- Implementation: Integrated into `run-comprehensive-tests.sh` (lines 171-226)
 
 ### Key Observations
 
