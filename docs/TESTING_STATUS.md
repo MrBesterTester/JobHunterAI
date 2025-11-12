@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-11 15:15:21 PST
-last_updated: 2025-11-11 18:20:11 PST
+last_updated: 2025-11-11 18:30:53 PST
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -30,9 +30,10 @@ last_updated: 2025-11-11 18:20:11 PST
   - [Overflow:hidden Investigation (2025-11-11 17:45:08 PST)](#overflowhidden-investigation-2025-11-11-174508-pst)
   - [DebugSection Test Fixes (2025-11-11 18:05:11 PST)](#debugsection-test-fixes-2025-11-11-180511-pst)
   - [Filtered Tab Test Data Consistency Fix (2025-11-11 18:20:11 PST)](#filtered-tab-test-data-consistency-fix-2025-11-11-182011-pst)
+  - [Performance Optimization: N+1 Query Fix (2025-11-11 18:30:53 PST)](#performance-optimization-n1-query-fix-2025-11-11-183053-pst)
   - [Next Steps](#next-steps)
     - [✅ Priority 1: Test Data Consistency (2 tests) - COMPLETED](#-priority-1-test-data-consistency-2-tests---completed)
-    - [Priority 2: Performance Regression (1 test)](#priority-2-performance-regression-1-test)
+    - [Priority 2: Performance Regression (1 test) - ✅ FIX IMPLEMENTED](#priority-2-performance-regression-1-test----fix-implemented)
     - [Priority 3: Frontend Unit Test Failure (1 test)](#priority-3-frontend-unit-test-failure-1-test)
     - [Priority 4: Description Quality Tests (2 tests)](#priority-4-description-quality-tests-2-tests)
   - [Related Files](#related-files)
@@ -40,7 +41,7 @@ last_updated: 2025-11-11 18:20:11 PST
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-**Last Updated**: 2025-11-11 18:20:11 PST (Filtered tab test data consistency issue fixed - 2 tests now pass)
+**Last Updated**: 2025-11-11 18:30:53 PST (N+1 query performance fix implemented - awaiting test verification)
 
 **Purpose**: Most recent comprehensive test suite results. This document reflects ONLY the latest comprehensive run.
 
@@ -251,6 +252,46 @@ last_updated: 2025-11-11 18:20:11 PST
 
 **Net Result**: **+2 passing tests** from comprehensive run baseline (380/411 → 382/411 E2E tests passing).
 
+## Performance Optimization: N+1 Query Fix (2025-11-11 18:30:53 PST)
+
+**Status**: ✅ **IMPLEMENTED** - Awaiting test verification
+
+**Root Cause Identified**: Classic N+1 query problem in job score fetching
+- After status update, `fetchJobs()` fetched all jobs from database
+- Then called `fetchJobScores(jobIds)` which made **individual API calls for every job**
+- With 50+ jobs, this resulted in 50+ separate HTTP requests
+- Test's `waitForJobsUpdate()` timed out at 5s, then waited 2s fallback + 1.5s render = 9s total
+
+**Solution Implemented**: Single-query optimization using LEFT JOIN
+1. **Backend**: Created `JobWithScore` struct combining Job + score fields
+2. **Backend**: Modified `GET /api/jobs` to use LEFT JOIN with `job_scores` table
+3. **Frontend**: Updated `Job` interface to include `total_score`, `rank`, `calculated_at` fields
+4. **Frontend**: Removed separate `fetchJobScores()` function and `jobScores` state
+5. **Frontend**: Updated all score references to use `job.total_score` instead of `jobScores.get(job_id)`
+
+**Performance Impact**:
+- **Before**: 1 query for jobs + N queries for scores = **N+1 queries**
+- **After**: 1 query with LEFT JOIN = **1 query total**
+- **Expected speedup**: ~50x faster with 50 jobs (from 9s → <200ms)
+
+**Files Modified**:
+- `backend/src/main.rs:147-170` - Added `JobWithScore` struct
+- `backend/src/main.rs:1747-1763` - Modified `get_jobs()` endpoint to use LEFT JOIN
+- `frontend/src/App.tsx:90-93` - Added score fields to `Job` interface
+- `frontend/src/App.tsx:978-987` - Removed `fetchJobScores()` call from `fetchJobs()`
+- `frontend/src/App.tsx:1031-1055` - Removed entire `fetchJobScores()` function
+- `frontend/src/App.tsx:927` - Removed `jobScores` state
+- `frontend/src/App.tsx:1551-1560,1577-1586` - Updated sorting to use `job.total_score`
+- `frontend/src/App.tsx:1745-1756` - Updated score badge rendering to use `job.total_score`, `job.rank`
+
+**Verification**:
+- Backend compiles successfully
+- Frontend TypeScript compiles without errors
+- API endpoint verified: `GET /api/jobs` returns jobs with embedded score data
+- Example response includes: `{"job_id":"...","title":"...","total_score":3.0,"rank":45,"calculated_at":"2025-11-12T02:28:41.371555Z"}`
+
+**Next**: Run performance test to confirm < 2000ms threshold
+
 ## Next Steps
 
 ### ✅ Priority 1: Test Data Consistency (2 tests) - COMPLETED
@@ -258,12 +299,12 @@ last_updated: 2025-11-11 18:20:11 PST
 **Solution**: Changed exact count assertions to `toBeGreaterThanOrEqual(30)` to handle test interdependency
 **Impact**: Both filtered tab tests now pass consistently
 
-### Priority 2: Performance Regression (1 test)
-**Impact**: Medium - Status updates taking 9s instead of <2s
-**Actions**:
-1. Profile status update endpoint
-2. Check for N+1 queries or missing indexes
-3. Consider if test environment differs from production
+### Priority 2: Performance Regression (1 test) - ✅ FIX IMPLEMENTED
+**Status**: Fix implemented (2025-11-11 18:30:53 PST) - awaiting test verification
+**Impact**: Medium - Status updates were taking 9s instead of <2s
+**Root Cause**: N+1 query problem - fetching scores individually for each job
+**Solution**: Modified `/api/jobs` endpoint to include scores via LEFT JOIN
+**Details**: See "Performance Optimization: N+1 Query Fix" section above
 
 ### Priority 3: Frontend Unit Test Failure (1 test)
 **Impact**: Low - Single failing test, 99.8% pass rate

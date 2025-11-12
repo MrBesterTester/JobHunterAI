@@ -87,6 +87,10 @@ interface Job {
     company_industry_source?: 'extracted' | 'inferred' | null;
     description?: string;  // Full email body
   };
+  // Score fields (included from LEFT JOIN with job_scores)
+  total_score?: number;
+  rank?: number;
+  calculated_at?: string;
 }
 
 interface JobCriteria {
@@ -920,7 +924,7 @@ const JobHunterDashboard: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   // ISSUE-023: Use ref to track current jobs without adding to dependency arrays
   const jobsRef = React.useRef<Job[]>([]);
-  const [jobScores, setJobScores] = useState<Map<string, JobScore>>(new Map());
+  // Note: jobScores removed - scores are now included in Job objects (LEFT JOIN optimization)
   const [applications, setApplications] = useState<Application[]>([]);
   const [criteria, setCriteria] = useState<JobCriteria | null>(null);
   const [stats, setStats] = useState<JobStats>({});
@@ -980,10 +984,7 @@ const JobHunterDashboard: React.FC = () => {
       const data: Job[] = await response.json();
       setJobs(data);
       setLoading(false);
-
-      // Fetch scores for all jobs
-      const jobIds = data.map(job => job.job_id);
-      fetchJobScores(jobIds);
+      // Scores are now included in the Job data (via LEFT JOIN) - no separate fetch needed
     } catch (error) {
       console.error('Error fetching jobs:', error);
       setJobs([
@@ -1024,32 +1025,6 @@ const JobHunterDashboard: React.FC = () => {
         }
       ]);
       setLoading(false);
-    }
-  };
-
-  const fetchJobScores = async (jobIds: string[]): Promise<void> => {
-    try {
-      const scoresMap = new Map<string, JobScore>();
-
-      // Fetch scores for all jobs in parallel
-      await Promise.all(
-        jobIds.map(async (jobId) => {
-          try {
-            const response = await fetch(`${API_URL}/jobs/${jobId}/score`);
-            if (response.ok) {
-              const score: JobScore = await response.json();
-              scoresMap.set(jobId, score);
-            }
-          } catch (error) {
-            // Silently ignore missing scores
-            console.debug(`No score found for job ${jobId}`);
-          }
-        })
-      );
-
-      setJobScores(scoresMap);
-    } catch (error) {
-      console.error('Error fetching job scores:', error);
     }
   };
 
@@ -1548,8 +1523,8 @@ const JobHunterDashboard: React.FC = () => {
       if (!hasDescA && hasDescB) return 1;
 
       // If both have or both lack descriptions, sort by score
-      const scoreA = jobScores.get(a.job_id)?.total_score;
-      const scoreB = jobScores.get(b.job_id)?.total_score;
+      const scoreA = a.total_score;
+      const scoreB = b.total_score;
 
       // Handle nulls/undefined
       if (scoreA === null || scoreA === undefined) return 1;
@@ -1573,8 +1548,8 @@ const JobHunterDashboard: React.FC = () => {
       if (!hasDescA && hasDescB) return 1;
 
       // If both have or both lack descriptions, sort by score
-      const scoreA = jobScores.get(a.job_id)?.total_score;
-      const scoreB = jobScores.get(b.job_id)?.total_score;
+      const scoreA = a.total_score;
+      const scoreB = b.total_score;
 
       // Handle nulls/undefined
       if (scoreA === null || scoreA === undefined) return 1;
@@ -1699,9 +1674,7 @@ const JobHunterDashboard: React.FC = () => {
       fetchCondensedDescription(job.job_id);
     }, [job.job_id]);
 
-    // Get score for this job
-    const score = jobScores.get(job.job_id);
-
+    // Score is now included in job object (via LEFT JOIN)
     // Helper function for score badge color
     const getScoreBadgeColor = (totalScore: number | null | undefined): { bg: string; text: string } => {
       if (totalScore === null || totalScore === undefined) return { bg: '#f3f4f6', text: '#6b7280' };
@@ -1743,7 +1716,7 @@ const JobHunterDashboard: React.FC = () => {
           {/* Header metadata: Score (FIRST), Industry, Employment Type, Extraction Method */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px', fontSize: '12px' }}>
             {/* Overall Score Badge (FIRST) */}
-            {score && score.total_score != null ? (
+            {job.total_score != null ? (
               <span
                 data-testid="header-score"
                 style={{
@@ -1751,9 +1724,9 @@ const JobHunterDashboard: React.FC = () => {
                   borderRadius: '3px',
                   fontSize: '11px',
                   fontWeight: '600',
-                  ...getScoreBadgeColor(score.total_score)
+                  ...getScoreBadgeColor(job.total_score)
                 }}>
-                ⭐ Score: {score.total_score.toFixed(1)} {score.rank && `(#${score.rank})`}
+                ⭐ Score: {job.total_score.toFixed(1)} {job.rank && `(#${job.rank})`}
               </span>
             ) : (
               <span

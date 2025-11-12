@@ -144,6 +144,31 @@ pub struct JobScore {
     pub overridden_at: Option<DateTime<Utc>>,
 }
 
+/// Combined Job and Score data for efficient API responses
+/// Eliminates N+1 query problem by fetching both in a single LEFT JOIN
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct JobWithScore {
+    // Job fields
+    pub job_id: Uuid,
+    pub title: String,
+    pub company: String,
+    pub location: Option<String>,
+    pub source: String,
+    pub salary: Option<i32>,
+    pub commute_time: Option<i32>,
+    pub status: String,
+    pub date_email_sent: DateTime<Utc>,
+    pub description: Option<String>,
+    pub url: Option<String>,
+    pub filter_reason: Option<String>,
+    pub extraction_method: Option<String>,
+    pub raw_data: Option<serde_json::Value>,
+    // Score fields (optional - job may not have a score yet)
+    pub total_score: Option<f64>,
+    pub rank: Option<i32>,
+    pub calculated_at: Option<DateTime<Utc>>,
+}
+
 // ============================================================================
 // Phase 5.2: Email Draft Models
 // ============================================================================
@@ -1720,8 +1745,15 @@ async fn generate_content_for_job(job: &Job, pool: &PgPool) -> Result<GeneratedC
 // ============================================================================
 
 async fn get_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
-    let jobs = sqlx::query_as::<_, Job>(
-        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, url, filter_reason, extraction_method, raw_data FROM jobs ORDER BY date_email_sent DESC"
+    let jobs = sqlx::query_as::<_, JobWithScore>(
+        "SELECT
+            j.job_id, j.title, j.company, j.location, j.source, j.salary,
+            j.commute_time, j.status, j.date_email_sent, j.description, j.url,
+            j.filter_reason, j.extraction_method, j.raw_data,
+            s.total_score, s.rank, s.calculated_at
+         FROM jobs j
+         LEFT JOIN job_scores s ON j.job_id = s.job_id
+         ORDER BY j.date_email_sent DESC"
     )
     .fetch_all(pool.get_ref())
     .await
