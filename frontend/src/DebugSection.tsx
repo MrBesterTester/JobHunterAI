@@ -42,6 +42,7 @@ export const DebugSection: React.FC<DebugSectionProps> = ({ job }) => {
 
   return (
     <div
+      data-testid="debug-section"
       style={{
         backgroundColor: '#fef3c7', // amber-100
         borderLeft: '4px solid #f59e0b', // orange-500

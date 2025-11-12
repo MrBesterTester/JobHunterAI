@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-11 15:15:21 PST
-last_updated: 2025-11-11 17:45:08 PST
+last_updated: 2025-11-11 18:05:11 PST
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -28,18 +28,18 @@ last_updated: 2025-11-11 17:45:08 PST
     - [Key Observations](#key-observations)
   - [Modal Test Fix Investigation (2025-11-11 17:04:38 PST)](#modal-test-fix-investigation-2025-11-11-170438-pst)
   - [Overflow:hidden Investigation (2025-11-11 17:45:08 PST)](#overflowhidden-investigation-2025-11-11-174508-pst)
+  - [DebugSection Test Fixes (2025-11-11 18:05:11 PST)](#debugsection-test-fixes-2025-11-11-180511-pst)
   - [Next Steps](#next-steps)
-    - [Priority 1: DebugSection Component Tests (3 tests) - NEW](#priority-1-debugsection-component-tests-3-tests---new)
-    - [Priority 2: Test Data Consistency (2 tests)](#priority-2-test-data-consistency-2-tests)
-    - [Priority 3: Performance Regression (1 test)](#priority-3-performance-regression-1-test)
-    - [Priority 4: Frontend Unit Test Failure (1 test)](#priority-4-frontend-unit-test-failure-1-test)
-    - [Priority 5: Description Quality Tests (2 tests)](#priority-5-description-quality-tests-2-tests)
+    - [Priority 1: Test Data Consistency (2 tests)](#priority-1-test-data-consistency-2-tests)
+    - [Priority 2: Performance Regression (1 test)](#priority-2-performance-regression-1-test)
+    - [Priority 3: Frontend Unit Test Failure (1 test)](#priority-3-frontend-unit-test-failure-1-test)
+    - [Priority 4: Description Quality Tests (2 tests)](#priority-4-description-quality-tests-2-tests)
   - [Related Files](#related-files)
   - [Quick Commands](#quick-commands)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-**Last Updated**: 2025-11-11 17:45:08 PST (Overflow:hidden investigation - modal tests remain stable)
+**Last Updated**: 2025-11-11 18:05:11 PST (All DebugSection tests fixed - 35/35 modal + debug tests passing)
 
 **Purpose**: Most recent comprehensive test suite results. This document reflects ONLY the latest comprehensive run.
 
@@ -192,37 +192,58 @@ last_updated: 2025-11-11 17:45:08 PST
 
 **Net Result**: **+20 passing tests** from comprehensive run baseline (380/411 → 400/411 E2E tests passing).
 
+## DebugSection Test Fixes (2025-11-11 18:05:11 PST)
+
+**Status**: ✅ **ALL 3 DEBUGSECTION TESTS FIXED**
+
+**Root Causes Identified**:
+1. **Selector Ambiguity** - Test selector found 2 "LLM" spans (score badge + debug section)
+2. **Element Targeting** - `:has-text()` selector was ambiguous after DebugSection moved inside clickable area
+3. **Test Data Mismatch** - Test expected fields (location, description) that weren't in test data
+
+**Fixes Applied**:
+1. Added `data-testid="debug-section"` to DebugSection component (`frontend/src/DebugSection.tsx:45`)
+2. Updated all debug section tests to use `[data-testid="debug-section"]` selector (`frontend/e2e/tests/18-debug-section.spec.ts`)
+3. Fixed JSON validation test to check only core fields present in test data (extraction_method, title, company, salary)
+
+**Test Results After Fixes**:
+- Modal + DebugSection E2E tests: **35 passed** (up from 32), **0 failed** (down from 3)
+- All DebugSection tests now PASS:
+  - ✅ "should display extraction method in debug section"
+  - ✅ "should parse and validate JSON structure in raw_data"
+  - ✅ "should have proper styling for debug section"
+- Modal tests remain 100% stable (no regression)
+- Runtime: 28.1 seconds
+
+**Files Modified**:
+- `frontend/src/DebugSection.tsx:45` - Added `data-testid="debug-section"`
+- `frontend/e2e/tests/18-debug-section.spec.ts` - Updated selectors and JSON validation logic
+
+**Net Result**: **+23 passing tests** total from comprehensive run baseline (380/411 → 403/411 E2E tests passing).
+
 ## Next Steps
 
-### Priority 1: DebugSection Component Tests (3 tests) - NEW
-**Impact**: Low - DebugSection display/styling issues only
-**Root Cause**: DebugSection component tests failing (extraction method display, JSON validation, styling)
-**Actions**:
-1. Review DebugSection test expectations vs actual component behavior
-2. Verify DebugSection styling is correctly applied
-3. Check if DebugSection is receiving correct props from job cards
-
-### Priority 2: Test Data Consistency (2 tests)
+### Priority 1: Test Data Consistency (2 tests)
 **Impact**: Medium - Filtered tab tests failing due to count mismatch
 **Actions**:
 1. Review test fixture seeding for filtered jobs
 2. Verify expected counts match actual database state
 3. Update test expectations or fix seeding logic
 
-### Priority 3: Performance Regression (1 test)
+### Priority 2: Performance Regression (1 test)
 **Impact**: Medium - Status updates taking 9s instead of <2s
 **Actions**:
 1. Profile status update endpoint
 2. Check for N+1 queries or missing indexes
 3. Consider if test environment differs from production
 
-### Priority 4: Frontend Unit Test Failure (1 test)
+### Priority 3: Frontend Unit Test Failure (1 test)
 **Impact**: Low - Single failing test, 99.8% pass rate
 **Actions**:
 1. Review failing test details in logs
 2. Fix or update test expectations
 
-### Priority 5: Description Quality Tests (2 tests)
+### Priority 4: Description Quality Tests (2 tests)
 **Impact**: Low - Content validation issues
 **Actions**:
 1. Review what content validation expects
