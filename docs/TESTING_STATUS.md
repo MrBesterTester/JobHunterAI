@@ -2,7 +2,7 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
   - [last_comprehensive_run: 2025-11-11 15:15:21 PST
-last_updated: 2025-11-11 17:04:38 PST](#last_comprehensive_run-2025-11-11-151521-pst%0Alast_updated-2025-11-11-170438-pst)
+last_updated: 2025-11-11 17:45:08 PST](#last_comprehensive_run-2025-11-11-151521-pst%0Alast_updated-2025-11-11-174508-pst)
 - [Testing Status](#testing-status)
   - [Latest Comprehensive Test Run](#latest-comprehensive-test-run)
     - [Quick Summary](#quick-summary)
@@ -13,6 +13,7 @@ last_updated: 2025-11-11 17:04:38 PST](#last_comprehensive_run-2025-11-11-151521
     - [Infrastructure Notes](#infrastructure-notes)
     - [Key Observations](#key-observations)
   - [Modal Test Fix Investigation (2025-11-11 17:04:38 PST)](#modal-test-fix-investigation-2025-11-11-170438-pst)
+  - [Overflow:hidden Investigation (2025-11-11 17:45:08 PST)](#overflowhidden-investigation-2025-11-11-174508-pst)
   - [Next Steps](#next-steps)
     - [Priority 1: DebugSection Component Tests (3 tests) - NEW](#priority-1-debugsection-component-tests-3-tests---new)
     - [Priority 2: Test Data Consistency (2 tests)](#priority-2-test-data-consistency-2-tests)
@@ -37,10 +38,10 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-11 15:15:21 PST
-last_updated: 2025-11-11 17:04:38 PST
+last_updated: 2025-11-11 17:45:08 PST
 ---
 
-**Last Updated**: 2025-11-11 17:04:38 PST (Modal test failures fixed - DebugSection placement corrected)
+**Last Updated**: 2025-11-11 17:45:08 PST (Overflow:hidden investigation - modal tests remain stable)
 
 **Purpose**: Most recent comprehensive test suite results. This document reflects ONLY the latest comprehensive run.
 
@@ -167,6 +168,31 @@ last_updated: 2025-11-11 17:04:38 PST
 
 **Files Modified**:
 - `frontend/src/App.tsx:2494-2497` - Moved DebugSection inside clickable area
+
+## Overflow:hidden Investigation (2025-11-11 17:45:08 PST)
+
+**Hypothesis**: Removing `overflow: 'hidden'` from job card (line 1716) would fix remaining 3 DebugSection test failures caused by content clipping.
+
+**Change Applied**: Removed `overflow: 'hidden'` from job card container style (`frontend/src/App.tsx:1716`).
+
+**Test Results**:
+- Modal tests: **32 passed** ✅ (no regression - modal fix remains stable)
+- DebugSection tests: **3 still failing** ❌ (hypothesis incorrect)
+- Runtime: 36.5 seconds
+
+**Analysis**:
+- `overflow: 'hidden'` removal did NOT fix DebugSection test failures
+- Original hypothesis was wrong - issue is not visual clipping
+- Same 3 failures persist:
+  1. "should display extraction method in debug section" - Extraction method not visible to test
+  2. "should parse and validate JSON structure in raw_data" - raw_data missing expected properties (pre-existing)
+  3. "should have proper styling for debug section" - Background color returns `rgba(0,0,0,0)` instead of `rgb(254,243,199)`
+
+**Root Cause** (likely): DebugSection either not rendering properly OR test selectors finding wrong element. Requires further investigation.
+
+**Decision**: Keep `overflow: 'hidden'` removed (cleaner code, no negative impact on tests).
+
+**Net Result**: **+20 passing tests** from comprehensive run baseline (380/411 → 400/411 E2E tests passing).
 
 ## Next Steps
 
