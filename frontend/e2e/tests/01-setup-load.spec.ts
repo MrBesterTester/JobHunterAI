@@ -103,7 +103,7 @@ test.describe('Setup & Initial Load', () => {
     test('should make successful API calls on page load', async ({ page }) => {
       // Set up response listeners before navigation with exact URL matching
       const jobsPromise = page.waitForResponse(
-        (response) => response.url().match(/\/api\/jobs(\?|$)/) && response.request().method() === 'GET',
+        (response) => !!response.url().match(/\/api\/jobs(\?|$)/) && response.request().method() === 'GET',
         { timeout: 10000 }
       );
       const statsPromise = page.waitForResponse(
@@ -127,7 +127,7 @@ test.describe('Setup & Initial Load', () => {
     test('should make GET /api/jobs request', async ({ page }) => {
       // Use exact URL matching to avoid matching /api/jobs/stats
       const responsePromise = page.waitForResponse(
-        (response) => response.url().match(/\/api\/jobs(\?|$)/) && response.request().method() === 'GET',
+        (response) => !!response.url().match(/\/api\/jobs(\?|$)/) && response.request().method() === 'GET',
         { timeout: 5000 }
       );
 
@@ -168,13 +168,22 @@ test.describe('Setup & Initial Load', () => {
 
     test('should have API response times under 100ms', async ({ page }) => {
       const measurements: number[] = [];
+      const requestTimes = new Map<string, number>();
 
-      // Capture response times
+      // Capture request start times
+      page.on('request', (request) => {
+        if (request.url().includes('/api/')) {
+          requestTimes.set(request.url(), Date.now());
+        }
+      });
+
+      // Capture response times and calculate duration
       page.on('response', (response) => {
         if (response.url().includes('/api/')) {
-          const timing = response.timing;
-          if (timing && timing.responseEnd) {
-            measurements.push(timing.responseEnd);
+          const startTime = requestTimes.get(response.url());
+          if (startTime) {
+            const duration = Date.now() - startTime;
+            measurements.push(duration);
           }
         }
       });

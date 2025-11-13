@@ -10,7 +10,7 @@
  * Date: 2025-10-28
  */
 
-export const ENABLED_TEST_SUITES = {
+export const ENABLED_TEST_SUITES: Record<string, boolean> = {
   // ===================================================================
   // CATEGORY 1: Core Workflow Tests (153 tests - ALWAYS ENABLED)
   // ===================================================================

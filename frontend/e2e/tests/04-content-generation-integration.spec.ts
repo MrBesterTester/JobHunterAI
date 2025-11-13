@@ -42,7 +42,7 @@ test.describe('Content Generation - LLM Integration Tests', () => {
     await dashboardPage.waitForJobsUpdate();
 
     if ((await dashboardPage.getVisibleJobCount()) === 0) {
-      test.skip('No approved jobs');
+      test.skip();
       return;
     }
 
@@ -107,7 +107,7 @@ test.describe('Content Generation - LLM Integration Tests', () => {
     const approvedCount = await dashboardPage.getVisibleJobCount();
 
     if (approvedCount < 2) {
-      test.skip('Need at least 2 approved jobs for comparison');
+      test.skip();
       return;
     }
 
@@ -146,7 +146,7 @@ test.describe('Content Generation - LLM Integration Tests', () => {
     await dashboardPage.waitForJobsUpdate();
 
     if ((await dashboardPage.getVisibleJobCount()) === 0) {
-      test.skip('No approved jobs');
+      test.skip();
       return;
     }
 

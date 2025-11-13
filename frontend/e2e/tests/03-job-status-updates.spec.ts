@@ -6,7 +6,9 @@ import { shouldRunTest } from '../test-config';
 
 // Conditionally skip entire file if disabled in test-config.ts
 // This will NOT show skip messages in test output
-test.skip(!shouldRunTest('job-status-updates'), 'Test suite disabled in test-config.ts');
+if (!shouldRunTest('job-status-updates')) {
+  test.skip();
+}
 
 /**
  * Test Suite 3: Job Status Updates
@@ -34,7 +36,7 @@ test.describe('Job Status Updates', () => {
       const initialInboxCount = await dashboardPage.getVisibleJobCount();
 
       if (initialInboxCount === 0) {
-        test.skip('No jobs in Inbox to test approval');
+        test.skip();
         return;
       }
 
@@ -76,7 +78,7 @@ test.describe('Job Status Updates', () => {
       const initialInboxCount = await dashboardPage.getVisibleJobCount();
 
       if (initialInboxCount === 0) {
-        test.skip('No jobs in Inbox to test rejection');
+        test.skip();
         return;
       }
 
@@ -104,7 +106,7 @@ test.describe('Job Status Updates', () => {
       const initialInboxCount = await dashboardPage.getVisibleJobCount();
 
       if (initialInboxCount === 0) {
-        test.skip('No jobs in Inbox to test approval');
+        test.skip();
         return;
       }
 
@@ -134,7 +136,7 @@ test.describe('Job Status Updates', () => {
       const initialInboxCount = await dashboardPage.getVisibleJobCount();
 
       if (initialInboxCount === 0) {
-        test.skip('No jobs in Inbox to test rejection');
+        test.skip();
         return;
       }
 
@@ -161,7 +163,7 @@ test.describe('Job Status Updates', () => {
       const initialCount = await dashboardPage.getVisibleJobCount();
 
       if (initialCount < 2) {
-        test.skip('Need at least 2 jobs in Inbox for this test');
+        test.skip();
         return;
       }
 
@@ -185,7 +187,7 @@ test.describe('Job Status Updates', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs in Inbox');
+        test.skip();
         return;
       }
 
@@ -208,7 +210,7 @@ test.describe('Job Status Updates', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs in Inbox');
+        test.skip();
         return;
       }
 
@@ -234,7 +236,7 @@ test.describe('Job Status Updates', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs in Inbox');
+        test.skip();
         return;
       }
 
@@ -260,7 +262,7 @@ test.describe('Job Status Updates', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs in Inbox');
+        test.skip();
         return;
       }
 
@@ -286,7 +288,7 @@ test.describe('Job Status Updates', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs in Inbox');
+        test.skip();
         return;
       }
 
@@ -311,7 +313,7 @@ test.describe('Job Status Updates', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs in Inbox');
+        test.skip();
         return;
       }
 
@@ -343,7 +345,7 @@ test.describe('Job Status Updates', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs in Inbox');
+        test.skip();
         return;
       }
 
@@ -363,7 +365,7 @@ test.describe('Job Status Updates', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs in Inbox');
+        test.skip();
         return;
       }
 
@@ -392,7 +394,7 @@ test.describe('Job Status Updates', () => {
       const initialCount = await dashboardPage.getVisibleJobCount();
 
       if (initialCount < 3) {
-        test.skip('Need at least 3 jobs for rapid approval test');
+        test.skip();
         return;
       }
 
@@ -417,7 +419,7 @@ test.describe('Job Status Updates', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs in Inbox');
+        test.skip();
         return;
       }
 

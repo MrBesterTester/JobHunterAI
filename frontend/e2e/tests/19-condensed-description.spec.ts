@@ -4,7 +4,9 @@ import { switchToTab } from '../helpers/tab-navigation';
 
 // Conditionally skip entire file if disabled in test-config.ts
 // This will NOT show skip messages in test output
-test.skip(!shouldRunTest('condensed-description'), 'Test suite disabled in test-config.ts');
+if (!shouldRunTest('condensed-description')) {
+  test.skip();
+}
 
 /**
  * E2E Tests for Condensed Job Descriptions

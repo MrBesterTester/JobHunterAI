@@ -32,7 +32,7 @@ test.describe('Phase 3.1.5: Testing & Refinement', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -122,7 +122,7 @@ test.describe('Phase 3.1.5: Testing & Refinement', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -161,7 +161,7 @@ test.describe('Phase 3.1.5: Testing & Refinement', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -243,7 +243,7 @@ test.describe('Phase 3.1.5: Testing & Refinement', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -348,7 +348,7 @@ test.describe('Phase 3.1.5: Testing & Refinement', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -478,7 +478,7 @@ test.describe('Phase 3.1.5: Testing & Refinement', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -510,7 +510,7 @@ test.describe('Phase 3.1.5: Testing & Refinement', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -543,7 +543,7 @@ test.describe('Phase 3.1.5: Testing & Refinement', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -568,7 +568,7 @@ test.describe('Phase 3.1.5: Testing & Refinement', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -634,7 +634,7 @@ test.describe('Phase 3.1.5: Testing & Refinement', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -688,7 +688,7 @@ test.describe('Phase 3.1.5: Testing & Refinement', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 

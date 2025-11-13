@@ -3,7 +3,9 @@ import { shouldRunTest } from '../test-config';
 
 // Conditionally skip entire file if disabled in test-config.ts
 // This will NOT show skip messages in test output
-test.skip(!shouldRunTest('refresh-data-button'), 'Test suite disabled in test-config.ts');
+if (!shouldRunTest('refresh-data-button')) {
+  test.skip();
+}
 
 /**
  * E2E Tests for Refresh Data Button (BUG-0001 Fix)

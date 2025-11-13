@@ -3,7 +3,9 @@ import { shouldRunTest } from '../test-config';
 
 // Conditionally skip entire file if disabled in test-config.ts
 // This will NOT show skip messages in test output
-test.skip(!shouldRunTest('filtered-tab-test'), 'Test suite disabled in test-config.ts');
+if (!shouldRunTest('filtered-tab-test')) {
+  test.skip();
+}
 
 /**
  * Test to verify the Filtered tab shows jobs with status="filtered"

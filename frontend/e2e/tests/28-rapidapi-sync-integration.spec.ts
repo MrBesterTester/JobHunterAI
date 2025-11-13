@@ -3,7 +3,9 @@ import { shouldRunTest } from '../test-config';
 
 // Conditionally skip entire file if disabled in test-config.ts
 // This will NOT show skip messages in test output
-test.skip(!shouldRunTest('rapidapi-sync-integration'), 'Test suite disabled in test-config.ts');
+if (!shouldRunTest('rapidapi-sync-integration')) {
+  test.skip();
+}
 
 /**
  * Test Suite 28: RapidAPI JSearch Sync Integration Tests

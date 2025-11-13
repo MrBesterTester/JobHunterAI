@@ -3,7 +3,9 @@ import { shouldRunTest } from '../test-config';
 
 // Conditionally skip entire file if disabled in test-config.ts
 // This will NOT show skip messages in test output
-test.skip(!shouldRunTest('extraction-method-badges'), 'Test suite disabled in test-config.ts');
+if (!shouldRunTest('extraction-method-badges')) {
+  test.skip();
+}
 
 /**
  * E2E Tests for Extraction Method Badges (LLM vs REGEX)

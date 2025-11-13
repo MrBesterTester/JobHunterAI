@@ -305,9 +305,8 @@ test.describe('Calendar Management - Phase 5.1', () => {
 
           await page.waitForTimeout(2000);
 
-          if (interviewCreated) {
-            expect(interviewCreated).toBeTruthy();
-          }
+          // Verify interview was created if all conditions met
+          expect(interviewCreated).toBe(true);
         }
       }
     });

@@ -324,9 +324,8 @@ test.describe('Follow-ups Management - Phase 5.1', () => {
         await approveButton.click();
         await page.waitForTimeout(2000);
 
-        if (approvalSuccessful) {
-          expect(approvalSuccessful).toBeTruthy();
-        }
+        // Verify approval was successful if button was clicked
+        expect(approvalSuccessful).toBe(true);
       }
     });
 
@@ -351,9 +350,8 @@ test.describe('Follow-ups Management - Phase 5.1', () => {
         await sendButton.click();
         await page.waitForTimeout(2000);
 
-        if (sendSuccessful) {
-          expect(sendSuccessful).toBeTruthy();
-        }
+        // Verify send was successful if button was clicked
+        expect(sendSuccessful).toBe(true);
       }
     });
 

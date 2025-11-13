@@ -25,7 +25,7 @@ test.describe('Filtered Jobs Display', () => {
       const filteredCount = await dashboardPage.getVisibleJobCount();
 
       if (filteredCount === 0) {
-        test.skip('No filtered jobs available');
+        test.skip();
         return;
       }
 
@@ -43,7 +43,7 @@ test.describe('Filtered Jobs Display', () => {
       const filteredCount = await dashboardPage.getVisibleJobCount();
 
       if (filteredCount === 0) {
-        test.skip('No filtered jobs available');
+        test.skip();
         return;
       }
 
@@ -63,7 +63,7 @@ test.describe('Filtered Jobs Display', () => {
       const filteredCount = await dashboardPage.getVisibleJobCount();
 
       if (filteredCount === 0) {
-        test.skip('No filtered jobs available');
+        test.skip();
         return;
       }
 
@@ -84,7 +84,7 @@ test.describe('Filtered Jobs Display', () => {
 
       // If no salary-based filtered jobs exist, skip
       if (!foundSalaryReason) {
-        test.skip('No jobs filtered by salary found');
+        test.skip();
       }
 
       expect(foundSalaryReason).toBe(true);
@@ -97,7 +97,7 @@ test.describe('Filtered Jobs Display', () => {
       const filteredCount = await dashboardPage.getVisibleJobCount();
 
       if (filteredCount === 0) {
-        test.skip('No filtered jobs available');
+        test.skip();
         return;
       }
 
@@ -117,7 +117,7 @@ test.describe('Filtered Jobs Display', () => {
       }
 
       if (!foundCommuteReason) {
-        test.skip('No jobs filtered by commute found');
+        test.skip();
       }
 
       expect(foundCommuteReason).toBe(true);
@@ -130,7 +130,7 @@ test.describe('Filtered Jobs Display', () => {
       const filteredCount = await dashboardPage.getVisibleJobCount();
 
       if (filteredCount === 0) {
-        test.skip('No filtered jobs available');
+        test.skip();
         return;
       }
 
@@ -150,7 +150,7 @@ test.describe('Filtered Jobs Display', () => {
       }
 
       if (!foundDomainReason) {
-        test.skip('No jobs filtered by domain found');
+        test.skip();
       }
 
       expect(foundDomainReason).toBe(true);
@@ -163,7 +163,7 @@ test.describe('Filtered Jobs Display', () => {
       const filteredCount = await dashboardPage.getVisibleJobCount();
 
       if (filteredCount === 0) {
-        test.skip('No filtered jobs available');
+        test.skip();
         return;
       }
 
@@ -187,7 +187,7 @@ test.describe('Filtered Jobs Display', () => {
       }
 
       if (!foundMultipleReasons) {
-        test.skip('No jobs with multiple filter reasons found');
+        test.skip();
       }
 
       expect(foundMultipleReasons).toBe(true);
@@ -200,7 +200,7 @@ test.describe('Filtered Jobs Display', () => {
       const filteredCount = await dashboardPage.getVisibleJobCount();
 
       if (filteredCount === 0) {
-        test.skip('No filtered jobs available');
+        test.skip();
         return;
       }
 
@@ -228,7 +228,7 @@ test.describe('Filtered Jobs Display', () => {
       const filteredCount = await dashboardPage.getVisibleJobCount();
 
       if (filteredCount === 0) {
-        test.skip('No filtered jobs available');
+        test.skip();
         return;
       }
 
@@ -273,7 +273,7 @@ test.describe('Filtered Jobs Display', () => {
       const filteredCount = await dashboardPage.getVisibleJobCount();
 
       if (filteredCount === 0) {
-        test.skip('No filtered jobs available');
+        test.skip();
         return;
       }
 

@@ -27,7 +27,7 @@ test.describe('Job Details View', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs available');
+        test.skip();
         return;
       }
 
@@ -46,7 +46,7 @@ test.describe('Job Details View', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs available');
+        test.skip();
         return;
       }
 
@@ -66,7 +66,7 @@ test.describe('Job Details View', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs available');
+        test.skip();
         return;
       }
 
@@ -86,7 +86,7 @@ test.describe('Job Details View', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs available');
+        test.skip();
         return;
       }
 
@@ -104,7 +104,7 @@ test.describe('Job Details View', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs available');
+        test.skip();
         return;
       }
 
@@ -128,7 +128,7 @@ test.describe('Job Details View', () => {
       }
 
       if (!foundJobWithSalary) {
-        test.skip('No jobs with salary found');
+        test.skip();
       }
     });
 
@@ -137,7 +137,7 @@ test.describe('Job Details View', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs available');
+        test.skip();
         return;
       }
 
@@ -155,7 +155,7 @@ test.describe('Job Details View', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs available');
+        test.skip();
         return;
       }
 
@@ -173,7 +173,7 @@ test.describe('Job Details View', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs available');
+        test.skip();
         return;
       }
 
@@ -199,7 +199,7 @@ test.describe('Job Details View', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs available');
+        test.skip();
         return;
       }
 
@@ -221,7 +221,7 @@ test.describe('Job Details View', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs available');
+        test.skip();
         return;
       }
 
@@ -239,7 +239,7 @@ test.describe('Job Details View', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs available');
+        test.skip();
         return;
       }
 
@@ -260,7 +260,7 @@ test.describe('Job Details View', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs available');
+        test.skip();
         return;
       }
 
@@ -281,7 +281,7 @@ test.describe('Job Details View', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs available');
+        test.skip();
         return;
       }
 
@@ -302,7 +302,7 @@ test.describe('Job Details View', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs in Inbox');
+        test.skip();
         return;
       }
 
@@ -324,7 +324,7 @@ test.describe('Job Details View', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs in Inbox');
+        test.skip();
         return;
       }
 
@@ -355,7 +355,7 @@ test.describe('Job Details View', () => {
       const initialCount = await dashboardPage.getVisibleJobCount();
 
       if (initialCount === 0) {
-        test.skip('No jobs in Inbox');
+        test.skip();
         return;
       }
 
@@ -380,7 +380,7 @@ test.describe('Job Details View', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -401,7 +401,7 @@ test.describe('Job Details View', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -426,7 +426,7 @@ test.describe('Job Details View', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) < 2) {
-        test.skip('Need at least 2 jobs in Inbox');
+        test.skip();
         return;
       }
 
@@ -486,7 +486,7 @@ test.describe('Job Details View', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs available');
+        test.skip();
         return;
       }
 
@@ -508,7 +508,7 @@ test.describe('Job Details View', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) < 2) {
-        test.skip('Need at least 2 jobs');
+        test.skip();
         return;
       }
 
@@ -533,7 +533,7 @@ test.describe('Job Details View', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs available');
+        test.skip();
         return;
       }
 

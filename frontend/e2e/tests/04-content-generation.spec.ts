@@ -64,7 +64,7 @@ test.describe('Content Generation', () => {
       const approvedCount = await dashboardPage.getVisibleJobCount();
 
       if (approvedCount === 0) {
-        test.skip('No approved jobs to test content generation');
+        test.skip();
         return;
       }
 
@@ -80,7 +80,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -100,7 +100,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -126,7 +126,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -152,7 +152,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -185,7 +185,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -225,7 +225,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -267,7 +267,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -295,7 +295,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -313,7 +313,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -334,7 +334,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -355,7 +355,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -373,7 +373,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -400,7 +400,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -431,7 +431,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -459,7 +459,7 @@ test.describe('Content Generation', () => {
       const approvedCount = await dashboardPage.getVisibleJobCount();
 
       if (approvedCount < 2) {
-        test.skip('Need at least 2 approved jobs for comparison');
+        test.skip();
         return;
       }
 
@@ -489,14 +489,14 @@ test.describe('Content Generation', () => {
     test('should include job-specific information in cover letter', async ({ page }) => {
       // Skip personalization tests when using mocks (mocks have generic content)
       if (!USE_REAL_LLM) {
-        test.skip('Skipping personalization test with mocks');
+        test.skip();
       }
 
       await dashboardPage.clickTab('approved');
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -517,7 +517,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -546,7 +546,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -577,7 +577,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -601,7 +601,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -626,7 +626,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -653,7 +653,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -712,7 +712,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -741,7 +741,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -786,7 +786,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -827,7 +827,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -872,7 +872,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -916,7 +916,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -946,7 +946,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -992,7 +992,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -1025,7 +1025,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -1058,7 +1058,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -1100,7 +1100,7 @@ test.describe('Content Generation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 

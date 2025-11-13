@@ -4,7 +4,9 @@ import { switchToTab } from '../helpers/tab-navigation';
 
 // Conditionally skip entire file if disabled in test-config.ts
 // This will NOT show skip messages in test output
-test.skip(!shouldRunTest('extraction-method-badge-test'), 'Test suite disabled in test-config.ts');
+if (!shouldRunTest('extraction-method-badge-test')) {
+  test.skip();
+}
 
 /**
  * Test to verify the Expert Systems Architect job shows LLM badge after HTML preprocessing fix

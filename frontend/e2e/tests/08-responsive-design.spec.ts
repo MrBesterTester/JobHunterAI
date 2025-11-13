@@ -6,7 +6,9 @@ import { setViewportSize, viewportSizes } from '../fixtures/test-helpers';
 
 // Conditionally skip entire file if disabled in test-config.ts
 // This will NOT show skip messages in test output
-test.skip(!shouldRunTest('responsive-design'), 'Test suite disabled in test-config.ts');
+if (!shouldRunTest('responsive-design')) {
+  test.skip();
+}
 
 /**
  * Test Suite 8: Responsive Design & Layout
@@ -43,7 +45,7 @@ test.describe('Responsive Design & Layout', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs to test layout');
+        test.skip();
         return;
       }
 
@@ -81,7 +83,7 @@ test.describe('Responsive Design & Layout', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs for modal test');
+        test.skip();
         return;
       }
 
@@ -125,7 +127,7 @@ test.describe('Responsive Design & Layout', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs to test layout');
+        test.skip();
         return;
       }
 
@@ -139,7 +141,7 @@ test.describe('Responsive Design & Layout', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs for modal test');
+        test.skip();
         return;
       }
 
@@ -217,7 +219,7 @@ test.describe('Responsive Design & Layout', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs for modal test');
+        test.skip();
         return;
       }
 
@@ -265,7 +267,7 @@ test.describe('Responsive Design & Layout', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs to test');
+        test.skip();
         return;
       }
 

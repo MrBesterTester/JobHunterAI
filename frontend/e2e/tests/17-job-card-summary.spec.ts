@@ -3,7 +3,9 @@ import { shouldRunTest } from '../test-config';
 
 // Conditionally skip entire file if disabled in test-config.ts
 // This will NOT show skip messages in test output
-test.skip(!shouldRunTest('job-card-summary'), 'Test suite disabled in test-config.ts');
+if (!shouldRunTest('job-card-summary')) {
+  test.skip();
+}
 
 /**
  * E2E Tests for Job Card Summary Section

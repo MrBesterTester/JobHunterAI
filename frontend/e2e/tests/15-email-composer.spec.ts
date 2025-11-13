@@ -6,7 +6,9 @@ import { ContentGenerationModal } from '../pages/ModalComponent';
 
 // Conditionally skip entire file if disabled in test-config.ts
 // This will NOT show skip messages in test output
-test.skip(!shouldRunTest('email-composer'), 'Test suite disabled in test-config.ts');
+if (!shouldRunTest('email-composer')) {
+  test.skip();
+}
 
 /**
  * Test Suite 15: Email Composer (Phase 5.2)
@@ -56,7 +58,7 @@ test.describe('Email Composer (Phase 5.2)', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -77,7 +79,7 @@ test.describe('Email Composer (Phase 5.2)', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -101,7 +103,7 @@ test.describe('Email Composer (Phase 5.2)', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -124,7 +126,7 @@ test.describe('Email Composer (Phase 5.2)', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -147,7 +149,7 @@ test.describe('Email Composer (Phase 5.2)', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -176,7 +178,7 @@ test.describe('Email Composer (Phase 5.2)', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -203,7 +205,7 @@ test.describe('Email Composer (Phase 5.2)', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -232,7 +234,7 @@ test.describe('Email Composer (Phase 5.2)', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -253,7 +255,7 @@ test.describe('Email Composer (Phase 5.2)', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -281,7 +283,7 @@ test.describe('Email Composer (Phase 5.2)', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -307,7 +309,7 @@ test.describe('Email Composer (Phase 5.2)', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -332,7 +334,7 @@ test.describe('Email Composer (Phase 5.2)', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -367,7 +369,7 @@ test.describe('Email Composer (Phase 5.2)', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -397,7 +399,7 @@ test.describe('Email Composer (Phase 5.2)', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -439,7 +441,7 @@ test.describe('Email Composer (Phase 5.2)', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -492,7 +494,7 @@ test.describe('Email Composer (Phase 5.2)', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 

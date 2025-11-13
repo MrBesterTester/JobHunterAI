@@ -6,7 +6,9 @@ import { ContentGenerationModal } from '../pages/ModalComponent';
 
 // Conditionally skip entire file if disabled in test-config.ts
 // This will NOT show skip messages in test output
-test.skip(!shouldRunTest('performance'), 'Test suite disabled in test-config.ts');
+if (!shouldRunTest('performance')) {
+  test.skip();
+}
 
 /**
  * Test Suite 10: Performance Validation
@@ -140,7 +142,7 @@ test.describe('Performance Validation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No approved jobs');
+        test.skip();
         return;
       }
 
@@ -173,7 +175,7 @@ test.describe('Performance Validation', () => {
       const jobCount = await dashboardPage.getVisibleJobCount();
 
       if (jobCount < 50) {
-        test.skip('Not enough jobs to test performance with large dataset');
+        test.skip();
         return;
       }
 
@@ -201,7 +203,7 @@ test.describe('Performance Validation', () => {
       const jobCount = await dashboardPage.getVisibleJobCount();
 
       if (jobCount < 20) {
-        test.skip('Not enough jobs to test scrolling');
+        test.skip();
         return;
       }
 
@@ -347,7 +349,7 @@ test.describe('Performance Validation', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs');
+        test.skip();
         return;
       }
 

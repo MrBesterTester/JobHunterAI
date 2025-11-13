@@ -73,7 +73,7 @@ test.describe('Statistics & Real-time Updates', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs in Inbox to test approval');
+        test.skip();
         return;
       }
 
@@ -102,7 +102,7 @@ test.describe('Statistics & Real-time Updates', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs in Inbox to test rejection');
+        test.skip();
         return;
       }
 
@@ -147,7 +147,7 @@ test.describe('Statistics & Real-time Updates', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs in Inbox');
+        test.skip();
         return;
       }
 
@@ -235,7 +235,7 @@ test.describe('Statistics & Real-time Updates', () => {
       const isVisible = await dashboardPage.configureCriteriaButton.isVisible().catch(() => false);
 
       if (!isVisible) {
-        test.skip('Configure Criteria button not implemented in UI');
+        test.skip();
         return;
       }
 
@@ -274,7 +274,7 @@ test.describe('Statistics & Real-time Updates', () => {
       const filteredCount = await dashboardPage.getVisibleJobCount();
 
       if (filteredCount === 0) {
-        test.skip('No filtered jobs to verify');
+        test.skip();
         return;
       }
 
@@ -350,7 +350,7 @@ test.describe('Statistics & Real-time Updates', () => {
       const initialCount = await dashboardPage.getVisibleJobCount();
 
       if (initialCount < 3) {
-        test.skip('Need at least 3 jobs for concurrent test');
+        test.skip();
         return;
       }
 

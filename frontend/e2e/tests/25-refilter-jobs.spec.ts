@@ -3,7 +3,9 @@ import { shouldRunTest } from '../test-config';
 
 // Conditionally skip entire file if disabled in test-config.ts
 // This will NOT show skip messages in test output
-test.skip(!shouldRunTest('refilter-jobs'), 'Test suite disabled in test-config.ts');
+if (!shouldRunTest('refilter-jobs')) {
+  test.skip();
+}
 
 /**
  * E2E Tests for Re-filter Jobs Functionality

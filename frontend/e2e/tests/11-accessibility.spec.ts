@@ -63,7 +63,7 @@ test.describe('Accessibility Testing', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs to test');
+        test.skip();
         return;
       }
 
@@ -113,7 +113,7 @@ test.describe('Accessibility Testing', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs to test');
+        test.skip();
         return;
       }
 
@@ -144,7 +144,7 @@ test.describe('Accessibility Testing', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs to test');
+        test.skip();
         return;
       }
 
@@ -185,7 +185,7 @@ test.describe('Accessibility Testing', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs to test');
+        test.skip();
         return;
       }
 
@@ -250,7 +250,7 @@ test.describe('Accessibility Testing', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs to test');
+        test.skip();
         return;
       }
 
@@ -280,7 +280,7 @@ test.describe('Accessibility Testing', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs to test');
+        test.skip();
         return;
       }
 

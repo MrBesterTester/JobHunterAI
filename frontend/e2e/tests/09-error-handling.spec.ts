@@ -122,7 +122,7 @@ test.describe('Error Handling & Edge Cases', () => {
         const hasEmptyState = await dashboardPage.isEmptyStateVisible();
         expect(hasEmptyState || count === 0).toBe(true);
       } else {
-        test.skip('Inbox has jobs - cannot test empty state');
+        test.skip();
       }
     });
 
@@ -224,7 +224,7 @@ test.describe('Error Handling & Edge Cases', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs to test');
+        test.skip();
         return;
       }
 
@@ -431,7 +431,7 @@ test.describe('Error Handling & Edge Cases', () => {
       await dashboardPage.waitForJobsUpdate();
 
       if ((await dashboardPage.getVisibleJobCount()) === 0) {
-        test.skip('No jobs to test');
+        test.skip();
         return;
       }
 

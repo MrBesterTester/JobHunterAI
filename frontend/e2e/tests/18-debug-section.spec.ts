@@ -4,7 +4,9 @@ import { switchToTab } from '../helpers/tab-navigation';
 
 // Conditionally skip entire file if disabled in test-config.ts
 // This will NOT show skip messages in test output
-test.skip(!shouldRunTest('debug-section'), 'Test suite disabled in test-config.ts');
+if (!shouldRunTest('debug-section')) {
+  test.skip();
+}
 
 /**
  * E2E Tests for Job Card Debug Section

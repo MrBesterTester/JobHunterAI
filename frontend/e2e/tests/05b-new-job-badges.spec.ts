@@ -3,7 +3,9 @@ import { shouldRunTest } from '../test-config';
 
 // Conditionally skip entire file if disabled in test-config.ts
 // This will NOT show skip messages in test output
-test.skip(!shouldRunTest('new-job-badges'), 'Test suite disabled in test-config.ts');
+if (!shouldRunTest('new-job-badges')) {
+  test.skip();
+}
 
 /**
  * E2E Tests for New Job Card Badges

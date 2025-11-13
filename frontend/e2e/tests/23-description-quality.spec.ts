@@ -4,7 +4,9 @@ import { switchToTab } from '../helpers/tab-navigation';
 
 // Conditionally skip entire file if disabled in test-config.ts
 // This will NOT show skip messages in test output
-test.skip(!shouldRunTest('description-quality'), 'Test suite disabled in test-config.ts');
+if (!shouldRunTest('description-quality')) {
+  test.skip();
+}
 
 /**
  * E2E Tests for Condensed Description Quality
@@ -146,8 +148,8 @@ test.describe('Condensed Description Quality', () => {
     const count = Math.min(await jobCards.count(), 10);
 
     let jobId: string | null = null;
-    let jobCard;
-    let descriptionContainer;
+    let jobCard: ReturnType<typeof page.locator> | undefined;
+    let descriptionContainer: ReturnType<typeof page.locator> | undefined;
 
     for (let i = 0; i < count; i++) {
       const card = jobCards.nth(i);
@@ -171,13 +173,15 @@ test.describe('Condensed Description Quality', () => {
 
     // Should have found at least one job with substantial content
     expect(jobId).toBeTruthy();
+    expect(jobCard).toBeDefined();
+    expect(descriptionContainer).toBeDefined();
 
     // Wait for initial description
-    await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 55000 });
-    const initialDescription = await descriptionContainer.textContent();
+    await expect(descriptionContainer!).not.toHaveText('Loading description...', { timeout: 55000 });
+    const initialDescription = await descriptionContainer!.textContent();
 
     // Click refresh
-    const descriptionHeader = jobCard.locator('strong:has-text("Condensed Description")').first();
+    const descriptionHeader = jobCard!.locator('strong:has-text("Condensed Description")').first();
     const refreshButton = descriptionHeader.locator('..').locator('button');
     await refreshButton.click();
 
@@ -186,9 +190,9 @@ test.describe('Condensed Description Quality', () => {
 
     // Wait for new description (still tracking the same job by ID)
     // Note: LLM API calls can take 30-40+ seconds for jobs with long descriptions
-    await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 55000 });
+    await expect(descriptionContainer!).not.toHaveText('Loading description...', { timeout: 55000 });
 
-    const newDescription = await descriptionContainer.textContent();
+    const newDescription = await descriptionContainer!.textContent();
 
     // Should have loaded some description
     expect(newDescription).toBeTruthy();
