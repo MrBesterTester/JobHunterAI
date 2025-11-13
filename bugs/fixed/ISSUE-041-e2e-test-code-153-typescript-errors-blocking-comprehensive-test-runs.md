@@ -1,14 +1,15 @@
 ---
 id: ISSUE-041
 title: E2E Test Code: 153 TypeScript Errors Blocking Comprehensive Test Runs
-status: open
+status: fixed
 priority: high
 severity: high
 component: frontend
 created: 2025-11-12
 updated: 2025-11-12
+fixed: 2025-11-12
 affects: [testing, e2e, quality-gates]
-related: []
+related: [bfbba1d, d89ebda, cd0c9e7]
 ---
 
 # ISSUE-041: E2E Test Code: 153 TypeScript Errors Blocking Comprehensive Test Runs
@@ -555,12 +556,56 @@ typecheck_e2e() {
 
 ## Implementation
 
-[To be filled in during implementation]
+**✅ COMPLETED: 2025-11-12**
+
+All 153 TypeScript errors resolved in E2E test code. E2E type-checking quality gate now passes.
+
+**Phase 1: test.skip() API Fixes (141 errors - 92%)**
+
+Pattern A (21 files): Converted suite-level conditional skips
+```typescript
+// Before:
+test.skip(!shouldRunTest('suite'), 'Test suite disabled');
+
+// After:
+if (!shouldRunTest('suite')) {
+  test.skip();
+}
+```
+
+Pattern B (~120 instances): Removed description strings from in-test skips
+```typescript
+// Before:
+if (condition) {
+  test.skip('No jobs available');
+  return;
+}
+
+// After:
+if (condition) {
+  test.skip();
+  return;
+}
+```
+
+**Phase 2: Property/Type Fixes (12 errors - 8%)**
+
+1. **Index signature** (test-config.ts): Added `Record<string, boolean>` type
+2. **Return types** (01-setup-load.spec.ts): Added `!!` to convert `.match()` result to boolean
+3. **Response.timing** (01-setup-load.spec.ts): Replaced with Date.now() timestamp approach
+4. **toBeTruthy on 'never'** (calendar/follow-ups): Removed redundant if blocks
+5. **Possibly undefined** (23-description-quality.spec.ts): Added type annotations and assertions
 
 **Commits**:
-- [ ] Phase 1: Fix test.skip() issues (141 errors)
-- [ ] Phase 2: Fix property/type issues (12 errors)
-- [ ] Verification: Run comprehensive test suite
+- [x] ✅ cd0c9e7 - "fix: Resolve all 153 TypeScript errors in E2E test code (ISSUE-041)"
+  - 33 files modified (all E2E test files + test-config.ts)
+  - 235 insertions, 185 deletions
+  - Actual time: ~3 hours (faster than 5-6 hour estimate)
+
+**Verification**:
+- [x] ✅ `npm run typecheck:e2e` → Exit code 0 (zero errors)
+- [x] ✅ BUILD PHASE quality gate passes (E2E typecheck no longer blocks)
+- [x] ✅ Comprehensive test suite can now execute
 
 ## Testing
 
@@ -594,13 +639,23 @@ cd ..
 
 ## Status History
 
-- **2025-11-12**: ISSUE-041 created
+- **2025-11-12 (Morning)**: ISSUE-041 created
   - E2E type-checking quality gate added to comprehensive test suite
   - Discovered 153 TypeScript errors in E2E test code
   - Analyzed and categorized all errors by type and file
   - Documented root causes and proposed systematic fix approach
   - Priority: HIGH (blocks comprehensive test runs)
   - Severity: HIGH (153 errors across 17 files)
+
+- **2025-11-12 (Evening)**: ISSUE-041 fixed ✅
+  - Implemented Option 1: Fix All Errors Systematically
+  - Phase 1: Fixed 141 test.skip() errors (Pattern A: 21 files, Pattern B: ~120 instances)
+  - Phase 2: Fixed 12 property/type errors across 5 categories
+  - Commit cd0c9e7: All 153 errors resolved
+  - Verification: `npm run typecheck:e2e` → Exit code 0 (zero errors)
+  - BUILD PHASE quality gate now passes
+  - Comprehensive test suite unblocked
+  - Actual implementation time: ~3 hours (faster than 5-6 hour estimate)
 
 ## Notes
 
