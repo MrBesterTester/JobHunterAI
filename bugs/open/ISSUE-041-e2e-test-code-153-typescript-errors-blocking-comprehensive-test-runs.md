@@ -17,6 +17,7 @@ related: []
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Summary](#summary)
+- [Next Steps](#next-steps)
 - [Impact](#impact)
 - [Error Analysis & Breakdown](#error-analysis--breakdown)
   - [Quick Statistics](#quick-statistics)
@@ -53,6 +54,37 @@ related: []
 E2E test type-checking quality gate (added 2025-11-12) discovered **153 TypeScript errors** in E2E test code that were previously being silently ignored. Playwright transpiles `.ts` files at runtime, allowing type-unsafe code to execute. The comprehensive test suite now **enforces E2E type-checking in the BUILD PHASE** and will abort until all errors are fixed.
 
 **Critical Impact**: Next comprehensive test run will **FAIL during BUILD PHASE** until all 153 TypeScript errors are resolved.
+
+## Next Steps
+
+**Decision**: Proceeding with **Option 1 - Fix All Errors Systematically** (see [Proposed Solutions](#proposed-solutions) for full analysis)
+
+**Implementation Plan** (Estimated 5-6 hours):
+
+**Phase 1: Fix test.skip() Issues (141 errors - 80% of work, ~3-4 hours)**
+1. Pattern A: Convert `test.skip(!condition, 'message')` → `if (!condition) { test.skip(); }`
+2. Pattern B: Remove description strings from in-test skip calls
+3. Use find/replace for mechanical fixes where safe
+4. Manual review for complex cases
+
+**Phase 2: Fix Property/Type Issues (12 errors - 20% of work, ~1.5 hours)**
+1. Remove `Response.timing` usage (1 error) - 15 min
+2. Add type guards for possibly-undefined variables (3 errors) - 30 min
+3. Fix return types: boolean | null → boolean (2 errors) - 10 min
+4. Add index signature to test-config.ts (1 error) - 5 min
+5. Fix toBeTruthy on 'never' type (6 errors) - 20 min
+
+**Verification**:
+- Run `npm run typecheck:e2e` - verify zero errors
+- Run `npm run test:e2e:chromium` - verify tests still execute
+- Run `./helper-scripts/run-comprehensive-tests.sh` - verify BUILD PHASE passes
+
+**Why Option 1**:
+- ✅ Achieves 100% type safety in one session
+- ✅ Unblocks comprehensive test suite immediately
+- ✅ Systematic approach (92% of errors are same issue)
+- ✅ Low risk (syntactic changes, no behavioral impact)
+- ✅ One-time investment eliminates all technical debt
 
 ## Impact
 
