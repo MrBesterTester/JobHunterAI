@@ -46,6 +46,8 @@ last_updated: 2025-11-12 18:05:00 PST (Added E2E type-checking infrastructure im
 
 **Overall Pass Rate: 99.6% (1099/1103 active tests)**
 
+**📌 This stable state is tagged as STABLE-9** (commit da02918, 2025-11-11 19:50:58 PST)
+
 ---
 
 ## ⚠️ CRITICAL INFRASTRUCTURE CHANGE (2025-11-12)
