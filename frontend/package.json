@@ -39,6 +39,7 @@
     "preview": "rsbuild preview",
     "typecheck": "tsc --noEmit",
     "typecheck:watch": "tsc --noEmit --watch",
+    "typecheck:e2e": "tsc --project e2e/tsconfig.json --noEmit",
     "test": "npm run typecheck && jest --watchAll=false",
     "test:coverage": "jest --coverage",
     "test:watch": "jest --watch",

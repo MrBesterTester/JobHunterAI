@@ -30,12 +30,14 @@ SKIP_E2E=false
 PREFLIGHT_PASSED=true
 BACKEND_BUILD_PASSED=false
 FRONTEND_BUILD_PASSED=false
+E2E_TYPECHECK_PASSED=false
 BACKEND_TESTS_PASSED=false
 FRONTEND_TESTS_PASSED=false
 E2E_TESTS_PASSED=false
 
 BACKEND_BUILD_TIME=""
 FRONTEND_BUILD_TIME=""
+E2E_TYPECHECK_TIME=""
 BACKEND_TEST_TIME=""
 FRONTEND_TEST_TIME=""
 E2E_TEST_TIME=""
@@ -401,6 +403,30 @@ build_frontend() {
     cd "$PROJECT_ROOT"
 }
 
+typecheck_e2e() {
+    log_section "TYPE-CHECKING E2E TESTS (TypeScript)"
+
+    cd "$PROJECT_ROOT/frontend"
+    local start_time=$(date +%s)
+
+    log_info "Running npm run typecheck:e2e..."
+    if npm run typecheck:e2e 2>&1 | tee /tmp/e2e-typecheck.log; then
+        local end_time=$(date +%s)
+        E2E_TYPECHECK_TIME="$((end_time - start_time))s"
+        log_info "E2E type-checking PASSED (${E2E_TYPECHECK_TIME})"
+        E2E_TYPECHECK_PASSED=true
+    else
+        log_error "E2E test code has TypeScript errors (zero-error build required)"
+        log_error "Fix all type errors before running tests"
+        cat /tmp/e2e-typecheck.log | grep -E "error TS[0-9]+" | head -20
+        log_error "See /tmp/e2e-typecheck.log for full details"
+        handle_failure "E2E type-checking" true
+        E2E_TYPECHECK_PASSED=false
+    fi
+
+    cd "$PROJECT_ROOT"
+}
+
 run_backend_tests() {
     log_section "RUNNING BACKEND TESTS (Cargo Test)"
 
@@ -523,6 +549,15 @@ generate_report() {
         ((total_failed++))
     fi
 
+    # E2E Typecheck
+    if [ "$E2E_TYPECHECK_PASSED" = true ]; then
+        echo -e "E2E Type-checking          ${GREEN}PASSED${NC}      $E2E_TYPECHECK_TIME"
+        ((total_passed++))
+    else
+        echo -e "E2E Type-checking          ${RED}FAILED${NC}      $E2E_TYPECHECK_TIME"
+        ((total_failed++))
+    fi
+
     # Backend Tests
     if [ "$BACKEND_TESTS_PASSED" = true ]; then
         echo -e "Backend Tests              ${GREEN}PASSED${NC}      $BACKEND_TEST_TIME"
@@ -598,6 +633,7 @@ main() {
     # Build phase
     build_backend
     build_frontend
+    typecheck_e2e
 
     # Test phase
     run_backend_tests
