@@ -107,7 +107,11 @@ test.describe('Performance Validation', () => {
       const responseTimes: number[] = [];
 
       page.on('requestfinished', async (request) => {
-        if (request.url().includes('/api/') && !request.url().includes('generate')) {
+        // Exclude LLM endpoints (generate, condense-description) from performance measurement
+        // as they involve expensive external API calls (~3 seconds each)
+        if (request.url().includes('/api/') &&
+            !request.url().includes('generate') &&
+            !request.url().includes('condense-description')) {
           const timing = request.timing();
           const responseTime = timing.responseEnd - timing.requestStart;
           if (responseTime > 0) {
