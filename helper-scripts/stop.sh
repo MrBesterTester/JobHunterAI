@@ -6,11 +6,86 @@
 
 set -e
 
+# Function to display help message
+show_help() {
+    cat << EOF
+Usage: ./helper-scripts/stop.sh [OPTIONS]
+
+Stops JobHunter services (backend, frontend, and optionally PostgreSQL)
+
+OPTIONS:
+    -b, --backend-only       Stop only backend (keep frontend running)
+    -f, --frontend-only      Stop only frontend (keep backend running)
+    --full                   Stop all services including PostgreSQL
+    -h, --help               Show this help message
+
+EXAMPLES:
+    # Stop backend and frontend (default)
+    ./helper-scripts/stop.sh
+
+    # Stop everything including PostgreSQL
+    ./helper-scripts/stop.sh --full
+
+    # Stop only backend
+    ./helper-scripts/stop.sh --backend-only
+
+    # Stop only frontend
+    ./helper-scripts/stop.sh --frontend-only
+
+NOTE:
+    By default, PostgreSQL remains running (required for tests).
+    Use --full to stop PostgreSQL as well.
+
+EOF
+}
+
 # Parse arguments
 STOP_POSTGRES=false
-if [ "$1" = "--full" ]; then
-    STOP_POSTGRES=true
+STOP_BACKEND=true
+STOP_FRONTEND=true
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --full)
+            STOP_POSTGRES=true
+            shift
+            ;;
+        -b|--backend-only)
+            STOP_FRONTEND=false
+            shift
+            ;;
+        -f|--frontend-only)
+            STOP_BACKEND=false
+            shift
+            ;;
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        *)
+            echo "❌ Unknown option: $1"
+            echo ""
+            show_help
+            exit 1
+            ;;
+    esac
+done
+
+# Validate configuration
+if [ "$STOP_BACKEND" = false ] && [ "$STOP_FRONTEND" = false ]; then
+    echo "❌ Error: Cannot use --backend-only and --frontend-only together"
+    echo ""
+    show_help
+    exit 1
+fi
+
+# Show what we're stopping
+if [ "$STOP_POSTGRES" = true ]; then
     echo "🛑 Stopping JobHunter (including PostgreSQL)..."
+elif [ "$STOP_BACKEND" = false ]; then
+    echo "🛑 Stopping frontend only..."
+elif [ "$STOP_FRONTEND" = false ]; then
+    echo "🛑 Stopping backend only..."
 else
     echo "🛑 Stopping JobHunter..."
 fi
@@ -52,104 +127,114 @@ FRONTEND_STOPPED=false
 POSTGRES_STOPPED=false
 
 # Try to stop backend (both cargo run and the binary)
-echo "🦀 Stopping backend (Rust)..."
-BACKEND_RUNNING=false
-if check_process 'cargo run' || check_process 'jobhunter-backend'; then
-    BACKEND_RUNNING=true
-    BACKEND_COUNT=$(count_processes 'cargo run|jobhunter-backend')
-    pkill -f 'cargo run' 2>/dev/null || true
-    pkill -f 'jobhunter-backend' 2>/dev/null || true
-    sleep 1
-
-    # Check if it stopped
-    if ! check_process 'cargo run' && ! check_process 'jobhunter-backend'; then
-        echo "✅ Backend stopped gracefully ($BACKEND_COUNT process(es))"
-        BACKEND_STOPPED=true
-    else
-        # Try force kill
-        echo "⚠️  Backend didn't stop, trying force kill..."
-        pkill -9 -f 'cargo run' 2>/dev/null || true
-        pkill -9 -f 'jobhunter-backend' 2>/dev/null || true
+if [ "$STOP_BACKEND" = true ]; then
+    echo "🦀 Stopping backend (Rust)..."
+    BACKEND_RUNNING=false
+    if check_process 'cargo run' || check_process 'jobhunter-backend'; then
+        BACKEND_RUNNING=true
+        BACKEND_COUNT=$(count_processes 'cargo run|jobhunter-backend')
+        pkill -f 'cargo run' 2>/dev/null || true
+        pkill -f 'jobhunter-backend' 2>/dev/null || true
         sleep 1
 
+        # Check if it stopped
         if ! check_process 'cargo run' && ! check_process 'jobhunter-backend'; then
-            echo "✅ Backend stopped (forced)"
+            echo "✅ Backend stopped gracefully ($BACKEND_COUNT process(es))"
             BACKEND_STOPPED=true
         else
-            echo "❌ Backend still running (may need manual intervention)"
+            # Try force kill
+            echo "⚠️  Backend didn't stop, trying force kill..."
+            pkill -9 -f 'cargo run' 2>/dev/null || true
+            pkill -9 -f 'jobhunter-backend' 2>/dev/null || true
+            sleep 1
+
+            if ! check_process 'cargo run' && ! check_process 'jobhunter-backend'; then
+                echo "✅ Backend stopped (forced)"
+                BACKEND_STOPPED=true
+            else
+                echo "❌ Backend still running (may need manual intervention)"
+            fi
         fi
     fi
-fi
 
-if [ "$BACKEND_RUNNING" = false ]; then
-    echo "ℹ️  Backend not running"
+    if [ "$BACKEND_RUNNING" = false ]; then
+        echo "ℹ️  Backend not running"
+        BACKEND_STOPPED=true
+    fi
+
+    echo ""
+else
+    # Skip backend, assume it's stopped successfully
     BACKEND_STOPPED=true
 fi
 
-echo ""
-
 # Try to stop frontend (react-scripts and rsbuild)
-echo "⚛️  Stopping frontend (React/RSBuild)..."
-FRONTEND_RUNNING=false
+if [ "$STOP_FRONTEND" = true ]; then
+    echo "⚛️  Stopping frontend (React/RSBuild)..."
+    FRONTEND_RUNNING=false
 
-# Check for react-scripts
-if check_process 'react-scripts'; then
-    FRONTEND_RUNNING=true
-    FRONTEND_COUNT=$(count_processes 'react-scripts')
-    pkill -f 'react-scripts' 2>/dev/null || true
-    sleep 1
-
-    # Check if it stopped
-    if ! check_process 'react-scripts'; then
-        echo "✅ React frontend stopped gracefully ($FRONTEND_COUNT process(es))"
-        FRONTEND_STOPPED=true
-    else
-        # Try force kill
-        echo "⚠️  React frontend didn't stop, trying force kill..."
-        pkill -9 -f 'react-scripts' 2>/dev/null || true
+    # Check for react-scripts
+    if check_process 'react-scripts'; then
+        FRONTEND_RUNNING=true
+        FRONTEND_COUNT=$(count_processes 'react-scripts')
+        pkill -f 'react-scripts' 2>/dev/null || true
         sleep 1
 
+        # Check if it stopped
         if ! check_process 'react-scripts'; then
-            echo "✅ React frontend stopped (forced)"
+            echo "✅ React frontend stopped gracefully ($FRONTEND_COUNT process(es))"
             FRONTEND_STOPPED=true
         else
-            echo "❌ React frontend still running (may need manual intervention)"
+            # Try force kill
+            echo "⚠️  React frontend didn't stop, trying force kill..."
+            pkill -9 -f 'react-scripts' 2>/dev/null || true
+            sleep 1
+
+            if ! check_process 'react-scripts'; then
+                echo "✅ React frontend stopped (forced)"
+                FRONTEND_STOPPED=true
+            else
+                echo "❌ React frontend still running (may need manual intervention)"
+            fi
         fi
     fi
-fi
 
-# Check for rsbuild
-if check_process 'rsbuild'; then
-    FRONTEND_RUNNING=true
-    RSBUILD_COUNT=$(count_processes 'rsbuild')
-    pkill -f 'rsbuild' 2>/dev/null || true
-    sleep 1
-
-    # Check if it stopped
-    if ! check_process 'rsbuild'; then
-        echo "✅ RSBuild frontend stopped gracefully ($RSBUILD_COUNT process(es))"
-        FRONTEND_STOPPED=true
-    else
-        # Try force kill
-        echo "⚠️  RSBuild frontend didn't stop, trying force kill..."
-        pkill -9 -f 'rsbuild' 2>/dev/null || true
+    # Check for rsbuild
+    if check_process 'rsbuild'; then
+        FRONTEND_RUNNING=true
+        RSBUILD_COUNT=$(count_processes 'rsbuild')
+        pkill -f 'rsbuild' 2>/dev/null || true
         sleep 1
 
+        # Check if it stopped
         if ! check_process 'rsbuild'; then
-            echo "✅ RSBuild frontend stopped (forced)"
+            echo "✅ RSBuild frontend stopped gracefully ($RSBUILD_COUNT process(es))"
             FRONTEND_STOPPED=true
         else
-            echo "❌ RSBuild frontend still running (may need manual intervention)"
+            # Try force kill
+            echo "⚠️  RSBuild frontend didn't stop, trying force kill..."
+            pkill -9 -f 'rsbuild' 2>/dev/null || true
+            sleep 1
+
+            if ! check_process 'rsbuild'; then
+                echo "✅ RSBuild frontend stopped (forced)"
+                FRONTEND_STOPPED=true
+            else
+                echo "❌ RSBuild frontend still running (may need manual intervention)"
+            fi
         fi
     fi
-fi
 
-if [ "$FRONTEND_RUNNING" = false ]; then
-    echo "ℹ️  Frontend not running"
+    if [ "$FRONTEND_RUNNING" = false ]; then
+        echo "ℹ️  Frontend not running"
+        FRONTEND_STOPPED=true
+    fi
+
+    echo ""
+else
+    # Skip frontend, assume it's stopped successfully
     FRONTEND_STOPPED=true
 fi
-
-echo ""
 
 # Clean up orphaned test processes
 echo "🧹 Cleaning up orphaned test processes..."

@@ -55,7 +55,6 @@
     - [Microsoft Email Integration Setup (Phase 2.7 & 2.8)](#microsoft-email-integration-setup-phase-27--28)
     - [Google Calendar Integration Setup (Phase 2.4)](#google-calendar-integration-setup-phase-24)
     - [Claude Code Notification Setup](#claude-code-notification-setup)
-    - [DEBUG_EXTRACTION Mode](#debug_extraction-mode)
     - [Quick Start: Database Setup](#quick-start-database-setup)
     - [Understanding Your Workflow: Setup vs. Daily Use](#understanding-your-workflow-setup-vs-daily-use)
       - [One-Time Setup (Do This Once)](#one-time-setup-do-this-once)
@@ -108,9 +107,10 @@
     - [Code Quality & Architecture](#code-quality--architecture)
     - [Feature Completeness](#feature-completeness)
     - [Development Stats](#development-stats)
-  - [Development Tools](#development-tools)
-    - [Debug Mode](#debug-mode)
+  - [Debug Tools](#debug-tools)
+    - [Frontend Debug Tool](#frontend-debug-tool)
       - [How to Get Claude Code to Use the Debug Tool](#how-to-get-claude-code-to-use-the-debug-tool)
+    - [Backend Debug Tool](#backend-debug-tool)
   - [Testing & Quality Assurance](#testing--quality-assurance)
     - [Backend Testing (100% Coverage)](#backend-testing-100%25-coverage)
     - [Frontend E2E Testing (94.1% Coverage)](#frontend-e2e-testing-941%25-coverage)
@@ -1909,76 +1909,6 @@ The system uses two notification methods:
 
 Combined, these provide reliable notifications whether you're at your desk or away from your Mac.
 
-### DEBUG_EXTRACTION Mode
-
-**Purpose**: Comprehensive debugging mode for the email job extraction pipeline. Provides detailed visibility into LLM and regex extraction behavior, confidence scoring, and performance metrics.
-
-**When to Use**:
-- Investigating emails that should be jobs but aren't being extracted
-- Diagnosing false positives (non-job emails incorrectly extracted as jobs)
-- Understanding why emails receive specific confidence scores
-- Comparing LLM vs regex extraction behavior
-- Troubleshooting extraction failures
-- Optimizing extraction pipeline performance
-
-**Features**:
-- **LLM extraction details**: Shows full extraction data even when confidence ≤ 0.3 (title, company, salary, location, confidence, API duration)
-- **Regex confidence breakdown**: Logs each pattern match with its confidence contribution:
-  - Job title strong pattern: +0.3
-  - Job title weak fallback: +0.1
-  - Company name: +0.2
-  - Salary: +0.2
-  - Location: +0.15
-  - URL: +0.15
-- **Email characteristics**: Subject and body character counts at extraction start
-- **Performance timing**: LLM API call duration, regex duration, total extraction time
-
-**Usage**:
-
-```bash
-# Enable debug mode (add to backend/.env or set in terminal)
-export DEBUG_EXTRACTION=true
-
-# Start backend with debug mode
-cargo run
-
-# Or set for single run
-DEBUG_EXTRACTION=true cargo run
-
-# Disable debug mode
-unset DEBUG_EXTRACTION
-# or
-export DEBUG_EXTRACTION=false
-```
-
-**Example Debug Output**:
-
-```
-[DEBUG_EXTRACTION] Email extraction started - subject: 45 chars, body: 2341 chars
-[DEBUG_EXTRACTION] LLM email extraction - Title: Some("Software Engineer"), Company: Some("TechCorp"), Salary: $Some(130000)-$Some(160000), Location: Some("Remote"), Confidence: 0.25, Duration: 523ms
-[DEBUG_EXTRACTION] LLM extraction confidence too low: 0.25 (threshold: > 0.3), falling back to regex
-[DEBUG_EXTRACTION] Regex extraction started - combined text: 2386 chars
-[DEBUG_EXTRACTION] Regex: Job title (strong pattern) matched: Some("Software Engineer") (+0.3 confidence, total: 0.30)
-[DEBUG_EXTRACTION] Regex: Company name matched: Some("TechCorp") (+0.2 confidence, total: 0.50)
-[DEBUG_EXTRACTION] Regex: No salary found (+0.0 confidence)
-[DEBUG_EXTRACTION] Regex: Location matched: Some("Remote") (+0.15 confidence, total: 0.65)
-[DEBUG_EXTRACTION] Regex: URL matched: Some("https://techcorp.com/jobs") (+0.15 confidence, total: 0.80)
-[DEBUG_EXTRACTION] Regex extraction ACCEPTED - Title: Some("Software Engineer"), Company: Some("TechCorp"), Final confidence: 0.80 (threshold: > 0.3), Duration: 12ms
-[DEBUG_EXTRACTION] Email extraction completed, total duration: 547ms
-```
-
-**Benefits**:
-- Complete visibility into extraction pipeline behavior
-- Helps diagnose why specific emails are/aren't extracted
-- Shows LLM reasoning even for low-confidence results (normally hidden)
-- Tracks performance of LLM API calls and regex processing
-- Makes it easy to identify which patterns contribute to confidence scores
-- Zero performance impact when disabled (single env var check)
-
-**Implementation Details**:
-- Implemented in `backend/src/main.rs` (extraction functions)
-- See [ISSUE-030 Appendix](bugs/mitigated/ISSUE-030-low-confidence-emails-appear-in-filtered-tab-instead-of-non-job-emails.md#appendix-regex-fallback-investigation) for full documentation
-
 ### Quick Start: Database Setup
 
 > **Note**: These commands use your macOS username as the PostgreSQL superuser. On macOS with Homebrew PostgreSQL, your system username (e.g., `sam`) is the default superuser, not `postgres`.
@@ -2021,7 +1951,9 @@ JobHunter uses a persistent PostgreSQL database (`jobhunter_personal`) for devel
 ./start.sh
 
 # Skip browser auto-open (if you already have it open)
-NO_BROWSER=1 ./start.sh
+./start.sh --no-browser
+# Or use environment variable (still supported):
+# NO_BROWSER=1 ./start.sh
 ```
 
 **Pros:**
@@ -2207,31 +2139,88 @@ brew services start postgresql@14     # Manual start
 This allows you to use either `./start.sh` or `./helper-scripts/start.sh` interchangeably. For all other scripts, use the full `./helper-scripts/` path.
 
 #### [`helper-scripts/start.sh`](helper-scripts/start.sh)
-One-command startup for the entire application.
+One-command startup for the entire application with optional debug modes and service selection.
 
-**Usage:**
+**Basic Usage:**
 ```bash
-./helper-scripts/start.sh
+./helper-scripts/start.sh                      # Start all services (default)
+./helper-scripts/start.sh --help               # Show all available options
 ```
+
+**Command-Line Options:**
+```bash
+# Debug modes
+./helper-scripts/start.sh --debug-backend      # Enable backend extraction logging
+./helper-scripts/start.sh --debug-frontend     # Enable frontend debug UI panel
+./helper-scripts/start.sh -d -f                # Enable both debug modes (short flags)
+
+# Service selection
+./helper-scripts/start.sh --backend-only       # Start only backend + PostgreSQL
+./helper-scripts/start.sh --frontend-only      # Start only frontend (backend must be running)
+
+# Output control
+./helper-scripts/start.sh --verbose            # Show service logs (don't suppress)
+./helper-scripts/start.sh --no-browser         # Don't auto-open browser
+
+# Combine flags
+./helper-scripts/start.sh -d -v -n             # Debug backend, verbose, no browser
+```
+
+**Available Flags:**
+- `-d, --debug-backend`: Enable `DEBUG_EXTRACTION=true` for backend extraction logging
+- `-f, --debug-frontend`: Enable `REACT_APP_DEBUG_MODE=true` for frontend debug panel
+- `-b, --backend-only`: Start only backend + PostgreSQL (skip frontend)
+- `-w, --frontend-only`: Start only frontend (assumes backend already running)
+- `-v, --verbose`: Show console output from services (don't suppress logs)
+- `-n, --no-browser`: Don't auto-open browser after startup
+- `-h, --help`: Show help message with examples
+
+**Environment Variables (still supported):**
+- `NO_BROWSER=1`: Alternative to `--no-browser` flag
 
 Automatically starts PostgreSQL (if needed), the backend server, and the frontend. See [Daily Use](#daily-use-every-time-you-start-the-app) for details.
 
 #### [`helper-scripts/stop.sh`](helper-scripts/stop.sh)
-Safely stops the backend and frontend processes, optionally including PostgreSQL.
+Safely stops the backend and frontend processes, with optional service selection and PostgreSQL control.
 
-**Usage:**
+**Basic Usage:**
 ```bash
-./helper-scripts/stop.sh          # Stop app only (PostgreSQL keeps running)
-./helper-scripts/stop.sh --full   # Stop app AND PostgreSQL
+./helper-scripts/stop.sh                       # Stop backend + frontend (default)
+./helper-scripts/stop.sh --help                # Show all available options
 ```
 
-This script:
+**Command-Line Options:**
+```bash
+# Stop all services
+./helper-scripts/stop.sh                       # Stop backend + frontend
+./helper-scripts/stop.sh --full                # Stop backend + frontend + PostgreSQL
+
+# Selective stopping
+./helper-scripts/stop.sh --backend-only        # Stop only backend (keep frontend running)
+./helper-scripts/stop.sh --frontend-only       # Stop only frontend (keep backend running)
+
+# Short flags
+./helper-scripts/stop.sh -b                    # Backend only (short flag)
+./helper-scripts/stop.sh -f                    # Frontend only (short flag)
+```
+
+**Available Flags:**
+- `-b, --backend-only`: Stop only backend (keep frontend running)
+- `-f, --frontend-only`: Stop only frontend (keep backend running)
+- `--full`: Stop all services including PostgreSQL
+- `-h, --help`: Show help message with examples
+
+**How It Works:**
 - Attempts graceful shutdown of backend (Rust) and frontend (React)
 - Checks if processes stopped successfully after each attempt
 - Uses force kill (SIGKILL) if graceful shutdown fails
 - Reports detailed status of what was stopped
+- Cleans up orphaned test processes (Playwright, cargo test, jest)
 - With `--full` flag: Also stops PostgreSQL service via Homebrew
 - Without `--full`: Leaves PostgreSQL running for faster restarts (recommended for development)
+
+**Backward Compatibility:**
+The script is fully backward compatible. Calling it with no arguments stops backend + frontend (same as before). The `--full` flag continues to work exactly as before.
 
 The script is robust and handles edge cases like processes that don't respond to graceful shutdown. See [Properly Managing Your PostgreSQL Database](#understanding-your-workflow-properly-managing-your-postgresql-database) for guidance on when to use `--full`.
 
@@ -3186,11 +3175,11 @@ Both prompts use **Claude 3.5 Haiku** for fast, cost-effective processing (<$0.0
 - **Live Prompt Editing**: Real-time prompt updates without backend restart
 - **Zero Runtime Errors**: Comprehensive error handling and validation across all systems
 
-## Development Tools
+## Debug Tools
 
-### Debug Mode
+### Frontend Debug Tool
 
-JobHunter includes a powerful debug mode for troubleshooting job extraction issues without needing database access.
+**Visual Debug Panel in Job Cards UI** - JobHunter includes a powerful debug mode for troubleshooting job extraction issues without needing database access. This frontend feature displays extraction metadata directly in the browser UI.
 
 **Enable debug mode:**
 ```bash
@@ -3394,6 +3383,76 @@ cd frontend && npm start
 ```
 
 **That's it!** Just say a trigger phrase, screenshot the amber debug box, and Claude Code will analyze it instantly.
+
+### Backend Debug Tool
+
+**Backend Console Logging for Email Processing** - Comprehensive debugging mode for the email job extraction pipeline. This backend feature provides detailed visibility into LLM and regex extraction behavior, confidence scoring, and performance metrics through terminal console output.
+
+**When to Use**:
+- Investigating emails that should be jobs but aren't being extracted
+- Diagnosing false positives (non-job emails incorrectly extracted as jobs)
+- Understanding why emails receive specific confidence scores
+- Comparing LLM vs regex extraction behavior
+- Troubleshooting extraction failures
+- Optimizing extraction pipeline performance
+
+**Features**:
+- **LLM extraction details**: Shows full extraction data even when confidence ≤ 0.3 (title, company, salary, location, confidence, API duration)
+- **Regex confidence breakdown**: Logs each pattern match with its confidence contribution:
+  - Job title strong pattern: +0.3
+  - Job title weak fallback: +0.1
+  - Company name: +0.2
+  - Salary: +0.2
+  - Location: +0.15
+  - URL: +0.15
+- **Email characteristics**: Subject and body character counts at extraction start
+- **Performance timing**: LLM API call duration, regex duration, total extraction time
+
+**Usage**:
+
+```bash
+# Enable debug mode (add to backend/.env or set in terminal)
+export DEBUG_EXTRACTION=true
+
+# Start backend with debug mode
+cargo run
+
+# Or set for single run
+DEBUG_EXTRACTION=true cargo run
+
+# Disable debug mode
+unset DEBUG_EXTRACTION
+# or
+export DEBUG_EXTRACTION=false
+```
+
+**Example Debug Output**:
+
+```
+[DEBUG_EXTRACTION] Email extraction started - subject: 45 chars, body: 2341 chars
+[DEBUG_EXTRACTION] LLM email extraction - Title: Some("Software Engineer"), Company: Some("TechCorp"), Salary: $Some(130000)-$Some(160000), Location: Some("Remote"), Confidence: 0.25, Duration: 523ms
+[DEBUG_EXTRACTION] LLM extraction confidence too low: 0.25 (threshold: > 0.3), falling back to regex
+[DEBUG_EXTRACTION] Regex extraction started - combined text: 2386 chars
+[DEBUG_EXTRACTION] Regex: Job title (strong pattern) matched: Some("Software Engineer") (+0.3 confidence, total: 0.30)
+[DEBUG_EXTRACTION] Regex: Company name matched: Some("TechCorp") (+0.2 confidence, total: 0.50)
+[DEBUG_EXTRACTION] Regex: No salary found (+0.0 confidence)
+[DEBUG_EXTRACTION] Regex: Location matched: Some("Remote") (+0.15 confidence, total: 0.65)
+[DEBUG_EXTRACTION] Regex: URL matched: Some("https://techcorp.com/jobs") (+0.15 confidence, total: 0.80)
+[DEBUG_EXTRACTION] Regex extraction ACCEPTED - Title: Some("Software Engineer"), Company: Some("TechCorp"), Final confidence: 0.80 (threshold: > 0.3), Duration: 12ms
+[DEBUG_EXTRACTION] Email extraction completed, total duration: 547ms
+```
+
+**Benefits**:
+- Complete visibility into extraction pipeline behavior
+- Helps diagnose why specific emails are/aren't extracted
+- Shows LLM reasoning even for low-confidence results (normally hidden)
+- Tracks performance of LLM API calls and regex processing
+- Makes it easy to identify which patterns contribute to confidence scores
+- Zero performance impact when disabled (single env var check)
+
+**Implementation Details**:
+- Implemented in `backend/src/main.rs` (extraction functions)
+- See [ISSUE-030 Appendix](bugs/mitigated/ISSUE-030-low-confidence-emails-appear-in-filtered-tab-instead-of-non-job-emails.md#appendix-regex-fallback-investigation) for full documentation
 
 ## Testing & Quality Assurance
 
