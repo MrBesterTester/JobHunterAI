@@ -31,6 +31,11 @@ last_updated: 2025-11-14 13:46:27 PST (Phase 1 complete - database caching + per
     - [Key Observations](#key-observations)
   - [Next Steps](#next-steps)
     - [Priority 1: Remaining E2E Failures (4 tests)](#priority-1-remaining-e2e-failures-4-tests)
+      - [Option A: Adjust Test Expectations](#option-a-adjust-test-expectations)
+      - [Option B: Fix Underlying Issues - ✅ INVESTIGATION COMPLETE (2025-11-14 13:15 PST)](#option-b-fix-underlying-issues----investigation-complete-2025-11-14-1315-pst)
+        - [Phase 1: Fix Performance Issue (Real bug - highest priority) - ✅ COMPLETED (2025-11-14 14:15 PST)](#phase-1-fix-performance-issue-real-bug---highest-priority----completed-2025-11-14-1415-pst)
+        - [Phase 2: Make Tests More Robust (Reduce flakiness)](#phase-2-make-tests-more-robust-reduce-flakiness)
+        - [Phase 3: Investigate New Failures (4 additional failures from Option A)](#phase-3-investigate-new-failures-4-additional-failures-from-option-a)
     - [Priority 2: Runtime Optimization (Optional)](#priority-2-runtime-optimization-optional)
     - [Priority 3: Full Comprehensive Test Run (Recommended)](#priority-3-full-comprehensive-test-run-recommended)
   - [Related Files](#related-files)
@@ -210,14 +215,15 @@ last_updated: 2025-11-14 13:46:27 PST (Phase 1 complete - database caching + per
 
 ### Priority 1: Remaining E2E Failures (4 tests)
 
-**Option A: Adjust Test Expectations**
+#### Option A: Adjust Test Expectations
+
 - Performance test: Adjust threshold from 100ms to 150ms average
 - Description quality tests: Accept LLM non-determinism, relax validation criteria
 - Gmail sync test: Update test to match actual approval workflow
 - **Status**: ❌ Attempted and reverted (2025-11-14 13:08 PST)
 - **Result**: Did not fix failures; caused 4 additional tests to fail (8 total failures)
 
-**Option B: Fix Underlying Issues** - ✅ **INVESTIGATION COMPLETE (2025-11-14 13:15 PST)**
+#### Option B: Fix Underlying Issues - ✅ INVESTIGATION COMPLETE (2025-11-14 13:15 PST)
 
 **Investigation Results (Isolated Test Runs)**:
 
@@ -248,11 +254,9 @@ last_updated: 2025-11-14 13:46:27 PST (Phase 1 complete - database caching + per
      - Race conditions with timing-sensitive operations
      - Test data state variations
 
-**Implementation Plan** (Option B):
+##### Phase 1: Fix Performance Issue (Real bug - highest priority) - ✅ COMPLETED (2025-11-14 14:15 PST)
 
-**Phase 1: Fix Performance Issue** (Real bug - highest priority) - ✅ **COMPLETED** (2025-11-14 14:15 PST)
-
-**Status**: ✅ **FIXED** - Performance test now passing (commit 1a5cb45)
+**Status**: ✅ FIXED - Performance test now passing (commit 1a5cb45)
 
 **Solution Implemented**: Combined approach (Options 1 + 3)
 1. ✅ **Database caching for condensed descriptions** (commit 7473e81)
@@ -365,14 +369,16 @@ const JobCard: React.FC = ({ job }) => {
 - Short-term: Adjust test to measure database API performance (< 50ms avg)
 - Long-term: Cache descriptions in database (eliminate LLM calls on page load)
 
-**Phase 2: Make Tests More Robust** (Reduce flakiness)
+##### Phase 2: Make Tests More Robust (Reduce flakiness)
+
 - Add automatic retry logic for LLM-dependent tests
 - Increase timeouts for tests calling LLM APIs under load
 - Improve test isolation and cleanup between runs
 - Consider test execution order impact on shared resources
 - Add better wait conditions for timing-sensitive operations
 
-**Phase 3: Investigate New Failures** (4 additional failures from Option A)
+##### Phase 3: Investigate New Failures (4 additional failures from Option A)
+
 - Accessibility: form inputs with labels
 - Calendar management: interview form fields
 - Follow-ups management: approve follow-up via API
