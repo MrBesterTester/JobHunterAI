@@ -1,3 +1,5 @@
+
+
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
@@ -109,7 +111,6 @@
     - [Development Stats](#development-stats)
   - [Debug Tools](#debug-tools)
     - [Frontend Debug Tool](#frontend-debug-tool)
-      - [How to Get Claude Code to Use the Debug Tool](#how-to-get-claude-code-to-use-the-debug-tool)
     - [Backend Debug Tool](#backend-debug-tool)
   - [Testing & Quality Assurance](#testing--quality-assurance)
     - [Backend Testing (100% Coverage)](#backend-testing-100%25-coverage)
@@ -3215,7 +3216,7 @@ npm start  # Restart frontend
 - **Visual comparison**: Easily compare LLM vs REGEX extraction quality across multiple job cards
 - **Troubleshooting workflow**: Screenshot debug section and share with team or Claude Code for analysis
 
-#### How to Get Claude Code to Use the Debug Tool
+**How to Get Claude Code to Use the Debug Tool:**
 
 Claude Code is trained to proactively suggest the debug section when you report extraction issues. This workflow is **80-90% faster** than database queries.
 
@@ -3279,7 +3280,7 @@ This is much faster than database queries! (5-10 min → <1 min)
 | Terminal commands | Browser screenshot |
 | Manual JSON parsing | Visual inspection |
 
-#### Debug Section Demo
+### Debug Section Demo
 
 **Test Scenario:** User reports "This job's salary is showing as null"
 
@@ -3340,7 +3341,7 @@ Result: <1 minute, 1 round trip ✅
 - Claude Code integration: `CLAUDE.md` (Quick Reference > Debugging Extraction Issues)
 - Manual debug tool: `frontend/debug-script.js` (Playwright script for troubleshooting)
 
-#### Debug Section Cheat Sheet
+### Debug Section Cheat Sheet
 
 **Quick Enable:**
 ```bash
