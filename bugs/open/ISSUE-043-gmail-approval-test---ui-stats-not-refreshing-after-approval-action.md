@@ -17,6 +17,7 @@ related: []
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Summary](#summary)
+- [Next Steps](#next-steps)
 - [Impact](#impact)
 - [Steps to Reproduce](#steps-to-reproduce)
 - [Expected Behavior](#expected-behavior)
@@ -41,6 +42,18 @@ related: []
 ## Summary
 
 Gmail approval E2E test (`16-gmail-sync-integration.spec.ts:228`) consistently fails because UI stats do not refresh after clicking the Approve button, even though the database is updated correctly and all API calls complete successfully. This appears to be a frontend React state management issue.
+
+## Next Steps
+
+**Implement Option B: Debug frontend state management (Proper fix)**
+
+Investigation steps:
+1. Add console.log to `fetchStats()` and `setStats()` calls in App.tsx
+2. Verify API response data vs UI displayed data
+3. Check if `stats` state object reference changes after API call
+4. Review component memoization (React.memo, useMemo, useCallback)
+5. Check for stale closures in event handlers
+6. Test fix with E2E test to verify stats update correctly
 
 ## Impact
 
