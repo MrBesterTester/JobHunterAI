@@ -75,8 +75,9 @@ test.describe('Calendar Management - Phase 5.1', () => {
         await submitButton.click();
 
         // Should show validation errors or stay on form
-        const form = page.locator('form, div[role="dialog"]');
-        await expect(form).toBeVisible();
+        // The form doesn't use <form> or role="dialog", check for form heading instead
+        const formHeading = page.locator('h3:has-text("Schedule Interview")');
+        await expect(formHeading).toBeVisible();
       }
     });
 
