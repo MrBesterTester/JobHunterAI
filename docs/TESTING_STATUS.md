@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-11 18:52:21 PST
-last_updated: 2025-11-12 18:38:00 PST (ISSUE-041 fixed - All 153 E2E TypeScript errors resolved)
+last_updated: 2025-11-14 13:18:18 PST (Option B investigation complete - Performance issue identified)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -210,17 +210,66 @@ last_updated: 2025-11-12 18:38:00 PST (ISSUE-041 fixed - All 153 E2E TypeScript 
 
 ### Priority 1: Remaining E2E Failures (4 tests)
 
-**Option A: Adjust Test Expectations** (Recommended)
+**Option A: Adjust Test Expectations**
 - Performance test: Adjust threshold from 100ms to 150ms average
 - Description quality tests: Accept LLM non-determinism, relax validation criteria
 - Gmail sync test: Update test to match actual approval workflow
+- **Status**: ❌ Attempted and reverted (2025-11-14 13:08 PST)
+- **Result**: Did not fix failures; caused 4 additional tests to fail (8 total failures)
 
-**Option B: Fix Underlying Issues**
-- Performance: Further optimize API response times
-- Description quality: Implement deterministic LLM mocking for tests
-- Gmail sync: Debug approval flow in test environment
+**Option B: Fix Underlying Issues** - ✅ **INVESTIGATION COMPLETE (2025-11-14 13:15 PST)**
 
-**Recommendation**: Option A - Test expectations may be too strict for real-world conditions. All functionality works correctly in manual testing.
+**Investigation Results (Isolated Test Runs)**:
+
+| Test | Isolated Result | Comprehensive Result | Issue Type |
+|------|----------------|---------------------|------------|
+| 1. Performance (API response times) | ❌ **FAILS** (1,584ms vs 500ms) | ❌ **FAILS** | **REAL BUG** |
+| 2. Gmail sync (approval) | ✅ PASSES (12.1s) | ❌ FAILS | Flaky - timing/load |
+| 3. Description quality (content) | ✅ PASSES (12.4s) | ❌ FAILS | Flaky - LLM variation |
+| 4. Description quality (refresh) | ✅ PASSES (16.9s) | ❌ FAILS | Flaky - LLM variation |
+
+**Root Causes Identified**:
+
+1. **Performance Test - REAL PERFORMANCE ISSUE** ⚠️
+   - API average response time: **1,584ms** (1.6 seconds)
+   - Threshold: 500ms (already generous; test name says 100ms)
+   - **3x slower than acceptable**
+   - Fails even in isolation (not flaky)
+   - Likely causes:
+     - Database query performance (N+1 queries, missing indexes)
+     - Score calculation on every job fetch
+     - Cold start overhead
+
+2. **Description & Gmail Tests - TEST FLAKINESS**
+   - All pass reliably in isolation
+   - Fail in comprehensive runs due to:
+     - System load during concurrent test execution
+     - LLM API rate limiting / slower responses under load
+     - Race conditions with timing-sensitive operations
+     - Test data state variations
+
+**Implementation Plan** (Option B):
+
+**Phase 1: Fix Performance Issue** (Real bug - highest priority)
+- Profile API endpoints to identify slow queries
+- Check for N+1 query patterns in job fetching
+- Add database query logging
+- Review score calculation performance
+- Consider caching strategies for job scores
+- Target: Reduce average API response time to < 150ms
+
+**Phase 2: Make Tests More Robust** (Reduce flakiness)
+- Add automatic retry logic for LLM-dependent tests
+- Increase timeouts for tests calling LLM APIs under load
+- Improve test isolation and cleanup between runs
+- Consider test execution order impact on shared resources
+- Add better wait conditions for timing-sensitive operations
+
+**Phase 3: Investigate New Failures** (4 additional failures from Option A)
+- Accessibility: form inputs with labels
+- Calendar management: interview form fields
+- Follow-ups management: approve follow-up via API
+- Microsoft email integration: stability after sync failures
 
 ### Priority 2: Runtime Optimization (Optional)
 - Investigate 13-minute runtime increase (37 → 50 min)
