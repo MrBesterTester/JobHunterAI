@@ -15,9 +15,10 @@ import { switchToTab } from '../helpers/tab-navigation';
  * Retry logic is enabled to handle transient failures.
  */
 
-test.describe.serial('Gmail Sync Integration', () => {
-  // Configure retries for this suite (flaky under load)
-  test.describe.configure({ retries: 2 });
+test.describe('Gmail Sync Integration', () => {
+  // Configure serial mode and retries for this suite
+  // Serial mode prevents parallel execution with other tests (test isolation)
+  test.describe.configure({ mode: 'serial', retries: 2 });
 
   let page: Page;
 
