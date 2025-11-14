@@ -242,6 +242,7 @@ test.describe.serial('Gmail Sync Integration', () => {
     // Get initial approved count
     const initialApprovedText = await page.getByTestId('stat-approved').textContent();
     const initialApprovedCount = parseInt(initialApprovedText?.match(/\d+/)?.[0] || '0');
+    console.log(`Initial approved count: ${initialApprovedCount}, expecting: ${initialApprovedCount + 1} after approval`);
 
     // Find first job with Approve button
     const firstCard = jobCards.first();
@@ -254,8 +255,20 @@ test.describe.serial('Gmail Sync Integration', () => {
       return;
     }
 
-    // Click approve
+    // Click approve and wait for API calls to complete
+    const statusUpdatePromise = page.waitForResponse(response =>
+      response.url().includes('/jobs/') && response.url().includes('/status') && response.status() === 200
+    );
+    const statsRefreshPromise = page.waitForResponse(response =>
+      response.url().includes('/api/jobs/stats') && response.status() === 200
+    );
+
     await approveButton.click();
+
+    // Wait for status update and stats refresh to complete
+    await statusUpdatePromise;
+    await statsRefreshPromise;
+    await page.waitForTimeout(500); // Give React time to update UI
 
     // Wait for approved count to increase (with extended timeout to handle system load)
     await page.waitForFunction(
