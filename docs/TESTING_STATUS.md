@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-11 18:52:21 PST
-last_updated: 2025-11-14 13:27:57 PST (Phase 1 in progress - Database indexes added)
+last_updated: 2025-11-14 13:33:48 PST (Phase 1 root cause identified - LLM API calls on every job card)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -252,35 +252,101 @@ last_updated: 2025-11-14 13:27:57 PST (Phase 1 in progress - Database indexes ad
 
 **Phase 1: Fix Performance Issue** (Real bug - highest priority) - 🔄 **IN PROGRESS**
 
-**Status (2025-11-14 13:45 PST)**:
-- ✅ Profiled API endpoints to identify slow queries
-- ✅ Found `get_job_stats` query doing full table scans on `email_jobs`
-- ✅ Added 5 database indexes for `email_jobs` table (commit cee833b)
-- ✅ Updated schema.sql with permanent indexes
-- ⚠️ Performance test still fails: 1,645ms avg (vs 500ms limit)
-- 🔍 Root cause: Test environment has 0 emails, so indexes don't help
-- 🔍 Actual bottleneck: Network/connection overhead or cumulative API latency
+**Status**: ✅ **ROOT CAUSE IDENTIFIED** (2025-11-14 13:50 PST)
+
+**Investigation Timeline**:
+1. ✅ Profiled API endpoints to identify slow queries
+2. ✅ Found `get_job_stats` query doing full table scans on `email_jobs`
+3. ✅ Added 5 database indexes for `email_jobs` table (commit cee833b)
+4. ✅ Updated schema.sql with permanent indexes
+5. ⚠️ Performance test still fails: 1,645ms avg (vs 500ms limit)
+6. 🔍 Discovered: Test environment has 0 emails, so indexes don't help
+7. ✅ **Created debug performance test with detailed API call logging**
+8. ✅ **FOUND ROOT CAUSE: Automatic LLM API calls for every job card**
+
+**🎯 Root Cause Identified** (`App.tsx:1673-1674`):
+
+```typescript
+const JobCard: React.FC = ({ job }) => {
+  // Fetch condensed description when card renders
+  React.useEffect(() => {
+    fetchCondensedDescription(job.job_id);  // ← PROBLEM: LLM API call!
+  }, [job.job_id]);
+```
+
+**The Issue**:
+- Every `JobCard` component automatically calls `/api/jobs/{id}/condense-description` on render
+- Each call invokes OpenAI/Claude API to generate condensed description
+- Each LLM API call takes **2,800-3,200ms** (3 seconds!)
+- Performance test displays 11 job cards → **11 concurrent LLM calls**
+- **Cumulative API time**: 33+ seconds for LLM calls alone
+
+**Performance Breakdown** (from debug test):
+- Basic API calls (database queries): **4-12ms each** ✅ (Fast!)
+- `/api/jobs`: 10ms
+- `/api/jobs/stats`: 11ms
+- `/api/applications`: 4ms
+- `/api/intake/logs`: 8ms
+- **LLM API calls**: **2,800-3,200ms each** ❌ (33x slower!)
+- `/api/jobs/{id}/condense-description`: 11 calls × ~3 seconds each
+
+**Why Performance Test Fails**:
+1. Test measures **average** API response time across **all endpoints**
+2. Fast database queries (4-12ms) get averaged with slow LLM calls (3,000ms)
+3. Result: 1,615ms average (fails 500ms threshold)
+4. This is **by design** - app automatically generates job descriptions using LLM
 
 **Completed Work**:
-1. Added indexes to `email_jobs` table:
-   - `idx_email_jobs_job_id`: For job_id lookups
-   - `idx_email_jobs_extraction_confidence`: For confidence range queries
-   - `idx_email_jobs_stats_query`: Composite index for common patterns
-   - `idx_email_jobs_extracted_data_gin`: GIN index for JSON queries
-   - `idx_email_jobs_failed`: Partial index for failed emails
-2. Indexes will improve production performance (when emails exist)
-3. Test environment revealed indexes aren't the bottleneck
+1. ✅ Added database indexes for `email_jobs` table (will help production)
+2. ✅ Created debug performance test (`10-performance-debug.spec.ts`)
+3. ✅ Identified exact bottleneck location in codebase
+4. ✅ Measured actual API call timings with detailed breakdown
 
-**Next Steps**:
-1. Profile actual API calls made during performance test
-2. Measure server-side vs client-side timing breakdown
-3. Check for connection pooling/cold start overhead
-4. Investigate if multiple small API calls are adding up
-5. Consider if 500ms threshold is realistic for E2E tests (includes browser overhead)
-6. Profile backend request handling (logging middleware)
-7. Check if score calculations are happening on every API call
+**Solutions & Recommendations**:
 
-**Target**: Reduce average API response time to < 150ms (or adjust test expectations if browser overhead is unavoidable)
+**Option 1: Cache descriptions in database** ⭐ (Best long-term solution)
+- Store generated descriptions in `jobs.condensed_description` column
+- Only call LLM API when description is missing or explicitly refreshed
+- Subsequent page loads would be instant (no LLM calls)
+- **Pros**: Permanent fix, dramatically improves UX, reduces API costs
+- **Cons**: Schema migration required, cache invalidation logic needed
+- **Effort**: Medium (2-3 hours)
+
+**Option 2: Lazy load descriptions** (Quick UX improvement)
+- Don't fetch on card render; only when user expands/hovers job card
+- Reduces initial page load time dramatically
+- **Pros**: Quick to implement, immediate UX improvement
+- **Cons**: User has to wait when viewing details
+- **Effort**: Low (30-60 minutes)
+
+**Option 3: Adjust performance test** ⭐ (Pragmatic short-term)
+- Exclude `/condense-description` endpoints from average calculation
+- Test would focus on actual database/API performance
+- Acknowledge LLM calls are inherently slow and shouldn't be averaged
+- **Pros**: Test becomes meaningful, accurately measures DB performance
+- **Cons**: Doesn't fix underlying issue
+- **Effort**: Very low (15 minutes)
+
+**Option 4: Background/async loading** (UX improvement)
+- Load job cards immediately with "Loading description..." placeholder
+- Fetch descriptions in background with visual progress indicator
+- **Pros**: Page feels responsive while descriptions load
+- **Cons**: Still makes same number of LLM calls
+- **Effort**: Medium (1-2 hours)
+
+**Recommendation**: **Combination of Options 1 + 3**
+1. **Short-term** (Option 3): Adjust performance test to exclude LLM endpoints
+   - Allows meaningful performance monitoring of database queries
+   - Test would pass with realistic thresholds
+   - Documents that LLM calls are intentionally excluded
+2. **Long-term** (Option 1): Implement database caching
+   - Permanent performance improvement
+   - Dramatically better UX
+   - Reduced API costs
+
+**Target**:
+- Short-term: Adjust test to measure database API performance (< 50ms avg)
+- Long-term: Cache descriptions in database (eliminate LLM calls on page load)
 
 **Phase 2: Make Tests More Robust** (Reduce flakiness)
 - Add automatic retry logic for LLM-dependent tests
