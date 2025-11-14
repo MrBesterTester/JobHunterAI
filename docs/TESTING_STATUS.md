@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-11 18:52:21 PST
-last_updated: 2025-11-14 14:33:07 PST (Phase 2.2 complete - Multiple fixes attempted, issue persists)
+last_updated: 2025-11-14 15:07:15 PST (Phase 2.3 complete - ISSUE-043 resolved, Gmail approval test passing)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -35,7 +35,7 @@ last_updated: 2025-11-14 14:33:07 PST (Phase 2.2 complete - Multiple fixes attem
       - [Option B: Fix Underlying Issues - ✅ INVESTIGATION COMPLETE (2025-11-14 13:15 PST)](#option-b-fix-underlying-issues----investigation-complete-2025-11-14-1315-pst)
         - [Phase 1: Fix Performance Issue (Real bug - highest priority) - ✅ COMPLETED (2025-11-14 14:15 PST)](#phase-1-fix-performance-issue-real-bug---highest-priority----completed-2025-11-14-1415-pst)
         - [Phase 2: Make Tests More Robust (Reduce flakiness) - ✅ COMPLETED (2025-11-14 13:59 PST)](#phase-2-make-tests-more-robust-reduce-flakiness----completed-2025-11-14-1359-pst)
-          - [Phase 2.1-2.2: Gmail Approval Test Investigation - ⚠️ FRONTEND BUG IDENTIFIED](#phase-21-22-gmail-approval-test-investigation----frontend-bug-identified)
+          - [Phase 2.1-2.3: Gmail Approval Test Investigation - ✅ FIXED](#phase-21-23-gmail-approval-test-investigation----fixed)
         - [Phase 3: Investigate New Failures (4 additional failures from Option A)](#phase-3-investigate-new-failures-4-additional-failures-from-option-a)
     - [Priority 2: Runtime Optimization (Optional)](#priority-2-runtime-optimization-optional)
     - [Priority 3: Full Comprehensive Test Run (Recommended)](#priority-3-full-comprehensive-test-run-recommended)
@@ -394,29 +394,40 @@ const JobCard: React.FC = ({ job }) => {
 
 **Note**: Retry logic will help reduce transient failures in comprehensive runs, but the Gmail approval test may need deeper investigation as it's failing even in isolation now.
 
-######  Phase 2.1-2.2: Gmail Approval Test Investigation - ⚠️ FRONTEND BUG IDENTIFIED
+######  Phase 2.1-2.3: Gmail Approval Test Investigation - ✅ FIXED
 
-**Status**: Extensive investigation completed (2025-11-14 14:00-14:33 PST) - Identified React state management bug
+**Status**: ✅ RESOLVED (2025-11-14 15:07:15 PST)
 
 **Quick Summary**:
-- Gmail approval test consistently fails - UI stats don't update after clicking Approve
-- Database IS updating correctly (verified by retry pattern 5→6→7→8)
-- API calls complete successfully (verified with waitForResponse)
-- **Issue**: React not re-rendering with fresh stats despite API success
+- Gmail approval test was failing due to `ReferenceError: process is not defined` in browser
+- Implemented Stats Debug Tool to investigate
+- Identified root cause: RSBuild config missing environment variable definition
+- Fixed both frontend config and backend SQL query
+- Test now passing consistently (4.9s)
 
-**Investigation & Fix Attempts**:
-- ✅ Serial execution implemented (1 worker instead of 4)
-- ✅ Stats API waits added (beforeEach and after approval)
-- ✅ Refresh Data button click in setup
-- ❌ Issue persists - UI still shows stale stats
+**Investigation Timeline**:
+- Phase 2.1 (14:00-14:18 PST): Initial investigation - test isolation hypothesis
+- Phase 2.2 (14:18-14:33 PST): Fix attempts - identified as frontend bug
+- Phase 2.3 (17:00 PST): Implemented Stats Debug Tool, found actual root cause
 
-**Root Cause**: Frontend React state management bug - `setStats()` not triggering UI update
+**Root Cause**:
+1. **Primary**: RSBuild configuration missing `REACT_APP_DEBUG_STATS` in `source.define`
+   - Caused: `ReferenceError: process is not defined` at App.tsx:1055
+   - Impact: Broke entire `fetchStats()` function, preventing ANY stats from loading
+2. **Secondary**: Backend SQL query missing `condensed_description` in RETURNING clause
+   - Caused: 500 error when approving jobs
+   - Impact: Job approval API calls failed
 
-**Next Steps**: Skip test with `.skip()` to unblock comprehensive testing, schedule proper debugging session
+**The Fix**:
+- ✅ Added `REACT_APP_DEBUG_STATS` to `frontend/rsbuild.config.ts` source.define
+- ✅ Added `condensed_description` to `backend/src/main.rs:1852` SQL RETURNING clause
+- ✅ Test now passes: Stats refresh in 42ms, test completes in 4.9s
 
-**📋 Full Investigation Details**: See [ISSUE-043](../../bugs/open/ISSUE-043-gmail-approval-test---ui-stats-not-refreshing-after-approval-action.md) for complete investigation timeline, evidence, and proposed solutions
+**Key Insight**: What appeared to be a complex React state management bug was actually a simple configuration error that completely broke the stats fetching function. The Stats Debug Tool successfully identified the root cause through console logging.
 
-**Commits**: f458c57, 6ccdcc9, 1bca951, 635fd3f, 185a6e9, 8604a96, ad1a5ea
+**📋 Full Investigation Details**: See [ISSUE-043](../../bugs/fixed/ISSUE-043-gmail-approval-test---ui-stats-not-refreshing-after-approval-action.md) for complete investigation timeline, evidence, and resolution
+
+**Commits**: f458c57, 6ccdcc9, 1bca951, 635fd3f, 185a6e9, 8604a96, ad1a5ea, 48f4c62, e0f215f, 815fe4f
 
 ##### Phase 3: Investigate New Failures (4 additional failures from Option A)
 

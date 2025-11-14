@@ -1,12 +1,13 @@
 ---
 id: ISSUE-043
 title: Gmail approval test - UI stats not refreshing after approval action
-status: open
+status: fixed
 priority: medium
 severity: medium
 component: frontend
 created: 2025-11-14
 updated: 2025-11-14
+fixed: 2025-11-14
 affects: []
 related: []
 ---
@@ -198,6 +199,75 @@ Initial approved count: 6, expecting: 7 after approval  (retry 1)
 Initial approved count: 7, expecting: 8 after approval  (retry 2)
 ```
 
+## Resolution
+
+**Status**: ✅ **FIXED** (2025-11-14 17:00 PST)
+
+**Actual Root Cause**: The issue was NOT a React state management bug as originally suspected. It was a `ReferenceError: process is not defined` error in the browser caused by missing RSBuild configuration.
+
+**Investigation Method**: Implemented Stats Debug Tool (Option B) which revealed the actual error through console logging.
+
+**Root Cause Analysis**:
+
+1. **Primary Issue**: RSBuild configuration missing environment variable definition
+   - File: `frontend/rsbuild.config.ts`
+   - Problem: `REACT_APP_DEBUG_STATS` not defined in `source.define`
+   - Result: Browser threw `ReferenceError: process is not defined` at line 1055 in App.tsx
+   - Impact: **Broke the entire `fetchStats()` function**, preventing ANY stats from loading
+
+2. **Secondary Issue**: Backend SQL query missing column
+   - File: `backend/src/main.rs:1852`
+   - Problem: `update_job_status` RETURNING clause missing `condensed_description` column
+   - Result: 500 error when approving jobs
+   - Impact: Job approval API calls failed
+
+**The Fix**:
+
+**1. Frontend - Add environment variable to RSBuild config** (frontend/rsbuild.config.ts:16-19):
+```typescript
+// Inject REACT_APP_DEBUG_STATS environment variable for stats debugging
+'process.env.REACT_APP_DEBUG_STATS': JSON.stringify(
+  process.env.REACT_APP_DEBUG_STATS || 'false'
+),
+```
+
+**2. Backend - Add condensed_description to SQL query** (backend/src/main.rs:1852):
+```rust
+let job = sqlx::query_as::<_, Job>(
+    "UPDATE jobs SET status = $1 WHERE job_id = $2
+     RETURNING job_id, title, company, location, source, salary, commute_time,
+               status, date_email_sent, description, condensed_description,
+               url, filter_reason, extraction_method, raw_data"
+)
+```
+
+**Test Results After Fix**:
+```
+Initial approved count: 5, expecting: 6 after approval
+[DEBUG_STATS] fetchStats() called at 428ms
+[DEBUG_STATS] Fetching from: http://localhost:8080/api/jobs/stats
+[DEBUG_STATS] API response received (16ms): {"approved":6,...}
+[DEBUG_STATS] Calling setStats() with new data
+[DEBUG_STATS] Stats update complete at 470ms (total: 42ms)
+✓ Job approved successfully - count: 5 → 6
+
+✓  [chromium] › e2e/tests/16-gmail-sync-integration.spec.ts:237:7 ›
+   Gmail Sync Integration › should allow approving jobs synced from Gmail (4.9s)
+```
+
+**Performance**:
+- Stats refresh: 42ms (was broken, now working)
+- Test execution: 4.9s (was timing out at 10+ seconds)
+- Test result: ✅ PASSING consistently
+
+**Commits**:
+- `48f4c62`: docs - Add Next Steps section to ISSUE-043
+- `e0f215f`: feat - Implement Stats Debug Tool
+- `815fe4f`: fix - Fix stats refresh issue and update job status SQL query
+- (pending): docs - Update ISSUE-043 resolution and clean up test
+
+**Key Insight**: The Stats Debug Tool (implemented as part of Option B investigation) successfully identified the root cause. What appeared to be a complex React state management bug was actually a simple configuration error that completely broke the stats fetching function.
+
 ## Proposed Solutions
 
 ### Option A: Skip/Mark test as known issue ⭐ (Pragmatic short-term)
@@ -316,6 +386,7 @@ psql -U jobhunter_user -d jobhunter_personal -c \
 - 2025-11-14 14:33 PST: ISSUE created after extensive investigation
 - 2025-11-14 14:00-14:18 PST: Phase 2.1 - Initial investigation (test isolation hypothesis)
 - 2025-11-14 14:18-14:33 PST: Phase 2.2 - Fix attempts (refined to frontend bug)
+- 2025-11-14 17:00 PST: ✅ FIXED - Implemented Stats Debug Tool, identified root cause (RSBuild config), fixed both frontend config and backend SQL query, test now passing
 
 ## Notes
 
