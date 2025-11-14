@@ -701,6 +701,7 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
               value={refilterScope}
               onChange={(e) => setRefilterScope(e.target.value)}
               disabled={refiltering}
+              aria-label="Re-filter scope selection"
               style={{
                 padding: '10px 12px',
                 borderRadius: '6px',
