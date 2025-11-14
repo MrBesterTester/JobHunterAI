@@ -12,6 +12,10 @@ export default defineConfig({
       'process.env.REACT_APP_DEBUG_MODE': JSON.stringify(
         process.env.REACT_APP_DEBUG_MODE || 'false'
       ),
+      // Inject REACT_APP_DEBUG_STATS environment variable for stats debugging
+      'process.env.REACT_APP_DEBUG_STATS': JSON.stringify(
+        process.env.REACT_APP_DEBUG_STATS || 'false'
+      ),
     },
   },
   html: {

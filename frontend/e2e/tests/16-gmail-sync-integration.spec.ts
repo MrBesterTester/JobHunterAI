@@ -24,6 +24,14 @@ test.describe('Gmail Sync Integration', () => {
 
   test.beforeEach(async ({ browser }) => {
     page = await browser.newPage();
+
+    // TEMP: Capture console logs for debugging
+    page.on('console', msg => {
+      if (msg.text().includes('DEBUG_STATS') || msg.text().includes('Error')) {
+        console.log(`[BROWSER CONSOLE] ${msg.type()}: ${msg.text()}`);
+      }
+    });
+
     await page.goto('/');
 
     // Wait for dashboard to load
