@@ -18,6 +18,7 @@ CREATE TABLE jobs (
     status VARCHAR(20) DEFAULT 'new',
     date_email_sent TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     description TEXT,
+    condensed_description TEXT,
     url TEXT,
     raw_data JSONB,
     filter_reason TEXT,

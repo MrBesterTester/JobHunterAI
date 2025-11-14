@@ -56,6 +56,7 @@ pub struct Job {
     pub status: String,
     pub date_email_sent: DateTime<Utc>,
     pub description: Option<String>,
+    pub condensed_description: Option<String>,
     pub url: Option<String>,
     pub filter_reason: Option<String>,
     pub extraction_method: Option<String>,
@@ -1767,7 +1768,7 @@ async fn get_job(
     job_id: web::Path<Uuid>,
 ) -> Result<HttpResponse> {
     let job = sqlx::query_as::<_, Job>(
-        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, url, filter_reason, extraction_method, raw_data FROM jobs WHERE job_id = $1"
+        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, condensed_description, url, filter_reason, extraction_method, raw_data FROM jobs WHERE job_id = $1"
     )
     .bind(*job_id)
     .fetch_optional(pool.get_ref())
@@ -1867,7 +1868,7 @@ async fn get_jobs_by_status(
     status: web::Path<String>,
 ) -> Result<HttpResponse> {
     let jobs = sqlx::query_as::<_, Job>(
-        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, url, filter_reason, extraction_method, raw_data FROM jobs WHERE status = $1 ORDER BY date_email_sent DESC"
+        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, condensed_description, url, filter_reason, extraction_method, raw_data FROM jobs WHERE status = $1 ORDER BY date_email_sent DESC"
     )
     .bind(status.as_str())
     .fetch_all(pool.get_ref())
@@ -2287,7 +2288,7 @@ async fn update_criteria(
 
 async fn get_filtered_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     let jobs = sqlx::query_as::<_, Job>(
-        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, url, filter_reason, extraction_method, raw_data FROM jobs WHERE status = 'filtered' ORDER BY date_email_sent DESC"
+        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, condensed_description, url, filter_reason, extraction_method, raw_data FROM jobs WHERE status = 'filtered' ORDER BY date_email_sent DESC"
     )
     .fetch_all(pool.get_ref())
     .await
@@ -2813,14 +2814,24 @@ async fn condense_description_handler(
 ) -> Result<HttpResponse> {
     let job_id = path.into_inner();
 
-    // Get job details
+    // Get job details including cached condensed_description
     let job = sqlx::query_as::<_, Job>(
-        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, url, filter_reason, extraction_method, raw_data FROM jobs WHERE job_id = $1"
+        "SELECT job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, condensed_description, url, filter_reason, extraction_method, raw_data FROM jobs WHERE job_id = $1"
     )
     .bind(job_id)
     .fetch_one(pool.get_ref())
     .await
     .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Job not found: {}", e)))?;
+
+    // Check if we have a cached condensed description
+    if let Some(cached_description) = &job.condensed_description {
+        let has_valid_description = is_valid_description(cached_description);
+        return Ok(HttpResponse::Ok().json(serde_json::json!({
+            "condensed_description": cached_description,
+            "has_valid_description": has_valid_description,
+            "cached": true
+        })));
+    }
 
     // Extract description from raw_data or use job.description
     let description = if let Some(raw_data) = &job.raw_data {
@@ -2836,7 +2847,8 @@ async fn condense_description_handler(
         None => {
             return Ok(HttpResponse::Ok().json(serde_json::json!({
                 "condensed_description": "No description available",
-                "has_valid_description": false
+                "has_valid_description": false,
+                "cached": false
             })));
         }
     };
@@ -2855,9 +2867,20 @@ async fn condense_description_handler(
     match condense_text_with_claude(&api_key, description_text).await {
         Ok(condensed) => {
             let has_valid_description = is_valid_description(&condensed);
+
+            // Cache the condensed description in the database
+            let _ = sqlx::query(
+                "UPDATE jobs SET condensed_description = $1 WHERE job_id = $2"
+            )
+            .bind(&condensed)
+            .bind(job_id)
+            .execute(pool.get_ref())
+            .await;
+
             Ok(HttpResponse::Ok().json(serde_json::json!({
                 "condensed_description": condensed,
-                "has_valid_description": has_valid_description
+                "has_valid_description": has_valid_description,
+                "cached": false
             })))
         },
         Err(e) => {
