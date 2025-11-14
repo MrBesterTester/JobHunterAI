@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-11 18:52:21 PST
-last_updated: 2025-11-14 15:18:47 PST (Phase 2.3 complete - ISSUE-043 fully resolved, retry logic removed, test stable)
+last_updated: 2025-11-14 15:34:00 PST (Phase 3 in progress - 1/4 additional failures fixed)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -36,7 +36,11 @@ last_updated: 2025-11-14 15:18:47 PST (Phase 2.3 complete - ISSUE-043 fully reso
         - [Phase 1: Fix Performance Issue (Real bug - highest priority) - ✅ COMPLETED (2025-11-14 14:15 PST)](#phase-1-fix-performance-issue-real-bug---highest-priority----completed-2025-11-14-1415-pst)
         - [Phase 2: Make Tests More Robust (Reduce flakiness) - ✅ COMPLETED (2025-11-14 13:59 PST)](#phase-2-make-tests-more-robust-reduce-flakiness----completed-2025-11-14-1359-pst)
           - [Phase 2.1-2.3: Gmail Approval Test Investigation - ✅ FIXED](#phase-21-23-gmail-approval-test-investigation----fixed)
-        - [Phase 3: Investigate New Failures (4 additional failures from Option A)](#phase-3-investigate-new-failures-4-additional-failures-from-option-a)
+        - [Phase 3: Investigate New Failures (4 additional failures from Option A) - ⏳ IN PROGRESS](#phase-3-investigate-new-failures-4-additional-failures-from-option-a----in-progress)
+          - [1. Accessibility - form inputs with labels ✅ FIXED (2025-11-14 15:29 PST)](#1-accessibility---form-inputs-with-labels--fixed-2025-11-14-1529-pst)
+          - [2. Calendar management - interview form fields ⏳ IN PROGRESS](#2-calendar-management---interview-form-fields--in-progress)
+          - [3. Follow-ups management - approve follow-up via API](#3-follow-ups-management---approve-follow-up-via-api)
+          - [4. Microsoft email integration - stability after sync failures](#4-microsoft-email-integration---stability-after-sync-failures)
     - [Priority 2: Runtime Optimization (Optional)](#priority-2-runtime-optimization-optional)
     - [Priority 3: Full Comprehensive Test Run (Recommended)](#priority-3-full-comprehensive-test-run-recommended)
   - [Related Files](#related-files)
@@ -430,12 +434,51 @@ const JobCard: React.FC = ({ job }) => {
 
 **Commits**: f458c57, 6ccdcc9, 1bca951, 635fd3f, 185a6e9, 8604a96, ad1a5ea, 48f4c62, e0f215f, 815fe4f, df6c4b4, ddb7797
 
-##### Phase 3: Investigate New Failures (4 additional failures from Option A)
+##### Phase 3: Investigate New Failures (4 additional failures from Option A) - ⏳ IN PROGRESS
 
-- Accessibility: form inputs with labels
-- Calendar management: interview form fields
-- Follow-ups management: approve follow-up via API
-- Microsoft email integration: stability after sync failures
+**Status**: ⏳ IN PROGRESS (2025-11-14 15:34:00 PST) - 1/4 fixed
+
+These 4 tests started failing when Option A (adjust test expectations) was attempted and then reverted.
+
+**Progress**:
+
+###### 1. Accessibility - form inputs with labels ✅ FIXED (2025-11-14 15:29 PST)
+
+**Test**: `11-accessibility.spec.ts:307` - "should have form inputs with labels"
+
+**Issue**: Re-filter scope dropdown in IntakeTab missing accessible label
+
+**Root Cause**: The `<select>` element for choosing between "Last Sync Only" and "All Filtered Jobs" had no `aria-label`, `aria-labelledby`, or associated `<label>` element.
+
+**Fix**: Added `aria-label="Re-filter scope selection"` to the dropdown
+
+**Result**: ✅ Test now passing (627ms)
+
+**Commit**: `ef52b72` - "fix: Add aria-label to re-filter scope dropdown for accessibility"
+
+---
+
+###### 2. Calendar management - interview form fields ⏳ IN PROGRESS
+
+**Test**: `12-calendar-management.spec.ts:66` - "should validate required fields in interview form"
+
+**Status**: Investigating...
+
+---
+
+###### 3. Follow-ups management - approve follow-up via API
+
+**Test**: `13-follow-ups-management.spec.ts:306` - "should approve follow-up via API"
+
+**Status**: Pending investigation
+
+---
+
+###### 4. Microsoft email integration - stability after sync failures
+
+**Test**: `16-microsoft-email-integration.spec.ts:939` - "app remains stable after sync failures"
+
+**Status**: Pending investigation
 
 ### Priority 2: Runtime Optimization (Optional)
 - Investigate 13-minute runtime increase (37 → 50 min)
