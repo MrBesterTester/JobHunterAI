@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-11 18:52:21 PST
-last_updated: 2025-11-14 13:59:35 PST (Phase 2 complete - retry logic + increased timeouts)
+last_updated: 2025-11-14 14:18:58 PST (Phase 2.1 complete - Gmail test root cause identified)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -35,6 +35,7 @@ last_updated: 2025-11-14 13:59:35 PST (Phase 2 complete - retry logic + increase
       - [Option B: Fix Underlying Issues - ✅ INVESTIGATION COMPLETE (2025-11-14 13:15 PST)](#option-b-fix-underlying-issues----investigation-complete-2025-11-14-1315-pst)
         - [Phase 1: Fix Performance Issue (Real bug - highest priority) - ✅ COMPLETED (2025-11-14 14:15 PST)](#phase-1-fix-performance-issue-real-bug---highest-priority----completed-2025-11-14-1415-pst)
         - [Phase 2: Make Tests More Robust (Reduce flakiness) - ✅ COMPLETED (2025-11-14 13:59 PST)](#phase-2-make-tests-more-robust-reduce-flakiness----completed-2025-11-14-1359-pst)
+          - [Phase 2.1: Gmail Approval Test Investigation - ✅ ROOT CAUSE IDENTIFIED (2025-11-14 14:18 PST)](#phase-21-gmail-approval-test-investigation----root-cause-identified-2025-11-14-1418-pst)
         - [Phase 3: Investigate New Failures (4 additional failures from Option A)](#phase-3-investigate-new-failures-4-additional-failures-from-option-a)
     - [Priority 2: Runtime Optimization (Optional)](#priority-2-runtime-optimization-optional)
     - [Priority 3: Full Comprehensive Test Run (Recommended)](#priority-3-full-comprehensive-test-run-recommended)
@@ -392,6 +393,82 @@ const JobCard: React.FC = ({ job }) => {
   - Previously passed in isolation (12.1s) - needs investigation
 
 **Note**: Retry logic will help reduce transient failures in comprehensive runs, but the Gmail approval test may need deeper investigation as it's failing even in isolation now.
+
+###### Phase 2.1: Gmail Approval Test Investigation - ✅ ROOT CAUSE IDENTIFIED (2025-11-14 14:18 PST)
+
+**Problem**: Gmail approval test (`16-gmail-sync-integration.spec.ts:216`) fails consistently when run in test suite, but passes in isolation.
+
+**Investigation Timeline** (2025-11-14 14:00-14:18 PST):
+
+1. **Initial Observation**: Test times out waiting for approved count to increase from 5 to 6 after clicking Approve button
+2. **Evidence Collected**:
+   - Error context shows UI displaying: `New: 10, Approved: 5`
+   - Database query shows actual values: `new: 7, approved: 8`
+   - **UI stats are completely out of sync with database!**
+3. **Code Review**:
+   - `App.tsx:1054-1076`: `fetchStats()` correctly queries `/api/jobs/stats` endpoint
+   - `App.tsx:1187-1210`: `updateJobStatus()` calls `fetchStats()` after approval (line 1202)
+   - `backend/src/main.rs:2442-2521`: Stats endpoint queries database with no caching
+   - All refresh mechanisms are properly implemented - **not a code bug**
+4. **Configuration Analysis**:
+   - `playwright.config.ts:27-28`: `fullyParallel: true, workers: 4`
+   - **Tests run with 4 parallel workers sharing same database!**
+
+**ROOT CAUSE**: **Test isolation failure due to parallel execution with shared database**
+
+**Failure Mechanism**:
+1. Gmail approval test starts, loads page, reads approved count: `5`
+2. **Meanwhile**: 4 parallel workers all modifying same `jobhunter_personal` database
+3. **Other tests approve 3 jobs** → database now has 8 approved (not 5)
+4. Gmail test clicks Approve → backend updates to 9 → calls `fetchStats()`
+5. Test waits for count to reach `6` (5+1), but it never does because baseline was stale!
+
+**Why it passes in isolation**: Single test, no parallel modifications, stats stay synchronized
+
+**Solution Options Analysis**:
+
+**Option 1: Disable parallel execution** ❌ (Not recommended)
+- Set `fullyParallel: false` and `workers: 1`
+- **Pros**: Eliminates all race conditions immediately
+- **Cons**: Much slower tests (15.9 min → potentially 60+ min)
+- **Effort**: 1 minute (config change)
+
+**Option 2: Make Gmail tests run serially** ⭐ (Recommended)
+- Add `test.describe.serial()` wrapper to Gmail test suite
+- Keeps parallelism for other tests, serializes only Gmail tests
+- **Pros**: Minimal impact on test time, fixes isolation issue
+- **Cons**: Doesn't address fundamental shared-database problem
+- **Effort**: 5 minutes (code change)
+- **Files**: `frontend/e2e/tests/16-gmail-sync-integration.spec.ts`
+
+**Option 3: Database cleanup per test** ✅ (Robust long-term solution)
+- Each test resets database to known state in `beforeEach`
+- Use existing `./helper-scripts/seed-test-data.sh --truncate`
+- **Pros**: True test isolation, maintains parallelism
+- **Cons**: Requires test data seeding in beforeEach hooks
+- **Effort**: 2-3 hours (refactor all test files)
+
+**Recommendation**: **Implement Option 2 now, plan Option 3 for future**
+- **Immediate**: Wrap Gmail tests in `test.describe.serial()` to fix current failure
+- **Future**: Migrate to per-test database seeding for true isolation
+
+**Implementation Details (Option 2)**:
+```typescript
+// frontend/e2e/tests/16-gmail-sync-integration.spec.ts
+test.describe.serial('Gmail Sync Integration', () => {
+  // Configure retries for this suite (flaky under load)
+  test.describe.configure({ retries: 2 });
+
+  let page: Page;
+
+  // ... rest of tests
+});
+```
+
+**Impact**:
+- Gmail tests will run sequentially (not in parallel)
+- Other test files continue running in parallel (4 workers)
+- Minimal runtime increase: ~30-60 seconds for Gmail suite
 
 ##### Phase 3: Investigate New Failures (4 additional failures from Option A)
 
