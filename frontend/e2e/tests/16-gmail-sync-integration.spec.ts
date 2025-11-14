@@ -23,10 +23,20 @@ test.describe.serial('Gmail Sync Integration', () => {
 
   test.beforeEach(async ({ browser }) => {
     page = await browser.newPage();
+
+    // Wait for stats API to complete on page load
+    const statsPromise = page.waitForResponse(response =>
+      response.url().includes('/api/jobs/stats') && response.status() === 200
+    );
+
     await page.goto('/');
 
     // Wait for dashboard to load
     await expect(page.getByRole('heading', { name: /^JobHunter$/i })).toBeVisible({ timeout: 10000 });
+
+    // Ensure stats have loaded with fresh data from database
+    await statsPromise;
+    await page.waitForTimeout(500); // Give React time to update state
   });
 
   test.afterEach(async () => {
