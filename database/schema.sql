@@ -305,6 +305,11 @@ CREATE INDEX idx_intake_logs_status ON job_intake_logs(sync_status);
 CREATE INDEX idx_email_jobs_message ON email_jobs(message_id);
 CREATE INDEX idx_email_jobs_processed ON email_jobs(processed);
 CREATE INDEX idx_email_jobs_received ON email_jobs(received_date DESC);
+CREATE INDEX idx_email_jobs_job_id ON email_jobs(job_id);
+CREATE INDEX idx_email_jobs_extraction_confidence ON email_jobs(extraction_confidence);
+CREATE INDEX idx_email_jobs_stats_query ON email_jobs(processed, job_id, extraction_confidence) WHERE processing_errors IS NULL;
+CREATE INDEX idx_email_jobs_extracted_data_gin ON email_jobs USING GIN (extracted_data);
+CREATE INDEX idx_email_jobs_failed ON email_jobs(processing_errors) WHERE processing_errors IS NOT NULL;
 
 CREATE INDEX idx_api_jobs_source ON api_job_sources(source_id);
 CREATE INDEX idx_api_jobs_external ON api_job_sources(external_job_id);
