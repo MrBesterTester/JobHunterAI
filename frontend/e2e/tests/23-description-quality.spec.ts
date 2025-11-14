@@ -19,9 +19,15 @@ if (!shouldRunTest('description-quality')) {
  * - Descriptions should NOT contain verbose explanations
  * - Descriptions should be concise (approximately 100 words)
  * - Refresh should regenerate descriptions from current prompt
+ *
+ * Note: These tests involve LLM API calls which can be slow under system load.
+ * Retry logic is enabled to handle transient LLM rate limiting and timing issues.
  */
 
 test.describe('Condensed Description Quality', () => {
+  // Configure retries for this suite (LLM-dependent, flaky under load)
+  test.describe.configure({ retries: 2 });
+
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:3000');
     await page.waitForLoadState('networkidle');
@@ -33,9 +39,9 @@ test.describe('Condensed Description Quality', () => {
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
 
-    // Wait for description to load
+    // Wait for description to load (increased timeout for system load)
     const descriptionContainer = jobCard.locator('div').filter({ hasText: 'Condensed Description' }).locator('div').last();
-    await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
+    await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 20000 });
 
     const descriptionText = await descriptionContainer.textContent();
 
@@ -96,7 +102,7 @@ test.describe('Condensed Description Quality', () => {
       const descriptionSection = card.locator('strong:has-text("Condensed Description")').locator('xpath=../..');
       const descriptionContainer = descriptionSection.locator('> div').last();
 
-      await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
+      await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 20000 });
 
       const descriptionText = await descriptionContainer.textContent();
 
@@ -136,8 +142,8 @@ test.describe('Condensed Description Quality', () => {
   });
 
   test('refresh should regenerate description (check for different content after prompt change)', async ({ page }) => {
-    // Increase timeout to allow for slow LLM API calls (can take 20-30+ seconds)
-    test.setTimeout(60000);
+    // Increase timeout to allow for slow LLM API calls under system load (can take 30-60+ seconds)
+    test.setTimeout(90000);
 
     // Use New Jobs tab which has jobs with long source descriptions
     await switchToTab(page, 'new');
@@ -156,7 +162,7 @@ test.describe('Condensed Description Quality', () => {
       const tempDescSection = card.locator('strong:has-text("Condensed Description")').locator('xpath=../..');
       const tempDescContainer = tempDescSection.locator('> div').last();
 
-      await expect(tempDescContainer).not.toHaveText('Loading description...', { timeout: 15000 });
+      await expect(tempDescContainer).not.toHaveText('Loading description...', { timeout: 20000 });
 
       const descText = await tempDescContainer.textContent();
       const wordCount = descText!.trim().split(/\s+/).length;
@@ -176,8 +182,8 @@ test.describe('Condensed Description Quality', () => {
     expect(jobCard).toBeDefined();
     expect(descriptionContainer).toBeDefined();
 
-    // Wait for initial description
-    await expect(descriptionContainer!).not.toHaveText('Loading description...', { timeout: 55000 });
+    // Wait for initial description (increased timeout for system load)
+    await expect(descriptionContainer!).not.toHaveText('Loading description...', { timeout: 75000 });
     const initialDescription = await descriptionContainer!.textContent();
 
     // Click refresh
@@ -189,8 +195,8 @@ test.describe('Condensed Description Quality', () => {
     await page.waitForTimeout(500);
 
     // Wait for new description (still tracking the same job by ID)
-    // Note: LLM API calls can take 30-40+ seconds for jobs with long descriptions
-    await expect(descriptionContainer!).not.toHaveText('Loading description...', { timeout: 55000 });
+    // Note: LLM API calls can take 40-60+ seconds for jobs with long descriptions under load
+    await expect(descriptionContainer!).not.toHaveText('Loading description...', { timeout: 75000 });
 
     const newDescription = await descriptionContainer!.textContent();
 

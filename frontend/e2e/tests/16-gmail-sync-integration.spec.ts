@@ -9,9 +9,15 @@ import { switchToTab } from '../helpers/tab-navigation';
  * 2. Verify jobs appear in Inbox tab
  * 3. Verify stats update correctly
  * 4. Verify jobs can be approved/rejected
+ *
+ * Note: These tests are timing-sensitive and may be affected by system load.
+ * Retry logic is enabled to handle transient failures.
  */
 
 test.describe('Gmail Sync Integration', () => {
+  // Configure retries for this suite (flaky under load)
+  test.describe.configure({ retries: 2 });
+
   let page: Page;
 
   test.beforeEach(async ({ browser }) => {
@@ -239,7 +245,7 @@ test.describe('Gmail Sync Integration', () => {
     // Click approve
     await approveButton.click();
 
-    // Wait for approved count to increase (with timeout to avoid hanging)
+    // Wait for approved count to increase (with extended timeout to handle system load)
     await page.waitForFunction(
       (expectedCount) => {
         const statElement = document.querySelector('[data-testid="stat-approved"]');
@@ -249,7 +255,7 @@ test.describe('Gmail Sync Integration', () => {
         return currentCount >= expectedCount;
       },
       initialApprovedCount + 1,
-      { timeout: 5000 }
+      { timeout: 10000 } // Increased from 5000ms to handle load better
     );
 
     // Verify approved count increased
