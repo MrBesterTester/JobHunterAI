@@ -1054,7 +1054,7 @@ const JobHunterDashboard: React.FC = () => {
   const fetchStats = async (): Promise<void> => {
     const debugStats = process.env.REACT_APP_DEBUG_STATS === 'true';
     const startTime = performance.now();
-    const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, fractionalSecondDigits: 3 });
+    const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, fractionalSecondDigits: 3 } as any);
 
     if (debugStats) {
       console.log(`[DEBUG_STATS] fetchStats() called at ${timestamp}`);
@@ -1096,7 +1096,7 @@ const JobHunterDashboard: React.FC = () => {
 
       if (debugStats) {
         const totalDuration = Math.round(performance.now() - startTime);
-        console.log(`[DEBUG_STATS] Stats update complete at ${new Date().toLocaleTimeString('en-US', { hour12: false, fractionalSecondDigits: 3 })} (total: ${totalDuration}ms)`);
+        console.log(`[DEBUG_STATS] Stats update complete at ${new Date().toLocaleTimeString('en-US', { hour12: false, fractionalSecondDigits: 3 } as any)} (total: ${totalDuration}ms)`);
         console.log(`[DEBUG_STATS] ✓ Stats should now reflect:`, JSON.stringify(data));
       }
     } catch (error) {
