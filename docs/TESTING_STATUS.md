@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-11 18:52:21 PST
-last_updated: 2025-11-14 13:18:18 PST (Option B investigation complete - Performance issue identified)
+last_updated: 2025-11-14 13:27:57 PST (Phase 1 in progress - Database indexes added)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -250,13 +250,37 @@ last_updated: 2025-11-14 13:18:18 PST (Option B investigation complete - Perform
 
 **Implementation Plan** (Option B):
 
-**Phase 1: Fix Performance Issue** (Real bug - highest priority)
-- Profile API endpoints to identify slow queries
-- Check for N+1 query patterns in job fetching
-- Add database query logging
-- Review score calculation performance
-- Consider caching strategies for job scores
-- Target: Reduce average API response time to < 150ms
+**Phase 1: Fix Performance Issue** (Real bug - highest priority) - 🔄 **IN PROGRESS**
+
+**Status (2025-11-14 13:45 PST)**:
+- ✅ Profiled API endpoints to identify slow queries
+- ✅ Found `get_job_stats` query doing full table scans on `email_jobs`
+- ✅ Added 5 database indexes for `email_jobs` table (commit cee833b)
+- ✅ Updated schema.sql with permanent indexes
+- ⚠️ Performance test still fails: 1,645ms avg (vs 500ms limit)
+- 🔍 Root cause: Test environment has 0 emails, so indexes don't help
+- 🔍 Actual bottleneck: Network/connection overhead or cumulative API latency
+
+**Completed Work**:
+1. Added indexes to `email_jobs` table:
+   - `idx_email_jobs_job_id`: For job_id lookups
+   - `idx_email_jobs_extraction_confidence`: For confidence range queries
+   - `idx_email_jobs_stats_query`: Composite index for common patterns
+   - `idx_email_jobs_extracted_data_gin`: GIN index for JSON queries
+   - `idx_email_jobs_failed`: Partial index for failed emails
+2. Indexes will improve production performance (when emails exist)
+3. Test environment revealed indexes aren't the bottleneck
+
+**Next Steps**:
+1. Profile actual API calls made during performance test
+2. Measure server-side vs client-side timing breakdown
+3. Check for connection pooling/cold start overhead
+4. Investigate if multiple small API calls are adding up
+5. Consider if 500ms threshold is realistic for E2E tests (includes browser overhead)
+6. Profile backend request handling (logging middleware)
+7. Check if score calculations are happening on every API call
+
+**Target**: Reduce average API response time to < 150ms (or adjust test expectations if browser overhead is unavoidable)
 
 **Phase 2: Make Tests More Robust** (Reduce flakiness)
 - Add automatic retry logic for LLM-dependent tests
