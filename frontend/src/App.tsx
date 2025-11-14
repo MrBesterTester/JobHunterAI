@@ -1052,12 +1052,27 @@ const JobHunterDashboard: React.FC = () => {
   };
 
   const fetchStats = async (): Promise<void> => {
+    const debugStats = process.env.REACT_APP_DEBUG_STATS === 'true';
+    const startTime = performance.now();
+    const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, fractionalSecondDigits: 3 });
+
+    if (debugStats) {
+      console.log(`[DEBUG_STATS] fetchStats() called at ${timestamp}`);
+      console.log(`[DEBUG_STATS] Fetching from: ${API_URL}/jobs/stats`);
+    }
+
     try {
       const response = await fetch(`${API_URL}/jobs/stats`);
+      const fetchDuration = Math.round(performance.now() - startTime);
+
       if (!response.ok) {
         throw new Error(`Stats API returned status ${response.status}`);
       }
       const data: JobStats = await response.json();
+
+      if (debugStats) {
+        console.log(`[DEBUG_STATS] API response received (${fetchDuration}ms):`, JSON.stringify(data));
+      }
 
       // Fetch ignored emails count
       try {
@@ -1071,8 +1086,23 @@ const JobHunterDashboard: React.FC = () => {
         data.ignored = 0;
       }
 
+      if (debugStats) {
+        console.log(`[DEBUG_STATS] Calling setStats() with new data`);
+        console.log(`[DEBUG_STATS] Previous stats:`, JSON.stringify(stats));
+        console.log(`[DEBUG_STATS] New stats:`, JSON.stringify(data));
+      }
+
       setStats(data);
+
+      if (debugStats) {
+        const totalDuration = Math.round(performance.now() - startTime);
+        console.log(`[DEBUG_STATS] Stats update complete at ${new Date().toLocaleTimeString('en-US', { hour12: false, fractionalSecondDigits: 3 })} (total: ${totalDuration}ms)`);
+        console.log(`[DEBUG_STATS] ✓ Stats should now reflect:`, JSON.stringify(data));
+      }
     } catch (error) {
+      if (debugStats) {
+        console.error('[DEBUG_STATS] Error fetching stats:', error);
+      }
       console.error('Error fetching stats:', error);
       // Set default stats on error
       setStats({ new: 0, approved: 0, applied: 0, filtered: 0, rejected: 0, ignored: 0 });

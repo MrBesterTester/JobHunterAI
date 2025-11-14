@@ -112,6 +112,7 @@
   - [Debug Tools](#debug-tools)
     - [Frontend Debug Tool](#frontend-debug-tool)
     - [Backend Debug Tool](#backend-debug-tool)
+    - [Stats Debug Tool](#stats-debug-tool)
   - [Testing & Quality Assurance](#testing--quality-assurance)
     - [Backend Testing (100% Coverage)](#backend-testing-100%25-coverage)
     - [Frontend E2E Testing (94.1% Coverage)](#frontend-e2e-testing-941%25-coverage)
@@ -3446,14 +3447,92 @@ export DEBUG_EXTRACTION=false
 **Benefits**:
 - Complete visibility into extraction pipeline behavior
 - Helps diagnose why specific emails are/aren't extracted
-- Shows LLM reasoning even for low-confidence results (normally hidden)
-- Tracks performance of LLM API calls and regex processing
-- Makes it easy to identify which patterns contribute to confidence scores
-- Zero performance impact when disabled (single env var check)
 
-**Implementation Details**:
-- Implemented in `backend/src/main.rs` (extraction functions)
-- See [ISSUE-030 Appendix](bugs/mitigated/ISSUE-030-low-confidence-emails-appear-in-filtered-tab-instead-of-non-job-emails.md#appendix-regex-fallback-investigation) for full documentation
+### Stats Debug Tool
+
+**Console Logging for React Stats State Management** - Debugging mode for troubleshooting stats display issues, particularly when stats don't update after API calls complete. This frontend feature provides detailed visibility into stats fetching, API responses, and React state updates through browser console output.
+
+**When to Use**:
+- Stats display not updating after job approval/rejection actions
+- Stats showing stale/incorrect counts compared to database
+- Investigating React state management issues with stats
+- Debugging timing issues between API calls and UI updates
+- Verifying `fetchStats()` is being called and `setStats()` is updating state
+- Troubleshooting race conditions in stats refresh logic
+
+**Features**:
+- **API call tracking**: Logs every call to `fetchStats()` with timestamp
+- **HTTP request monitoring**: Shows fetch URL, method, timing
+- **Response data inspection**: Displays full stats data from API before state update
+- **State update confirmation**: Logs `setStats()` calls with new state object
+- **Object reference checking**: Shows whether stats state object reference changed
+- **Error detection**: Logs API errors, network failures, parsing issues
+- **Performance timing**: Duration of API calls and state updates
+
+**Usage**:
+
+```bash
+# Enable stats debug mode
+echo "REACT_APP_DEBUG_STATS=true" >> frontend/.env.development.local
+cd frontend
+npm start  # Restart frontend to apply changes
+
+# Or use start.sh convenience flag
+./helper-scripts/start.sh --debug-stats
+./helper-scripts/start.sh -s  # Short flag
+
+# Combine with other debug modes
+./helper-scripts/start.sh --debug-frontend --debug-stats
+./helper-scripts/start.sh -f -s  # Short flags
+
+# Disable stats debug mode
+# Remove REACT_APP_DEBUG_STATS from frontend/.env.development.local
+cd frontend
+npm start
+```
+
+**Example Debug Output**:
+
+```
+[DEBUG_STATS] fetchStats() called at 14:32:15.234
+[DEBUG_STATS] Fetching from: http://localhost:8080/api/jobs/stats
+[DEBUG_STATS] API response received (127ms): {"new":7,"approved":5,"rejected":2,"filtered":30}
+[DEBUG_STATS] Calling setStats() with new data
+[DEBUG_STATS] State object reference changed: true
+[DEBUG_STATS] Stats update complete at 14:32:15.361
+
+[User clicks Approve button]
+
+[DEBUG_STATS] fetchStats() called at 14:32:18.567 (triggered by updateJobStatus)
+[DEBUG_STATS] Fetching from: http://localhost:8080/api/jobs/stats
+[DEBUG_STATS] API response received (89ms): {"new":6,"approved":6,"rejected":2,"filtered":30}
+[DEBUG_STATS] Calling setStats() with new data
+[DEBUG_STATS] State object reference changed: true
+[DEBUG_STATS] Stats update complete at 14:32:18.656
+[DEBUG_STATS] ✓ Stats should now reflect: approved count 5 → 6
+```
+
+**Diagnostic Patterns**:
+
+| Pattern | Diagnosis |
+|---------|-----------|
+| No `fetchStats()` call logged | Stats fetch not being triggered - check caller logic |
+| `fetchStats()` called but no API response | Network/backend issue - check backend logs |
+| API response received but no `setStats()` call | State update blocked - investigate React render cycle |
+| `setStats()` called but reference unchanged | Same object reused - React won't re-render |
+| `setStats()` called, reference changed, but UI stale | Component memoization or stale closure issue |
+| API returns old data | Backend caching issue or database not updating |
+
+**Benefits**:
+- Pinpoints exact failure point in stats update pipeline
+- Verifies API calls completing vs state updates executing
+- Confirms React state reference changes (required for re-render)
+- Eliminates guesswork - see exactly what's happening in real-time
+- Works with E2E tests - console logs captured in test output
+- No database queries needed - all debugging in browser console
+
+**Related Issues**:
+- [ISSUE-043](../bugs/open/ISSUE-043-gmail-approval-test---ui-stats-not-refreshing-after-approval-action.md) - Gmail approval test failure that motivated this tool
 
 ## Testing & Quality Assurance
 

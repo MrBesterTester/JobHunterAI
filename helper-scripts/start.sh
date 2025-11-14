@@ -16,6 +16,7 @@ Starts JobHunter development environment (PostgreSQL, backend, frontend)
 OPTIONS:
     -d, --debug-backend      Enable backend extraction debug logging (DEBUG_EXTRACTION=true)
     -f, --debug-frontend     Enable frontend debug mode (REACT_APP_DEBUG_MODE=true)
+    -s, --debug-stats        Enable stats debug logging (REACT_APP_DEBUG_STATS=true)
     -b, --backend-only       Start only backend + PostgreSQL (skip frontend)
     -w, --frontend-only      Start only frontend (assumes backend is already running)
     -v, --verbose            Show console output from services (don't suppress logs)
@@ -26,14 +27,17 @@ EXAMPLES:
     # Start with backend debug logging
     ./helper-scripts/start.sh --debug-backend
 
-    # Start with both debug modes and verbose output
-    ./helper-scripts/start.sh -d -f -v
+    # Start with all debug modes and verbose output
+    ./helper-scripts/start.sh -d -f -s -v
+
+    # Start with stats debug logging only
+    ./helper-scripts/start.sh --debug-stats
 
     # Start only backend (for API testing)
     ./helper-scripts/start.sh --backend-only
 
-    # Start with frontend debug mode, no browser
-    ./helper-scripts/start.sh --debug-frontend --no-browser
+    # Start with frontend and stats debug, no browser
+    ./helper-scripts/start.sh -f -s --no-browser
 
 ENVIRONMENT VARIABLES:
     NO_BROWSER=1             Alternative to --no-browser flag (still supported)
@@ -44,6 +48,7 @@ EOF
 # Parse command-line arguments
 DEBUG_BACKEND=false
 DEBUG_FRONTEND=false
+DEBUG_STATS=false
 VERBOSE=false
 NO_BROWSER_FLAG=false
 START_BACKEND=true
@@ -57,6 +62,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -f|--debug-frontend)
             DEBUG_FRONTEND=true
+            shift
+            ;;
+        -s|--debug-stats)
+            DEBUG_STATS=true
             shift
             ;;
         -v|--verbose)
@@ -212,6 +221,17 @@ if [ "$START_FRONTEND" = true ]; then
             else
                 echo "REACT_APP_DEBUG_MODE=true" >> .env.development.local
                 echo "   🐛 REACT_APP_DEBUG_MODE=true added to .env.development.local"
+            fi
+        fi
+
+        # Apply debug stats flag
+        if [ "$DEBUG_STATS" = true ]; then
+            # Check if .env.development.local exists and already has the flag
+            if [ -f .env.development.local ] && grep -q "^REACT_APP_DEBUG_STATS=true" .env.development.local 2>/dev/null; then
+                echo "   📊 REACT_APP_DEBUG_STATS already set in .env.development.local"
+            else
+                echo "REACT_APP_DEBUG_STATS=true" >> .env.development.local
+                echo "   📊 REACT_APP_DEBUG_STATS=true added to .env.development.local"
             fi
         fi
 
