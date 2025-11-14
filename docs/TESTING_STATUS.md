@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-11 18:52:21 PST
-last_updated: 2025-11-14 14:18:58 PST (Phase 2.1 complete - Gmail test root cause identified)
+last_updated: 2025-11-14 14:33:07 PST (Phase 2.2 complete - Multiple fixes attempted, issue persists)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -36,6 +36,7 @@ last_updated: 2025-11-14 14:18:58 PST (Phase 2.1 complete - Gmail test root caus
         - [Phase 1: Fix Performance Issue (Real bug - highest priority) - ✅ COMPLETED (2025-11-14 14:15 PST)](#phase-1-fix-performance-issue-real-bug---highest-priority----completed-2025-11-14-1415-pst)
         - [Phase 2: Make Tests More Robust (Reduce flakiness) - ✅ COMPLETED (2025-11-14 13:59 PST)](#phase-2-make-tests-more-robust-reduce-flakiness----completed-2025-11-14-1359-pst)
           - [Phase 2.1: Gmail Approval Test Investigation - ✅ ROOT CAUSE IDENTIFIED (2025-11-14 14:18 PST)](#phase-21-gmail-approval-test-investigation----root-cause-identified-2025-11-14-1418-pst)
+          - [Phase 2.2: Implementation Attempts - ⚠️ ISSUE PERSISTS (2025-11-14 14:33 PST)](#phase-22-implementation-attempts----issue-persists-2025-11-14-1433-pst)
         - [Phase 3: Investigate New Failures (4 additional failures from Option A)](#phase-3-investigate-new-failures-4-additional-failures-from-option-a)
     - [Priority 2: Runtime Optimization (Optional)](#priority-2-runtime-optimization-optional)
     - [Priority 3: Full Comprehensive Test Run (Recommended)](#priority-3-full-comprehensive-test-run-recommended)
@@ -469,6 +470,103 @@ test.describe.serial('Gmail Sync Integration', () => {
 - Gmail tests will run sequentially (not in parallel)
 - Other test files continue running in parallel (4 workers)
 - Minimal runtime increase: ~30-60 seconds for Gmail suite
+
+###### Phase 2.2: Implementation Attempts - ⚠️ ISSUE PERSISTS (2025-11-14 14:33 PST)
+
+**Status**: Multiple fixes attempted, but test still fails with same symptoms
+
+**Fixes Implemented** (commits f458c57, 6ccdcc9, 1bca951, 635fd3f, 185a6e9):
+
+1. **Serial execution** (commit f458c57, 185a6e9):
+   - Changed: `test.describe.configure({ mode: 'serial' })`
+   - Tests now run with 1 worker (not 4 parallel workers)
+   - ✅ Confirmed working (logs show "Running 3 tests using 1 worker")
+
+2. **Stats API wait in beforeEach** (commit 6ccdcc9):
+   - Added `waitForResponse('/api/jobs/stats')` after page load
+   - Ensures stats API completes before test proceeds
+   - Added 500ms delay for React state propagation
+
+3. **Refresh Data button click** (commit 1bca951):
+   - Click "Refresh Data" button in beforeEach to force fresh fetch
+   - Triggers complete reload: jobs, stats, applications
+   - Waits for stats API to complete
+
+4. **Wait for approval API calls** (commit 635fd3f):
+   - Added `waitForResponse` for both:
+     - Status update API: `/jobs/{id}/status`
+     - Stats refresh API: `/api/jobs/stats`
+   - Waits for both API calls to complete after clicking Approve
+   - Added 500ms delay for React state update
+
+**Test Results After All Fixes**:
+```
+Run 1:    Initial approved: 5, expecting: 6 → ❌ TIMEOUT (11.0s)
+Retry 1:  Initial approved: 6, expecting: 7 → ❌ TIMEOUT (11.3s)
+Retry 2:  Initial approved: 7, expecting: 8 → ❌ TIMEOUT (11.1s)
+```
+
+**Key Observation**: Database IS being updated correctly!
+- Each retry sees count increase (5→6→7→8)
+- This means the Approve action works
+- This means the database transaction completes
+- **But UI stats remain stale after approval action**
+
+**Error Context Analysis**:
+- After all fixes, UI still shows: `New: 10, Approved: 5`
+- Database actually has: `new: 7, approved: 8`
+- Even after:
+  - Waiting for stats API response
+  - Waiting for status update API response
+  - Clicking Refresh Data button
+  - Adding React state propagation delays
+
+**Suspected Root Cause**: **Frontend React state management bug**
+
+The issue appears to be that even though:
+1. API calls complete successfully (we wait for 200 responses)
+2. Backend returns fresh data from database
+3. React state should update via `setStats(data)`
+
+...the UI is not re-rendering with the new stats. Possible causes:
+- React `useState` not triggering re-render
+- Component memoization preventing update
+- State update batching issue
+- Frontend caching layer we haven't identified
+
+**Recommended Next Steps**:
+
+**Option A: Skip/Mark test as known issue** ⭐ (Pragmatic short-term)
+- Add `.skip()` to failing test with comment explaining frontend bug
+- Create bug report for React state management investigation
+- **Pros**: Unblocks comprehensive test run, documents known issue
+- **Cons**: Doesn't fix underlying problem
+- **Effort**: 5 minutes
+
+**Option B: Debug frontend state management** (Proper fix)
+- Add console.log to `fetchStats()` and `setStats()` calls
+- Verify API response data vs UI displayed data
+- Check if `stats` state object reference changes
+- Investigate React DevTools for state updates
+- **Pros**: Fixes root cause
+- **Cons**: Requires frontend debugging session (30-60 min)
+- **Effort**: 1-2 hours
+
+**Option C: Rewrite test to not depend on stats** (Workaround)
+- Instead of checking stats count, verify job moved from "New" tab to "Approved" tab
+- Check job card status badge shows "approved"
+- **Pros**: Tests actual user-visible behavior
+- **Cons**: Different test approach, doesn't validate stats feature
+- **Effort**: 30 minutes
+
+**Recommendation**: **Option A** (skip with bug report) followed by **Option B** (proper fix in separate session)
+
+**Commits**:
+- f458c57: Serial execution fix
+- 6ccdcc9: Stats API wait
+- 1bca951: Refresh Data button
+- 635fd3f: Approval API wait
+- 185a6e9: Serial mode syntax fix
 
 ##### Phase 3: Investigate New Failures (4 additional failures from Option A)
 
