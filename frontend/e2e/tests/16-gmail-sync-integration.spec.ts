@@ -12,13 +12,12 @@ import { switchToTab } from '../helpers/tab-navigation';
  *
  * Note: These tests modify the database and must run serially to avoid race conditions.
  * Using test.describe.serial() prevents parallel execution with other tests.
- * Retry logic is enabled to handle transient failures.
  */
 
 test.describe('Gmail Sync Integration', () => {
-  // Configure serial mode and retries for this suite
+  // Configure serial mode for this suite
   // Serial mode prevents parallel execution with other tests (test isolation)
-  test.describe.configure({ mode: 'serial', retries: 2 });
+  test.describe.configure({ mode: 'serial' });
 
   let page: Page;
 
