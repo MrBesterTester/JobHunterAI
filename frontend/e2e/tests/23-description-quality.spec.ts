@@ -86,7 +86,7 @@ test.describe('Condensed Description Quality', () => {
     // Note: Backend passes through short descriptions (≤150 words) as-is to save API costs
     // We need to find at least one job with a long source description that gets condensed
     const jobCards = page.locator('[data-testid="job-card"]');
-    const count = Math.min(await jobCards.count(), 20); // Check up to 20 jobs (increased from 10)
+    const count = Math.min(await jobCards.count(), 10); // Check up to 10 jobs in New Jobs tab
 
     let foundSubstantialDescription = false;
 
@@ -107,21 +107,18 @@ test.describe('Condensed Description Quality', () => {
 
       const wordCount = descriptionText!.trim().split(/\s+/).length;
 
-      // Relaxed threshold: Reduced from 20 to 10 words to account for LLM variability
       // Short descriptions (≤150 words source) are passed through as-is
       // We want to find at least one substantial description (from a long source that was condensed)
-      if (wordCount > 10) {
+      if (wordCount > 20) {
         foundSubstantialDescription = true;
 
         // Should contain job-related keywords (at least one)
-        // Expanded keyword list to be more inclusive of various job description styles
         const jobKeywords = [
           'experience', 'skills', 'responsibilities', 'requirements',
           'engineer', 'developer', 'software', 'position', 'role',
           'company', 'team', 'work', 'project', 'technologies',
           'qualifications', 'candidate', 'seeking', 'looking', 'testing',
-          'automation', 'quality', 'applications', 'job', 'hiring',
-          'opportunity', 'tech', 'technical'
+          'automation', 'quality', 'applications'
         ];
 
         const hasJobKeyword = jobKeywords.some(keyword =>
@@ -139,9 +136,8 @@ test.describe('Condensed Description Quality', () => {
   });
 
   test('refresh should regenerate description (check for different content after prompt change)', async ({ page }) => {
-    // Increased timeout to allow for slow LLM API calls in comprehensive test runs
-    // LLM can take 30-50+ seconds during heavy load
-    test.setTimeout(90000);
+    // Increase timeout to allow for slow LLM API calls (can take 20-30+ seconds)
+    test.setTimeout(60000);
 
     // Use New Jobs tab which has jobs with long source descriptions
     await switchToTab(page, 'new');
@@ -166,8 +162,7 @@ test.describe('Condensed Description Quality', () => {
       const wordCount = descText!.trim().split(/\s+/).length;
 
       // Find a job with substantial content (condensed from long source)
-      // Relaxed from 20 to 10 words to account for LLM variability
-      if (wordCount > 10 && descText !== 'No job description to be extracted.') {
+      if (wordCount > 20 && descText !== 'No job description to be extracted.') {
         jobId = await card.getAttribute('data-job-id');
         jobCard = page.locator(`[data-testid="job-card"][data-job-id="${jobId}"]`);
         const finalDescSection = jobCard.locator('strong:has-text("Condensed Description")').locator('xpath=../..');
@@ -211,10 +206,9 @@ test.describe('Condensed Description Quality', () => {
     expect(newDescription).not.toContain('No description available');
 
     // Verify it's still a quality description (reasonable length)
-    // Relaxed word count from 20 to 10 to account for LLM variability
     // Note: We selected a job with substantial content, so refresh should maintain that
     const wordCount = newDescription!.trim().split(/\s+/).length;
-    expect(wordCount).toBeGreaterThan(10);
+    expect(wordCount).toBeGreaterThan(20);
     expect(wordCount).toBeLessThanOrEqual(200);
   });
 

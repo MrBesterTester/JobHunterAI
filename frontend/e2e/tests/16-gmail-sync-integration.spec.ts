@@ -239,11 +239,7 @@ test.describe('Gmail Sync Integration', () => {
     // Click approve
     await approveButton.click();
 
-    // Wait for approval to process (increased timeout for more reliable test)
-    await page.waitForTimeout(1000);
-
-    // Wait for approved count to increase (with increased timeout for realistic conditions)
-    // Timeout increased from 5000ms to 10000ms to account for API response time
+    // Wait for approved count to increase (with timeout to avoid hanging)
     await page.waitForFunction(
       (expectedCount) => {
         const statElement = document.querySelector('[data-testid="stat-approved"]');
@@ -253,7 +249,7 @@ test.describe('Gmail Sync Integration', () => {
         return currentCount >= expectedCount;
       },
       initialApprovedCount + 1,
-      { timeout: 10000 }
+      { timeout: 5000 }
     );
 
     // Verify approved count increased
