@@ -10,11 +10,12 @@ import { switchToTab } from '../helpers/tab-navigation';
  * 3. Verify stats update correctly
  * 4. Verify jobs can be approved/rejected
  *
- * Note: These tests are timing-sensitive and may be affected by system load.
+ * Note: These tests modify the database and must run serially to avoid race conditions.
+ * Using test.describe.serial() prevents parallel execution with other tests.
  * Retry logic is enabled to handle transient failures.
  */
 
-test.describe('Gmail Sync Integration', () => {
+test.describe.serial('Gmail Sync Integration', () => {
   // Configure retries for this suite (flaky under load)
   test.describe.configure({ retries: 2 });
 
