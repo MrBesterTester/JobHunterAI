@@ -122,16 +122,21 @@ test.describe('Intake Tab', () => {
       // Navigate to Intake tab
       const intakeTab = page.getByRole('button', { name: /^intake$/i });
       await intakeTab.click();
-      await page.waitForTimeout(1000);
+
+      // Wait for loading to complete by waiting for Gmail card buttons to appear
+      // Either "Sync Now" or "Authenticate with Gmail" should appear when loaded
+      await page.getByRole('button', { name: /Sync Now|Authenticate with Gmail/i }).first().waitFor({ state: 'visible', timeout: 10000 });
     });
 
     test('should display Gmail authentication button when not connected', async () => {
       // Check if either "Authenticate with Gmail" or "Sync Now" button exists
+      // Note: There are multiple "Sync Now" buttons on the page (Gmail, Microsoft, LinkedIn, RapidAPI)
+      // so we use .first() to avoid strict mode errors
       const authButton = page.getByRole('button', { name: /Authenticate with Gmail/i });
       const syncButton = page.getByRole('button', { name: /Sync Now/i });
 
-      const authVisible = await authButton.isVisible().catch(() => false);
-      const syncVisible = await syncButton.isVisible().catch(() => false);
+      const authVisible = await authButton.first().isVisible().catch(() => false);
+      const syncVisible = await syncButton.first().isVisible().catch(() => false);
 
       // At least one should be visible
       expect(authVisible || syncVisible).toBe(true);
