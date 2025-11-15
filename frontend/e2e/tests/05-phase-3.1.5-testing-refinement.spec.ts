@@ -1,7 +1,14 @@
 import { test, expect } from '@playwright/test';
+import { shouldRunTest } from '../test-config';
 import { DashboardPage } from '../pages/DashboardPage';
 import { getJobCard } from '../pages/JobCardComponent';
 import { ContentGenerationModal } from '../pages/ModalComponent';
+
+// Conditionally skip entire file if disabled in test-config.ts
+// This will NOT show skip messages in test output
+if (!shouldRunTest('testing-refinement')) {
+  test.skip();
+}
 
 /**
  * Test Suite 5: Phase 3.1.5 - Testing & Refinement
