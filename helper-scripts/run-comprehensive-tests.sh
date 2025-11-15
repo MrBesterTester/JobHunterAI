@@ -273,8 +273,25 @@ check_oauth_expiry() {
         fi
 
         log_info "OAuth tokens refreshed successfully"
-        log_info "Backend server will remain running for E2E tests"
-        # Keep backend running - it will be reused by E2E phase
+
+        # Kill backend before build phase (must use fresh compiled code in E2E tests)
+        log_info "Stopping backend (will be restarted with fresh code after build)"
+        kill $BACKEND_PID 2>/dev/null || true
+        rm -f /tmp/preflight-backend.pid
+
+        # Wait for backend to stop
+        local stop_retries=0
+        while kill -0 $BACKEND_PID 2>/dev/null; do
+            sleep 0.5
+            ((stop_retries++))
+            if [ $stop_retries -gt 10 ]; then
+                log_warning "Backend did not stop gracefully, forcing..."
+                kill -9 $BACKEND_PID 2>/dev/null || true
+                break
+            fi
+        done
+
+        log_info "Backend stopped (OAuth complete, ready for build phase)"
         return 0
     fi
 
@@ -833,20 +850,16 @@ main() {
 
     # E2E phase (requires servers and OAuth)
     if [ "$SKIP_E2E" = false ]; then
-        # Check if backend is already running from preflight OAuth refresh
-        if [ -f /tmp/preflight-backend.pid ] && kill -0 $(cat /tmp/preflight-backend.pid) 2>/dev/null; then
-            log_info "Backend already running from preflight OAuth refresh (reusing)"
-            BACKEND_PID=$(cat /tmp/preflight-backend.pid)
-        else
-            # Start backend server and validate OAuth
-            if ! validate_oauth_with_html; then
-                log_error "OAuth validation failed"
-                send_notification "OAuth Validation Failed" "Cannot proceed with E2E tests"
-                E2E_TESTS_PASSED=false
-            fi
+        # Start backend server with fresh compiled code and validate OAuth
+        # Note: Even if OAuth was refreshed in preflight, we need to restart backend
+        # to ensure E2E tests run against freshly compiled code (not old code)
+        if ! validate_oauth_with_html; then
+            log_error "OAuth validation failed"
+            send_notification "OAuth Validation Failed" "Cannot proceed with E2E tests"
+            E2E_TESTS_PASSED=false
         fi
 
-        # Only proceed if OAuth validation succeeded (or backend already running)
+        # Only proceed if OAuth validation succeeded
         if [ "$E2E_TESTS_PASSED" != false ]; then
             # Start frontend server
             log_info "Starting frontend server..."
