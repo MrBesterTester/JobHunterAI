@@ -9,7 +9,7 @@ related_docs:
   - TESTING_HISTORY.md (historical test results archive)
   - TESTING_GUIDE.md (testing principles and investigation guide)
   - PROJECT_STATUS.md (overall project status)
-last_updated: 2025-11-12 17:56:27 PST (Major restructuring: Added E2E typecheck quality gate; moved 1,617 lines of historical test results to TESTING_HISTORY.md; removed TAP section)
+last_updated: 2025-11-14 17:03:34 PST (Comprehensive testing flow redesign: HTML-based OAuth automation, optimized test phase ordering, notification control with --no-notify flag)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -30,6 +30,7 @@ last_updated: 2025-11-12 17:56:27 PST (Major restructuring: Added E2E typecheck 
       - [Backend Tests Only](#backend-tests-only)
       - [Frontend Tests Only](#frontend-tests-only)
       - [E2E Tests Only](#e2e-tests-only)
+    - [HTML-Based OAuth Validation](#html-based-oauth-validation)
     - [Recommended Test Workflow](#recommended-test-workflow)
     - [Quality Gates & Error Handling](#quality-gates--error-handling)
       - [Build/Compilation Failures (ALWAYS STOP ⛔)](#buildcompilation-failures-always-stop-)
@@ -186,15 +187,19 @@ This document outlines the comprehensive testing strategy for the JobHunter auto
 **Purpose**: Local, on-demand comprehensive validation (informal CI/CD)
 
 **What it does**:
-1. **Preflight checks** (git, database, email state)
-2. **Clean rebuild** backend and frontend (zero warnings required)
-3. **Run all test suites** (backend, frontend unit, E2E)
-4. **Report comprehensive results** with iPhone notification
+1. **Preflight checks** (git, database, process cleanup)
+2. **Build phase** (backend, frontend, E2E typecheck - zero warnings required)
+3. **Unit test phase** (backend tests, frontend tests - no servers needed)
+4. **E2E phase** (start backend → HTML-based OAuth validation → start frontend → E2E tests)
+5. **Report comprehensive results** with iPhone notification
 
 **Usage**:
 ```bash
 # Run all tests, report at end (default) - ~27 min
 ./helper-scripts/run-comprehensive-tests.sh
+
+# Suppress subordinate notifications (only OAuth and final results notify)
+./helper-scripts/run-comprehensive-tests.sh --no-notify
 
 # Two-phase testing (fast tests only) - ~4 min
 ./helper-scripts/run-comprehensive-tests.sh --skip-e2e
@@ -206,6 +211,9 @@ This document outlines the comprehensive testing strategy for the JobHunter auto
 
 # Skip preflight checks (not recommended)
 ./helper-scripts/run-comprehensive-tests.sh --skip-preflight
+
+# Combine flags as needed
+./helper-scripts/run-comprehensive-tests.sh --no-notify --skip-e2e
 ```
 
 **Runtime Estimates** (with 15% margin):
@@ -253,15 +261,23 @@ afplay /System/Library/Sounds/Glass.aiff && osascript -e "display dialog \"Test 
 
 #### When Notifications Are Sent
 
-**Notifications sent** (tasks >30 seconds):
+**Default behavior** (without `--no-notify` flag):
 - ✅ `run-comprehensive-tests.sh` - After full test suite completes (~27 min)
 - ✅ `run-e2e-tests.sh` - After E2E tests complete (~20-25 min)
-
-**No notifications** (tasks <30 seconds):
 - ❌ `run-backend-tests.sh` - Too fast (~1-2 min)
 - ❌ `run-frontend-tests.sh` - Too fast (~30 sec)
 
-**Rationale**: Only send notifications for tasks where user is likely to context-switch away from terminal while waiting.
+**With `--no-notify` flag** (subordinate notification suppression):
+- ✅ **OAuth notifications** - ALWAYS sent (requires manual user action)
+- ✅ **Final comprehensive test results** - ALWAYS sent
+- ❌ **E2E test completion** - Suppressed when run as part of comprehensive suite
+- ❌ **Build/compile notifications** - Suppressed (intermediate steps)
+
+**Rationale**:
+- Long-running tests (>30 sec) deserve notifications
+- OAuth requires manual intervention, must always notify
+- `--no-notify` flag reduces notification noise during comprehensive runs while keeping critical alerts
+- Final result notification always sent so user knows comprehensive testing is complete
 
 #### Message Format
 
@@ -364,6 +380,41 @@ For faster iteration and targeted testing, individual test suites can be run sep
 3. Sends iPhone notification when complete
 
 **Use when**: Validating end-to-end workflows after backend/frontend tests pass
+
+**Note**: When run as part of comprehensive tests with `--no-notify` flag, E2E test completion notifications are suppressed (only OAuth and final results notify).
+
+---
+
+### HTML-Based OAuth Validation
+
+**Purpose**: Automated OAuth token validation using local HTML files for manual authorization flow
+
+**When It Runs**: During the E2E phase of comprehensive testing (before E2E tests execute)
+
+**How It Works**:
+1. **Backend server starts** - Required for OAuth callback endpoints
+2. **Token validation check** - Script checks if OAuth tokens are valid using `refresh-oauth-tokens.sh`
+3. **Automatic browser opening** (if tokens invalid):
+   - Opens `gmail-oauth.html` in default browser
+   - Opens `microsoft-oauth.html` in default browser (2-second delay)
+   - User completes OAuth consent flow in browser
+   - Tokens saved automatically via backend OAuth callback endpoints
+4. **Token polling** - Script polls for valid tokens (max 5 minutes)
+5. **Success** - Once tokens validated, E2E tests proceed
+6. **Backend stays running** - No stop/restart between OAuth and E2E tests (efficiency optimization)
+
+**Notification Behavior**:
+- **OAuth notification ALWAYS sent** (regardless of `--no-notify` flag)
+- User must manually complete OAuth flow (cannot be automated)
+- Dialog appears: "OAuth Required - Please complete Gmail and Microsoft OAuth in your browser"
+- Once OAuth complete, tests automatically resume
+
+**Files Used**:
+- `gmail-oauth.html` (project root) - Gmail OAuth consent UI
+- `microsoft-oauth.html` (project root) - Microsoft OAuth consent UI
+- Backend OAuth callback endpoints: `/auth/gmail/callback`, `/auth/microsoft/callback`
+
+**Implementation**: See `helper-scripts/run-comprehensive-tests.sh` function `validate_oauth_with_html()` (lines 267-339)
 
 ---
 
@@ -899,10 +950,9 @@ All critical requirements from the testing plan have been fully implemented and 
 │ 1. Process Cleanup (stop.sh)                           │
 │ 2. Git Status (no uncommitted changes)                 │
 │ 3. Database Selection (jobhunter_personal)             │
-│ 4. OAuth Token Refresh (if .env.test exists)           │
-│ 5. Database Backup → Clear → Seed ⚠️ CRITICAL          │
-│ 6. Gmail State Clear                                    │
-│ 7. MS Mail State Setup                                 │
+│ 4. Database Backup → Clear → Seed ⚠️ CRITICAL          │
+│ 5. Gmail State Clear                                    │
+│ 6. MS Mail State Setup                                 │
 └─────────────────────────────────────────────────────────┘
                         ↓
 ┌─────────────────────────────────────────────────────────┐
@@ -914,11 +964,29 @@ All critical requirements from the testing plan have been fully implemented and 
 └─────────────────────────────────────────────────────────┘
                         ↓
 ┌─────────────────────────────────────────────────────────┐
-│ TEST EXECUTION (Respects --fail-fast flag)             │
+│ UNIT TEST PHASE (No servers needed)                    │
 ├─────────────────────────────────────────────────────────┤
 │ 1. Backend Tests (cargo test)                          │
 │ 2. Frontend Unit Tests (jest)                          │
-│ 3. E2E Tests (playwright)                              │
+└─────────────────────────────────────────────────────────┘
+                        ↓
+┌─────────────────────────────────────────────────────────┐
+│ E2E PHASE (Servers + OAuth + E2E Tests)                │
+├─────────────────────────────────────────────────────────┤
+│ 1. Start Backend Server (for OAuth callbacks)          │
+│ 2. HTML-Based OAuth Validation ⚠️ MANUAL STEP          │
+│    - Check if tokens valid (refresh-oauth-tokens.sh)   │
+│    - If invalid: Open gmail-oauth.html & microsoft-     │
+│      oauth.html in browser                             │
+│    - User completes OAuth consent (manual)             │
+│    - Tokens saved via backend callbacks               │
+│    - Poll for valid tokens (max 5 min)                │
+│    - ✅ CRITICAL: OAuth notification ALWAYS sent       │
+│ 3. Keep Backend Running (no restart)                   │
+│ 4. Start Frontend Server (npm start)                   │
+│ 5. Wait for Frontend Ready (port 3000)                 │
+│ 6. Run E2E Tests (playwright)                          │
+│ 7. Stop Servers (backend + frontend)                   │
 └─────────────────────────────────────────────────────────┘
                         ↓
 ┌─────────────────────────────────────────────────────────┐
@@ -926,6 +994,8 @@ All critical requirements from the testing plan have been fully implemented and 
 ├─────────────────────────────────────────────────────────┤
 │ • Summary table with pass/fail counts                  │
 │ • iPhone notification (dialog + sound)                 │
+│   - With --no-notify: Only OAuth and final notify      │
+│   - Without flag: E2E notify + final notify            │
 │ • Update TESTING_STATUS.md with timestamp              │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -987,6 +1057,19 @@ All critical requirements from the testing plan have been fully implemented and 
 - Commit: `743269b`
 - Status: NOW plan-compliant
 - Impact: Development data protected going forward
+
+**2025-11-14 17:03:34 PST** - Comprehensive testing flow redesign
+- **Implementation**: Complete redesign of comprehensive test execution flow
+- **Key Changes**:
+  - ✅ HTML-based OAuth automation (gmail-oauth.html, microsoft-oauth.html)
+  - ✅ Optimized test phase ordering: builds → unit tests → servers+OAuth → E2E
+  - ✅ Backend server stays running (no wasteful stop/start between OAuth and E2E)
+  - ✅ Notification control with `--no-notify` flag
+  - ✅ OAuth notifications always sent (critical, requires manual action)
+  - ✅ Subordinate E2E notifications suppressed with `--no-notify`
+- **Commit**: `6926880` (test flow implementation)
+- **Impact**: Fully automated testing with minimal manual intervention (only OAuth when needed)
+- **Implementation Location**: `helper-scripts/run-comprehensive-tests.sh` (validate_oauth_with_html function, lines 267-339)
 
 ### Compliance Verification
 
