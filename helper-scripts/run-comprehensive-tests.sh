@@ -186,6 +186,35 @@ check_database_selection() {
     fi
 }
 
+check_oauth_expiry() {
+    log_section "PREFLIGHT: OAuth Token Expiry"
+
+    # Query database for OAuth token expiry times
+    # This is a fast check (~10ms) that prevents wasting time on tests
+    # when OAuth tokens are expired and E2E tests will fail anyway
+    local expired_count=$(psql -U jobhunter_user -d jobhunter_personal -tAc "
+        SELECT COUNT(*) FROM oauth_credentials
+        WHERE token_expires_at < NOW();
+    " 2>/dev/null)
+
+    # Check if query succeeded
+    if [ $? -ne 0 ]; then
+        log_warning "Could not check OAuth token expiry (database issue)"
+        return 0  # Don't block tests for database query issues
+    fi
+
+    if [ "$expired_count" -gt 0 ]; then
+        log_error "Found $expired_count expired OAuth token(s)"
+        log_error "Please refresh OAuth tokens before running E2E tests"
+        log_error "  Gmail: open gmail-oauth.html"
+        log_error "  Microsoft: open microsoft-oauth.html"
+        return 1
+    fi
+
+    log_info "OAuth tokens valid (not expired)"
+    return 0
+}
+
 check_database_state() {
     log_section "PREFLIGHT: Database State"
 
@@ -413,8 +442,11 @@ run_preflight_checks() {
         all_passed=false
     fi
 
-    # OAuth validation moved to E2E phase (HTML-based validation with browser)
-    # No longer checking tokens during preflight
+    # OAuth expiry check (HARD requirement - abort if expired)
+    # Fast SQL query (~10ms) to detect expired tokens before wasting time on tests
+    if ! check_oauth_expiry; then
+        all_passed=false
+    fi
 
     # Database state (HARD requirement - abort if fails)
     if ! check_database_state; then
