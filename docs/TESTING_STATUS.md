@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-15 12:38:10 PST
-last_updated: 2025-11-15 14:20:33 PST (Full test file verification complete - all files pass)
+last_updated: 2025-11-15 14:35:48 PST (Flaky test fixed - stable job ID locator)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -29,7 +29,7 @@ last_updated: 2025-11-15 14:20:33 PST (Full test file verification complete - al
       - [5. Description Regeneration After Prompt Change](#5-description-regeneration-after-prompt-change)
     - [Comparison to Previous Run](#comparison-to-previous-run)
   - [🔧 Work Since Last Comprehensive Run](#-work-since-last-comprehensive-run)
-    - [Bugs Fixed (2 actual issues)](#bugs-fixed-2-actual-issues)
+    - [Bugs Fixed (3 actual issues)](#bugs-fixed-3-actual-issues)
     - [False Positives Verified (4 tests)](#false-positives-verified-4-tests)
     - [Full Test File Verification Results](#full-test-file-verification-results)
   - [Next Steps](#next-steps)
@@ -70,10 +70,9 @@ last_updated: 2025-11-15 14:20:33 PST (Full test file verification complete - al
 - **2 Email Integration Tests**: Gmail auth button + Gmail sync integration → ✅ **FIXED**
 - **4 False Positives**: Microsoft E2E, description quality tests → ✅ **VERIFIED PASSING**
 
-**Flaky Tests**:
-- 5 tests in `03-job-status-updates.spec.ts` (approval/rejection workflows)
-- 1 test in `22-refresh-buttons.spec.ts:135` (job card order) → **New discovery**
-- All pass on retry - not blocking
+**Flaky Tests** (baseline from comprehensive run):
+- 5 tests in `03-job-status-updates.spec.ts` (approval/rejection workflows) - remain to investigate
+- 1 test in `22-refresh-buttons.spec.ts:135` (job card order) → ✅ **FIXED** (Commit 4a6c0a3)
 
 ### Detailed Failure Analysis
 
@@ -135,7 +134,7 @@ last_updated: 2025-11-15 14:20:33 PST (Full test file verification complete - al
 
 Systematic debugging of all 6 E2E failures completed with two-level verification:
 
-### Bugs Fixed (2 actual issues)
+### Bugs Fixed (3 actual issues)
 
 1. **Gmail Auth Button Test** - `15-intake-tab.spec.ts:128` (Commits `f4aff38`, `2485e93`)
    - Fixed timing issue - wait for loading state vs fixed timeout
@@ -145,6 +144,12 @@ Systematic debugging of all 6 E2E failures completed with two-level verification
 2. **Gmail Sync Integration Test** - `16-gmail-sync-integration.spec.ts:48` (Commit `b44bf14`)
    - Fixed obsolete "Inbox" tab reference → "New Jobs"
    - Updated selector to use `data-testid`
+
+3. **Flaky Job Stability Test** - `22-refresh-buttons.spec.ts:135` (Commit `4a6c0a3`)
+   - Root cause: Job list re-sorts when description loads (hasValidDescription changes)
+   - Test used `.first()` which became invalid after re-sort
+   - Fix: Use stable job ID locator that tracks specific job regardless of position
+   - Result: Failed 5/5 times before fix → Passed 2/2 times + full file after fix
 
 ### False Positives Verified (4 tests)
 
@@ -161,13 +166,11 @@ All passed in both single test isolation and full test file runs:
 | `15-intake-tab.spec.ts` | 22 ✅ | 5 | 0 | 17.1s | ✅ PASS |
 | `16-gmail-sync-integration.spec.ts` | 3 ✅ | 0 | 0 | 30.7s | ✅ PASS |
 | `16-microsoft-email-integration.spec.ts` | 16 ✅ | 7 | 0 | (prev) | ✅ PASS |
-| `22-refresh-buttons.spec.ts` | 7 ✅ | 0 | 1 | 24.4s | ✅ PASS |
+| `22-refresh-buttons.spec.ts` | 8 ✅ | 0 | 0 | 12.7s | ✅ PASS |
 | `23-description-quality.spec.ts` | 7 ✅ | 0 | 0 | 18.0s | ✅ PASS |
-| **TOTAL** | **55** | **12** | **1** | **~90s** | ✅ **ALL PASS** |
+| **TOTAL** | **56** | **12** | **0** | **~79s** | ✅ **ALL PASS** |
 
-**New Flaky Test Identified**: `22-refresh-buttons.spec.ts:135` - "should NOT change to different job descriptions after refresh"
-- Issue: Job card order changed during test (sorting/timing)
-- Passed on retry - not blocking
+**Flaky Test Fixed**: `22-refresh-buttons.spec.ts:135` now passes reliably (see Bugs Fixed #3 above)
 
 **Current Status (verified via full test file runs)**:
 - E2E estimated failures: **0-1** (down from 6 in comprehensive run)
@@ -189,10 +192,10 @@ All passed in both single test isolation and full test file runs:
    - Expected outcome: 0-1 E2E failures (vs 6 baseline)
    - **Not urgent** - systematic debugging complete, tests verified working
 
-2. **Monitor 6 Flaky Tests** (Priority: Low)
+2. **Monitor 5 Flaky Tests** (Priority: Low)
    - 5 tests in `03-job-status-updates.spec.ts` (approval/rejection workflows)
-   - 1 test in `22-refresh-buttons.spec.ts:135` (job card order during refresh)
    - All pass on retry - not blocking, functionality works correctly
+   - ~~1 test in `22-refresh-buttons.spec.ts:135`~~ → ✅ **FIXED** (Commit 4a6c0a3)
 
 ### Current Test Health
 
@@ -227,6 +230,7 @@ All passed in both single test isolation and full test file runs:
 - `2485e93` - refactor: Add data-testid attributes to all Intake Tab buttons for robust testing (2025-11-15 13:52 PST)
 - `e81e674` - docs: Update TESTING_STATUS.md with data-testid improvements (2025-11-15 13:52 PST)
 - `b44bf14` - fix: Gmail sync integration test - update obsolete "Inbox" → "New Jobs" tab reference (2025-11-15 14:05 PST)
+- `4a6c0a3` - fix: Resolve flaky test - use stable job ID locator instead of position-based selector (2025-11-15 14:35 PST)
 
 ## Quick Commands
 
