@@ -111,6 +111,7 @@
     - [Development Stats](#development-stats)
   - [Debug Strategy & Tools](#debug-strategy--tools)
     - [Test Debugging Strategy](#test-debugging-strategy)
+    - [Debug Tools](#debug-tools)
       - [Frontend Debug Tool](#frontend-debug-tool)
       - [Backend Debug Tool](#backend-debug-tool)
       - [Stats Debug Tool](#stats-debug-tool)
@@ -3197,6 +3198,8 @@ When debugging E2E test failures, understanding the **test context hierarchy** i
 **Example**: A test passes alone but fails in comprehensive runs → Run at test file level to reproduce the issue in ~2 minutes instead of 20+ minutes. This approach was successfully used to debug ISSUE-044 (Tab Navigation timeout).
 
 **For complete details**, see [Test Context Terminology](#test-context-terminology) section below.
+
+### Debug Tools
 
 #### Frontend Debug Tool
 
