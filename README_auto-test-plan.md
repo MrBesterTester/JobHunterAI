@@ -9,7 +9,7 @@ related_docs:
   - TESTING_HISTORY.md (historical test results archive)
   - TESTING_GUIDE.md (testing principles and investigation guide)
   - PROJECT_STATUS.md (overall project status)
-last_updated: 2025-11-14 19:44:42 PST (Restore OAuth notification documentation - notification already implemented in script)
+last_updated: 2025-11-14 22:03:57 PST (OAuth expiry check with auto-open HTML files - preflight enhancement)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -48,6 +48,7 @@ last_updated: 2025-11-14 19:44:42 PST (Restore OAuth notification documentation 
       - [0. Process Cleanup ✅](#0-process-cleanup-)
       - [1. Git Status ✅](#1-git-status-)
       - [2. Database Selection ✅](#2-database-selection-)
+      - [2.5. OAuth Token Expiry ✅](#25-oauth-token-expiry-)
       - [3. Database State ✅](#3-database-state-)
         - [Database Backup & Restore](#database-backup--restore)
       - [4. Gmail State ✅](#4-gmail-state-)
@@ -685,6 +686,44 @@ All preflight checks are **HARD requirements** - the script aborts if any check 
 - **Why**: Ensures consistent test environment
 - **Implementation**: Check `DATABASE_URL` in `backend/.env`
 
+#### 2.5. OAuth Token Expiry ✅
+- **Requirement**: OAuth tokens must not be expired before running E2E tests
+- **Why**: Prevents wasting 2-4 minutes on backend/frontend tests when OAuth will fail anyway
+- **Status**: ✅ **COMPLETE** (implemented 2025-11-14)
+- **Implementation**:
+  ```bash
+  # Fast SQL query to check token expiry (~10ms)
+  psql -U jobhunter_user -d jobhunter_personal -tAc "
+    SELECT COUNT(*) FROM oauth_credentials
+    WHERE token_expires_at < NOW();
+  "
+  # If expired_count > 0: Auto-open OAuth HTML files for refresh
+  # If expired_count = 0: Continue immediately (~10ms overhead)
+  ```
+- **Behavior When Tokens Expired**:
+  1. Detects expired tokens via database query (~10ms)
+  2. Starts backend server (needed for OAuth callbacks)
+  3. **Auto-opens Gmail OAuth HTML file** in browser
+  4. Waits for user to complete OAuth flow (press ENTER)
+  5. **Auto-opens Microsoft OAuth HTML file** in browser
+  6. Waits for user to complete OAuth flow (press ENTER)
+  7. Verifies tokens are now valid
+  8. **Kills backend server** (ensures E2E tests use fresh compiled code)
+  9. Continues with build phase
+- **Behavior When Tokens Valid**:
+  - Quick validation (~10ms)
+  - Continues immediately with build phase
+- **Benefits**:
+  - ✅ Fails fast (saves 2-4 minutes when tokens expired)
+  - ✅ Auto-opens OAuth HTML files (no manual commands)
+  - ✅ Interactive guidance (step-by-step prompts)
+  - ✅ Ensures E2E tests use fresh compiled code (backend killed before build)
+- **Implementation Reference**: `helper-scripts/run-comprehensive-tests.sh` function `check_oauth_expiry()` (lines 189-299)
+- **Commits**:
+  - `b4c16a5` - OAuth expiry check with fast SQL query
+  - `2c10095` - Auto-open OAuth HTML files when expired
+  - `9d6e443` - Kill backend before build to ensure fresh code
+
 #### 3. Database State ✅
 - **Requirement**: Database cleared AND test fixtures loaded (WITH automatic backup)
 - **Why**: Provides known initial state for repeatable testing
@@ -1072,7 +1111,7 @@ git commit -m "docs: Update TESTING_STATUS.md with test results ($TIMESTAMP)"
 
 ## Implementation Status & Gap Analysis
 
-**Last Reviewed**: 2025-11-12 PST
+**Last Reviewed**: 2025-11-14 PST (OAuth expiry check implementation)
 **Review Type**: Comprehensive gap analysis comparing plan requirements vs actual implementation
 
 ### ✅ Implementation Summary
@@ -1099,10 +1138,11 @@ All critical requirements from the testing plan have been fully implemented and 
 | 0 | **Process Cleanup** | ✅ **COMPLETE** | `stop.sh` | Stops backend/frontend servers, cleans orphaned processes, frees ports 8080/3000 |
 | 1 | **Git Status** | ✅ **COMPLETE** | `git diff-index --quiet HEAD` | Ensures no uncommitted changes before test run |
 | 2 | **Database Selection** | ✅ **COMPLETE** | Validates `backend/.env` | Confirms `jobhunter_personal` database in use |
+| 2.5 | **OAuth Token Expiry** | ✅ **COMPLETE** | `check_oauth_expiry()` | Fast SQL query (~10ms), auto-opens HTML files if expired (2025-11-14) |
 | 3 | **Database State** | ✅ **COMPLETE** | Backup + Clear + Seed | **Automatic backup before clear** (integrated 2025-11-11) |
 | 4 | **Gmail State** | ✅ **COMPLETE** | `clear-gmail-state.sh` (143 lines) | Clears labels, marks emails read via Gmail API |
 | 5 | **Microsoft Email State** | ✅ **COMPLETE** | `setup-msmail-state.sh` | Seeds 3 test emails via MS Graph API |
-| - | **OAuth Token Refresh** | ✅ **COMPLETE** | `refresh-oauth-tokens.sh` | Auto-refreshes expired Gmail & MS Mail tokens |
+| - | **OAuth Token Refresh** | ✅ **COMPLETE** | `refresh-oauth-tokens.sh` | Auto-refreshes expired Gmail & MS Mail tokens (used by check 2.5) |
 
 ### Critical Safety Enhancement (Database Backup)
 
@@ -1149,15 +1189,30 @@ All critical requirements from the testing plan have been fully implemented and 
 │ 1. Process Cleanup (stop.sh)                           │
 │ 2. Git Status (no uncommitted changes)                 │
 │ 3. Database Selection (jobhunter_personal)             │
-│ 4. Database Backup → Clear → Seed ⚠️ CRITICAL          │
-│ 5. Gmail State Clear                                    │
-│ 6. MS Mail State Setup                                 │
+│ 4. OAuth Token Expiry Check ⚠️ NEW (2025-11-14)        │
+│    - Fast SQL query (~10ms) checks token_expires_at    │
+│    - If expired: Interactive OAuth refresh flow        │
+│      • Start backend server                           │
+│      • ✅ Send notification: "OAuth Required"          │
+│      • Auto-open gmail-oauth.html in browser          │
+│      • Display colored prompt, wait for user ENTER    │
+│      • User completes Gmail OAuth                     │
+│      • Auto-open microsoft-oauth.html in browser      │
+│      • Display colored prompt, wait for user ENTER    │
+│      • User completes Microsoft OAuth                 │
+│      • Verify tokens are now valid                    │
+│      • ⚠️ KILL backend (ensures E2E uses fresh code)   │
+│    - If valid: Continue immediately (~10ms overhead)   │
+│ 5. Database Backup → Clear → Seed ⚠️ CRITICAL          │
+│ 6. Gmail State Clear                                    │
+│ 7. MS Mail State Setup                                 │
 └─────────────────────────────────────────────────────────┘
                         ↓
 ┌─────────────────────────────────────────────────────────┐
 │ BUILD PHASE (ALWAYS STOP on warnings/errors)           │
 ├─────────────────────────────────────────────────────────┤
 │ 1. Backend Build (cargo build) - zero warnings         │
+│    ⚠️ Uses FRESH code (preflight backend killed)       │
 │ 2. Frontend Build (rsbuild) - zero warnings            │
 │ 3. E2E Typecheck (tsc --noEmit) - zero errors ✅       │
 └─────────────────────────────────────────────────────────┘
@@ -1172,18 +1227,11 @@ All critical requirements from the testing plan have been fully implemented and 
 ┌─────────────────────────────────────────────────────────┐
 │ E2E PHASE (Servers + OAuth + E2E Tests)                │
 ├─────────────────────────────────────────────────────────┤
-│ 1. Start Backend Server (for OAuth callbacks)          │
-│ 2. HTML-Based OAuth Validation ⚠️ MANUAL STEP          │
-│    - Check if tokens valid (refresh-oauth-tokens.sh)   │
-│    - If invalid: Interactive OAuth flow                │
-│      • ✅ Send notification: "OAuth Required"          │
-│      • Open gmail-oauth.html in browser               │
-│      • Display colored prompt, wait for user ENTER    │
-│      • User completes Gmail OAuth                     │
-│      • Open microsoft-oauth.html in browser           │
-│      • Display colored prompt, wait for user ENTER    │
-│      • User completes Microsoft OAuth                 │
-│      • Verify tokens are now valid                    │
+│ 1. Start Backend Server (FRESH compiled code)          │
+│ 2. OAuth Validation Check                              │
+│    - If already valid (from preflight): Skip HTML flow │
+│    - If still invalid: Interactive OAuth flow          │
+│      (Same flow as preflight, but usually skipped)     │
 │ 3. Keep Backend Running (no restart)                   │
 │ 4. Start Frontend Server (npm start)                   │
 │ 5. Wait for Frontend Ready (port 3000)                 │
