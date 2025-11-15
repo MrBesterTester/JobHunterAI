@@ -60,8 +60,8 @@ last_updated: 2025-11-15 14:59:14 PST (Clarified baseline vs current state in te
 | **E2E Type-check** | ✅ | - | - | - | **100%** | 3s | ✅ **PASSING** |
 | **Backend Tests** | 164 | 0 | 0 | 6 | **100%** | 100s | ✅ **PASSING** |
 | **Frontend Unit** | 516 | 0 | 0 | 1 | **100%** | 25s | ✅ **PASSING** |
-| **E2E Tests** | 385 | 6 | 5 | 197 | **97.6%** | 632s | ⚠️ **6 FAILURES** |
-| **TOTAL (Active)** | **1065** | **6** | **5** | **204** | **99.4%** | **~15 min** | ⚠️ **6 FAILURES** |
+| **E2E Tests** | 385 | 6 | 5 | 197 | **97.6%** | 632s | ⚠️ **6 FAILURES (baseline)** |
+| **TOTAL (Active)** | **1065** | **6** | **5** | **204** | **99.4%** | **~15 min** | ⚠️ **6 FAILURES (baseline)** |
 
 **Note**: This table shows results from the baseline comprehensive run. See "Work Since Last Comprehensive Run" below for fixes completed since then.
 
