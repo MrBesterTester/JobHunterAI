@@ -41,11 +41,11 @@ export class DashboardPage {
     // Header
     this.pageTitle = page.getByRole('heading', { name: /^JobHunter$/i });
 
-    // Statistics - using text patterns to locate specific stat cards
-    this.newJobsCount = page.locator('[data-testid="stat-new"], .stat-card').filter({ hasText: /new/i }).first();
-    this.approvedJobsCount = page.locator('[data-testid="stat-approved"], .stat-card').filter({ hasText: /approved/i }).first();
-    this.appliedJobsCount = page.locator('[data-testid="stat-applied"], .stat-card').filter({ hasText: /applied/i }).first();
-    this.filteredJobsCount = page.locator('[data-testid="stat-filtered"], .stat-card').filter({ hasText: /filtered/i }).first();
+    // Statistics - use data-testid to locate specific stat cards
+    this.newJobsCount = page.getByTestId('stat-new');
+    this.approvedJobsCount = page.getByTestId('stat-approved');
+    this.appliedJobsCount = page.getByTestId('stat-applied');
+    this.filteredJobsCount = page.getByTestId('stat-filtered');
 
     // Tabs - use data-testid attributes (format: {tab}-tab-button)
     this.allTab = page.getByTestId('all-tab-button');
@@ -110,10 +110,33 @@ export class DashboardPage {
       filtered: this.filteredJobsCount,
     };
 
-    const text = await stats[statName].textContent();
-    // Extract number from text like "15 New Jobs"
-    const match = text?.match(/(\d+)/);
-    return match ? parseInt(match[1], 10) : 0;
+    try {
+      // Wait for the stat to be visible first
+      await stats[statName].waitFor({ state: 'visible', timeout: 5000 });
+
+      // Wait a moment for content to load
+      await this.page.waitForTimeout(500);
+
+      // Get ALL text content from the stat div (includes both number and label)
+      const text = await stats[statName].textContent();
+
+      if (!text) {
+        console.error(`No text content found for stat: ${statName}`);
+        return 0;
+      }
+
+      // Extract the first number we find (e.g., from "10New" or "10\nNew")
+      const match = text.trim().match(/(\d+)/);
+      if (!match) {
+        console.error(`No number found in stat text: "${text}" for ${statName}`);
+        return 0;
+      }
+
+      return parseInt(match[1], 10);
+    } catch (error) {
+      console.error(`Error getting stat count for ${statName}:`, error);
+      return 0;
+    }
   }
 
   /**
@@ -122,10 +145,20 @@ export class DashboardPage {
    */
   async getVisibleJobCount(): Promise<number> {
     try {
-      // Wait briefly for cards to load, but don't hang if none exist
-      await this.page.waitForTimeout(500);
+      // Wait for either job cards or empty state to appear
+      await Promise.race([
+        this.jobCards.first().waitFor({ state: 'visible', timeout: 3000 }).catch(() => {}),
+        this.emptyState.waitFor({ state: 'visible', timeout: 3000 }).catch(() => {}),
+        this.page.waitForTimeout(3000),
+      ]);
 
-      // Use waitFor with a short timeout to avoid hanging
+      // Check if we have an empty state
+      const emptyStateVisible = await this.emptyState.isVisible().catch(() => false);
+      if (emptyStateVisible) {
+        return 0;
+      }
+
+      // Count the job cards
       const count = await this.jobCards.count();
       return count;
     } catch (error) {
