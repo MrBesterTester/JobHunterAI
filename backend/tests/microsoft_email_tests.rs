@@ -75,7 +75,7 @@ mod microsoft_email_tests {
 
         // Delete any existing test credentials for this source first
         let _ = sqlx::query!(
-            "DELETE FROM oauth_credentials WHERE source_id = $1",
+            "DELETE FROM oauth_credentials WHERE source_id = $1 AND (client_id LIKE 'test_%' OR client_secret LIKE 'test_%')",
             source_id
         )
         .execute(pool)
@@ -144,7 +144,7 @@ mod microsoft_email_tests {
             .expect("Should create test credentials");
 
         // Delete the credential we just inserted so we can insert an expired one
-        let _ = sqlx::query!("DELETE FROM oauth_credentials WHERE source_id = $1", source_id)
+        let _ = sqlx::query!("DELETE FROM oauth_credentials WHERE source_id = $1 AND (client_id LIKE 'test_%' OR client_secret LIKE 'test_%')", source_id)
             .execute(&pool)
             .await;
 
@@ -424,7 +424,7 @@ mod microsoft_email_tests {
             .expect("Should create test credentials");
 
         // Delete the credential we just inserted so we can insert one with scopes
-        let _ = sqlx::query!("DELETE FROM oauth_credentials WHERE source_id = $1", source_id)
+        let _ = sqlx::query!("DELETE FROM oauth_credentials WHERE source_id = $1 AND (client_id LIKE 'test_%' OR client_secret LIKE 'test_%')", source_id)
             .execute(&pool)
             .await;
 
