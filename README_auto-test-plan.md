@@ -31,6 +31,12 @@ last_updated: 2025-11-14 17:03:34 PST (Comprehensive testing flow redesign: HTML
       - [Frontend Tests Only](#frontend-tests-only)
       - [E2E Tests Only](#e2e-tests-only)
     - [HTML-Based OAuth Validation](#html-based-oauth-validation)
+      - [Purpose](#purpose)
+      - [When It Runs](#when-it-runs)
+      - [How It Works](#how-it-works)
+      - [Notification Behavior](#notification-behavior)
+      - [Files Used](#files-used)
+      - [Implementation Reference](#implementation-reference)
     - [Recommended Test Workflow](#recommended-test-workflow)
     - [Quality Gates & Error Handling](#quality-gates--error-handling)
       - [Build/Compilation Failures (ALWAYS STOP ⛔)](#buildcompilation-failures-always-stop-)
@@ -387,11 +393,13 @@ For faster iteration and targeted testing, individual test suites can be run sep
 
 ### HTML-Based OAuth Validation
 
-**Purpose**: Automated OAuth token validation using local HTML files for manual authorization flow
+#### Purpose
+Automated OAuth token validation using local HTML files for manual authorization flow
 
-**When It Runs**: During the E2E phase of comprehensive testing (before E2E tests execute)
+#### When It Runs
+During the E2E phase of comprehensive testing (before E2E tests execute)
 
-**How It Works**:
+#### How It Works
 1. **Backend server starts** - Required for OAuth callback endpoints
 2. **Token validation check** - Script checks if OAuth tokens are valid using `refresh-oauth-tokens.sh`
 3. **Automatic browser opening** (if tokens invalid):
@@ -403,18 +411,19 @@ For faster iteration and targeted testing, individual test suites can be run sep
 5. **Success** - Once tokens validated, E2E tests proceed
 6. **Backend stays running** - No stop/restart between OAuth and E2E tests (efficiency optimization)
 
-**Notification Behavior**:
+#### Notification Behavior
 - **OAuth notification ALWAYS sent** (regardless of `--no-notify` flag)
 - User must manually complete OAuth flow (cannot be automated)
 - Dialog appears: "OAuth Required - Please complete Gmail and Microsoft OAuth in your browser"
 - Once OAuth complete, tests automatically resume
 
-**Files Used**:
+#### Files Used
 - `gmail-oauth.html` (project root) - Gmail OAuth consent UI
 - `microsoft-oauth.html` (project root) - Microsoft OAuth consent UI
 - Backend OAuth callback endpoints: `/auth/gmail/callback`, `/auth/microsoft/callback`
 
-**Implementation**: See `helper-scripts/run-comprehensive-tests.sh` function `validate_oauth_with_html()` (lines 267-339)
+#### Implementation Reference
+See `helper-scripts/run-comprehensive-tests.sh` function `validate_oauth_with_html()` (lines 267-339)
 
 ---
 
