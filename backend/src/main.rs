@@ -3494,92 +3494,83 @@ async fn get_microsoft_user_email(access_token: &str) -> std::result::Result<Str
 }
 
 async fn get_microsoft_folders(pool: web::Data<PgPool>) -> Result<HttpResponse> {
-    // Get Microsoft email source
-    let source = sqlx::query_as::<_, JobSource>(
-        "SELECT * FROM job_sources WHERE source_name = 'microsoft_email' AND is_active = true LIMIT 1"
-    )
-    .fetch_one(pool.get_ref())
-    .await
-    .map_err(|_| actix_web::error::ErrorNotFound("Microsoft email source not found or inactive"))?;
+    // Use auto-refresh wrapper to handle token expiration
+    let folders_result = with_microsoft_token_refresh(pool.get_ref(), |token| async move {
+        let client = reqwest::Client::new();
+        let url = "https://graph.microsoft.com/v1.0/me/mailFolders?$select=id,displayName,parentFolderId,childFolderCount,unreadItemCount,totalItemCount&$top=100";
 
-    // Get OAuth credentials
-    let credentials = sqlx::query_as::<_, OAuthCredential>(
-        "SELECT * FROM oauth_credentials WHERE source_id = $1 LIMIT 1"
-    )
-    .bind(source.source_id)
-    .fetch_one(pool.get_ref())
-    .await
-    .map_err(|_| actix_web::error::ErrorNotFound("Microsoft credentials not found"))?;
+        let response = client
+            .get(url)
+            .bearer_auth(&token)
+            .header("Accept", "application/json")
+            .send()
+            .await?;
 
-    let access_token = credentials.access_token.as_ref()
-        .ok_or_else(|| actix_web::error::ErrorUnauthorized("No access token available"))?.clone();
+        // error_for_status() will return a reqwest::Error if the status is not success
+        let response = response.error_for_status()?;
 
-    // Check if token is expired and refresh if needed
-    let token = if let Some(expires_at) = credentials.token_expires_at {
-        if chrono::Utc::now() > expires_at {
-            refresh_microsoft_token(&credentials, pool.get_ref()).await?
-        } else {
-            access_token
-        }
-    } else {
-        access_token
-    };
+        response.json::<MicrosoftFoldersResponse>().await
+    }).await?;
 
-    // List all folders
-    match list_microsoft_folders(&token).await {
-        Ok(folders) => {
-            // Check if JobOps folder exists
-            let jobops_folder = folders.iter().find(|f| f.display_name == "JobOps");
+    // Check if JobOps folder exists
+    let jobops_folder = folders_result.value.iter().find(|f| f.display_name == "JobOps");
 
-            Ok(HttpResponse::Ok().json(serde_json::json!({
-                "folders": folders,
-                "jobops_folder": jobops_folder,
-                "has_jobops": jobops_folder.is_some()
-            })))
-        }
-        Err(e) => {
-            Err(actix_web::error::ErrorInternalServerError(format!("Failed to list folders: {}", e)))
-        }
-    }
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "folders": folders_result.value,
+        "jobops_folder": jobops_folder,
+        "has_jobops": jobops_folder.is_some()
+    })))
 }
 
 async fn seed_microsoft_test_emails(pool: web::Data<PgPool>) -> Result<HttpResponse> {
-    // Get Microsoft email source
-    let source = sqlx::query_as::<_, JobSource>(
-        "SELECT * FROM job_sources WHERE source_name = 'microsoft_email' AND is_active = true LIMIT 1"
-    )
-    .fetch_one(pool.get_ref())
-    .await
-    .map_err(|_| actix_web::error::ErrorNotFound("Microsoft email source not found or inactive"))?;
+    // Get or create JobOps folder using auto-refresh wrapper
+    let folder_id = with_microsoft_token_refresh(pool.get_ref(), |token| async move {
+        // First, list all folders to find existing JobOps folder
+        let client = reqwest::Client::new();
+        let list_url = "https://graph.microsoft.com/v1.0/me/mailFolders?$select=id,displayName,parentFolderId,childFolderCount,unreadItemCount,totalItemCount&$top=100";
 
-    // Get OAuth credentials
-    let credentials = sqlx::query_as::<_, OAuthCredential>(
-        "SELECT * FROM oauth_credentials WHERE source_id = $1 LIMIT 1"
-    )
-    .bind(source.source_id)
-    .fetch_one(pool.get_ref())
-    .await
-    .map_err(|_| actix_web::error::ErrorNotFound("Microsoft credentials not found"))?;
+        let response = client
+            .get(list_url)
+            .bearer_auth(&token)
+            .header("Accept", "application/json")
+            .send()
+            .await?;
 
-    let access_token = credentials.access_token.as_ref()
-        .ok_or_else(|| actix_web::error::ErrorUnauthorized("No access token available"))?.clone();
+        // error_for_status() will return a reqwest::Error if the status is not success
+        let response = response.error_for_status()?;
 
-    // Check if token is expired and refresh if needed
-    let token = if let Some(expires_at) = credentials.token_expires_at {
-        if chrono::Utc::now() > expires_at {
-            refresh_microsoft_token(&credentials, pool.get_ref()).await?
-        } else {
-            access_token
+        let folders_response: MicrosoftFoldersResponse = response.json().await?;
+
+        // Check if JobOps folder already exists
+        if let Some(folder) = folders_response.value.iter().find(|f| f.display_name == "JobOps") {
+            log_debug(&format!("✓ Found existing JobOps folder (ID: {})", folder.id));
+            return Ok(folder.id.clone());
         }
-    } else {
-        access_token
-    };
 
-    // Get or create JobOps folder
-    let folder_id = get_or_create_jobops_folder(&token).await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to access JobOps folder: {}", e)))?;
+        // JobOps folder doesn't exist, create it
+        log_debug("JobOps folder not found, creating it...");
+        let create_url = "https://graph.microsoft.com/v1.0/me/mailFolders";
+        let create_body = serde_json::json!({
+            "displayName": "JobOps"
+        });
 
-    // Create 3 test job opportunity emails
+        let create_response = client
+            .post(create_url)
+            .bearer_auth(&token)
+            .header("Content-Type", "application/json")
+            .json(&create_body)
+            .send()
+            .await?;
+
+        // error_for_status() will return a reqwest::Error if the status is not success
+        let create_response = create_response.error_for_status()?;
+
+        let new_folder: MicrosoftFolder = create_response.json().await?;
+        log_debug(&format!("✓ Created JobOps folder (ID: {})", new_folder.id));
+        Ok(new_folder.id)
+    }).await?;
+
+    // Create 3 test job opportunity emails using auto-refresh wrapper
     let test_emails = vec![
         (
             "Senior Software Test Engineer - Remote",
@@ -3649,51 +3640,66 @@ AI Innovations Talent Team"#
         ),
     ];
 
-    let client = reqwest::Client::new();
-    let mut created_count = 0;
+    let created_count = with_microsoft_token_refresh(pool.get_ref(), |token| {
+        let folder_id = folder_id.clone();
+        let test_emails = test_emails.clone();
+        async move {
+            let client = reqwest::Client::new();
+            let mut created = 0;
 
-    for (subject, company, body) in test_emails {
-        // Create the email message directly in the JobOps folder
-        let email_payload = serde_json::json!({
-            "subject": subject,
-            "body": {
-                "contentType": "Text",
-                "content": body
-            },
-            "from": {
-                "emailAddress": {
-                    "address": "noreply@jobhunter-test.example.com",
-                    "name": company
-                }
-            },
-            "receivedDateTime": chrono::Utc::now().to_rfc3339(),
-            "isRead": false
-        });
+            for (subject, company, body) in test_emails {
+                // Create the email message directly in the JobOps folder
+                let email_payload = serde_json::json!({
+                    "subject": subject,
+                    "body": {
+                        "contentType": "Text",
+                        "content": body
+                    },
+                    "from": {
+                        "emailAddress": {
+                            "address": "noreply@jobhunter-test.example.com",
+                            "name": company
+                        }
+                    },
+                    "receivedDateTime": chrono::Utc::now().to_rfc3339(),
+                    "isRead": false
+                });
 
-        let url = format!("https://graph.microsoft.com/v1.0/me/mailFolders/{}/messages", folder_id);
+                let url = format!("https://graph.microsoft.com/v1.0/me/mailFolders/{}/messages", folder_id);
 
-        match client.post(&url)
-            .bearer_auth(&token)
-            .header("Content-Type", "application/json")
-            .json(&email_payload)
-            .send()
-            .await
-        {
-            Ok(response) => {
-                if response.status().is_success() {
-                    created_count += 1;
-                    log_debug(&format!("Created test email: {}", subject));
-                } else {
-                    let status = response.status();
-                    let error_text = response.text().await.unwrap_or_default();
-                    log_debug(&format!("Failed to create test email '{}': {} - {}", subject, status, error_text));
+                let result = client.post(&url)
+                    .bearer_auth(&token)
+                    .header("Content-Type", "application/json")
+                    .json(&email_payload)
+                    .send()
+                    .await;
+
+                match result {
+                    Ok(response) => {
+                        // error_for_status() will convert non-success status to reqwest::Error
+                        // This includes 401 errors which will trigger the auto-refresh retry
+                        match response.error_for_status() {
+                            Ok(_) => {
+                                created += 1;
+                                log_debug(&format!("Created test email: {}", subject));
+                            }
+                            Err(e) => {
+                                // On any error (including 401), propagate it to trigger potential retry
+                                log_debug(&format!("Failed to create test email '{}': {}", subject, e));
+                                return Err(e);
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        log_debug(&format!("Error creating test email '{}': {}", subject, e));
+                        return Err(e);
+                    }
                 }
             }
-            Err(e) => {
-                log_debug(&format!("Error creating test email '{}': {}", subject, e));
-            }
+
+            Ok::<i32, reqwest::Error>(created)
         }
-    }
+    }).await?;
 
     if created_count == 0 {
         return Err(actix_web::error::ErrorInternalServerError("Failed to create any test emails"));
@@ -3857,6 +3863,8 @@ async fn refresh_microsoft_token(credentials: &OAuthCredential, pool: &PgPool) -
     let refresh_token = credentials.refresh_token.as_ref()
         .ok_or_else(|| actix_web::error::ErrorUnauthorized("No refresh token available"))?;
 
+    log_debug("🔄 Refreshing Microsoft OAuth token...");
+
     let tenant_id = std::env::var("MICROSOFT_TENANT_ID")
         .unwrap_or_else(|_| "common".to_string());
 
@@ -3874,6 +3882,15 @@ async fn refresh_microsoft_token(credentials: &OAuthCredential, pool: &PgPool) -
         .await
         .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Token refresh failed: {}", e)))?;
 
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_default();
+        return Err(actix_web::error::ErrorInternalServerError(format!(
+            "Microsoft token refresh failed: {} - {}",
+            status, error_text
+        )));
+    }
+
     let token_data: OAuthTokenResponse = response
         .json()
         .await
@@ -3881,10 +3898,13 @@ async fn refresh_microsoft_token(credentials: &OAuthCredential, pool: &PgPool) -
 
     let expires_at = chrono::Utc::now() + chrono::Duration::seconds(token_data.expires_in);
 
-    // Update stored credentials
+    // Update stored credentials with new access token
+    // Note: Microsoft returns a NEW refresh token with each refresh - we should update it too
+    let new_refresh_token = token_data.refresh_token.as_deref().unwrap_or(refresh_token);
     sqlx::query!(
-        "UPDATE oauth_credentials SET access_token = $1, token_expires_at = $2, updated_at = NOW() WHERE credential_id = $3",
+        "UPDATE oauth_credentials SET access_token = $1, refresh_token = $2, token_expires_at = $3, updated_at = NOW() WHERE credential_id = $4",
         token_data.access_token,
+        new_refresh_token,
         expires_at,
         credentials.credential_id
     )
@@ -3892,7 +3912,216 @@ async fn refresh_microsoft_token(credentials: &OAuthCredential, pool: &PgPool) -
     .await
     .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to update credentials: {}", e)))?;
 
+    log_debug("✓ Microsoft OAuth token refreshed successfully");
     Ok(token_data.access_token)
+}
+
+// ============================================================================
+// OAuth Auto-Refresh Helpers (ISSUE-045)
+// ============================================================================
+// These functions automatically detect expired OAuth tokens (401 errors) and
+// retry API calls with refreshed tokens, eliminating the need for manual
+// re-authentication during long-running operations.
+// ============================================================================
+
+/// Check if an HTTP status code or error message indicates an expired OAuth token
+fn is_token_expired_error(status: reqwest::StatusCode, error_body: &str) -> bool {
+    if status == reqwest::StatusCode::UNAUTHORIZED {
+        // Check for common token expiration error messages
+        let lowercase_body = error_body.to_lowercase();
+        lowercase_body.contains("token")
+            && (lowercase_body.contains("expired")
+                || lowercase_body.contains("invalid")
+                || lowercase_body.contains("lifetime validation failed"))
+    } else {
+        false
+    }
+}
+
+/// Load OAuth credentials and refresh token if expired based on database timestamp
+/// This is a proactive check before making API calls
+async fn get_and_refresh_gmail_token_if_needed(pool: &PgPool) -> actix_web::Result<(String, OAuthCredential)> {
+    let source = sqlx::query_as::<_, JobSource>(
+        "SELECT * FROM job_sources WHERE source_name = 'gmail' LIMIT 1"
+    )
+    .fetch_one(pool)
+    .await
+    .map_err(|_| actix_web::error::ErrorNotFound("Gmail source not found"))?;
+
+    let credentials = sqlx::query_as::<_, OAuthCredential>(
+        "SELECT * FROM oauth_credentials WHERE source_id = $1 LIMIT 1"
+    )
+    .bind(source.source_id)
+    .fetch_one(pool)
+    .await
+    .map_err(|_| actix_web::error::ErrorNotFound("Gmail credentials not found"))?;
+
+    let access_token = credentials.access_token.as_ref()
+        .ok_or_else(|| actix_web::error::ErrorUnauthorized("No Gmail access token available"))?.clone();
+
+    // Proactively refresh if token is expired based on database timestamp
+    let token = if let Some(expires_at) = credentials.token_expires_at {
+        if chrono::Utc::now() > expires_at {
+            log_debug("Gmail token expired (timestamp check), refreshing proactively...");
+            refresh_gmail_token(&credentials, pool).await?
+        } else {
+            access_token
+        }
+    } else {
+        access_token
+    };
+
+    Ok((token, credentials))
+}
+
+/// Load OAuth credentials and refresh token if expired based on database timestamp
+/// This is a proactive check before making API calls
+async fn get_and_refresh_microsoft_token_if_needed(pool: &PgPool) -> actix_web::Result<(String, OAuthCredential)> {
+    let source = sqlx::query_as::<_, JobSource>(
+        "SELECT * FROM job_sources WHERE source_name = 'microsoft_email' AND is_active = true LIMIT 1"
+    )
+    .fetch_one(pool)
+    .await
+    .map_err(|_| actix_web::error::ErrorNotFound("Microsoft email source not found or inactive"))?;
+
+    let credentials = sqlx::query_as::<_, OAuthCredential>(
+        "SELECT * FROM oauth_credentials WHERE source_id = $1 LIMIT 1"
+    )
+    .bind(source.source_id)
+    .fetch_one(pool)
+    .await
+    .map_err(|_| actix_web::error::ErrorNotFound("Microsoft credentials not found"))?;
+
+    let access_token = credentials.access_token.as_ref()
+        .ok_or_else(|| actix_web::error::ErrorUnauthorized("No Microsoft access token available"))?.clone();
+
+    // Proactively refresh if token is expired based on database timestamp
+    let token = if let Some(expires_at) = credentials.token_expires_at {
+        if chrono::Utc::now() > expires_at {
+            log_debug("Microsoft token expired (timestamp check), refreshing proactively...");
+            refresh_microsoft_token(&credentials, pool).await?
+        } else {
+            access_token
+        }
+    } else {
+        access_token
+    };
+
+    Ok((token, credentials))
+}
+
+/// Execute a Gmail API call with automatic token refresh on 401 errors
+///
+/// This function wraps Gmail API calls and automatically detects expired tokens,
+/// refreshes them, and retries the call. This eliminates manual intervention when
+/// tokens expire during long-running operations (e.g., comprehensive test suites).
+///
+/// Usage:
+/// ```
+/// let result = with_gmail_token_refresh(pool, |token| async move {
+///     // Your Gmail API call here using the token
+///     client.get(url).bearer_auth(token).send().await
+/// }).await?;
+/// ```
+async fn with_gmail_token_refresh<F, Fut, T>(
+    pool: &PgPool,
+    api_call: F,
+) -> actix_web::Result<T>
+where
+    F: Fn(String) -> Fut,
+    Fut: std::future::Future<Output = std::result::Result<T, reqwest::Error>>,
+{
+    // First attempt: get token (refresh proactively if timestamp indicates expiration)
+    let (token, credentials) = get_and_refresh_gmail_token_if_needed(pool).await?;
+
+    match api_call(token.clone()).await {
+        Ok(result) => Ok(result),
+        Err(e) => {
+            // Check if this is a 401 error indicating token expiration
+            if let Some(status) = e.status() {
+                let error_body = e.to_string();
+                if is_token_expired_error(status, &error_body) {
+                    log_debug("Gmail API returned 401 (token expired), refreshing and retrying...");
+
+                    // Refresh token and retry
+                    let new_token = refresh_gmail_token(&credentials, pool).await?;
+
+                    // Retry the API call with the new token
+                    api_call(new_token).await
+                        .map_err(|e| actix_web::error::ErrorInternalServerError(
+                            format!("Gmail API call failed after token refresh: {}", e)
+                        ))
+                } else {
+                    // Not a token expiration error, return the original error
+                    Err(actix_web::error::ErrorInternalServerError(
+                        format!("Gmail API call failed: {}", e)
+                    ))
+                }
+            } else {
+                // No status code (network error, etc.), return the original error
+                Err(actix_web::error::ErrorInternalServerError(
+                    format!("Gmail API call failed: {}", e)
+                ))
+            }
+        }
+    }
+}
+
+/// Execute a Microsoft Graph API call with automatic token refresh on 401 errors
+///
+/// This function wraps Microsoft Graph API calls and automatically detects expired tokens,
+/// refreshes them, and retries the call. This eliminates manual intervention when
+/// tokens expire during long-running operations (e.g., comprehensive test suites).
+///
+/// Usage:
+/// ```
+/// let result = with_microsoft_token_refresh(pool, |token| async move {
+///     // Your Microsoft Graph API call here using the token
+///     client.get(url).bearer_auth(token).send().await
+/// }).await?;
+/// ```
+async fn with_microsoft_token_refresh<F, Fut, T>(
+    pool: &PgPool,
+    api_call: F,
+) -> actix_web::Result<T>
+where
+    F: Fn(String) -> Fut,
+    Fut: std::future::Future<Output = std::result::Result<T, reqwest::Error>>,
+{
+    // First attempt: get token (refresh proactively if timestamp indicates expiration)
+    let (token, credentials) = get_and_refresh_microsoft_token_if_needed(pool).await?;
+
+    match api_call(token.clone()).await {
+        Ok(result) => Ok(result),
+        Err(e) => {
+            // Check if this is a 401 error indicating token expiration
+            if let Some(status) = e.status() {
+                let error_body = e.to_string();
+                if is_token_expired_error(status, &error_body) {
+                    log_debug("Microsoft API returned 401 (token expired), refreshing and retrying...");
+
+                    // Refresh token and retry
+                    let new_token = refresh_microsoft_token(&credentials, pool).await?;
+
+                    // Retry the API call with the new token
+                    api_call(new_token).await
+                        .map_err(|e| actix_web::error::ErrorInternalServerError(
+                            format!("Microsoft API call failed after token refresh: {}", e)
+                        ))
+                } else {
+                    // Not a token expiration error, return the original error
+                    Err(actix_web::error::ErrorInternalServerError(
+                        format!("Microsoft API call failed: {}", e)
+                    ))
+                }
+            } else {
+                // No status code (network error, etc.), return the original error
+                Err(actix_web::error::ErrorInternalServerError(
+                    format!("Microsoft API call failed: {}", e)
+                ))
+            }
+        }
+    }
 }
 
 async fn process_microsoft_messages(
@@ -4412,6 +4641,8 @@ async fn refresh_gmail_token(credentials: &OAuthCredential, pool: &PgPool) -> ac
     let refresh_token = credentials.refresh_token.as_ref()
         .ok_or_else(|| actix_web::error::ErrorUnauthorized("No refresh token available"))?;
 
+    log_debug("🔄 Refreshing Gmail OAuth token...");
+
     let client = reqwest::Client::new();
     let response = client
         .post("https://oauth2.googleapis.com/token")
@@ -4424,6 +4655,15 @@ async fn refresh_gmail_token(credentials: &OAuthCredential, pool: &PgPool) -> ac
         .send()
         .await
         .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Token refresh failed: {}", e)))?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_default();
+        return Err(actix_web::error::ErrorInternalServerError(format!(
+            "Gmail token refresh failed: {} - {}",
+            status, error_text
+        )));
+    }
 
     let token_data: OAuthTokenResponse = response
         .json()
@@ -4443,6 +4683,7 @@ async fn refresh_gmail_token(credentials: &OAuthCredential, pool: &PgPool) -> ac
     .await
     .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to update credentials: {}", e)))?;
 
+    log_debug("✓ Gmail OAuth token refreshed successfully");
     Ok(token_data.access_token)
 }
 
