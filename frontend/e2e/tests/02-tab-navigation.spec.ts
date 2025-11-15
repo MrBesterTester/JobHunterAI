@@ -321,6 +321,10 @@ test.describe('Tab Navigation & Filtering', () => {
   // Run serially to avoid race conditions with shared database state
   test.describe.serial('Empty State Handling', () => {
     test('should handle tabs with no jobs gracefully', async ({ page }) => {
+      // This test loops through 4 tabs, each taking ~8-10s (click + wait + checks)
+      // Total time: ~32-40s, so we need a longer timeout than the default 30s
+      test.setTimeout(60000); // 60 seconds
+
       // Try each tab and verify empty state handling
       const tabs: Array<'inbox' | 'approved' | 'applied' | 'filtered'> = [
         'inbox',
