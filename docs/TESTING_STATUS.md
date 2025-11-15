@@ -1,3 +1,19 @@
+---
+document_type: testing_status
+purpose: Results of most recent comprehensive test suite execution
+scope: Current and previous comprehensive test run only
+relationship: Contains RESULTS of README_auto-test-plan.md execution; older runs archived to TESTING_HISTORY.md
+update_policy: Keep current + previous run; move older results to TESTING_HISTORY.md
+content_lifecycle: Latest two runs only - workspace for current testing status
+related_docs:
+  - README_auto-test-plan.md (the testing plan)
+  - TESTING_HISTORY.md (historical archive)
+  - TESTING_GUIDE.md (testing principles)
+  - PROJECT_STATUS.md (overall project status)
+last_comprehensive_run: 2025-11-15 12:38:10 PST
+last_updated: 2025-11-15 13:15:39 PST (OAuth fix WORKED! Comprehensive test run completed successfully)
+---
+
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
@@ -22,22 +38,6 @@
   - [Quick Commands](#quick-commands)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
----
-document_type: testing_status
-purpose: Results of most recent comprehensive test suite execution
-scope: Current and previous comprehensive test run only
-relationship: Contains RESULTS of README_auto-test-plan.md execution; older runs archived to TESTING_HISTORY.md
-update_policy: Keep current + previous run; move older results to TESTING_HISTORY.md
-content_lifecycle: Latest two runs only - workspace for current testing status
-related_docs:
-  - README_auto-test-plan.md (the testing plan)
-  - TESTING_HISTORY.md (historical archive)
-  - TESTING_GUIDE.md (testing principles)
-  - PROJECT_STATUS.md (overall project status)
-last_comprehensive_run: 2025-11-15 12:38:10 PST
-last_updated: 2025-11-15 13:15:39 PST (OAuth fix WORKED! Comprehensive test run completed successfully)
----
 
 # Testing Status
 
