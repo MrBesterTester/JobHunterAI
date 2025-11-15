@@ -117,6 +117,7 @@
     - [Backend Testing (100% Coverage)](#backend-testing-100%25-coverage)
     - [Frontend E2E Testing (94.1% Coverage)](#frontend-e2e-testing-941%25-coverage)
     - [Testing Architecture](#testing-architecture)
+    - [Test Context Terminology](#test-context-terminology)
     - [Key Testing Achievements](#key-testing-achievements)
   - [Browser & Testing Strategy](#browser--testing-strategy)
     - [Development & Testing Browser: Chrome](#development--testing-browser-chrome)
@@ -3582,6 +3583,47 @@ JobHunter maintains high standards through comprehensive automated testing cover
 - **Large-Scale Validation**: 103 jobs in test database for stress testing
 - **Performance Monitoring**: Memory leak detection, FPS tracking, API timing
 - **Comprehensive Coverage**: 244 automated tests validating full-stack functionality
+
+### Test Context Terminology
+
+Understanding test scopes helps you run the right tests for debugging and verification:
+
+**Test Hierarchy** (from smallest to largest):
+
+1. **Test level** (or "single test"): Individual test case
+   - **Runtime**: ~10-60 seconds
+   - **Use case**: Verify specific functionality, debug single test failures
+   - **Example**: `npx playwright test -g "should handle tabs with no jobs gracefully"`
+
+2. **Test file level**: All tests in one `.spec.ts` file
+   - **Runtime**: ~1-5 minutes
+   - **Use case**: Debug flaky tests that pass alone but fail in context
+   - **Example**: `npx playwright test e2e/tests/02-tab-navigation.spec.ts`
+   - **Key benefit**: Fast enough for iteration, realistic enough to catch cumulative load issues
+
+3. **Suite level**: Full E2E suite (all test files)
+   - **Runtime**: ~15-20 minutes
+   - **Use case**: Verify E2E tests after significant changes
+   - **Example**: `npm run test:e2e`
+
+4. **Comprehensive level**: Backend + Frontend + E2E (full comprehensive suite)
+   - **Runtime**: ~20-25 minutes + OAuth flows
+   - **Use case**: Pre-release verification, major refactoring
+   - **Example**: `./helper-scripts/run-comprehensive-tests.sh`
+   - **Note**: Requires explicit permission per CLAUDE.md policy
+
+**Shorthand Usage:**
+- "Run at test level" = Run individual test
+- "Run at test file level" = Run entire `.spec.ts` file ← **Powerful for debugging**
+- "Run at suite level" = Run all E2E tests
+- "Run comprehensive" = Full test suite (requires permission)
+
+**Investigation Strategy** (see ISSUE-044):
+When a test is flaky (passes alone, fails in comprehensive):
+1. Run at test level to verify it passes in isolation
+2. Run at test file level to reproduce failure in context
+3. Analyze position in file, cumulative load, timeout issues
+4. Fix and verify at test file level before comprehensive run
 
 ### Key Testing Achievements
 - ✅ Increased frontend coverage from 68.8% to 92.1% (+23.3 points)
