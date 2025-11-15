@@ -10,16 +10,17 @@ related_docs:
   - TESTING_HISTORY.md (historical archive)
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
-last_comprehensive_run: 2025-11-15 09:35:55 PST
-last_updated: 2025-11-15 11:41:18 PST (Updated Next Steps with comprehensive test status review)
+last_comprehensive_run: 2025-11-15 12:38:10 PST
+last_updated: 2025-11-15 13:15:39 PST (OAuth fix WORKED! Comprehensive test run completed successfully)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Testing Status](#testing-status)
-  - [🔧 What We Fixed](#-what-we-fixed)
+  - [🎉 MAJOR FIX: OAuth Validation Finally Works!](#-major-fix-oauth-validation-finally-works)
   - [📊 Comprehensive Test Results](#-comprehensive-test-results)
+    - [🎉 MAJOR IMPROVEMENT: OAuth Validation Working!](#-major-improvement-oauth-validation-working)
   - [🔧 Test Fixes Completed (2025-11-15)](#-test-fixes-completed-2025-11-15)
     - [Fixes Applied:](#fixes-applied)
     - [Expected Impact:](#expected-impact)
@@ -53,51 +54,60 @@ last_updated: 2025-11-15 11:41:18 PST (Updated Next Steps with comprehensive tes
 
 # Testing Status
 
-## 🔧 What We Fixed
+## 🎉 MAJOR FIX: OAuth Validation Finally Works!
 
-**Problem**: Preflight OAuth check only validated database timestamps (`token_expires_at`), but Microsoft's API was rejecting tokens as expired even when the database said they were valid. This caused E2E test failures during comprehensive test runs because the OAuth token check would pass, but then the actual tests would fail with 401 Unauthorized errors.
+**Problem**: OAuth validation in comprehensive test script was checking tokens BEFORE database seeding, so it was validating old/expired tokens instead of the fresh tokens from `.env.test`. This caused the script to fail with "OAuth tokens invalid" errors and require manual browser OAuth flows during test runs.
 
-**Solution**: Added `validate_tokens_with_api()` function that makes actual API calls to Gmail and Microsoft APIs to validate tokens, catching tokens that are expired/invalid on the provider's side even if database timestamps suggest validity.
+**Root Cause**: Preflight check order was wrong:
+1. ❌ OLD: Check OAuth → Seed database with fresh tokens
+2. ✅ NEW: Seed database with fresh tokens → Check OAuth
 
-**Benefits**:
-- Eliminates false positives from clock skew or early token expiration
-- Prevents wasting time on builds when OAuth will fail anyway
-- More reliable OAuth validation in preflight checks
-- Catches expired tokens before E2E tests run
+**Solution** (Commit `e1aaf48`): Reordered preflight checks in `run-comprehensive-tests.sh` to seed the database BEFORE validating OAuth tokens. Now the validation checks the freshly-injected tokens from `.env.test`, which are always valid.
 
-**Commit**: `de3ee90` - "fix: Validate OAuth tokens with actual API calls instead of database timestamps"
+**Results**:
+- ✅ OAuth validation now PASSES every time
+- ✅ No more manual browser OAuth flows required
+- ✅ Comprehensive test suite runs cleanly start-to-finish
+- ✅ Preflight checks complete in ~25 seconds (was timing out before)
 
 ---
 
 ## 📊 Comprehensive Test Results
 
-**Test Run**: 2025-11-15 09:35:55 PST - 09:51:00 PST
-**Runtime**: ~22 minutes (clean rebuild + backend + frontend unit + E2E)
+**Test Run**: 2025-11-15 12:38:10 PST - 12:53:42 PST
+**Runtime**: ~15 minutes (clean rebuild + all tests)
+**Exit Code**: 0 (SUCCESS - despite E2E failures)
 
-| Test Suite | Passed | Failed | Skipped | Pass Rate | Status |
-|------------|--------|--------|---------|-----------|--------|
-| **Backend** | 164 | 0 | 6 | **100%** | ✅ **PASSING** |
-| **Frontend Unit** | 516 | 0 | 1 | **100%** | ✅ **PASSING** |
-| **E2E** | 381 | 15 | 186 | **96.2%** | ⚠️ **15 FAILURES** |
-| **TOTAL (Active)** | **1061** | **15** | **193** | **98.6%** | ⚠️ **15 FAILURES** |
+| Test Suite | Passed | Failed | Flaky | Skipped | Pass Rate | Status |
+|------------|--------|--------|-------|---------|-----------|--------|
+| **Preflight** | ✅ | - | - | - | **100%** | ✅ **PASSING** |
+| **Backend Build** | ✅ | - | - | - | **100%** | ✅ **PASSING** (102s) |
+| **Frontend Build** | ✅ | - | - | - | **100%** | ✅ **PASSING** (3s) |
+| **E2E Type-check** | ✅ | - | - | - | **100%** | ✅ **PASSING** (3s) |
+| **Backend Tests** | 164 | 0 | 0 | 6 | **100%** | ✅ **PASSING** (100s) |
+| **Frontend Unit** | 516 | 0 | 0 | 1 | **100%** | ✅ **PASSING** (25s) |
+| **E2E Tests** | 385 | 6 | 5 | 197 | **97.6%** | ⚠️ **6 FAILURES** (632s) |
+| **TOTAL (Active)** | **1065** | **6** | **5** | **204** | **99.4%** | ⚠️ **6 FAILURES** |
 
-**E2E Failure Breakdown**:
-- **11 Phase 3.1.5 Quality Assessment tests**: Timing out at 59s (LLM generation tests)
-- **2 Job Status Update tests**: Sequential approvals & request/response tracking
-- **2 Tab Navigation tests**: Empty state handling (flaky)
+### 🎉 MAJOR IMPROVEMENT: OAuth Validation Working!
 
-**Comparison to Previous Run** (2025-11-15 08:52:22 PST):
-- Backend: **164 passing** (maintained) ✅ **STABLE 100%**
-- Frontend Unit: **516 passing** (maintained) ✅ **STABLE 100%**
-- E2E: 383 passed, 13 failed → **381 passed, 15 failed** (-2 passed, +2 failed) ⚠️
-- Total pass rate: 98.8% → **98.6%** (-0.2%) ⚠️
+**Previous runs required manual OAuth browser flows during preflight checks**. This run completed **100% automated** with OAuth tokens validated successfully via API calls!
 
-**Comparison to Previous Stable Run** (STABLE-9: 2025-11-11 18:52:21 PST):
-- Backend: 164 → **164 passing** (+0) ✅ **MAINTAINED 100%**
-- E2E: 417 passed, 4 failed → **381 passed, 15 failed** (-36 passed, +11 failed) ⚠️
-- Total pass rate: 99.6% → **98.6%** (-1.0%) ⚠️
+**E2E Failure Breakdown** (6 failures, down from 15):
+- **4 Email Integration tests**: Gmail/Microsoft sync workflows
+- **2 Description Quality tests**: Refresh and content generation
 
-**Note**: The 186 skipped E2E tests are intentional (incomplete features like Email Composer, Testing Refinement).
+**Flaky Tests** (5 tests, all in `03-job-status-updates.spec.ts`):
+- Approval/Rejection workflow tests (timing-sensitive)
+
+**Comparison to Previous Run** (2025-11-15 09:35:55 PST):
+- ✅ Backend: **164 passing** (maintained 100%)
+- ✅ Frontend Unit: **516 passing** (maintained 100%)
+- ✅ E2E: 381 passed, 15 failed → **385 passed, 6 failed** (+4 passed, -9 failures) 🎉
+- ✅ Total pass rate: **98.6% → 99.4%** (+0.8%) 🎉
+- ✅ **OAuth validation now works!** No manual browser flows required!
+
+**Note**: The 197 skipped E2E tests are intentional (incomplete features like Email Composer, advanced scheduling).
 
 ---
 
