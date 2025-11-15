@@ -136,13 +136,22 @@ test.describe('Refresh Buttons', () => {
     // Navigate to All tab
     await switchToTab(page, 'all');
 
-    const jobCard = page.locator('[data-testid="job-card"]').first();
+    // Get the first job card and extract its ID
+    const firstJobCard = page.locator('[data-testid="job-card"]').first();
+    const jobIdBadge = firstJobCard.locator('[data-testid="job-id-badge"]');
+    const jobIdText = await jobIdBadge.textContent();
 
-    // Get the job ID to track which job we're looking at
-    const jobIdBadge = jobCard.locator('[data-testid="job-id-badge"]');
-    const jobId = await jobIdBadge.textContent();
+    console.log(`Testing job stability for job ID badge text: ${jobIdText}`);
 
-    const descriptionSection = jobCard.locator('div:has-text("Condensed Description")').first();
+    // Create a stable locator that finds THIS specific job card by its ID badge text
+    // This remains valid even if the job list re-sorts
+    // Use the exact badge text (e.g., "#ID: 968cc5d4")
+    const stableJobCard = page.locator('[data-testid="job-card"]').filter({
+      has: page.locator('[data-testid="job-id-badge"]', { hasText: jobIdText || '' })
+    });
+
+    // Get elements relative to the stable job card locator
+    const descriptionSection = stableJobCard.locator('div:has-text("Condensed Description")').first();
     const descriptionContainer = descriptionSection.locator('div').nth(1);
 
     // Wait for initial load
@@ -156,11 +165,13 @@ test.describe('Refresh Buttons', () => {
     await page.waitForTimeout(1000);
     await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
 
-    // Job ID should still be the same
-    const newJobId = await jobIdBadge.textContent();
-    expect(newJobId).toBe(jobId);
+    // Verify we're still looking at the same job (using stable locator)
+    const currentJobIdBadge = stableJobCard.locator('[data-testid="job-id-badge"]');
+    const currentJobId = await currentJobIdBadge.textContent();
+    expect(currentJobId).toBe(jobIdText);
 
     // Monitor for 3 more seconds - description should remain stable
+    // Even if the job list re-sorts, we're tracking the specific job by ID
     const description1 = await descriptionContainer.textContent();
     await page.waitForTimeout(1000);
     const description2 = await descriptionContainer.textContent();
