@@ -258,6 +258,95 @@ validate_tokens_with_api() {
     fi
 }
 
+refresh_gmail_token_automatically() {
+    # Automatically refresh Gmail token using refresh token
+    log_info "Attempting automatic Gmail token refresh..."
+
+    # Load credentials from .env.test
+    set -a
+    source "$PROJECT_ROOT/.env.test"
+    set +a
+
+    if [ -z "${GMAIL_TEST_REFRESH_TOKEN:-}" ] || [ -z "${GMAIL_TEST_CLIENT_ID:-}" ] || [ -z "${GMAIL_TEST_CLIENT_SECRET:-}" ]; then
+        log_warning "Missing Gmail refresh credentials in .env.test"
+        return 1
+    fi
+
+    # Request new access token using refresh token
+    local response=$(curl -s -X POST "https://oauth2.googleapis.com/token" \
+        -d "client_id=$GMAIL_TEST_CLIENT_ID" \
+        -d "client_secret=$GMAIL_TEST_CLIENT_SECRET" \
+        -d "refresh_token=$GMAIL_TEST_REFRESH_TOKEN" \
+        -d "grant_type=refresh_token")
+
+    local new_token=$(echo "$response" | python3 -c "import sys, json; print(json.load(sys.stdin).get('access_token', ''))" 2>/dev/null)
+
+    if [ -z "$new_token" ]; then
+        log_warning "Gmail token refresh failed: $(echo "$response" | python3 -c "import sys, json; print(json.load(sys.stdin).get('error', 'unknown error'))" 2>/dev/null)"
+        return 1
+    fi
+
+    # Update database
+    psql -U jobhunter_user -d jobhunter_personal -c "
+        UPDATE oauth_credentials
+        SET access_token = '$new_token',
+            token_expires_at = NOW() + INTERVAL '1 hour'
+        WHERE source_id = (SELECT source_id FROM job_sources WHERE source_name = 'gmail');
+    " > /dev/null 2>&1
+
+    # Update .env.test
+    sed -i.bak "s|^GMAIL_TEST_ACCESS_TOKEN=.*|GMAIL_TEST_ACCESS_TOKEN=$new_token|" "$PROJECT_ROOT/.env.test"
+    rm -f "$PROJECT_ROOT/.env.test.bak"
+
+    log_info "Gmail token refreshed automatically"
+    return 0
+}
+
+refresh_msmail_token_automatically() {
+    # Automatically refresh Microsoft token using refresh token
+    log_info "Attempting automatic Microsoft token refresh..."
+
+    # Load credentials from .env.test
+    set -a
+    source "$PROJECT_ROOT/.env.test"
+    set +a
+
+    if [ -z "${MSMAIL_TEST_REFRESH_TOKEN:-}" ] || [ -z "${MSMAIL_TEST_CLIENT_ID:-}" ] || [ -z "${MSMAIL_TEST_CLIENT_SECRET:-}" ] || [ -z "${MSMAIL_TEST_TENANT_ID:-}" ]; then
+        log_warning "Missing Microsoft refresh credentials in .env.test"
+        return 1
+    fi
+
+    # Request new access token using refresh token
+    local response=$(curl -s -X POST "https://login.microsoftonline.com/$MSMAIL_TEST_TENANT_ID/oauth2/v2.0/token" \
+        -d "client_id=$MSMAIL_TEST_CLIENT_ID" \
+        -d "client_secret=$MSMAIL_TEST_CLIENT_SECRET" \
+        -d "refresh_token=$MSMAIL_TEST_REFRESH_TOKEN" \
+        -d "grant_type=refresh_token" \
+        -d "scope=https://graph.microsoft.com/Mail.Read https://graph.microsoft.com/Mail.ReadWrite https://graph.microsoft.com/MailboxSettings.Read")
+
+    local new_token=$(echo "$response" | python3 -c "import sys, json; print(json.load(sys.stdin).get('access_token', ''))" 2>/dev/null)
+
+    if [ -z "$new_token" ]; then
+        log_warning "Microsoft token refresh failed: $(echo "$response" | python3 -c "import sys, json; print(json.load(sys.stdin).get('error', 'unknown error'))" 2>/dev/null)"
+        return 1
+    fi
+
+    # Update database
+    psql -U jobhunter_user -d jobhunter_personal -c "
+        UPDATE oauth_credentials
+        SET access_token = '$new_token',
+            token_expires_at = NOW() + INTERVAL '1 hour'
+        WHERE source_id = (SELECT source_id FROM job_sources WHERE source_name = 'microsoft_email');
+    " > /dev/null 2>&1
+
+    # Update .env.test
+    sed -i.bak "s|^MSMAIL_TEST_ACCESS_TOKEN=.*|MSMAIL_TEST_ACCESS_TOKEN=$new_token|" "$PROJECT_ROOT/.env.test"
+    rm -f "$PROJECT_ROOT/.env.test.bak"
+
+    log_info "Microsoft token refreshed automatically"
+    return 0
+}
+
 check_oauth_expiry() {
     log_section "PREFLIGHT: OAuth Token Expiry"
 
@@ -270,7 +359,40 @@ check_oauth_expiry() {
         return 0
     fi
 
-    # Tokens are invalid - need to refresh
+    # Tokens are invalid - try automatic refresh using refresh tokens first
+    log_info "Tokens invalid - attempting automatic refresh..."
+
+    local gmail_refreshed=false
+    local msmail_refreshed=false
+
+    if [ "$GMAIL_TOKEN_VALID" = false ]; then
+        if refresh_gmail_token_automatically; then
+            gmail_refreshed=true
+            GMAIL_TOKEN_VALID=true
+        fi
+    else
+        gmail_refreshed=true
+    fi
+
+    if [ "$MSMAIL_TOKEN_VALID" = false ]; then
+        if refresh_msmail_token_automatically; then
+            msmail_refreshed=true
+            MSMAIL_TOKEN_VALID=true
+        fi
+    else
+        msmail_refreshed=true
+    fi
+
+    # Check if automatic refresh worked
+    if [ "$gmail_refreshed" = true ] && [ "$msmail_refreshed" = true ]; then
+        log_info "OAuth tokens refreshed automatically - validating..."
+        if validate_tokens_with_api; then
+            log_info "OAuth tokens refreshed and validated successfully"
+            return 0
+        fi
+    fi
+
+    # Automatic refresh failed - fall back to manual OAuth flow
     # Build list of which tokens need refresh
     local tokens_to_refresh=""
     if [ "$GMAIL_TOKEN_VALID" = false ]; then
@@ -284,8 +406,8 @@ check_oauth_expiry() {
         fi
     fi
 
-    log_warning "OAuth tokens are invalid or expired: $tokens_to_refresh"
-    log_info "Starting OAuth token refresh process..."
+    log_warning "Automatic token refresh failed for: $tokens_to_refresh"
+    log_info "Starting manual OAuth flow..."
 
     # Start backend server for OAuth callbacks
     log_info "Starting backend server for OAuth validation..."
