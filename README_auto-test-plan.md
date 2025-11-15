@@ -53,6 +53,7 @@ last_updated: 2025-11-14 17:03:34 PST (Comprehensive testing flow redesign: HTML
       - [4. Gmail State ✅](#4-gmail-state-)
       - [5. Microsoft Email State ✅](#5-microsoft-email-state-)
     - [OAuth Token Management Strategy](#oauth-token-management-strategy)
+      - [OAuth Troubleshooting](#oauth-troubleshooting)
     - [Test Result Documentation](#test-result-documentation)
       - [What to Update](#what-to-update)
       - [Timestamp Format Requirements](#timestamp-format-requirements)
@@ -828,6 +829,128 @@ All preflight checks are **HARD requirements** - the script aborts if any check 
 - ✅ Secure: No tokens committed to git repository
 - ✅ Automated: No manual intervention per test run
 - ✅ Low maintenance: Refresh tokens last months/years
+
+#### OAuth Troubleshooting
+
+**Problem: "Token has been expired or revoked"**
+
+When running `./helper-scripts/refresh-oauth-tokens.sh` or comprehensive tests:
+
+```bash
+✗ Failed to refresh Gmail access token
+{
+  "error": "invalid_grant",
+  "error_description": "Token has been expired or revoked."
+}
+```
+
+**Cause**: Refresh token in `.env.test` is no longer valid (revoked, expired, or never set up)
+
+**Solution**: Re-run OAuth setup to get fresh tokens:
+```bash
+./helper-scripts/setup-test-oauth.sh
+# Follow browser prompts for Gmail and Microsoft Mail
+```
+
+---
+
+**Problem: "This site can't be reached" during OAuth callback**
+
+When HTML-based OAuth flow opens browser but callback fails:
+- Browser shows: `This site can't be reached` at `http://localhost:8080/auth/gmail/callback?code=...`
+- Backend is not running or crashed during OAuth flow
+
+**Cause**: Backend server not running or OAuth endpoints not responding
+
+**Solution 1 - Manual OAuth with backend running**:
+```bash
+# Terminal 1: Start backend
+cd backend
+cargo run
+
+# Terminal 2: Run setup
+./helper-scripts/setup-test-oauth.sh
+```
+
+**Solution 2 - Check backend OAuth endpoints**:
+```bash
+# Verify backend has OAuth routes
+grep -r "auth/gmail/callback" backend/src/
+
+# Check backend logs
+tail -f /tmp/oauth-backend.log  # (if running via comprehensive tests)
+```
+
+---
+
+**Problem: OAuth HTML files open but don't trigger OAuth flow**
+
+**Cause**: Browser blocking localhost OAuth or files opened but user didn't complete flow
+
+**Solution**: Manually trigger OAuth in browser:
+1. Open `gmail-oauth.html` in browser
+2. Click "Authorize Gmail" button
+3. Complete Google OAuth consent screen
+4. Should redirect to `localhost:8080/auth/gmail/callback` (backend must be running)
+5. Repeat for `microsoft-oauth.html`
+
+---
+
+**Problem: E2E tests need OAuth but tokens expired**
+
+**Cause**: Comprehensive test script validates OAuth before E2E tests, finds expired tokens
+
+**Workaround 1 - Skip E2E tests**:
+```bash
+# Run comprehensive tests without E2E (no OAuth validation)
+./helper-scripts/run-comprehensive-tests.sh --skip-e2e
+```
+
+**Workaround 2 - Use fast test script instead**:
+```bash
+# Run only unit tests (no OAuth needed)
+./helper-scripts/run-fast-tests.sh
+```
+
+**Permanent fix**: Re-run OAuth setup to get fresh tokens:
+```bash
+./helper-scripts/setup-test-oauth.sh
+```
+
+---
+
+**Problem: How often do I need to re-authenticate?**
+
+**Token Expiration Schedule**:
+- **Gmail Refresh Token**: Years (or until revoked/unused for 6+ months)
+- **Microsoft Refresh Token**: 90 days (standard policy)
+- **Access Tokens**: 1 hour (auto-refreshed by `refresh-oauth-tokens.sh`)
+
+**Recommended Maintenance**:
+- **Gmail**: One-time setup (very rarely needs refresh)
+- **Microsoft**: Re-run `setup-test-oauth.sh` every ~3 months
+- **Access Tokens**: Automatic refresh (no action needed)
+
+---
+
+**Problem: Can I run tests without OAuth at all?**
+
+**Yes! Use the fast test script for development**:
+```bash
+./helper-scripts/run-fast-tests.sh  # No OAuth needed (~2 min)
+```
+
+**What works without OAuth**:
+- ✅ Backend unit tests (cargo test)
+- ✅ Frontend unit tests (npm test)
+- ✅ All non-email integration tests
+
+**What requires OAuth**:
+- ❌ E2E tests (email ingestion, Gmail/MS Mail workflows)
+- ❌ Comprehensive test suite preflight checks
+- ❌ Manual email source testing
+
+**Strategy**: Use `run-fast-tests.sh` for rapid development, only run comprehensive tests when you need to validate email integration.
 
 ---
 
