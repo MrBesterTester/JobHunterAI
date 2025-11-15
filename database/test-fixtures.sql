@@ -126,7 +126,7 @@ INSERT INTO oauth_credentials (
     'GMAIL_REFRESH_TOKEN_PLACEHOLDER',
     NOW() + INTERVAL '1 hour',
     ARRAY['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/gmail.modify']
-) ON CONFLICT ON CONSTRAINT idx_oauth_credentials_source DO UPDATE SET
+) ON CONFLICT (source_id) DO UPDATE SET
     client_id = EXCLUDED.client_id,
     client_secret = EXCLUDED.client_secret,
     access_token = EXCLUDED.access_token,
@@ -152,7 +152,7 @@ INSERT INTO oauth_credentials (
     'MSMAIL_REFRESH_TOKEN_PLACEHOLDER',
     NOW() + INTERVAL '1 hour',
     ARRAY['Mail.Read', 'Mail.ReadWrite']
-) ON CONFLICT ON CONSTRAINT idx_oauth_credentials_source DO UPDATE SET
+) ON CONFLICT (source_id) DO UPDATE SET
     client_id = EXCLUDED.client_id,
     client_secret = EXCLUDED.client_secret,
     access_token = EXCLUDED.access_token,
