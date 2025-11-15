@@ -739,6 +739,7 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
             </button>
           </div>
           <button
+            data-testid="sync-all-sources-button"
             onClick={handleSyncAll}
             disabled={syncingAll || syncingSource !== null || refiltering}
             style={{
@@ -888,6 +889,7 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
           <div style={{ display: 'flex', gap: '8px' }}>
             {!isGmailConnected ? (
               <button
+                data-testid="gmail-auth-button"
                 onClick={handleGmailAuth}
                 style={{
                   flex: 1,
@@ -905,6 +907,7 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
               </button>
             ) : (
               <button
+                data-testid="gmail-sync-button"
                 onClick={handleGmailSync}
                 disabled={isGmailSyncing || syncingAll}
                 style={{
@@ -929,6 +932,7 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
               </button>
             )}
             <button
+              data-testid="gmail-settings-button"
               onClick={handleGmailAuth}
               title="Re-authenticate Gmail"
               style={{
@@ -1001,6 +1005,7 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
           <div style={{ display: 'flex', gap: '8px' }}>
             {!isMicrosoftConnected ? (
               <button
+                data-testid="microsoft-auth-button"
                 onClick={handleMicrosoftAuth}
                 style={{
                   flex: 1,
@@ -1018,9 +1023,9 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
               </button>
             ) : (
               <button
+                data-testid="microsoft-sync-button"
                 onClick={handleMicrosoftSync}
                 disabled={isMicrosoftSyncing || syncingAll}
-                data-testid="microsoft-sync-button"
                 style={{
                   flex: 1,
                   padding: '10px 16px',
@@ -1043,6 +1048,7 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
               </button>
             )}
             <button
+              data-testid="microsoft-settings-button"
               onClick={handleMicrosoftAuth}
               title="Re-authenticate Microsoft"
               style={{
@@ -1101,6 +1107,7 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
 
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
+              data-testid="linkedin-sync-button"
               onClick={handleLinkedInSync}
               disabled={isLinkedInSyncing || syncingAll}
               style={{
@@ -1124,6 +1131,7 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
               {isLinkedInSyncing ? 'Syncing...' : 'Sync Now'}
             </button>
             <button
+              data-testid="linkedin-learn-more-button"
               style={{
                 padding: '10px 16px',
                 borderRadius: '6px',
