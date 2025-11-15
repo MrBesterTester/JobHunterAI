@@ -186,116 +186,168 @@ check_database_selection() {
     fi
 }
 
+validate_tokens_with_api() {
+    # Validate OAuth tokens by making actual API calls
+    # This catches tokens that are expired/invalid on the provider's side
+    # even if database timestamps suggest they're still valid
+
+    local all_valid=true
+
+    # Get Gmail access token from database
+    local gmail_token=$(psql -U jobhunter_user -d jobhunter_personal -tAc "
+        SELECT oc.access_token
+        FROM oauth_credentials oc
+        JOIN job_sources js ON oc.source_id = js.source_id
+        WHERE js.source_type = 'email' AND js.source_name = 'gmail'
+        LIMIT 1;
+    " 2>/dev/null | tr -d '[:space:]')
+
+    # Test Gmail token with actual API call
+    if [ -n "$gmail_token" ]; then
+        local gmail_response=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer $gmail_token" \
+            "https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=1" 2>/dev/null || echo "000")
+
+        if [ "$gmail_response" != "200" ]; then
+            log_warning "Gmail token validation failed (HTTP $gmail_response)"
+            all_valid=false
+        else
+            log_info "Gmail token validated successfully"
+        fi
+    else
+        log_warning "No Gmail token found in database"
+        all_valid=false
+    fi
+
+    # Get Microsoft access token from database
+    local msmail_token=$(psql -U jobhunter_user -d jobhunter_personal -tAc "
+        SELECT oc.access_token
+        FROM oauth_credentials oc
+        JOIN job_sources js ON oc.source_id = js.source_id
+        WHERE js.source_type = 'email' AND js.source_name = 'microsoft_email'
+        LIMIT 1;
+    " 2>/dev/null | tr -d '[:space:]')
+
+    # Test Microsoft token with actual API call
+    if [ -n "$msmail_token" ]; then
+        local msmail_response=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer $msmail_token" \
+            "https://graph.microsoft.com/v1.0/me/messages?\$top=1" 2>/dev/null || echo "000")
+
+        if [ "$msmail_response" != "200" ]; then
+            log_warning "Microsoft token validation failed (HTTP $msmail_response)"
+            all_valid=false
+        else
+            log_info "Microsoft token validated successfully"
+        fi
+    else
+        log_warning "No Microsoft token found in database"
+        all_valid=false
+    fi
+
+    if [ "$all_valid" = true ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 check_oauth_expiry() {
     log_section "PREFLIGHT: OAuth Token Expiry"
 
-    # Query database for OAuth token expiry times
-    # This is a fast check (~10ms) that prevents wasting time on tests
-    # when OAuth tokens are expired and E2E tests will fail anyway
-    local expired_count=$(psql -U jobhunter_user -d jobhunter_personal -tAc "
-        SELECT COUNT(*) FROM oauth_credentials
-        WHERE token_expires_at < NOW();
-    " 2>/dev/null)
+    # Validate OAuth tokens by making actual API calls (not just checking database timestamps)
+    # This catches tokens that are expired/invalid on the provider's side
+    log_info "Validating OAuth tokens with Gmail and Microsoft APIs..."
 
-    # Check if query succeeded
-    if [ $? -ne 0 ]; then
-        log_warning "Could not check OAuth token expiry (database issue)"
-        return 0  # Don't block tests for database query issues
+    if validate_tokens_with_api; then
+        log_info "OAuth tokens valid (verified with API calls)"
+        return 0
     fi
 
-    if [ "$expired_count" -gt 0 ]; then
-        log_warning "Found $expired_count expired OAuth token(s)"
-        log_info "Starting OAuth token refresh process..."
+    # Tokens are invalid - need to refresh
+    log_warning "OAuth tokens are invalid or expired"
+    log_info "Starting OAuth token refresh process..."
 
-        # Start backend server for OAuth callbacks
-        log_info "Starting backend server for OAuth validation..."
-        cd "$PROJECT_ROOT/backend"
-        cargo run > /tmp/oauth-backend.log 2>&1 &
-        local BACKEND_PID=$!
-        echo $BACKEND_PID > /tmp/preflight-backend.pid
-        cd "$PROJECT_ROOT"
+    # Start backend server for OAuth callbacks
+    log_info "Starting backend server for OAuth validation..."
+    cd "$PROJECT_ROOT/backend"
+    cargo run > /tmp/oauth-backend.log 2>&1 &
+    local BACKEND_PID=$!
+    echo $BACKEND_PID > /tmp/preflight-backend.pid
+    cd "$PROJECT_ROOT"
 
-        # Wait for backend to start
-        log_info "Waiting for backend to be ready..."
-        local retries=0
-        while ! curl -s http://localhost:8080/health > /dev/null 2>&1; do
-            sleep 1
-            ((retries++))
-            if [ $retries -gt 30 ]; then
-                log_error "Backend failed to start within 30 seconds"
-                kill $BACKEND_PID 2>/dev/null || true
-                rm -f /tmp/preflight-backend.pid
-                return 1
-            fi
-        done
-        log_info "Backend ready"
-
-        # Send notification
-        send_notification "OAuth Required" "Please complete Gmail and Microsoft OAuth in your browser" true
-
-        # Step 1: Gmail OAuth
-        log_info "Opening Gmail OAuth page in browser..."
-        open "$PROJECT_ROOT/gmail-oauth.html"
-        echo ""
-        echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-        echo -e "${YELLOW}Gmail OAuth browser window should now be open.${NC}"
-        echo -e "${YELLOW}Complete the OAuth flow, then press ENTER to continue...${NC}"
-        echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-        echo ""
-        read -r
-        log_info "Gmail OAuth completed"
-
-        # Step 2: Microsoft OAuth
-        log_info "Opening Microsoft OAuth page in browser..."
-        open "$PROJECT_ROOT/microsoft-oauth.html"
-        echo ""
-        echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-        echo -e "${YELLOW}Microsoft OAuth browser window should now be open.${NC}"
-        echo -e "${YELLOW}Complete the OAuth flow, then press ENTER to continue...${NC}"
-        echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-        echo ""
-        read -r
-        log_info "Microsoft OAuth completed"
-
-        # Verify tokens are now valid
-        log_info "Verifying OAuth tokens..."
-        local new_expired_count=$(psql -U jobhunter_user -d jobhunter_personal -tAc "
-            SELECT COUNT(*) FROM oauth_credentials
-            WHERE token_expires_at < NOW();
-        " 2>/dev/null)
-
-        if [ "$new_expired_count" -gt 0 ]; then
-            log_error "OAuth tokens still expired after refresh"
-            log_error "Please check that both OAuth flows completed successfully"
+    # Wait for backend to start
+    log_info "Waiting for backend to be ready..."
+    local retries=0
+    while ! curl -s http://localhost:8080/health > /dev/null 2>&1; do
+        sleep 1
+        ((retries++))
+        if [ $retries -gt 30 ]; then
+            log_error "Backend failed to start within 30 seconds"
             kill $BACKEND_PID 2>/dev/null || true
             rm -f /tmp/preflight-backend.pid
             return 1
         fi
+    done
+    log_info "Backend ready"
 
-        log_info "OAuth tokens refreshed successfully"
+    # Send notification
+    send_notification "OAuth Required" "Please complete Gmail and Microsoft OAuth in your browser" true
 
-        # Kill backend before build phase (must use fresh compiled code in E2E tests)
-        log_info "Stopping backend (will be restarted with fresh code after build)"
+    # Step 1: Gmail OAuth
+    log_info "Opening Gmail OAuth page in browser..."
+    open "$PROJECT_ROOT/gmail-oauth.html"
+    echo ""
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${YELLOW}Gmail OAuth browser window should now be open.${NC}"
+    echo -e "${YELLOW}Complete the OAuth flow, then press ENTER to continue...${NC}"
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+    read -r
+    log_info "Gmail OAuth completed"
+
+    # Step 2: Microsoft OAuth
+    log_info "Opening Microsoft OAuth page in browser..."
+    open "$PROJECT_ROOT/microsoft-oauth.html"
+    echo ""
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${YELLOW}Microsoft OAuth browser window should now be open.${NC}"
+    echo -e "${YELLOW}Complete the OAuth flow, then press ENTER to continue...${NC}"
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+    read -r
+    log_info "Microsoft OAuth completed"
+
+    # Verify tokens are now valid with actual API calls
+    log_info "Verifying OAuth tokens with API calls..."
+    if ! validate_tokens_with_api; then
+        log_error "OAuth tokens still invalid after refresh"
+        log_error "Please check that both OAuth flows completed successfully"
         kill $BACKEND_PID 2>/dev/null || true
         rm -f /tmp/preflight-backend.pid
-
-        # Wait for backend to stop
-        local stop_retries=0
-        while kill -0 $BACKEND_PID 2>/dev/null; do
-            sleep 0.5
-            ((stop_retries++))
-            if [ $stop_retries -gt 10 ]; then
-                log_warning "Backend did not stop gracefully, forcing..."
-                kill -9 $BACKEND_PID 2>/dev/null || true
-                break
-            fi
-        done
-
-        log_info "Backend stopped (OAuth complete, ready for build phase)"
-        return 0
+        return 1
     fi
 
-    log_info "OAuth tokens valid (not expired)"
+    log_info "OAuth tokens refreshed and validated successfully"
+
+    # Kill backend before build phase (must use fresh compiled code in E2E tests)
+    log_info "Stopping backend (will be restarted with fresh code after build)"
+    kill $BACKEND_PID 2>/dev/null || true
+    rm -f /tmp/preflight-backend.pid
+
+    # Wait for backend to stop
+    local stop_retries=0
+    while kill -0 $BACKEND_PID 2>/dev/null; do
+        sleep 0.5
+        ((stop_retries++))
+        if [ $stop_retries -gt 10 ]; then
+            log_warning "Backend did not stop gracefully, forcing..."
+            kill -9 $BACKEND_PID 2>/dev/null || true
+            break
+        fi
+    done
+
+    log_info "Backend stopped (OAuth complete, ready for build phase)"
     return 0
 }
 
