@@ -905,14 +905,17 @@ main() {
         # Start backend server with fresh compiled code and validate OAuth
         # Note: Even if OAuth was refreshed in preflight, we need to restart backend
         # to ensure E2E tests run against freshly compiled code (not old code)
-        if ! validate_oauth_with_html; then
+        local OAUTH_VALIDATED=false
+        if validate_oauth_with_html; then
+            OAUTH_VALIDATED=true
+        else
             log_error "OAuth validation failed"
             send_notification "OAuth Validation Failed" "Cannot proceed with E2E tests"
             E2E_TESTS_PASSED=false
         fi
 
         # Only proceed if OAuth validation succeeded
-        if [ "$E2E_TESTS_PASSED" != false ]; then
+        if [ "$OAUTH_VALIDATED" = true ]; then
             # Start frontend server
             log_info "Starting frontend server..."
             cd "$PROJECT_ROOT/frontend"
