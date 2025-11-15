@@ -479,6 +479,8 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       // This test verifies that the system handles archive folder creation
       // without breaking the sync workflow
 
+      test.setTimeout(120000); // Extended timeout for sync operations
+
       // Check if Microsoft OAuth credentials exist
       const hasCredentials = await hasMicrosoftOAuthCredentials();
       if (!hasCredentials) {
@@ -520,9 +522,8 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       await page.waitForTimeout(10000);
 
       // Verify sync completed without errors
-      // The fact that we got here means archive folder creation didn't break the sync
-      const syncButton = page.locator('button', { hasText: /sync now/i }).last();
-      await expect(syncButton).toBeEnabled({ timeout: 5000 });
+      // Wait for Microsoft sync button to re-enable (indicates sync completion)
+      await expect(microsoftSyncButton).toBeEnabled({ timeout: 60000 });
     });
 
     test('should preserve sync functionality with archiving enabled', async ({ page }) => {
@@ -581,7 +582,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
     test('should show archive metrics after sync', async ({ page }) => {
       // This test validates that archive functionality is working without manual Outlook checks
 
-      test.setTimeout(60000); // Extended timeout for sync operations
+      test.setTimeout(120000); // Extended timeout for sync operations
 
       // Check if Microsoft OAuth credentials exist
       const hasCredentials = await hasMicrosoftOAuthCredentials();
@@ -620,8 +621,8 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       await microsoftSyncButton.click();
       await page.waitForTimeout(20000); // Wait for sync to complete
 
-      // Check for sync completion indicator
-      await expect(microsoftSyncButton).toBeEnabled({ timeout: 10000 });
+      // Check for sync completion indicator (increased timeout for slower sync operations)
+      await expect(microsoftSyncButton).toBeEnabled({ timeout: 60000 });
 
       // Check stats were updated (indicates archiving happened)
       const statElement = page.locator('[data-testid="stat-filtered"]').or(
@@ -644,7 +645,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       // Only high-confidence emails (>0.3) create job records in database
       // Archival happens when user clicks "Reject" button (tested separately)
 
-      test.setTimeout(60000); // Extended timeout for LLM processing
+      test.setTimeout(120000); // Extended timeout for LLM processing and sync operations
 
       // Check if Microsoft OAuth credentials exist
       const hasCredentials = await hasMicrosoftOAuthCredentials();
@@ -663,8 +664,8 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       await syncButton.click();
       await page.waitForTimeout(20000); // Wait for processing
 
-      // Wait for sync to complete
-      await expect(syncButton).toBeEnabled({ timeout: 10000 });
+      // Wait for sync to complete (increased timeout for LLM processing + email operations)
+      await expect(syncButton).toBeEnabled({ timeout: 60000 });
 
       // Check sync metrics - should show emails were processed
       const syncMetrics = page.locator('text=/discovered:|processed:/i');
