@@ -10,6 +10,7 @@
     - [File Path Conventions](#file-path-conventions)
     - [File Discovery Tools](#file-discovery-tools)
     - [Work Session Tagging](#work-session-tagging)
+    - [Comprehensive Testing Policy](#comprehensive-testing-policy)
   - [Workflow Standards (Summary)](#workflow-standards-summary)
     - [Documentation Timestamp Standards](#documentation-timestamp-standards)
     - [PROJECT_STATUS.md Organization](#project_statusmd-organization)
@@ -49,7 +50,9 @@ This file provides essential project information and guidance to Claude Code (cl
   - [Database Configuration](#database-configuration)
   - [Notifications](#notifications)
   - [File Path Conventions](#file-path-conventions)
+  - [File Discovery Tools](#file-discovery-tools)
   - [Work Session Tagging](#work-session-tagging)
+  - [Comprehensive Testing Policy](#comprehensive-testing-policy)
 - [Workflow Standards (Summary)](#workflow-standards-summary)
 - [Development Commands](#development-commands)
   - [Database Setup](#database-setup)
@@ -198,6 +201,62 @@ afplay /System/Library/Sounds/Glass.aiff && osascript -e "display dialog \"[mess
 **Common session types**: `end-of-am`, `end-of-pm`, `end-of-day`, `end-of-evening`
 
 **Full documentation**: See [README_dev.md - Helper Scripts](README_dev.md#tag-sessionsh) for detailed usage instructions.
+
+### Comprehensive Testing Policy
+
+**⚠️ CRITICAL**: Avoid running comprehensive test suites unless absolutely necessary!
+
+**Why Comprehensive Tests Are Expensive**:
+- **Runtime**: ~15-20 minutes (backend + frontend + E2E)
+- **OAuth requirement**: Requires manual browser OAuth flows (Gmail + Microsoft)
+- **Token usage**: Significant Claude Code token consumption
+- **Interruptions**: Must monitor and interact with OAuth prompts
+- **Cost**: Time-consuming for developer and AI assistant
+
+**❌ DON'T run comprehensive tests for**:
+- Small code changes or bug fixes
+- Documentation updates
+- Test-only changes
+- Exploratory work or prototyping
+- Regular development work
+
+**✅ DO run comprehensive tests for**:
+- Major refactoring across multiple components
+- Pre-release verification before deployment
+- After fixing critical bugs that affect multiple systems
+- When explicitly requested by user
+- Before merging major feature branches
+
+**Instead, use targeted testing**:
+```bash
+# Backend only (fast: ~90 seconds)
+cd backend && cargo test
+
+# Frontend only (fast: ~25 seconds)
+cd frontend && npm test
+
+# Specific E2E test file (fast: ~1-5 minutes)
+cd frontend && npx playwright test e2e/tests/03-job-status-updates.spec.ts
+
+# Backend + Frontend unit tests only (fast: ~2 minutes)
+cd backend && cargo test && cd ../frontend && npm test
+```
+
+**Current Testing State** (as of 2025-11-15):
+- Backend: 164/164 passing (100%)
+- Frontend: 516/516 passing (100%)
+- E2E: ~98% pass rate expected (381-390 passed, 4-6 failed estimated)
+- **Status**: Tests at "acceptable" state for active development
+
+**When User Says "Run Tests"**:
+- **Ask which tests**: "Which tests would you like me to run? (backend/frontend/specific E2E/comprehensive)"
+- **Default to targeted**: Suggest running only affected tests based on changes
+- **Warn about comprehensive**: If they request comprehensive, remind them of ~20 minute runtime + OAuth requirement
+
+**Documentation**:
+- Current test status: `docs/TESTING_STATUS.md`
+- Test plan: `README_auto-test-plan.md`
+- Test history: `docs/TESTING_HISTORY.md`
 
 ---
 
