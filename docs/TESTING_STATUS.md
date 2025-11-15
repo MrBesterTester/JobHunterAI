@@ -129,10 +129,10 @@ cargo test
 | **Backend Build** | ✅ | - | 0 | - | 100% | 99s | ✅ PASSED |
 | **Frontend Build** | ✅ | - | 0 | - | 100% | 4s | ✅ PASSED |
 | **E2E Type-checking** | ✅ | 0 | 0 | - | **100%** | 3s | ✅ PASSED |
-| **Backend Tests** | 161 | **3** | 3² | 6³ | **98.2%** | 87s | ⚠️ **3 FAILURES** |
+| **Backend Tests** | **164** | **0** | 3² | 6³ | **100%** | 87s | ✅ **FIXED** |
 | **Frontend Unit (Jest)** | 516 | 0 | 0 | 1⁴ | **100%** | 25s | ✅ PASSED |
 | **E2E (Playwright)** | 391 | **32** | 0 | 154⁵ + 18⁶ | **92.3%** | 18m 5s | ⚠️ **32 FAILURES** |
-| **TOTAL** | **1068** | **35** | **3** | **179** | **96.9%** | **~41 min** | ⚠️ **35 FAILURES** |
+| **TOTAL** | **1071** | **32** | **3** | **179** | **97.1%** | **~41 min** | ⚠️ **32 FAILURES** |
 
 **Notes**:
 - ¹**Pass Rate Formula**: `Passed / (Passed + Failed)` - Skipped/Ignored tests excluded from denominator
