@@ -27,6 +27,7 @@ last_updated: 2025-11-14 17:03:34 PST (Comprehensive testing flow redesign: HTML
       - [Message Format](#message-format)
       - [Cross-Reference](#cross-reference)
     - [Separate Test Runner Scripts](#separate-test-runner-scripts)
+      - [Fast Unit Tests (Recommended for Development)](#fast-unit-tests-recommended-for-development)
       - [Backend Tests Only](#backend-tests-only)
       - [Frontend Tests Only](#frontend-tests-only)
       - [E2E Tests Only](#e2e-tests-only)
@@ -314,6 +315,51 @@ afplay /System/Library/Sounds/Basso.aiff && osascript -e "display dialog \"❌ T
 
 For faster iteration and targeted testing, individual test suites can be run separately:
 
+#### Fast Unit Tests (Recommended for Development)
+
+**Script**: `./helper-scripts/run-fast-tests.sh`
+
+**Purpose**: Run backend + frontend unit tests WITHOUT OAuth validation or cargo clean
+
+**Runtime**: ~2 minutes (vs ~6+ minutes for comprehensive suite)
+
+**Usage**:
+```bash
+# Quick iteration during development
+./helper-scripts/run-fast-tests.sh
+```
+
+**What it does**:
+1. Runs `cargo test` (uses incremental build, no cargo clean)
+2. Runs `npm test` (Jest unit tests)
+3. Reports combined pass/fail summary with timing
+4. Plays sound notification on completion
+
+**What it DOESN'T do** (for speed):
+- ❌ No cargo clean (uses incremental builds)
+- ❌ No OAuth validation (unit tests don't need real tokens)
+- ❌ No E2E tests (no browser, no servers)
+- ❌ No preflight checks (git status, database state)
+
+**Use when**:
+- Making code changes during active development
+- Rapid iteration (code → test → fix cycle)
+- Want immediate feedback without waiting for full CI/CD
+
+**Strategy**:
+- This script prioritizes **speed over completeness**
+- OAuth tokens from `.env.test` are used by seed-database.sh during comprehensive tests
+- The comprehensive test suite handles OAuth validation and E2E testing
+- See "OAuth Token Management Strategy" section for token refresh workflow
+
+**Why it's fast**:
+- Incremental cargo builds save ~2-3 minutes vs cargo clean + full rebuild
+- No OAuth validation saves ~30-60 seconds of token refresh checks
+- No E2E tests saves ~20-25 minutes of browser automation
+- Total: ~2 min (fast) vs ~6+ min (comprehensive without E2E) vs ~30+ min (full suite)
+
+---
+
 #### Backend Tests Only
 
 **Script**: `./helper-scripts/run-backend-tests.sh`
@@ -429,29 +475,43 @@ See `helper-scripts/run-comprehensive-tests.sh` function `validate_oauth_with_ht
 
 ### Recommended Test Workflow
 
-**Fast Iteration** (2-3 minutes):
+**Fast Iteration** (~2 minutes) - **RECOMMENDED FOR ACTIVE DEVELOPMENT**:
 ```bash
-# 1. Backend changes
+# Run both backend + frontend unit tests in one command
+./helper-scripts/run-fast-tests.sh
+```
+
+**Why this is the best choice for development**:
+- ✅ Runs all unit tests (backend + frontend) in ~2 minutes
+- ✅ No OAuth validation delays (uses incremental builds)
+- ✅ Immediate feedback on code changes
+- ✅ Sound notification when done
+
+**Targeted Testing** (when you need granular control):
+```bash
+# Backend changes only
 ./helper-scripts/run-backend-tests.sh --no-build
 
-# 2. Frontend changes
+# Frontend changes only
 ./helper-scripts/run-frontend-tests.sh --no-build
 ```
 
 **Full Validation** (25-30 minutes):
 ```bash
-# 1. Fast tests first
-./helper-scripts/run-backend-tests.sh
-./helper-scripts/run-frontend-tests.sh
+# 1. Fast unit tests first
+./helper-scripts/run-fast-tests.sh
 
-# 2. E2E tests last (if fast tests pass)
+# 2. E2E tests last (if unit tests pass)
 ./helper-scripts/run-e2e-tests.sh
 ```
 
-**Comprehensive Pre-commit** (30 minutes):
+**Comprehensive Pre-commit** (~6 minutes without E2E, ~30 minutes with E2E):
 ```bash
-# Run everything with preflight checks
+# Run everything with preflight checks and OAuth validation
 ./helper-scripts/run-comprehensive-tests.sh
+
+# Skip E2E if OAuth tokens expired (unit tests only)
+./helper-scripts/run-comprehensive-tests.sh --skip-e2e
 ```
 
 ---
@@ -1011,9 +1071,10 @@ All critical requirements from the testing plan have been fully implemented and 
 
 ### Helper Scripts Inventory
 
-**Total Scripts**: 35 scripts in `helper-scripts/` directory
+**Total Scripts**: 36 scripts in `helper-scripts/` directory
 
 **Key Testing Scripts**:
+- `run-fast-tests.sh` - **[NEW]** Fast unit tests (backend + frontend, ~2 min, recommended for development)
 - `run-comprehensive-tests.sh` - Full test suite with preflight
 - `run-backend-tests.sh` - Backend tests only
 - `run-frontend-tests.sh` - Frontend unit tests only
