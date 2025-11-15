@@ -8578,43 +8578,28 @@ async fn send_gmail_email(
     // Encode as base64 (Gmail API requirement)
     let encoded_message = general_purpose::URL_SAFE_NO_PAD.encode(message.as_bytes());
 
-    // Get OAuth credentials
-    let oauth_cred = sqlx::query_as::<_, OAuthCredential>(
-        "SELECT * FROM oauth_credentials WHERE source_id = (SELECT source_id FROM job_sources WHERE source_name = 'gmail') LIMIT 1"
-    )
-    .fetch_one(pool)
-    .await
-    .map_err(|e| actix_web::error::ErrorUnauthorized(format!("Gmail not authenticated: {}", e)))?;
+    // Send via Gmail API with automatic token refresh
+    let send_response = with_gmail_token_refresh(pool, |token| {
+        let encoded_message = encoded_message.clone();
+        async move {
+            let client = reqwest::Client::new();
+            let send_request = serde_json::json!({
+                "raw": encoded_message
+            });
 
-    // Check if token is expired and refresh if needed
-    let access_token = if oauth_cred.token_expires_at < Some(chrono::Utc::now()) {
-        refresh_gmail_token(&oauth_cred, pool).await?
-    } else {
-        oauth_cred.access_token
-            .ok_or_else(|| actix_web::error::ErrorUnauthorized("No access token"))?
-    };
+            let response = client
+                .post("https://gmail.googleapis.com/gmail/v1/users/me/messages/send")
+                .bearer_auth(&token)
+                .json(&send_request)
+                .send()
+                .await?;
 
-    // Send via Gmail API (messages.send endpoint, not drafts)
-    let client = reqwest::Client::new();
-    let send_request = serde_json::json!({
-        "raw": encoded_message
-    });
+            // error_for_status() will convert non-success status to reqwest::Error
+            let response = response.error_for_status()?;
 
-    let response = client
-        .post("https://gmail.googleapis.com/gmail/v1/users/me/messages/send")
-        .bearer_auth(&access_token)
-        .json(&send_request)
-        .send()
-        .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Gmail API call failed: {}", e)))?;
-
-    if !response.status().is_success() {
-        let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
-        return Err(actix_web::error::ErrorInternalServerError(format!("Gmail API error: {}", error_text)));
-    }
-
-    let send_response: serde_json::Value = response.json().await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to parse Gmail response: {}", e)))?;
+            response.json::<serde_json::Value>().await
+        }
+    }).await?;
 
     // Extract message ID from response
     let message_id = send_response["id"]
@@ -8708,45 +8693,30 @@ async fn create_gmail_draft(
     // 4. Encode the entire message as base64 (Gmail API requirement)
     let encoded_message = general_purpose::URL_SAFE_NO_PAD.encode(mime_message.as_bytes());
 
-    // 5. Get OAuth credentials
-    let oauth_cred = sqlx::query_as::<_, OAuthCredential>(
-        "SELECT * FROM oauth_credentials WHERE source_id = (SELECT source_id FROM job_sources WHERE source_name = 'gmail') LIMIT 1"
-    )
-    .fetch_one(pool)
-    .await
-    .map_err(|e| actix_web::error::ErrorUnauthorized(format!("Gmail not authenticated: {}", e)))?;
+    // 5-6. Call Gmail API to create draft with automatic token refresh
+    let gmail_response = with_gmail_token_refresh(pool, |token| {
+        let encoded_message = encoded_message.clone();
+        async move {
+            let client = reqwest::Client::new();
+            let draft_request = GmailDraftRequest {
+                message: GmailDraftMessage {
+                    raw: encoded_message,
+                },
+            };
 
-    // Check if token is expired and refresh if needed
-    let access_token = if oauth_cred.token_expires_at < Some(chrono::Utc::now()) {
-        refresh_gmail_token(&oauth_cred, pool).await?
-    } else {
-        oauth_cred.access_token
-            .ok_or_else(|| actix_web::error::ErrorUnauthorized("No access token"))?
-    };
+            let response = client
+                .post("https://gmail.googleapis.com/gmail/v1/users/me/drafts")
+                .bearer_auth(&token)
+                .json(&draft_request)
+                .send()
+                .await?;
 
-    // 6. Call Gmail API to create draft
-    let client = reqwest::Client::new();
-    let draft_request = GmailDraftRequest {
-        message: GmailDraftMessage {
-            raw: encoded_message,
-        },
-    };
+            // error_for_status() will convert non-success status to reqwest::Error
+            let response = response.error_for_status()?;
 
-    let response = client
-        .post("https://gmail.googleapis.com/gmail/v1/users/me/drafts")
-        .bearer_auth(&access_token)
-        .json(&draft_request)
-        .send()
-        .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Gmail API call failed: {}", e)))?;
-
-    if !response.status().is_success() {
-        let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
-        return Err(actix_web::error::ErrorInternalServerError(format!("Gmail API error: {}", error_text)));
-    }
-
-    let gmail_response: GmailDraftResponse = response.json().await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to parse Gmail response: {}", e)))?;
+            response.json::<GmailDraftResponse>().await
+        }
+    }).await?;
 
     // 7. Store draft in database
     let draft_id = Uuid::new_v4();
