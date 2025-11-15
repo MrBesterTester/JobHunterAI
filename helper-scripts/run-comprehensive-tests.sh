@@ -204,11 +204,78 @@ check_oauth_expiry() {
     fi
 
     if [ "$expired_count" -gt 0 ]; then
-        log_error "Found $expired_count expired OAuth token(s)"
-        log_error "Please refresh OAuth tokens before running E2E tests"
-        log_error "  Gmail: open gmail-oauth.html"
-        log_error "  Microsoft: open microsoft-oauth.html"
-        return 1
+        log_warning "Found $expired_count expired OAuth token(s)"
+        log_info "Starting OAuth token refresh process..."
+
+        # Start backend server for OAuth callbacks
+        log_info "Starting backend server for OAuth validation..."
+        cd "$PROJECT_ROOT/backend"
+        cargo run > /tmp/oauth-backend.log 2>&1 &
+        local BACKEND_PID=$!
+        echo $BACKEND_PID > /tmp/preflight-backend.pid
+        cd "$PROJECT_ROOT"
+
+        # Wait for backend to start
+        log_info "Waiting for backend to be ready..."
+        local retries=0
+        while ! curl -s http://localhost:8080/health > /dev/null 2>&1; do
+            sleep 1
+            ((retries++))
+            if [ $retries -gt 30 ]; then
+                log_error "Backend failed to start within 30 seconds"
+                kill $BACKEND_PID 2>/dev/null || true
+                rm -f /tmp/preflight-backend.pid
+                return 1
+            fi
+        done
+        log_info "Backend ready"
+
+        # Send notification
+        send_notification "OAuth Required" "Please complete Gmail and Microsoft OAuth in your browser" true
+
+        # Step 1: Gmail OAuth
+        log_info "Opening Gmail OAuth page in browser..."
+        open "$PROJECT_ROOT/gmail-oauth.html"
+        echo ""
+        echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${YELLOW}Gmail OAuth browser window should now be open.${NC}"
+        echo -e "${YELLOW}Complete the OAuth flow, then press ENTER to continue...${NC}"
+        echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo ""
+        read -r
+        log_info "Gmail OAuth completed"
+
+        # Step 2: Microsoft OAuth
+        log_info "Opening Microsoft OAuth page in browser..."
+        open "$PROJECT_ROOT/microsoft-oauth.html"
+        echo ""
+        echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${YELLOW}Microsoft OAuth browser window should now be open.${NC}"
+        echo -e "${YELLOW}Complete the OAuth flow, then press ENTER to continue...${NC}"
+        echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo ""
+        read -r
+        log_info "Microsoft OAuth completed"
+
+        # Verify tokens are now valid
+        log_info "Verifying OAuth tokens..."
+        local new_expired_count=$(psql -U jobhunter_user -d jobhunter_personal -tAc "
+            SELECT COUNT(*) FROM oauth_credentials
+            WHERE token_expires_at < NOW();
+        " 2>/dev/null)
+
+        if [ "$new_expired_count" -gt 0 ]; then
+            log_error "OAuth tokens still expired after refresh"
+            log_error "Please check that both OAuth flows completed successfully"
+            kill $BACKEND_PID 2>/dev/null || true
+            rm -f /tmp/preflight-backend.pid
+            return 1
+        fi
+
+        log_info "OAuth tokens refreshed successfully"
+        log_info "Backend server will remain running for E2E tests"
+        # Keep backend running - it will be reused by E2E phase
+        return 0
     fi
 
     log_info "OAuth tokens valid (not expired)"
@@ -748,7 +815,7 @@ main() {
     echo "Skip E2E tests: $SKIP_E2E"
     echo "No notify: $NO_NOTIFY"
 
-    # Preflight checks (without OAuth refresh - that happens later)
+    # Preflight checks (includes OAuth expiry check with auto-refresh if needed)
     if [ "$SKIP_PREFLIGHT" = false ]; then
         run_preflight_checks
     else
@@ -766,12 +833,21 @@ main() {
 
     # E2E phase (requires servers and OAuth)
     if [ "$SKIP_E2E" = false ]; then
-        # Start backend server and validate OAuth
-        if ! validate_oauth_with_html; then
-            log_error "OAuth validation failed"
-            send_notification "OAuth Validation Failed" "Cannot proceed with E2E tests"
-            E2E_TESTS_PASSED=false
+        # Check if backend is already running from preflight OAuth refresh
+        if [ -f /tmp/preflight-backend.pid ] && kill -0 $(cat /tmp/preflight-backend.pid) 2>/dev/null; then
+            log_info "Backend already running from preflight OAuth refresh (reusing)"
+            BACKEND_PID=$(cat /tmp/preflight-backend.pid)
         else
+            # Start backend server and validate OAuth
+            if ! validate_oauth_with_html; then
+                log_error "OAuth validation failed"
+                send_notification "OAuth Validation Failed" "Cannot proceed with E2E tests"
+                E2E_TESTS_PASSED=false
+            fi
+        fi
+
+        # Only proceed if OAuth validation succeeded (or backend already running)
+        if [ "$E2E_TESTS_PASSED" != false ]; then
             # Start frontend server
             log_info "Starting frontend server..."
             cd "$PROJECT_ROOT/frontend"
@@ -809,6 +885,10 @@ main() {
             if [ -f /tmp/test-backend.pid ]; then
                 kill $(cat /tmp/test-backend.pid) 2>/dev/null || true
                 rm /tmp/test-backend.pid
+            fi
+            if [ -f /tmp/preflight-backend.pid ]; then
+                kill $(cat /tmp/preflight-backend.pid) 2>/dev/null || true
+                rm /tmp/preflight-backend.pid
             fi
         fi
     else
