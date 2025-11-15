@@ -318,7 +318,8 @@ test.describe('Tab Navigation & Filtering', () => {
     });
   });
 
-  test.describe('Empty State Handling', () => {
+  // Run serially to avoid race conditions with shared database state
+  test.describe.serial('Empty State Handling', () => {
     test('should handle tabs with no jobs gracefully', async ({ page }) => {
       // Try each tab and verify empty state handling
       const tabs: Array<'inbox' | 'approved' | 'applied' | 'filtered'> = [
