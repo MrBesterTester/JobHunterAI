@@ -25,6 +25,7 @@ NC='\033[0m' # No Color
 FAIL_FAST=false
 SKIP_PREFLIGHT=false
 SKIP_E2E=false
+NO_NOTIFY=false
 
 # Results tracking
 PREFLIGHT_PASSED=true
@@ -61,6 +62,7 @@ OPTIONS:
     -f, --fail-fast       Stop on first TEST failure (build failures always stop)
     --skip-preflight      Skip preflight checks (not recommended)
     --skip-e2e            Skip E2E tests (run only backend/frontend unit tests)
+    --no-notify           Suppress subordinate notifications (final result only)
     -h, --help            Show this help message
 
 EXAMPLES:
@@ -84,6 +86,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --skip-e2e)
             SKIP_E2E=true
+            shift
+            ;;
+        --no-notify)
+            NO_NOTIFY=true
             shift
             ;;
         -h|--help)
@@ -145,6 +151,12 @@ handle_failure() {
 send_notification() {
     local title="$1"
     local message="$2"
+    local always_notify="${3:-false}"  # Third param for OAuth/critical notifications
+
+    # Skip notification if suppressed (unless it's a critical notification like OAuth)
+    if [ "$NO_NOTIFY" = true ] && [ "$always_notify" != true ]; then
+        return 0
+    fi
 
     # Play sound
     afplay /System/Library/Sounds/Glass.aiff 2>/dev/null || true
@@ -249,6 +261,80 @@ check_msmail_state() {
     # Test setup will seed MS Mail data after backend starts
 
     log_info "MS Mail OAuth validated (seeding handled by E2E setup)"
+    return 0
+}
+
+validate_oauth_with_html() {
+    log_section "OAUTH VALIDATION (HTML-based)"
+
+    # Backend must be running for OAuth callbacks
+    log_info "Starting backend server for OAuth validation..."
+    cd "$PROJECT_ROOT/backend"
+    cargo run > /tmp/oauth-backend.log 2>&1 &
+    local BACKEND_PID=$!
+    cd "$PROJECT_ROOT"
+
+    # Wait for backend to start
+    log_info "Waiting for backend to be ready..."
+    local retries=0
+    while ! curl -s http://localhost:8080/health > /dev/null 2>&1; do
+        sleep 1
+        ((retries++))
+        if [ $retries -gt 30 ]; then
+            log_error "Backend failed to start within 30 seconds"
+            kill $BACKEND_PID 2>/dev/null || true
+            return 1
+        fi
+    done
+    log_info "Backend ready"
+
+    # Check if OAuth tokens need refresh
+    local needs_oauth=false
+    if ! "$SCRIPT_DIR/refresh-oauth-tokens.sh" > /dev/null 2>&1; then
+        needs_oauth=true
+        log_warning "OAuth tokens invalid or missing"
+        log_info "Opening OAuth HTML files in browser..."
+
+        # Always notify for OAuth (requires user action)
+        send_notification "OAuth Required" "Please complete Gmail and Microsoft OAuth in your browser" true
+
+        # Open OAuth HTML files
+        open "$PROJECT_ROOT/gmail-oauth.html"
+        sleep 2  # Brief delay between opening pages
+        open "$PROJECT_ROOT/microsoft-oauth.html"
+
+        log_info "Waiting for OAuth completion..."
+        log_warning "Complete OAuth in browser windows, then tokens will be validated"
+
+        # Poll for valid tokens (max 5 minutes)
+        local oauth_retries=0
+        while [ $oauth_retries -lt 60 ]; do
+            sleep 5
+            if "$SCRIPT_DIR/refresh-oauth-tokens.sh" > /dev/null 2>&1; then
+                log_info "OAuth tokens validated successfully!"
+                break
+            fi
+            ((oauth_retries++))
+            if [ $((oauth_retries % 6)) -eq 0 ]; then
+                log_info "Still waiting for OAuth... ($((oauth_retries * 5))s elapsed)"
+            fi
+        done
+
+        if [ $oauth_retries -ge 60 ]; then
+            log_error "OAuth validation timed out after 5 minutes"
+            kill $BACKEND_PID 2>/dev/null || true
+            return 1
+        fi
+    else
+        log_info "OAuth tokens are valid"
+    fi
+
+    # Keep backend running for E2E tests (don't kill it)
+    log_info "Backend server will remain running for E2E tests"
+
+    # Store PID for later cleanup if needed
+    echo $BACKEND_PID > /tmp/test-backend.pid
+
     return 0
 }
 
@@ -490,26 +576,25 @@ run_frontend_tests() {
 run_e2e_tests() {
     log_section "RUNNING E2E TESTS (Playwright)"
 
-    cd "$PROJECT_ROOT/frontend"
     local start_time=$(date +%s)
 
-    log_info "Running npm run test:e2e..."
-    if npm run test:e2e 2>&1 | tee /tmp/e2e-test.log; then
+    # Pass --no-notify flag to subordinate script if set
+    local notify_flag=""
+    if [ "$NO_NOTIFY" = true ]; then
+        notify_flag="--no-notify"
+    fi
+
+    log_info "Running E2E test script..."
+    if "$SCRIPT_DIR/run-e2e-tests.sh" $notify_flag; then
         local end_time=$(date +%s)
         E2E_TEST_TIME="$((end_time - start_time))s"
-
-        # Extract test counts
-        local test_summary=$(grep "passed\|failed\|skipped" /tmp/e2e-test.log | tail -1)
         log_info "E2E tests PASSED (${E2E_TEST_TIME})"
-        log_info "$test_summary"
         E2E_TESTS_PASSED=true
     else
         log_error "E2E tests FAILED"
         handle_failure "E2E tests"
         E2E_TESTS_PASSED=false
     fi
-
-    cd "$PROJECT_ROOT"
 }
 
 generate_report() {
@@ -622,25 +707,71 @@ main() {
     echo "Fail-fast mode: $FAIL_FAST"
     echo "Skip preflight: $SKIP_PREFLIGHT"
     echo "Skip E2E tests: $SKIP_E2E"
+    echo "No notify: $NO_NOTIFY"
 
-    # Preflight checks
+    # Preflight checks (without OAuth refresh - that happens later)
     if [ "$SKIP_PREFLIGHT" = false ]; then
         run_preflight_checks
     else
         log_warning "Skipping preflight checks (not recommended)"
     fi
 
-    # Build phase
+    # Build phase (Quality Gate - must pass before tests)
     build_backend
     build_frontend
     typecheck_e2e
 
-    # Test phase
+    # Unit test phase (no servers needed)
     run_backend_tests
     run_frontend_tests
 
+    # E2E phase (requires servers and OAuth)
     if [ "$SKIP_E2E" = false ]; then
-        run_e2e_tests
+        # Start backend server and validate OAuth
+        if ! validate_oauth_with_html; then
+            log_error "OAuth validation failed"
+            send_notification "OAuth Validation Failed" "Cannot proceed with E2E tests"
+            E2E_TESTS_PASSED=false
+        else
+            # Start frontend server
+            log_info "Starting frontend server..."
+            cd "$PROJECT_ROOT/frontend"
+            npm start > /tmp/frontend-server.log 2>&1 &
+            local FRONTEND_PID=$!
+            echo $FRONTEND_PID > /tmp/test-frontend.pid
+            cd "$PROJECT_ROOT"
+
+            # Wait for frontend to be ready
+            log_info "Waiting for frontend to be ready..."
+            local retries=0
+            while ! curl -s http://localhost:3000 > /dev/null 2>&1; do
+                sleep 1
+                ((retries++))
+                if [ $retries -gt 30 ]; then
+                    log_error "Frontend failed to start within 30 seconds"
+                    E2E_TESTS_PASSED=false
+                    break
+                fi
+            done
+
+            if [ $retries -lt 30 ]; then
+                log_info "Frontend ready"
+
+                # Run E2E tests
+                run_e2e_tests
+            fi
+
+            # Cleanup servers after E2E tests
+            log_info "Stopping test servers..."
+            if [ -f /tmp/test-frontend.pid ]; then
+                kill $(cat /tmp/test-frontend.pid) 2>/dev/null || true
+                rm /tmp/test-frontend.pid
+            fi
+            if [ -f /tmp/test-backend.pid ]; then
+                kill $(cat /tmp/test-backend.pid) 2>/dev/null || true
+                rm /tmp/test-backend.pid
+            fi
+        fi
     else
         log_warning "Skipping E2E tests (--skip-e2e flag set)"
         E2E_TESTS_PASSED=false  # Mark as not run

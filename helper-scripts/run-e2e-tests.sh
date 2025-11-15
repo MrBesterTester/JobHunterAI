@@ -3,11 +3,28 @@ set -euo pipefail
 
 # Run E2E Tests Script
 # Purpose: Run only E2E Playwright tests
-# Usage: ./helper-scripts/run-e2e-tests.sh
+# Usage: ./helper-scripts/run-e2e-tests.sh [--no-notify]
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 FRONTEND_DIR="$PROJECT_ROOT/frontend"
+
+# Default behavior
+NO_NOTIFY=false
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --no-notify)
+            NO_NOTIFY=true
+            shift
+            ;;
+        *)
+            echo "Unknown option: $1"
+            exit 1
+            ;;
+    esac
+done
 
 # Color codes
 RED='\033[0;31m'
@@ -58,9 +75,11 @@ if npm run test:e2e 2>&1 | tee /tmp/e2e-test.log; then
     echo -e "${GREEN}✅ E2E tests completed successfully${NC}"
     echo "Runtime: ${RUNTIME_MIN}m ${RUNTIME_SEC}s"
 
-    # Send notification
-    afplay /System/Library/Sounds/Glass.aiff 2>/dev/null || true
-    osascript -e "display dialog \"E2E tests passed (${RUNTIME_MIN}m ${RUNTIME_SEC}s)\" with title \"Claude Code\" buttons {\"OK\"} default button \"OK\" with icon note" 2>/dev/null || true
+    # Send notification (unless suppressed)
+    if [ "$NO_NOTIFY" = false ]; then
+        afplay /System/Library/Sounds/Glass.aiff 2>/dev/null || true
+        osascript -e "display dialog \"E2E tests passed (${RUNTIME_MIN}m ${RUNTIME_SEC}s)\" with title \"Claude Code\" buttons {\"OK\"} default button \"OK\" with icon note" 2>/dev/null || true
+    fi
 
     exit 0
 else
@@ -82,9 +101,11 @@ else
     echo -e "${RED}❌ E2E tests failed${NC}"
     echo "See /tmp/e2e-test.log for details"
 
-    # Send notification
-    afplay /System/Library/Sounds/Basso.aiff 2>/dev/null || true
-    osascript -e "display dialog \"E2E tests failed\" with title \"Claude Code\" buttons {\"OK\"} default button \"OK\" with icon caution" 2>/dev/null || true
+    # Send notification (unless suppressed)
+    if [ "$NO_NOTIFY" = false ]; then
+        afplay /System/Library/Sounds/Basso.aiff 2>/dev/null || true
+        osascript -e "display dialog \"E2E tests failed\" with title \"Claude Code\" buttons {\"OK\"} default button \"OK\" with icon caution" 2>/dev/null || true
+    fi
 
     exit 1
 fi
