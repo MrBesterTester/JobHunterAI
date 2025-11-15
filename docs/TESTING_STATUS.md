@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-15 09:35:55 PST
-last_updated: 2025-11-15 10:27:57 PST (Job Status Update test investigation completed)
+last_updated: 2025-11-15 11:05:42 PST (LLM Quality Assessment test timeout fix completed)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -34,7 +34,7 @@ last_updated: 2025-11-15 10:27:57 PST (Job Status Update test investigation comp
     - [Key Observations](#key-observations)
   - [Next Steps](#next-steps)
     - [✅ Priority 1: Investigate Job Status Update Test Failures (COMPLETED)](#-priority-1-investigate-job-status-update-test-failures-completed)
-    - [Priority 2: Address LLM Quality Test Timeouts](#priority-2-address-llm-quality-test-timeouts)
+    - [✅ Priority 2: Address LLM Quality Test Timeouts (COMPLETED)](#-priority-2-address-llm-quality-test-timeouts-completed)
     - [Deferred: Fix OAuth Flow to Only Prompt for Expired Tokens](#deferred-fix-oauth-flow-to-only-prompt-for-expired-tokens)
     - [Historical: Completed Priorities](#historical-completed-priorities)
   - [Related Files](#related-files)
@@ -424,30 +424,46 @@ All quality scoring tests timing out at 59s:
 
 ---
 
-### Priority 2: Address LLM Quality Test Timeouts
+### ✅ Priority 2: Address LLM Quality Test Timeouts (COMPLETED)
 
 **Purpose**: Reduce or eliminate 11 LLM API timeout failures in E2E tests
 
-**Status**: ⏳ **PENDING**
+**Status**: ✅ **COMPLETED** (2025-11-15 11:05 PST)
 
-**Test Failures**:
-- 11 Phase 3.1.5 Quality Assessment tests timing out at 59s
-- Tests use live Claude API for LLM generation
-- Timeouts occur when API takes longer than test timeout (59s)
+**Test Failures Addressed**:
+- 11 Phase 3.1.5 Quality Assessment tests timing out at 57-59s
+- Tests in `05-phase-3.1.5-testing-refinement.spec.ts`
+- Tests use live Claude API for LLM content generation
+- Timeouts occur when API takes longer than expected (unpredictable latency)
 
-**Root Cause**: Live API calls are unreliable for E2E testing (network latency, API load)
+**Root Cause Analysis**:
+- Live API calls are unreliable for E2E testing (network latency, API load, rate limits)
+- These are infrastructure/timing issues, NOT application bugs
+- Tests were supposed to be disabled via test-config.ts ('testing-refinement': false)
+- But test file wasn't checking the configuration properly
 
-**Solution Options**:
-1. **Increase timeout** to 90s or 120s (simple but doesn't solve root cause)
-2. **Mock LLM responses** for E2E tests (reliable but loses integration coverage)
-3. **Skip in comprehensive runs** and run separately with longer timeout
-4. **Make optional** with separate test tag (e.g., `@llm-integration`)
+**Solution Implemented**: Option 3 - Skip in comprehensive runs
+- Added `shouldRunTest('testing-refinement')` check to test file
+- Tests now properly skip when disabled in test-config.ts
+- Follows same pattern as other disabled test suites (email-composer)
+- Tests remain available for separate execution when needed
 
-**Recommended Approach**: Option 3 or 4 - separate long-running LLM tests from core E2E suite
+**Code Changes**:
+- Updated `05-phase-3.1.5-testing-refinement.spec.ts` to check test config
+- No changes to test-config.ts (already had 'testing-refinement': false)
+- Commit: `2145190` - "fix: Properly skip LLM Quality Assessment tests"
 
-**Estimated Time**: 1 hour
+**Expected Impact**:
+- Eliminates 11 timeout failures from comprehensive runs
+- Pass rate improvement: 96.2% → 98.9% (+2.7%)
+- Reduces comprehensive run time by ~10 minutes
+- Expected comprehensive test results: ~385-390 passed, 4-6 failed (vs current 381 passed, 15 failed)
 
-**Why This Matters**: 11 timeouts inflate failure count and obscure real test failures. These are infrastructure issues, not application bugs.
+**Verification**: Ran isolated test - properly shows as skipped (-)
+
+**Time Taken**: 30 minutes
+
+**How to Re-enable**: Change test-config.ts line 62 to `'testing-refinement': true`
 
 ---
 
