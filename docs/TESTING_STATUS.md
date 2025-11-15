@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-15 12:38:10 PST
-last_updated: 2025-11-15 14:55:22 PST (Flaky tests investigated and documented - ISSUE-046)
+last_updated: 2025-11-15 14:59:14 PST (Clarified baseline vs current state in test results)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -19,7 +19,8 @@ last_updated: 2025-11-15 14:55:22 PST (Flaky tests investigated and documented -
 
 - [Testing Status](#testing-status)
   - [📊 Latest Comprehensive Test Run](#-latest-comprehensive-test-run)
-    - [Test Results Summary](#test-results-summary)
+    - [Test Results Summary (Baseline)](#test-results-summary-baseline)
+    - [Estimated Current State (After Fixes)](#estimated-current-state-after-fixes)
     - [E2E Failure Breakdown](#e2e-failure-breakdown)
     - [Detailed Failure Analysis](#detailed-failure-analysis)
       - [1. Gmail Sync Integration](#1-gmail-sync-integration)
@@ -49,7 +50,7 @@ last_updated: 2025-11-15 14:55:22 PST (Flaky tests investigated and documented -
 **Runtime**: ~15 minutes (clean rebuild + all tests)
 **Exit Code**: 0 (SUCCESS)
 
-### Test Results Summary
+### Test Results Summary (Baseline)
 
 | Test Suite | Passed | Failed | Flaky | Skipped | Pass Rate | Runtime | Status |
 |------------|--------|--------|-------|---------|-----------|---------|--------|
@@ -62,7 +63,22 @@ last_updated: 2025-11-15 14:55:22 PST (Flaky tests investigated and documented -
 | **E2E Tests** | 385 | 6 | 5 | 197 | **97.6%** | 632s | ⚠️ **6 FAILURES** |
 | **TOTAL (Active)** | **1065** | **6** | **5** | **204** | **99.4%** | **~15 min** | ⚠️ **6 FAILURES** |
 
+**Note**: This table shows results from the baseline comprehensive run. See "Work Since Last Comprehensive Run" below for fixes completed since then.
+
 **Key Achievement**: 🎉 OAuth validation now fully automated - no manual browser flows required during test runs
+
+### Estimated Current State (After Fixes)
+
+Based on systematic debugging and verification since the baseline run:
+
+| Test Suite | Passed | Failed | Flaky | Skipped | Pass Rate | Status |
+|------------|--------|--------|-------|---------|-----------|--------|
+| **E2E Tests** | ~391 | 0 | 5 | 197 | **~99.0%** | ✅ **0 FAILURES** |
+| **TOTAL (Active)** | **~1071** | **0** | **5** | **204** | **~99.8%** | ✅ **0 FAILURES** |
+
+**Changes from baseline:**
+- ✅ 6 E2E failures → 0 failures (all fixed or verified passing)
+- ⚠️ 5 E2E flaky tests remain (context-dependent, pass in isolation - see ISSUE-046)
 
 ### E2E Failure Breakdown
 
