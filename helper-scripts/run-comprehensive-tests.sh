@@ -190,8 +190,13 @@ validate_tokens_with_api() {
     # Validate OAuth tokens by making actual API calls
     # This catches tokens that are expired/invalid on the provider's side
     # even if database timestamps suggest they're still valid
+    #
+    # Sets global variables:
+    #   GMAIL_TOKEN_VALID (true/false)
+    #   MSMAIL_TOKEN_VALID (true/false)
 
-    local all_valid=true
+    GMAIL_TOKEN_VALID=true
+    MSMAIL_TOKEN_VALID=true
 
     # Get Gmail access token from database
     local gmail_token=$(psql -U jobhunter_user -d jobhunter_personal -tAc "
@@ -210,13 +215,13 @@ validate_tokens_with_api() {
 
         if [ "$gmail_response" != "200" ]; then
             log_warning "Gmail token validation failed (HTTP $gmail_response)"
-            all_valid=false
+            GMAIL_TOKEN_VALID=false
         else
             log_info "Gmail token validated successfully"
         fi
     else
         log_warning "No Gmail token found in database"
-        all_valid=false
+        GMAIL_TOKEN_VALID=false
     fi
 
     # Get Microsoft access token from database
@@ -236,16 +241,17 @@ validate_tokens_with_api() {
 
         if [ "$msmail_response" != "200" ]; then
             log_warning "Microsoft token validation failed (HTTP $msmail_response)"
-            all_valid=false
+            MSMAIL_TOKEN_VALID=false
         else
             log_info "Microsoft token validated successfully"
         fi
     else
         log_warning "No Microsoft token found in database"
-        all_valid=false
+        MSMAIL_TOKEN_VALID=false
     fi
 
-    if [ "$all_valid" = true ]; then
+    # Return success only if both tokens are valid
+    if [ "$GMAIL_TOKEN_VALID" = true ] && [ "$MSMAIL_TOKEN_VALID" = true ]; then
         return 0
     else
         return 1
@@ -265,7 +271,20 @@ check_oauth_expiry() {
     fi
 
     # Tokens are invalid - need to refresh
-    log_warning "OAuth tokens are invalid or expired"
+    # Build list of which tokens need refresh
+    local tokens_to_refresh=""
+    if [ "$GMAIL_TOKEN_VALID" = false ]; then
+        tokens_to_refresh="Gmail"
+    fi
+    if [ "$MSMAIL_TOKEN_VALID" = false ]; then
+        if [ -n "$tokens_to_refresh" ]; then
+            tokens_to_refresh="$tokens_to_refresh and Microsoft"
+        else
+            tokens_to_refresh="Microsoft"
+        fi
+    fi
+
+    log_warning "OAuth tokens are invalid or expired: $tokens_to_refresh"
     log_info "Starting OAuth token refresh process..."
 
     # Start backend server for OAuth callbacks
@@ -292,37 +311,41 @@ check_oauth_expiry() {
     log_info "Backend ready"
 
     # Send notification
-    send_notification "OAuth Required" "Please complete Gmail and Microsoft OAuth in your browser" true
+    send_notification "OAuth Required" "Please complete $tokens_to_refresh OAuth in your browser" true
 
-    # Step 1: Gmail OAuth
-    log_info "Opening Gmail OAuth page in browser..."
-    open "$PROJECT_ROOT/gmail-oauth.html"
-    echo ""
-    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${YELLOW}Gmail OAuth browser window should now be open.${NC}"
-    echo -e "${YELLOW}Complete the OAuth flow, then press ENTER to continue...${NC}"
-    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo ""
-    read -r
-    log_info "Gmail OAuth completed"
+    # Only prompt for Gmail OAuth if Gmail token is invalid
+    if [ "$GMAIL_TOKEN_VALID" = false ]; then
+        log_info "Opening Gmail OAuth page in browser..."
+        open "$PROJECT_ROOT/gmail-oauth.html"
+        echo ""
+        echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${YELLOW}Gmail OAuth browser window should now be open.${NC}"
+        echo -e "${YELLOW}Complete the OAuth flow, then press ENTER to continue...${NC}"
+        echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo ""
+        read -r
+        log_info "Gmail OAuth completed"
+    fi
 
-    # Step 2: Microsoft OAuth
-    log_info "Opening Microsoft OAuth page in browser..."
-    open "$PROJECT_ROOT/microsoft-oauth.html"
-    echo ""
-    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${YELLOW}Microsoft OAuth browser window should now be open.${NC}"
-    echo -e "${YELLOW}Complete the OAuth flow, then press ENTER to continue...${NC}"
-    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo ""
-    read -r
-    log_info "Microsoft OAuth completed"
+    # Only prompt for Microsoft OAuth if Microsoft token is invalid
+    if [ "$MSMAIL_TOKEN_VALID" = false ]; then
+        log_info "Opening Microsoft OAuth page in browser..."
+        open "$PROJECT_ROOT/microsoft-oauth.html"
+        echo ""
+        echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${YELLOW}Microsoft OAuth browser window should now be open.${NC}"
+        echo -e "${YELLOW}Complete the OAuth flow, then press ENTER to continue...${NC}"
+        echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo ""
+        read -r
+        log_info "Microsoft OAuth completed"
+    fi
 
     # Verify tokens are now valid with actual API calls
     log_info "Verifying OAuth tokens with API calls..."
     if ! validate_tokens_with_api; then
         log_error "OAuth tokens still invalid after refresh"
-        log_error "Please check that both OAuth flows completed successfully"
+        log_error "Please check that the OAuth flows completed successfully"
         kill $BACKEND_PID 2>/dev/null || true
         rm -f /tmp/preflight-backend.pid
         return 1
