@@ -601,14 +601,15 @@ run_preflight_checks() {
         all_passed=false
     fi
 
-    # OAuth expiry check (HARD requirement - abort if expired)
-    # Fast SQL query (~10ms) to detect expired tokens before wasting time on tests
-    if ! check_oauth_expiry; then
+    # Database state (HARD requirement - abort if fails)
+    # MUST run BEFORE OAuth validation since it seeds fresh tokens from .env.test
+    if ! check_database_state; then
         all_passed=false
     fi
 
-    # Database state (HARD requirement - abort if fails)
-    if ! check_database_state; then
+    # OAuth expiry check (HARD requirement - abort if expired)
+    # Runs AFTER database seeding to validate the freshly-injected tokens
+    if ! check_oauth_expiry; then
         all_passed=false
     fi
 
