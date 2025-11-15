@@ -329,6 +329,22 @@ validate_oauth_with_html() {
         log_info "OAuth tokens are valid"
     fi
 
+    # Clear Gmail state (now that OAuth tokens are valid)
+    log_info "Clearing Gmail state..."
+    if ! "$SCRIPT_DIR/clear-gmail-state.sh"; then
+        log_error "Failed to clear Gmail state"
+        kill $BACKEND_PID 2>/dev/null || true
+        return 1
+    fi
+
+    # Setup MS Mail state (now that OAuth tokens are valid)
+    log_info "Setting up MS Mail state..."
+    if ! "$SCRIPT_DIR/setup-msmail-state.sh"; then
+        log_error "Failed to setup MS Mail state"
+        kill $BACKEND_PID 2>/dev/null || true
+        return 1
+    fi
+
     # Keep backend running for E2E tests (don't kill it)
     log_info "Backend server will remain running for E2E tests"
 
@@ -388,38 +404,20 @@ run_preflight_checks() {
         all_passed=false
     fi
 
-    # OAuth token refresh (HARD requirement - abort if fails)
-    if [ -f "$PROJECT_ROOT/.env.test" ]; then
-        log_info "Refreshing OAuth tokens..."
-        if ! "$SCRIPT_DIR/refresh-oauth-tokens.sh"; then
-            log_error "Failed to refresh OAuth tokens"
-            log_error "Run: ./helper-scripts/setup-test-oauth.sh"
-            all_passed=false
-        fi
-    else
-        log_error ".env.test not found - OAuth tokens required"
-        log_error "Run: ./helper-scripts/setup-test-oauth.sh"
-        all_passed=false
-    fi
+    # OAuth validation moved to E2E phase (HTML-based validation with browser)
+    # No longer checking tokens during preflight
 
     # Database state (HARD requirement - abort if fails)
     if ! check_database_state; then
         all_passed=false
     fi
 
-    # Gmail state (HARD requirement - abort if fails)
-    if ! check_gmail_state; then
-        all_passed=false
-    fi
-
-    # MS Mail state (HARD requirement - abort if fails)
-    if ! check_msmail_state; then
-        all_passed=false
-    fi
+    # Gmail/MS Mail state checks moved to E2E phase (require OAuth tokens)
+    # These will be validated after HTML-based OAuth validation completes
 
     if [ "$all_passed" = false ]; then
         log_error "Preflight checks FAILED"
-        send_notification "Preflight Checks Failed" "Fix issues and try again"
+        # No notification for preflight failures - just log and exit
         exit 1
     fi
 
