@@ -41,6 +41,12 @@ related: [ISSUE-034, commit-330c8e7, commit-de3ee90]
   - [Phase 3: Testing & Validation](#phase-3-testing--validation)
 - [Testing](#testing)
 - [Status History](#status-history)
+- [Two Layers of OAuth Protection](#two-layers-of-oauth-protection)
+  - [Layer 1: Test Script Preflight Check (helper-scripts/run-comprehensive-tests.sh:261)](#layer-1-test-script-preflight-check-helper-scriptsrun-comprehensive-testssh261)
+  - [Layer 2: Backend Auto-Refresh (This Fix - backend/src/main.rs)](#layer-2-backend-auto-refresh-this-fix---backendsrcmainrs)
+  - [How They Work Together](#how-they-work-together)
+  - [Why Both Are Necessary](#why-both-are-necessary)
+- [Implementation Summary](#implementation-summary)
 - [Notes](#notes)
 - [Related Files](#related-files)
 - [Related Commits](#related-commits)
@@ -446,6 +452,77 @@ curl http://localhost:8080/api/gmail/sync/status
 - 2025-11-15: Documented comprehensive implementation plan for automatic token refresh
 - 2025-11-15: **IMPLEMENTED** - Core OAuth auto-refresh infrastructure complete (commit 930df71)
 - 2025-11-15: **FIXED** - Gmail critical endpoints updated with auto-refresh (commit 976799d)
+
+## Two Layers of OAuth Protection
+
+**CRITICAL DISTINCTION**: This fix implements backend auto-refresh, which is **complementary** to the comprehensive test script's preflight OAuth check. Both are necessary.
+
+### Layer 1: Test Script Preflight Check (helper-scripts/run-comprehensive-tests.sh:261)
+
+**What it does**:
+- Runs BEFORE tests start
+- Validates tokens with actual API calls (not just timestamp checks)
+- If tokens are **already expired at start time**, prompts user for manual OAuth
+- Ensures tests START with valid tokens
+
+**Problem it solves**:
+- "I forgot to refresh my tokens for 7 days (Gmail testing mode) or 90 days (Microsoft)"
+- "My tokens expired yesterday and I'm starting a test run today"
+- "Backend can't make ANY API calls because tokens are completely invalid"
+
+### Layer 2: Backend Auto-Refresh (This Fix - backend/src/main.rs)
+
+**What it does**:
+- Runs DURING test execution and application usage
+- Automatically refreshes tokens when they expire mid-operation
+- No user intervention needed
+- Handles 401 errors and retries automatically
+
+**Problem it solves**:
+- "Tokens expire DURING a 20-minute test run"
+- "Test started at 11:45am, token expires at 12:00pm, test fails at 12:05pm"
+- "Long-running operations interrupted by token expiration"
+
+### How They Work Together
+
+```
+Timeline Example - Comprehensive Test Run:
+
+11:00 AM - User starts test script
+11:00 AM - ✅ LAYER 1: Preflight check runs
+           - Token was issued at 10:30 AM
+           - Still valid (expires at 11:30 AM)
+           - Preflight passes, tests begin
+
+11:05 AM - Backend tests run (5 min)
+11:10 AM - Frontend tests run (5 min)
+11:15 AM - E2E tests start
+
+11:30 AM - ⚠️ TOKEN EXPIRES (1 hour after issue time)
+
+11:32 AM - E2E test tries to seed MS Mail
+           - Without Layer 2: ❌ FAILS with 401
+           - With Layer 2: ✅ LAYER 2: Auto-refreshes token, continues
+
+11:45 AM - All tests complete successfully ✅
+```
+
+### Why Both Are Necessary
+
+| Scenario | Preflight Check Needed? | Backend Auto-Refresh Needed? |
+|----------|------------------------|------------------------------|
+| Token expired before test starts | ✅ YES (can't call API at all) | ❌ No |
+| Token expires during test run | ❌ No (was valid at start) | ✅ YES |
+| Token expires during app usage | ❌ No (not in test mode) | ✅ YES |
+
+**Key Insight**:
+- **Preflight check** ensures "Do we have valid tokens to START?"
+- **Backend auto-refresh** ensures "Keep tokens valid DURING execution"
+- Both mechanisms complement each other perfectly
+
+**What changed with this fix**: Tests that START with valid tokens will no longer FAIL mid-run when tokens expire. The preflight check is still critical for catching already-expired tokens before tests begin.
+
+---
 
 ## Implementation Summary
 
