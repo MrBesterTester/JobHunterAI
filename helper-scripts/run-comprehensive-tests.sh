@@ -297,38 +297,43 @@ validate_oauth_with_html() {
     if ! "$SCRIPT_DIR/refresh-oauth-tokens.sh" > /dev/null 2>&1; then
         needs_oauth=true
         log_warning "OAuth tokens invalid or missing"
-        log_info "Opening OAuth HTML files in browser..."
 
         # Always notify for OAuth (requires user action)
         send_notification "OAuth Required" "Please complete Gmail and Microsoft OAuth in your browser" true
 
-        # Open OAuth HTML files
+        # Step 1: Gmail OAuth
+        log_info "Opening Gmail OAuth page in browser..."
         open "$PROJECT_ROOT/gmail-oauth.html"
-        sleep 2  # Brief delay between opening pages
+        echo ""
+        echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${YELLOW}Gmail OAuth browser window should now be open.${NC}"
+        echo -e "${YELLOW}Complete the OAuth flow, then press ENTER to continue...${NC}"
+        echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo ""
+        read -r
+        log_info "Gmail OAuth completed"
+
+        # Step 2: Microsoft OAuth
+        log_info "Opening Microsoft OAuth page in browser..."
         open "$PROJECT_ROOT/microsoft-oauth.html"
+        echo ""
+        echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${YELLOW}Microsoft OAuth browser window should now be open.${NC}"
+        echo -e "${YELLOW}Complete the OAuth flow, then press ENTER to continue...${NC}"
+        echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo ""
+        read -r
+        log_info "Microsoft OAuth completed"
 
-        log_info "Waiting for OAuth completion..."
-        log_warning "Complete OAuth in browser windows, then tokens will be validated"
-
-        # Poll for valid tokens (max 5 minutes)
-        local oauth_retries=0
-        while [ $oauth_retries -lt 60 ]; do
-            sleep 5
-            if "$SCRIPT_DIR/refresh-oauth-tokens.sh" > /dev/null 2>&1; then
-                log_info "OAuth tokens validated successfully!"
-                break
-            fi
-            ((oauth_retries++))
-            if [ $((oauth_retries % 6)) -eq 0 ]; then
-                log_info "Still waiting for OAuth... ($((oauth_retries * 5))s elapsed)"
-            fi
-        done
-
-        if [ $oauth_retries -ge 60 ]; then
-            log_error "OAuth validation timed out after 5 minutes"
+        # Verify tokens are now valid
+        log_info "Verifying OAuth tokens..."
+        if ! "$SCRIPT_DIR/refresh-oauth-tokens.sh" > /dev/null 2>&1; then
+            log_error "OAuth tokens still invalid after completion"
+            log_error "Please check that both OAuth flows completed successfully"
             kill $BACKEND_PID 2>/dev/null || true
             return 1
         fi
+        log_info "OAuth tokens validated successfully!"
     else
         log_info "OAuth tokens are valid"
     fi
