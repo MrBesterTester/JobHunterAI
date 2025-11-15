@@ -109,10 +109,11 @@
     - [Code Quality & Architecture](#code-quality--architecture)
     - [Feature Completeness](#feature-completeness)
     - [Development Stats](#development-stats)
-  - [Debug Tools](#debug-tools)
-    - [Frontend Debug Tool](#frontend-debug-tool)
-    - [Backend Debug Tool](#backend-debug-tool)
-    - [Stats Debug Tool](#stats-debug-tool)
+  - [Debug Strategy & Tools](#debug-strategy--tools)
+    - [Test Debugging Strategy](#test-debugging-strategy)
+      - [Frontend Debug Tool](#frontend-debug-tool)
+      - [Backend Debug Tool](#backend-debug-tool)
+      - [Stats Debug Tool](#stats-debug-tool)
   - [Testing & Quality Assurance](#testing--quality-assurance)
     - [Backend Testing (100% Coverage)](#backend-testing-100%25-coverage)
     - [Frontend E2E Testing (94.1% Coverage)](#frontend-e2e-testing-941%25-coverage)
@@ -3178,9 +3179,26 @@ Both prompts use **Claude 3.5 Haiku** for fast, cost-effective processing (<$0.0
 - **Live Prompt Editing**: Real-time prompt updates without backend restart
 - **Zero Runtime Errors**: Comprehensive error handling and validation across all systems
 
-## Debug Tools
+## Debug Strategy & Tools
 
-### Frontend Debug Tool
+### Test Debugging Strategy
+
+When debugging E2E test failures, understanding the **test context hierarchy** is critical for efficient investigation. Rather than immediately running expensive comprehensive test suites (~20+ minutes), use targeted testing at the appropriate level to reproduce and fix issues quickly.
+
+**Test Context Hierarchy** (from smallest to largest scope):
+
+1. **Test level** - Individual test case (~10-60s)
+2. **Test file level** - All tests in one `.spec.ts` file (~1-5 min)
+3. **Suite level** - Full E2E suite (~15-20 min)
+4. **Comprehensive level** - Backend + Frontend + E2E (~20-25 min + OAuth)
+
+**Key Strategy**: Start at test level, escalate to test file level if the issue doesn't reproduce, avoid comprehensive runs during active debugging.
+
+**Example**: A test passes alone but fails in comprehensive runs → Run at test file level to reproduce the issue in ~2 minutes instead of 20+ minutes. This approach was successfully used to debug ISSUE-044 (Tab Navigation timeout).
+
+**For complete details**, see [Test Context Terminology](#test-context-terminology) section below.
+
+#### Frontend Debug Tool
 
 **Visual Debug Panel in Job Cards UI** - JobHunter includes a powerful debug mode for troubleshooting job extraction issues without needing database access. This frontend feature displays extraction metadata directly in the browser UI.
 
@@ -3282,7 +3300,7 @@ This is much faster than database queries! (5-10 min → <1 min)
 | Terminal commands | Browser screenshot |
 | Manual JSON parsing | Visual inspection |
 
-### Debug Section Demo
+#### Debug Section Demo
 
 **Test Scenario:** User reports "This job's salary is showing as null"
 
@@ -3343,7 +3361,7 @@ Result: <1 minute, 1 round trip ✅
 - Claude Code integration: `CLAUDE.md` (Quick Reference > Debugging Extraction Issues)
 - Manual debug tool: `frontend/debug-script.js` (Playwright script for troubleshooting)
 
-### Debug Section Cheat Sheet
+#### Debug Section Cheat Sheet
 
 **Quick Enable:**
 ```bash
@@ -3387,7 +3405,7 @@ cd frontend && npm start
 
 **That's it!** Just say a trigger phrase, screenshot the amber debug box, and Claude Code will analyze it instantly.
 
-### Backend Debug Tool
+#### Backend Debug Tool
 
 **Backend Console Logging for Email Processing** - Comprehensive debugging mode for the email job extraction pipeline. This backend feature provides detailed visibility into LLM and regex extraction behavior, confidence scoring, and performance metrics through terminal console output.
 
@@ -3449,7 +3467,7 @@ export DEBUG_EXTRACTION=false
 - Complete visibility into extraction pipeline behavior
 - Helps diagnose why specific emails are/aren't extracted
 
-### Stats Debug Tool
+#### Stats Debug Tool
 
 **Console Logging for React Stats State Management** - Debugging mode for troubleshooting stats display issues, particularly when stats don't update after API calls complete. This frontend feature provides detailed visibility into stats fetching, API responses, and React state updates through browser console output.
 
