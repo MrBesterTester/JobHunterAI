@@ -6,7 +6,7 @@ import { switchToTab } from '../helpers/tab-navigation';
  *
  * Tests the complete workflow:
  * 1. Sync Gmail jobs in Intake tab
- * 2. Verify jobs appear in Inbox tab
+ * 2. Verify jobs appear in New Jobs tab
  * 3. Verify stats update correctly
  * 4. Verify jobs can be approved/rejected
  *
@@ -45,7 +45,7 @@ test.describe('Gmail Sync Integration', () => {
     await page.close();
   });
 
-  test('should sync Gmail and display jobs in Inbox tab', async () => {
+  test('should sync Gmail and display jobs in New Jobs tab', async () => {
     // Step 1: Get initial stats
     await page.waitForTimeout(1000);
     const initialNewJobsText = await page.getByTestId('stat-new').textContent();
@@ -112,15 +112,15 @@ test.describe('Gmail Sync Integration', () => {
 
       // If no jobs were discovered, skip the rest
       if (discoveredCount === 0) {
-        console.log('No jobs discovered - test cannot verify inbox display');
+        console.log('No jobs discovered - test cannot verify New Jobs tab display');
         return;
       }
     }
 
-    // Step 7: Navigate to Inbox tab
-    console.log('Navigating to Inbox tab...');
-    const inboxTab = page.getByRole('button', { name: /^inbox$/i });
-    await inboxTab.click();
+    // Step 7: Navigate to New Jobs tab (was called "Inbox" in earlier versions)
+    console.log('Navigating to New Jobs tab...');
+    const newJobsTab = page.getByTestId('new-tab-button');
+    await newJobsTab.click();
     await page.waitForTimeout(2000); // Wait for jobs to load
 
     // Step 8: Verify updated stats
@@ -133,11 +133,11 @@ test.describe('Gmail Sync Integration', () => {
     console.log(`Updated stats - New: ${newCount}, Filtered: ${filteredCount}`);
     console.log(`Change - New: +${newCount - initialNewCount}, Filtered: +${filteredCount - initialFilteredCount}`);
 
-    // Step 9: Verify jobs appear in Inbox (new or filtered jobs)
-    const totalInboxJobs = newCount + filteredCount - initialNewCount - initialFilteredCount;
-    console.log(`Expected jobs in Inbox: ${totalInboxJobs}`);
+    // Step 9: Verify jobs appear in New Jobs tab (new or filtered jobs)
+    const totalNewJobs = newCount + filteredCount - initialNewCount - initialFilteredCount;
+    console.log(`Expected jobs in New Jobs tab: ${totalNewJobs}`);
 
-    if (totalInboxJobs > 0) {
+    if (totalNewJobs > 0) {
       // Look for job cards
       const jobCards = page.getByTestId('job-card');
       const jobCardCount = await jobCards.count();
@@ -158,13 +158,13 @@ test.describe('Gmail Sync Integration', () => {
       const jobCompany = firstCard.getByTestId('job-company');
       await expect(jobCompany).toBeVisible();
 
-      console.log('✓ Jobs are visible in Inbox tab');
+      console.log('✓ Jobs are visible in New Jobs tab');
     } else {
       console.log('No new jobs added - all might be duplicates');
     }
 
     // Step 10: Verify job details
-    if (totalInboxJobs > 0) {
+    if (totalNewJobs > 0) {
       // Click on first job to see details
       const firstCard = page.getByTestId('job-card').first();
       await firstCard.click();
