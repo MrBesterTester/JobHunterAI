@@ -18,21 +18,8 @@ last_updated: 2025-11-15 13:52:38 PST (Improved test robustness with data-testid
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Testing Status](#testing-status)
-  - [🎉 MAJOR FIX: OAuth Validation Finally Works!](#-major-fix-oauth-validation-finally-works)
-  - [🔧 Latest Test Fix: Gmail Auth Button Timing Issue (2025-11-15 13:39 PST)](#-latest-test-fix-gmail-auth-button-timing-issue-2025-11-15-1339-pst)
-    - [Problem](#problem)
-    - [Root Cause (Two Issues)](#root-cause-two-issues)
-    - [Solution](#solution)
-    - [Results](#results)
-    - [Impact on Testing Status](#impact-on-testing-status)
-  - [🎯 Test Robustness Improvement: data-testid Attributes (2025-11-15 13:52 PST)](#-test-robustness-improvement-data-testid-attributes-2025-11-15-1352-pst)
-    - [Problem with Initial Fix](#problem-with-initial-fix)
-    - [Solution: Comprehensive data-testid Attributes](#solution-comprehensive-data-testid-attributes)
-    - [Benefits](#benefits)
-    - [Results](#results-1)
-    - [Commits](#commits)
-  - [📊 Current Comprehensive Test Run](#-current-comprehensive-test-run)
-    - [🎉 Key Achievement: OAuth Validation Working!](#-key-achievement-oauth-validation-working)
+  - [📊 Latest Comprehensive Test Run](#-latest-comprehensive-test-run)
+    - [Test Results Summary](#test-results-summary)
     - [E2E Failure Breakdown](#e2e-failure-breakdown)
     - [Detailed Failure Analysis](#detailed-failure-analysis)
       - [1. Gmail Sync Integration](#1-gmail-sync-integration)
@@ -41,6 +28,7 @@ last_updated: 2025-11-15 13:52:38 PST (Improved test robustness with data-testid
       - [4. Description Content Quality](#4-description-content-quality)
       - [5. Description Regeneration After Prompt Change](#5-description-regeneration-after-prompt-change)
     - [Comparison to Previous Run](#comparison-to-previous-run)
+  - [🔧 Work Since Last Comprehensive Run](#-work-since-last-comprehensive-run)
   - [Next Steps](#next-steps)
     - [Immediate Priorities](#immediate-priorities)
     - [Current Test Health](#current-test-health)
@@ -52,142 +40,13 @@ last_updated: 2025-11-15 13:52:38 PST (Improved test robustness with data-testid
 
 # Testing Status
 
-## 🎉 MAJOR FIX: OAuth Validation Finally Works!
+## 📊 Latest Comprehensive Test Run
 
-**Problem**: OAuth validation in comprehensive test script was checking tokens BEFORE database seeding, so it was validating old/expired tokens instead of the fresh tokens from `.env.test`. This caused the script to fail with "OAuth tokens invalid" errors and require manual browser OAuth flows during test runs.
-
-**Root Cause**: Preflight check order was wrong:
-1. ❌ OLD: Check OAuth → Seed database with fresh tokens
-2. ✅ NEW: Seed database with fresh tokens → Check OAuth
-
-**Solution** (Commit `e1aaf48`): Reordered preflight checks in `run-comprehensive-tests.sh` to seed the database BEFORE validating OAuth tokens. Now the validation checks the freshly-injected tokens from `.env.test`, which are always valid.
-
-**Results**:
-- ✅ OAuth validation now PASSES every time
-- ✅ No more manual browser OAuth flows required
-- ✅ Comprehensive test suite runs cleanly start-to-finish
-- ✅ Preflight checks complete in ~25 seconds
-
----
-
-## 🔧 Latest Test Fix: Gmail Auth Button Timing Issue (2025-11-15 13:39 PST)
-
-**Test**: `e2e/tests/15-intake-tab.spec.ts` - "should display Gmail authentication button when not connected"
-**Status**: ✅ **FIXED** - Test now passes reliably
-
-### Problem
-Test was failing with timeout looking for Gmail authentication/sync buttons:
-- Test used fixed 1-second timeout: `await page.waitForTimeout(1000)`
-- IntakeTab component shows loading spinner until data loads
-- During loading, NO buttons exist (component returns early with spinner)
-- Test checked for buttons before loading completed → buttons not found → test failed
-
-### Root Cause (Two Issues)
-1. **Timing**: Fixed timeout insufficient for data loading
-   - Component needs to fetch job sources from API before rendering buttons
-   - 1 second wasn't always enough
-2. **Multiple Element Selector**: Test selector matched multiple buttons
-   - Four "Sync Now" buttons exist (Gmail, Microsoft, LinkedIn, RapidAPI)
-   - Playwright `.isVisible()` threw error with multiple matches
-   - Error was caught and returned false → test failed
-
-### Solution
-**File**: `frontend/e2e/tests/15-intake-tab.spec.ts` (lines 121-143)
-
-1. **Wait for actual button visibility** (line 128):
-   ```typescript
-   // OLD: await page.waitForTimeout(1000);
-   // NEW: Wait for loading to complete by waiting for buttons to appear
-   await page.getByRole('button', { name: /Sync Now|Authenticate with Gmail/i })
-     .first()
-     .waitFor({ state: 'visible', timeout: 10000 });
-   ```
-
-2. **Use `.first()` for multiple matches** (lines 138-139):
-   ```typescript
-   // OLD: await authButton.isVisible().catch(() => false);
-   // NEW: await authButton.first().isVisible().catch(() => false);
-   const authVisible = await authButton.first().isVisible().catch(() => false);
-   const syncVisible = await syncButton.first().isVisible().catch(() => false);
-   ```
-
-### Results
-- ✅ **22 passed, 5 skipped, 0 failed** (all Intake Tab tests now pass)
-- ✅ Test runtime: ~600ms (down from timeout failures)
-- ✅ Reliable: No more flaky failures due to timing
-
-### Impact on Testing Status
-- **E2E failures**: 6 → 5 (down 1)
-- **E2E pass rate**: 97.6% → 97.8% (+0.2%)
-- **Test file health**: `15-intake-tab.spec.ts` now 100% passing
-
----
-
-## 🎯 Test Robustness Improvement: data-testid Attributes (2025-11-15 13:52 PST)
-
-**Status**: ✅ **IMPROVED** - Tests now use specific, unambiguous selectors
-
-### Problem with Initial Fix
-The initial fix used `.first()` to handle multiple "Sync Now" buttons:
-```typescript
-const syncButton = page.getByRole('button', { name: /Sync Now/i });
-const syncVisible = await syncButton.first().isVisible().catch(() => false);
-```
-
-**Issue**: This was **fragile** and could check the wrong button:
-- 4 "Sync Now" buttons exist: Gmail, Microsoft, LinkedIn, RapidAPI
-- `.first()` returned first in DOM order (happened to be Gmail)
-- **Render order dependency**: If component order changed, test could pass while checking Microsoft button instead of Gmail
-- Not explicit about which button is being tested
-
-### Solution: Comprehensive data-testid Attributes
-Added `data-testid` attributes to **ALL Intake Tab buttons** for robust, specific testing.
-
-**Files**:
-- `frontend/src/IntakeTab.tsx` (component)
-- `frontend/e2e/tests/15-intake-tab.spec.ts` (test)
-
-**data-testid attributes added**:
-
-| Source | Button test IDs |
-|--------|----------------|
-| **Gmail** | `gmail-auth-button`, `gmail-sync-button`, `gmail-settings-button` |
-| **Microsoft** | `microsoft-auth-button`, `microsoft-sync-button`, `microsoft-settings-button` |
-| **LinkedIn** | `linkedin-sync-button`, `linkedin-learn-more-button` |
-| **RapidAPI** | `rapidapi-sync-button`, `rapidapi-reset-button` |
-| **Global** | `sync-all-sources-button` |
-
-**Test updated to use specific selector**:
-```typescript
-// NEW (robust - explicitly targets Gmail):
-const gmailAuthButton = page.getByTestId('gmail-auth-button');
-const gmailSyncButton = page.getByTestId('gmail-sync-button');
-```
-
-### Benefits
-1. **Explicit**: Selector clearly shows which source is being tested
-2. **Robust**: Independent of render order - always checks correct button
-3. **Maintainable**: Self-documenting test IDs (`gmail-sync-button` vs `.first()`)
-4. **Extensible**: Future tests can easily target specific sources
-5. **No ambiguity**: Impossible to check wrong source's button
-
-### Results
-- ✅ Test still passes reliably with explicit selectors
-- ✅ All 22 Intake Tab tests passing
-- ✅ Test infrastructure now ready for source-specific tests
-- ✅ Eliminates entire class of render-order-dependent bugs
-
-### Commits
-- `f4aff38` - Initial fix (timing + `.first()` workaround)
-- `2485e93` - Improved fix (data-testid attributes for robustness)
-
----
-
-## 📊 Current Comprehensive Test Run
-
-**Test Run**: 2025-11-15 12:38:10 PST - 12:53:42 PST
+**Run Date**: 2025-11-15 12:38:10 PST - 12:53:42 PST
 **Runtime**: ~15 minutes (clean rebuild + all tests)
 **Exit Code**: 0 (SUCCESS)
+
+### Test Results Summary
 
 | Test Suite | Passed | Failed | Flaky | Skipped | Pass Rate | Runtime | Status |
 |------------|--------|--------|-------|---------|-----------|---------|--------|
@@ -200,14 +59,12 @@ const gmailSyncButton = page.getByTestId('gmail-sync-button');
 | **E2E Tests** | 385 | 6 | 5 | 197 | **97.6%** | 632s | ⚠️ **6 FAILURES** |
 | **TOTAL (Active)** | **1065** | **6** | **5** | **204** | **99.4%** | **~15 min** | ⚠️ **6 FAILURES** |
 
-### 🎉 Key Achievement: OAuth Validation Working!
-
-**Previous runs required manual OAuth browser flows during preflight checks**. This run completed **100% automated** with OAuth tokens validated successfully via API calls!
+**Key Achievement**: 🎉 OAuth validation now fully automated - no manual browser flows required during test runs
 
 ### E2E Failure Breakdown
 
-**5 Failures** (down from 6, previously 15):
-- **3 Email Integration Tests**: Gmail/Microsoft sync workflows
+**6 Failures**:
+- **4 Email Integration Tests**: Gmail/Microsoft sync workflows
 - **2 Description Quality Tests**: Refresh and content generation
 
 **5 Flaky Tests** (all in `03-job-status-updates.spec.ts`):
@@ -263,7 +120,34 @@ const gmailSyncButton = page.getByTestId('gmail-sync-button');
 - ✅ E2E failures: 15 → 6 (-9 failures, **-60%**)
 - ✅ E2E pass rate: 96.2% → 97.6% (+1.4%)
 - ✅ Total pass rate: 98.6% → 99.4% (+0.8%)
-- ✅ **OAuth validation now works automatically!**
+- ✅ **OAuth validation automated** - major workflow improvement
+
+---
+
+## 🔧 Work Since Last Comprehensive Run
+
+**Date**: 2025-11-15 (post 12:38 PST run)
+
+Since the last comprehensive run, the following improvements were made:
+
+1. **Gmail Auth Button Test Fixed** (Commit `f4aff38`)
+   - Fixed timing issue in `15-intake-tab.spec.ts`
+   - Test now waits for loading to complete instead of fixed timeout
+   - **Result**: E2E failures 6 → 5
+
+2. **Test Robustness Improved** (Commit `2485e93`)
+   - Added `data-testid` attributes to all Intake Tab buttons
+   - Gmail, Microsoft, LinkedIn, RapidAPI, Global sync buttons
+   - Tests now use explicit selectors instead of render-order-dependent `.first()`
+   - **Result**: Eliminated entire class of potential bugs
+
+**Current Status (not yet in comprehensive run)**:
+- E2E estimated failures: **5** (down from 6 in comprehensive run)
+- E2E estimated pass rate: **97.8%** (up from 97.6%)
+- Overall estimated pass rate: **99.5%** (up from 99.4%)
+- Test file `15-intake-tab.spec.ts`: **100% passing** (22 passed, 5 skipped)
+
+**Detailed work history**: See `docs/TESTING_HISTORY.md`
 
 ---
 
@@ -272,17 +156,17 @@ const gmailSyncButton = page.getByTestId('gmail-sync-button');
 ### Immediate Priorities
 
 1. **Investigate 2 Email Integration Failures** (Priority: High)
-   - Gmail sync integration
-   - Microsoft E2E workflow
+   - Gmail sync integration (`16-gmail-sync-integration.spec.ts:48`)
+   - Microsoft E2E workflow (`16-microsoft-email-integration.spec.ts:779`)
    - These affect core application functionality
 
 2. **Fix 2 Description Quality Issues** (Priority: Medium)
-   - Description content showing placeholders
-   - Description not regenerating after prompt changes
+   - Description content showing placeholders (`23-description-quality.spec.ts:87`)
+   - Description not regenerating after prompt changes (`23-description-quality.spec.ts:144`)
    - Affects content generation quality
 
 3. **Fix Per-Job Description Refresh** (Priority: Low)
-   - Individual job description refresh button not triggering
+   - Individual job description refresh button not triggering (`22-refresh-buttons.spec.ts:57`)
    - Feature exists but needs debugging
 
 4. **Monitor 5 Flaky Tests** (Priority: Low)
@@ -294,10 +178,10 @@ const gmailSyncButton = page.getByTestId('gmail-sync-button');
 
 - ✅ **Backend: 100% passing** (164/164 tests)
 - ✅ **Frontend: 100% passing** (516/516 tests)
-- ⚠️ **E2E: 97.8% passing** (386/391 active tests, 5 failures)
-- ✅ **Overall: 99.5% passing** (1066/1071 active tests)
+- ⚠️ **E2E: ~97.8% passing** (~386/391 active tests, ~5 failures estimated)
+- ✅ **Overall: ~99.5% passing** (~1066/1071 active tests estimated)
 
-**Assessment**: Test suite is in **good health**. OAuth automation working perfectly. Gmail auth button timing issue fixed. Remaining 5 E2E failures are specific to email integration sync and content generation - core application navigation, job management, and backend functionality all working correctly.
+**Assessment**: Test suite is in **good health**. OAuth automation working perfectly. One Gmail test fixed since last comprehensive run. Remaining ~5 E2E failures are specific to email integration sync and content generation - core application navigation, job management, and backend functionality all working correctly.
 
 ---
 
@@ -310,10 +194,14 @@ const gmailSyncButton = page.getByTestId('gmail-sync-button');
 
 ## Related Commits
 
+**OAuth Automation** (from last comprehensive run):
 - `e1aaf48` - fix: Reorder preflight checks to seed database BEFORE OAuth validation (2025-11-15)
 - `97b6696` - docs: Update TESTING_STATUS.md with OAuth fix results (2025-11-15 13:15 PST)
+
+**Post-Run Improvements**:
 - `f4aff38` - fix: Gmail auth button test timing issue - wait for loading state (2025-11-15 13:39 PST)
 - `2485e93` - refactor: Add data-testid attributes to all Intake Tab buttons for robust testing (2025-11-15 13:52 PST)
+- `e81e674` - docs: Update TESTING_STATUS.md with data-testid improvements (2025-11-15 13:52 PST)
 
 ## Quick Commands
 
