@@ -158,11 +158,15 @@ send_notification() {
         return 0
     fi
 
-    # Play sound
+    # Play sound (try both foreground and background modes)
     afplay /System/Library/Sounds/Glass.aiff 2>/dev/null || true
 
-    # Show dialog
-    osascript -e "display dialog \"$message\" with title \"$title\" buttons {\"OK\"} default button \"OK\" with icon note" 2>/dev/null || true
+    # Show dialog - use nohup and output redirection to work from background processes
+    # This ensures the notification appears even when running from Claude Code bash tool
+    nohup osascript -e "display dialog \"$message\" with title \"$title\" buttons {\"OK\"} default button \"OK\" with icon note" >/dev/null 2>&1 &
+
+    # Also log notification to stdout so user can see it in bash output
+    echo "🔔 NOTIFICATION: $title - $message"
 }
 
 check_database_selection() {
@@ -683,15 +687,15 @@ generate_report() {
     if [ $total_failed -eq 0 ]; then
         if [ "$SKIP_E2E" = true ]; then
             log_info "✅ FAST TESTS PASSED (E2E skipped)"
-            send_notification "Fast Tests PASSED" "Backend and frontend tests completed successfully"
+            send_notification "Fast Tests PASSED" "Backend and frontend tests completed successfully" true
         else
             log_info "✅ ALL TESTS PASSED"
-            send_notification "Comprehensive Tests PASSED" "All phases completed successfully"
+            send_notification "Comprehensive Tests PASSED" "All phases completed successfully" true
         fi
         return 0
     else
         log_error "❌ SOME TESTS FAILED"
-        send_notification "Comprehensive Tests FAILED" "$total_failed phase(s) failed"
+        send_notification "Comprehensive Tests FAILED" "$total_failed phase(s) failed" true
         return 1
     fi
 }
