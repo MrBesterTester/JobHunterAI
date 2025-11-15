@@ -204,30 +204,22 @@ afplay /System/Library/Sounds/Glass.aiff && osascript -e "display dialog \"[mess
 
 ### Comprehensive Testing Policy
 
-**⚠️ CRITICAL**: Avoid running comprehensive test suites unless absolutely necessary!
+**⚠️ CRITICAL DISTINCTION**:
+- ✅ **Running individual/targeted tests is ALWAYS FINE** - Do this freely!
+- ❌ **Running the comprehensive test suite requires explicit user permission**
 
-**Why Comprehensive Tests Are Expensive**:
-- **Runtime**: ~15-20 minutes (backend + frontend + E2E)
-- **OAuth requirement**: Requires manual browser OAuth flows (Gmail + Microsoft)
-- **Token usage**: Significant Claude Code token consumption
-- **Interruptions**: Must monitor and interact with OAuth prompts
-- **Cost**: Time-consuming for developer and AI assistant
+**What is the "Comprehensive Test Suite"?**
+- The script: `./helper-scripts/run-comprehensive-tests.sh`
+- Runs ALL tests: Backend + Frontend + Full E2E suite
+- **Runtime**: ~15-20 minutes
+- **Requires**: Manual OAuth flows (Gmail + Microsoft)
+- **Cost**: Significant token usage + developer time
 
-**❌ DON'T run comprehensive tests for**:
-- Small code changes or bug fixes
-- Documentation updates
-- Test-only changes
-- Exploratory work or prototyping
-- Regular development work
+**❌ NEVER run `./helper-scripts/run-comprehensive-tests.sh` UNLESS**:
+- User explicitly requests it ("run comprehensive tests", "run all tests", "run the full test suite")
+- OR: Major refactoring, pre-release verification, critical multi-system fixes
 
-**✅ DO run comprehensive tests for**:
-- Major refactoring across multiple components
-- Pre-release verification before deployment
-- After fixing critical bugs that affect multiple systems
-- When explicitly requested by user
-- Before merging major feature branches
-
-**Instead, use targeted testing**:
+**✅ ALWAYS OKAY to run targeted tests freely**:
 ```bash
 # Backend only (fast: ~90 seconds)
 cd backend && cargo test
@@ -249,9 +241,11 @@ cd backend && cargo test && cd ../frontend && npm test
 - **Status**: Tests at "acceptable" state for active development
 
 **When User Says "Run Tests"**:
-- **Ask which tests**: "Which tests would you like me to run? (backend/frontend/specific E2E/comprehensive)"
-- **Default to targeted**: Suggest running only affected tests based on changes
-- **Warn about comprehensive**: If they request comprehensive, remind them of ~20 minute runtime + OAuth requirement
+- **Default to targeted**: Run affected tests based on recent changes (e.g., backend test, specific E2E file)
+- **Ask for clarification** if ambiguous: "Which tests? (backend/frontend/specific E2E tests/comprehensive)"
+- **ONLY run comprehensive** if user explicitly says: "run comprehensive tests", "run all tests", "run the full test suite"
+
+**Key Principle**: Use your judgment to run targeted tests freely. Only ask permission for the comprehensive suite.
 
 **Documentation**:
 - Current test status: `docs/TESTING_STATUS.md`
