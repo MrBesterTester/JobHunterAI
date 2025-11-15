@@ -9,7 +9,7 @@ related_docs:
   - TESTING_HISTORY.md (historical test results archive)
   - TESTING_GUIDE.md (testing principles and investigation guide)
   - PROJECT_STATUS.md (overall project status)
-last_updated: 2025-11-14 19:40:49 PST (OAuth flow update: Replace polling/timeout with interactive ENTER-to-continue flow)
+last_updated: 2025-11-14 19:44:42 PST (Restore OAuth notification documentation - notification already implemented in script)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -276,14 +276,14 @@ afplay /System/Library/Sounds/Glass.aiff && osascript -e "display dialog \"Test 
 - ❌ `run-frontend-tests.sh` - Too fast (~30 sec)
 
 **With `--no-notify` flag** (subordinate notification suppression):
-- ✅ **OAuth prompts** - Interactive prompts guide user through OAuth flow (no notification needed)
+- ✅ **OAuth notification** - ALWAYS sent when tokens invalid (requires manual user action)
 - ✅ **Final comprehensive test results** - ALWAYS sent
 - ❌ **E2E test completion** - Suppressed when run as part of comprehensive suite
 - ❌ **Build/compile notifications** - Suppressed (intermediate steps)
 
 **Rationale**:
 - Long-running tests (>30 sec) deserve notifications
-- OAuth uses interactive prompts that wait for user input (no separate notification needed)
+- OAuth requires manual intervention and may be needed 2-3 minutes after test start (must notify)
 - `--no-notify` flag reduces notification noise during comprehensive runs while keeping critical alerts
 - Final result notification always sent so user knows comprehensive testing is complete
 
@@ -465,8 +465,10 @@ During the E2E phase of comprehensive testing (before E2E tests execute)
 6. **Backend stays running** - No stop/restart between OAuth and E2E tests (efficiency optimization)
 
 #### Notification Behavior
+- **OAuth notification ALWAYS sent** when tokens are invalid (regardless of `--no-notify` flag)
+- Notification appears: "OAuth Required - Please complete Gmail and Microsoft OAuth in your browser"
 - User must manually complete OAuth flow step-by-step (cannot be automated)
-- **No OAuth notification** - Interactive prompts provide clear guidance at each step
+- Interactive prompts provide clear guidance at each step
 - Script waits indefinitely for user to press ENTER (no timeouts or polling)
 
 #### Files Used
@@ -1174,6 +1176,7 @@ All critical requirements from the testing plan have been fully implemented and 
 │ 2. HTML-Based OAuth Validation ⚠️ MANUAL STEP          │
 │    - Check if tokens valid (refresh-oauth-tokens.sh)   │
 │    - If invalid: Interactive OAuth flow                │
+│      • ✅ Send notification: "OAuth Required"          │
 │      • Open gmail-oauth.html in browser               │
 │      • Display colored prompt, wait for user ENTER    │
 │      • User completes Gmail OAuth                     │
@@ -1181,7 +1184,6 @@ All critical requirements from the testing plan have been fully implemented and 
 │      • Display colored prompt, wait for user ENTER    │
 │      • User completes Microsoft OAuth                 │
 │      • Verify tokens are now valid                    │
-│    - ✅ No notification (interactive prompts guide)    │
 │ 3. Keep Backend Running (no restart)                   │
 │ 4. Start Frontend Server (npm start)                   │
 │ 5. Wait for Frontend Ready (port 3000)                 │
@@ -1194,9 +1196,9 @@ All critical requirements from the testing plan have been fully implemented and 
 ├─────────────────────────────────────────────────────────┤
 │ • Summary table with pass/fail counts                  │
 │ • iPhone notification (dialog + sound)                 │
-│   - With --no-notify: Only final notify                │
-│   - Without flag: E2E notify + final notify            │
-│   - OAuth uses interactive prompts (no notification)   │
+│   - With --no-notify: OAuth notify + final notify      │
+│   - Without flag: OAuth notify + E2E notify + final    │
+│   - OAuth notification only if tokens invalid          │
 │ • Update TESTING_STATUS.md with timestamp              │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -1267,7 +1269,8 @@ All critical requirements from the testing plan have been fully implemented and 
   - ✅ Optimized test phase ordering: builds → unit tests → servers+OAuth → E2E
   - ✅ Backend server stays running (no wasteful stop/start between OAuth and E2E)
   - ✅ Notification control with `--no-notify` flag
-  - ✅ OAuth interactive prompts guide user through flow (no notification needed)
+  - ✅ OAuth notification sent when tokens invalid (alerts user after 2-3 min delay)
+  - ✅ OAuth interactive prompts guide user through flow step-by-step
   - ✅ Subordinate E2E notifications suppressed with `--no-notify`
 - **Commit**: `6926880` (test flow implementation)
 - **Impact**: Fully automated testing with minimal manual intervention (only OAuth when needed)
