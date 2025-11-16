@@ -41,11 +41,12 @@ related: [ISSUE-034, commit-330c8e7, commit-de3ee90]
   - [Phase 3: Testing & Validation](#phase-3-testing--validation)
 - [Testing](#testing)
 - [Status History](#status-history)
-- [Two Layers of OAuth Protection](#two-layers-of-oauth-protection)
+- [Three Layers of OAuth Protection](#three-layers-of-oauth-protection)
   - [Layer 1: Test Script Preflight Check (helper-scripts/run-comprehensive-tests.sh:261)](#layer-1-test-script-preflight-check-helper-scriptsrun-comprehensive-testssh261)
-  - [Layer 2: Backend Auto-Refresh (This Fix - backend/src/main.rs)](#layer-2-backend-auto-refresh-this-fix---backendsrcmainrs)
+  - [Layer 1.5: Test Script Automatic Token Refresh (helper-scripts/run-comprehensive-tests.sh) - NEW!](#layer-15-test-script-automatic-token-refresh-helper-scriptsrun-comprehensive-testssh---new)
+  - [Layer 2: Backend Auto-Refresh (This Issue - backend/src/main.rs)](#layer-2-backend-auto-refresh-this-issue---backendsrcmainrs)
   - [How They Work Together](#how-they-work-together)
-  - [Why Both Are Necessary](#why-both-are-necessary)
+  - [Why All Three Layers Are Necessary](#why-all-three-layers-are-necessary)
 - [Implementation Summary](#implementation-summary)
 - [Notes](#notes)
 - [Related Files](#related-files)
@@ -447,30 +448,54 @@ curl http://localhost:8080/api/gmail/sync/status
 
 ## Status History
 
-- 2025-11-15: ISSUE-045 created after comprehensive test failure due to OAuth token expiration
-- 2025-11-15: Research completed on OAuth token lifetimes for Gmail and Microsoft
-- 2025-11-15: Documented comprehensive implementation plan for automatic token refresh
-- 2025-11-15: **IMPLEMENTED** - Core OAuth auto-refresh infrastructure complete (commit 930df71)
-- 2025-11-15: **FIXED** - Gmail critical endpoints updated with auto-refresh (commit 976799d)
+- 2025-11-15 (morning): ISSUE-045 created after comprehensive test failure due to OAuth token expiration
+- 2025-11-15 (morning): Research completed on OAuth token lifetimes for Gmail and Microsoft
+- 2025-11-15 (morning): Documented comprehensive implementation plan for automatic token refresh
+- 2025-11-15 (morning): **IMPLEMENTED** - Core OAuth auto-refresh infrastructure complete (commit 930df71)
+- 2025-11-15 (morning): **FIXED** - Gmail critical endpoints updated with auto-refresh (commit 976799d)
+- 2025-11-15 (afternoon): **ENHANCED** - Layer 1.5 added: Test script automatic token refresh (commit 02ecd2b)
+  - Implemented `refresh_gmail_token_automatically()` and `refresh_msmail_token_automatically()`
+  - Modified `check_oauth_expiry()` to attempt automatic refresh before manual OAuth
+  - Comprehensive test suite now fully automated - no manual OAuth flows required
+  - Updated both database and `.env.test` with refreshed tokens
 
-## Two Layers of OAuth Protection
+## Three Layers of OAuth Protection
 
-**CRITICAL DISTINCTION**: This fix implements backend auto-refresh, which is **complementary** to the comprehensive test script's preflight OAuth check. Both are necessary.
+**CRITICAL DISTINCTION**: This issue implements backend auto-refresh (Layer 2), which is **complementary** to the comprehensive test script's preflight check (Layer 1) and test script automatic refresh (Layer 1.5). All three are necessary for fully automated operation.
 
 ### Layer 1: Test Script Preflight Check (helper-scripts/run-comprehensive-tests.sh:261)
 
 **What it does**:
 - Runs BEFORE tests start
 - Validates tokens with actual API calls (not just timestamp checks)
-- If tokens are **already expired at start time**, prompts user for manual OAuth
-- Ensures tests START with valid tokens
+- Detects if tokens are **already expired at start time**
+- Triggers Layer 1.5 (automatic refresh) or prompts for manual OAuth if refresh fails
 
 **Problem it solves**:
 - "I forgot to refresh my tokens for 7 days (Gmail testing mode) or 90 days (Microsoft)"
 - "My tokens expired yesterday and I'm starting a test run today"
 - "Backend can't make ANY API calls because tokens are completely invalid"
 
-### Layer 2: Backend Auto-Refresh (This Fix - backend/src/main.rs)
+### Layer 1.5: Test Script Automatic Token Refresh (helper-scripts/run-comprehensive-tests.sh) - NEW!
+
+**What it does** (Added 2025-11-15):
+- Runs DURING preflight check when expired tokens detected
+- Uses refresh tokens stored in `.env.test` to automatically get new access tokens
+- Updates both database and `.env.test` with refreshed tokens
+- No user intervention needed (no manual browser OAuth flows)
+- Falls back to manual OAuth only if automatic refresh fails
+
+**Implementation**:
+- `refresh_gmail_token_automatically()` - Calls Google OAuth token endpoint
+- `refresh_msmail_token_automatically()` - Calls Microsoft OAuth token endpoint
+- Modified `check_oauth_expiry()` to attempt automatic refresh before manual flow
+
+**Problem it solves**:
+- "Tokens expired overnight but I want to run tests without manual OAuth"
+- "Test script should be fully automated - no human intervention required"
+- "CI/CD pipelines need unattended test execution"
+
+### Layer 2: Backend Auto-Refresh (This Issue - backend/src/main.rs)
 
 **What it does**:
 - Runs DURING test execution and application usage
@@ -486,7 +511,7 @@ curl http://localhost:8080/api/gmail/sync/status
 ### How They Work Together
 
 ```
-Timeline Example - Comprehensive Test Run:
+Timeline Example 1 - Comprehensive Test Run (Token Expires During Execution):
 
 11:00 AM - User starts test script
 11:00 AM - ✅ LAYER 1: Preflight check runs
@@ -502,25 +527,55 @@ Timeline Example - Comprehensive Test Run:
 
 11:32 AM - E2E test tries to seed MS Mail
            - Without Layer 2: ❌ FAILS with 401
-           - With Layer 2: ✅ LAYER 2: Auto-refreshes token, continues
+           - With Layer 2: ✅ LAYER 2: Backend auto-refreshes token, continues
 
 11:45 AM - All tests complete successfully ✅
 ```
 
-### Why Both Are Necessary
+```
+Timeline Example 2 - Comprehensive Test Run (Token Already Expired):
 
-| Scenario | Preflight Check Needed? | Backend Auto-Refresh Needed? |
-|----------|------------------------|------------------------------|
-| Token expired before test starts | ✅ YES (can't call API at all) | ❌ No |
-| Token expires during test run | ❌ No (was valid at start) | ✅ YES |
-| Token expires during app usage | ❌ No (not in test mode) | ✅ YES |
+08:00 AM - User starts test script
+08:00 AM - ✅ LAYER 1: Preflight check runs
+           - Token was issued yesterday at 06:00 PM
+           - Already expired (was valid until 07:00 PM yesterday)
+           - Detects expiration via API validation
 
-**Key Insight**:
-- **Preflight check** ensures "Do we have valid tokens to START?"
-- **Backend auto-refresh** ensures "Keep tokens valid DURING execution"
-- Both mechanisms complement each other perfectly
+08:00 AM - ✅ LAYER 1.5: Test script automatic refresh
+           - Uses refresh_token from .env.test
+           - Calls Google/Microsoft OAuth token endpoints
+           - Gets new access_token
+           - Updates database + .env.test
+           - No browser OAuth flow needed!
 
-**What changed with this fix**: Tests that START with valid tokens will no longer FAIL mid-run when tokens expire. The preflight check is still critical for catching already-expired tokens before tests begin.
+08:01 AM - ✅ Preflight validation passes with fresh tokens
+           - Tests begin
+
+08:05 AM - Backend tests run (5 min)
+08:10 AM - Frontend tests run (5 min)
+08:15 AM - E2E tests complete successfully ✅
+```
+
+### Why All Three Layers Are Necessary
+
+| Scenario | Layer 1<br>Preflight Check | Layer 1.5<br>Script Auto-Refresh | Layer 2<br>Backend Auto-Refresh |
+|----------|------------------------|---------------------------|------------------------------|
+| Token expired before test starts | ✅ Detects | ✅ Refreshes automatically | ❌ Not involved |
+| Script auto-refresh fails (refresh_token expired) | ✅ Detects failure | ❌ Failed | ⚠️ Prompts manual OAuth |
+| Token valid at start, expires during test | ✅ Passes | ❌ Not needed | ✅ Refreshes mid-run |
+| Token expires during app usage (not tests) | ❌ Not running | ❌ Not running | ✅ Refreshes seamlessly |
+
+**Key Insights**:
+- **Layer 1 (Preflight)** ensures "Do we have valid tokens to START?"
+- **Layer 1.5 (Script Auto-Refresh)** ensures "Can we automatically fix expired tokens WITHOUT user intervention?"
+- **Layer 2 (Backend Auto-Refresh)** ensures "Keep tokens valid DURING execution"
+- All three mechanisms complement each other for fully automated operation
+
+**What changed with today's update (2025-11-15)**:
+- **Layer 1.5 added**: Test script can now automatically refresh expired tokens without manual browser OAuth
+- **Result**: Comprehensive test suite is now **fully automated** - no human intervention required even if tokens expired overnight
+- **Layer 2 (backend)** was already implemented - continues to handle mid-run token expiration
+- **Layer 1 (preflight)** unchanged - still validates tokens, but now triggers Layer 1.5 instead of manual OAuth
 
 ---
 
@@ -658,6 +713,27 @@ Timeline Example - Comprehensive Test Run:
 ## Related Commits
 
 **Recent OAuth Work**:
+
+**Layer 2 (Backend Auto-Refresh) - This Issue**:
+- `930df71`: "feat: Implement OAuth token auto-refresh for Microsoft endpoints" (2025-11-15)
+  - Core OAuth auto-refresh infrastructure
+  - Updated Microsoft endpoints with automatic token refresh
+  - Proactive timestamp-based refresh + reactive 401 error handling
+
+- `976799d`: "feat: Add OAuth auto-refresh to Gmail critical endpoints" (2025-11-15)
+  - Updated Gmail send_email and create_draft endpoints
+  - Applied auto-refresh wrappers for critical user-facing operations
+  - Eliminates manual token checking and 401 error handling
+
+**Layer 1.5 (Test Script Auto-Refresh) - Today's Addition**:
+- `02ecd2b`: "feat: Add automatic OAuth token refresh to comprehensive test script" (2025-11-15)
+  - **FULLY AUTOMATED** - No manual OAuth flows required for comprehensive tests
+  - Implemented `refresh_gmail_token_automatically()` and `refresh_msmail_token_automatically()`
+  - Modified `check_oauth_expiry()` to attempt automatic refresh before manual OAuth
+  - Updates both database and `.env.test` with refreshed tokens
+  - Falls back to manual OAuth only if automatic refresh fails
+
+**Layer 1 (Preflight Detection) - Related Work**:
 - `330c8e7b`: "fix: OAuth flow now only prompts for expired tokens (not both)" (2025-11-15)
   - Improved UX to only refresh expired tokens
   - Sets GMAIL_TOKEN_VALID and MSMAIL_TOKEN_VALID flags
