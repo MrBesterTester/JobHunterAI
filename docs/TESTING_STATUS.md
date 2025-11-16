@@ -204,28 +204,29 @@ last_updated: 2025-11-15 16:55:00 PST (Latest comprehensive run with OAuth autom
 
 ### Immediate Priorities
 
-**1. Fix 10 Context-Dependent Test Failures** (Priority: High - EXPANDED ISSUE-046 SCOPE)
+**1. Fix Context-Dependent Test Failures** (Priority: High)
    - **Verification Complete**: All 4 "hard failures" confirmed context-dependent (pass in isolation)
-   - **Total affected**: 10 tests (6 ISSUE-046 + 4 newly verified)
+   - **Total affected**: 10 tests (6 ISSUE-046 flaky + 4 hard failures)
    - **Root cause**: Architectural test isolation issues (shared across all 10 tests)
+   - **Tracking**: ISSUE-046 covers 6 flaky tests; 4 hard failures tracked in TESTING_STATUS.md
 
-   **Recommended Approach** (expand ISSUE-046 to cover all 10 tests):
-   1. **Apply state polling fixes** to Group B tests (4 tests in 3 files):
+   **Recommended Approach**:
+   1. **Continue ISSUE-046 work** (6 flaky tests):
+      - Apply state polling to 6th test (`16-gmail-sync-integration.spec.ts:229`)
+      - Increase timeouts from 10s to 15-20s under load
+      - Monitor next comprehensive run
+
+   2. **Investigate Group B tests separately** (4 hard failures):
       - `22-refresh-buttons.spec.ts:57`
       - `23-description-quality.spec.ts:87`
       - `23-description-quality.spec.ts:144`
       - `16-microsoft-email-integration.spec.ts:779`
-      - Also apply to `16-gmail-sync-integration.spec.ts:229` (Group A, 6th flaky test)
-
-   2. **Increase timeouts** from 10s to 15-20s under load for all affected tests
-
-   3. **Monitor next comprehensive run** to measure improvement
-
-   4. **If flakiness persists**, implement Phase 2 (serial execution for affected test files)
+      - Same root cause as ISSUE-046 but different failure pattern (don't pass on retry)
+      - Consider similar fixes: state polling, timeout adjustments, or serial execution
 
    **Current Status**:
-   - Group A (6 tests): Improved from "failed" to "flaky" (~50% reduction)
-   - Group B (4 tests): Still failing completely (need state polling + timeout adjustments)
+   - Group A (6 ISSUE-046 tests): Improved from "failed" to "flaky" (~50% reduction)
+   - Group B (4 hard failures): Verified passing in isolation, need further investigation
 
 **2. Optional: Investigate Microsoft Archiving Test Failure** (Priority: Low)
    - `16-microsoft-email-integration.spec.ts:529` - "preserve sync functionality with archiving"
