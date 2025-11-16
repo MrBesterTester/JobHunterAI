@@ -213,7 +213,13 @@ last_updated: 2025-11-15 16:55:00 PST (Latest comprehensive run with OAuth autom
    - `23-description-quality.spec.ts:144` - Description regeneration
    - **Context**: Previously verified as false positives (passed in isolation), now failing again
    - **Hypothesis**: May be context-dependent like ISSUE-046 flaky tests, but with different triggers
-   - **Action**: Run each test file in isolation to verify pass/fail behavior
+
+   **Investigation Plan** (easiest to hardest):
+   1. **Start**: Description quality tests (`23-description-quality.spec.ts`) - Two tests in same file, likely same root cause (10-15 min)
+   2. **Then**: Refresh button test (`22-refresh-buttons.spec.ts`) - Related to description functionality (10-15 min)
+   3. **Last**: Microsoft E2E workflow (`16-microsoft-email-integration.spec.ts`) - Complex multi-step workflow (20-30 min)
+
+   **Approach**: Run each test file in isolation to determine if truly failing or context-dependent
 
 **2. Further Improve ISSUE-046 Flaky Tests** (Priority: Medium)
    - Apply state polling fix to 6th test (`16-gmail-sync-integration.spec.ts:229`)
