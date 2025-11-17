@@ -338,9 +338,11 @@ Serial execution eliminated resource contention - the problematic test now runs 
 
 **1. ✅ ISSUE-046: All 7 Flaky Tests Resolved** (Completed 2025-11-17)
    - **Status**: All 7 tests now pass consistently in isolation and moderate-load scenarios
-   - **Fixes Applied**: State polling with load-aware timeouts (10s/20s)
+   - **Fixes Applied**:
+     - 6 tests: State polling with load-aware timeouts (10s/20s)
+     - 1 test (line 183): Serial execution mode (architectural fix)
    - **Verification**: Passed individual, file-level, and multi-file tests
-   - **Next Action**: Run comprehensive test suite to verify under full parallel load (595 E2E tests)
+   - **⏳ TODO**: Run comprehensive test suite later to verify under full parallel load (595 E2E tests)
 
    **Tests Fixed (2025-11-17)**:
    - ✅ `16-gmail-sync-integration.spec.ts:229`
@@ -353,24 +355,28 @@ Serial execution eliminated resource contention - the problematic test now runs 
    - ✅ `03-job-status-updates.spec.ts:410`
    - ✅ `03-job-status-updates.spec.ts:461`
 
-**2. Investigate Group B Context-Dependent Hard Failures** (Priority: High)
+**2. 🎯 Fix Group B Context-Dependent Hard Failures** (Priority: High - NEXT STEP)
    - **Total affected**: 4 tests (pass in isolation, fail in comprehensive suite)
    - **Root cause**: Same as ISSUE-046 - architectural test isolation issues
    - **Tests**:
-     - `22-refresh-buttons.spec.ts:57`
-     - `23-description-quality.spec.ts:87`
-     - `23-description-quality.spec.ts:144`
-     - `16-microsoft-email-integration.spec.ts:779`
-   - **Recommended fix**: Apply same state polling pattern used for ISSUE-046
+     1. `22-refresh-buttons.spec.ts:57` - "should refresh single job description"
+     2. `23-description-quality.spec.ts:87` - "should show actual job content"
+     3. `23-description-quality.spec.ts:144` - "should regenerate description after prompt change"
+     4. `16-microsoft-email-integration.spec.ts:779` - "End-to-End Microsoft workflow"
+   - **Recommended fix**: Apply same patterns used for ISSUE-046:
+     - State polling with `page.waitForFunction()`
+     - Load-aware timeouts (10s/20s)
+     - Or serial execution mode (if modifying shared state)
    - **Status**: Verified passing in isolation (2025-11-15), awaiting fixes
+   - **Expected impact**: E2E pass rate 98.0% → 99.0%
 
-**2. Optional: Investigate Microsoft Archiving Test Failure** (Priority: Low)
+**3. Optional: Investigate Microsoft Archiving Test Failure** (Priority: Low)
    - `16-microsoft-email-integration.spec.ts:529` - "preserve sync functionality with archiving"
    - **Error**: Expected >= 25, Received: 0 (total count issue)
    - **Note**: This is a DIFFERENT test (not context-dependent, failed in isolation)
    - **Status**: Might be real bug or data-dependent test issue
 
-**3. Optional: Document Test Isolation Architecture** (Priority: Low)
+**4. Optional: Document Test Isolation Architecture** (Priority: Low)
    - Create design document for test data isolation strategy
    - Evaluate options: database transactions, per-test-file data pools, serial execution
    - **Purpose**: Prevent future context-dependent flakiness issues
