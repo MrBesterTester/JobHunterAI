@@ -16,9 +16,16 @@ if (!shouldRunTest('job-status-updates')) {
  * Covers:
  * - Approve/Reject workflow test (Section 5)
  * - Status update API validation (Section 6)
+ *
+ * Note: These tests modify the database and must run serially to avoid race conditions.
+ * Using test.describe.configure() prevents parallel execution with other tests.
  */
 
 test.describe('Job Status Updates', () => {
+  // Configure serial mode for this suite
+  // Serial mode prevents parallel execution with other tests (test isolation)
+  test.describe.configure({ mode: 'serial' });
+
   let dashboardPage: DashboardPage;
 
   test.beforeEach(async ({ page }) => {
