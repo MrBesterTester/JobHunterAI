@@ -86,7 +86,7 @@ test.describe('Refresh Buttons', () => {
         const firstCard = cards[0];
         // Find strong tag containing "Condensed Description" text
         const strongs = firstCard.querySelectorAll('strong');
-        let descSection: Element | null = null;
+        let descSection: HTMLElement | null | undefined = null;
         for (const strong of strongs) {
           if (strong.textContent?.includes('Condensed Description')) {
             descSection = strong.parentElement?.parentElement;
@@ -109,7 +109,7 @@ test.describe('Refresh Buttons', () => {
         const firstCard = cards[0];
         // Find strong tag containing "Condensed Description" text
         const strongs = firstCard.querySelectorAll('strong');
-        let descSection: Element | null = null;
+        let descSection: HTMLElement | null | undefined = null;
         for (const strong of strongs) {
           if (strong.textContent?.includes('Condensed Description')) {
             descSection = strong.parentElement?.parentElement;

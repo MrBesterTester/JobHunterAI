@@ -114,7 +114,7 @@ test.describe('Condensed Description Quality', () => {
           const card = cards[idx];
           // Find strong tag containing "Condensed Description" text
           const strongs = card.querySelectorAll('strong');
-          let descSection: Element | null = null;
+          let descSection: HTMLElement | null | undefined = null;
           for (const strong of strongs) {
             if (strong.textContent?.includes('Condensed Description')) {
               descSection = strong.parentElement?.parentElement;
@@ -201,7 +201,7 @@ test.describe('Condensed Description Quality', () => {
           const card = cards[idx];
           // Find strong tag containing "Condensed Description" text
           const strongs = card.querySelectorAll('strong');
-          let descSection: Element | null = null;
+          let descSection: HTMLElement | null | undefined = null;
           for (const strong of strongs) {
             if (strong.textContent?.includes('Condensed Description')) {
               descSection = strong.parentElement?.parentElement;
@@ -243,7 +243,7 @@ test.describe('Condensed Description Quality', () => {
         if (!card) return false;
         // Find strong tag containing "Condensed Description" text
         const strongs = card.querySelectorAll('strong');
-        let descSection: Element | null = null;
+        let descSection: HTMLElement | null | undefined = null;
         for (const strong of strongs) {
           if (strong.textContent?.includes('Condensed Description')) {
             descSection = strong.parentElement?.parentElement;
@@ -273,7 +273,7 @@ test.describe('Condensed Description Quality', () => {
         if (!card) return false;
         // Find strong tag containing "Condensed Description" text
         const strongs = card.querySelectorAll('strong');
-        let descSection: Element | null = null;
+        let descSection: HTMLElement | null | undefined = null;
         for (const strong of strongs) {
           if (strong.textContent?.includes('Condensed Description')) {
             descSection = strong.parentElement?.parentElement;
@@ -297,7 +297,7 @@ test.describe('Condensed Description Quality', () => {
         if (!card) return false;
         // Find strong tag containing "Condensed Description" text
         const strongs = card.querySelectorAll('strong');
-        let descSection: Element | null = null;
+        let descSection: HTMLElement | null | undefined = null;
         for (const strong of strongs) {
           if (strong.textContent?.includes('Condensed Description')) {
             descSection = strong.parentElement?.parentElement;
