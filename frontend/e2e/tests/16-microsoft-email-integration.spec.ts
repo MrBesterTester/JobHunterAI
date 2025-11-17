@@ -568,8 +568,30 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       }
       await microsoftSyncButton.click();
 
-      // Wait for sync with archiving to complete
-      await page.waitForTimeout(15000);
+      // Wait for sync button to re-enable (indicates sync completion)
+      // Use load-aware timeout: 120s under load, 60s in isolation (Microsoft sync is slow)
+      const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 120000 : 60000;
+      await expect(microsoftSyncButton).toBeEnabled({ timeout: pollTimeout });
+
+      // Wait for Total count to update using state polling
+      await page.waitForFunction(
+        (expectedMin) => {
+          const totalElements = document.querySelectorAll('*');
+          for (const el of totalElements) {
+            const text = el.textContent || '';
+            if (text.match(/Total/i)) {
+              const match = text.match(/\d+/);
+              if (match) {
+                const count = parseInt(match[0]);
+                return count >= expectedMin;
+              }
+            }
+          }
+          return false;
+        },
+        initialTotalCount,
+        { timeout: pollTimeout }
+      );
 
       // Verify sync still works - jobs should be created
       const newTotal = await page.getByText(/Total/i).last().textContent();

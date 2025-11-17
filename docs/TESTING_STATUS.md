@@ -374,13 +374,19 @@ Serial execution eliminated resource contention - the problematic test now runs 
    **Technical Note**: Fixed SyntaxError caused by using Playwright-specific `:has-text()` selector
    inside `page.waitForFunction()`. Replaced with native DOM iteration (querySelectorAll + loop).
 
-**3. Optional: Investigate Microsoft Archiving Test Failure** (Priority: Low)
+**3. ⏳ Investigate 197 Skipped E2E Tests** (Priority: Low)
+   - **Count**: 197 E2E tests skipped in last comprehensive run
+   - **Action Needed**: Review skipped tests to confirm skipping is intentional
+   - **Expected**: Most should be for unimplemented features or conditional tests
+   - **Purpose**: Ensure no accidentally disabled tests
+
+**4. Optional: Investigate Microsoft Archiving Test Failure** (Priority: Low)
    - `16-microsoft-email-integration.spec.ts:529` - "preserve sync functionality with archiving"
    - **Error**: Expected >= 25, Received: 0 (total count issue)
    - **Note**: This is a DIFFERENT test (not context-dependent, failed in isolation)
-   - **Status**: Might be real bug or data-dependent test issue
+   - **Status**: Under investigation
 
-**4. Optional: Document Test Isolation Architecture** (Priority: Low)
+**5. Optional: Document Test Isolation Architecture** (Priority: Low)
    - Create design document for test data isolation strategy
    - Evaluate options: database transactions, per-test-file data pools, serial execution
    - **Purpose**: Prevent future context-dependent flakiness issues
