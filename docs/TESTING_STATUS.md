@@ -10,9 +10,9 @@ related_docs:
   - TESTING_HISTORY.md (historical archive)
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
-last_comprehensive_run: 2025-11-15 16:48:00 PST
+last_comprehensive_run: 2025-11-17 16:20:00 PST
 last_targeted_testing: 2025-11-17 15:16:09 PST
-last_updated: 2025-11-17 15:16:09 PST (ISSUE-046 additional fixes - 3 more flaky tests resolved)
+last_updated: 2025-11-17 16:20:00 PST (ISSUE-046 status: 6 of 7 resolved, line 183 context-dependent failure identified)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -23,6 +23,7 @@ last_updated: 2025-11-17 15:16:09 PST (ISSUE-046 additional fixes - 3 more flaky
     - [Summary of Work](#summary-of-work)
     - [Test Verification Results](#test-verification-results)
     - [Fixes Applied](#fixes-applied)
+    - [Step 4: Comprehensive Suite Verification (2025-11-17 15:16 PST)](#step-4-comprehensive-suite-verification-2025-11-17-1516-pst)
     - [Current ISSUE-046 Status](#current-issue-046-status)
   - [📊 Previous Comprehensive Test Run (2025-11-15)](#-previous-comprehensive-test-run-2025-11-15)
     - [Test Results Summary](#test-results-summary)
@@ -47,17 +48,17 @@ last_updated: 2025-11-17 15:16:09 PST (ISSUE-046 additional fixes - 3 more flaky
 
 ## 🎯 Latest Targeted Testing (2025-11-17)
 
-**Run Date**: 2025-11-17 14:00:00 PST - 15:16:00 PST
+**Run Date**: 2025-11-17 14:00:00 PST - 16:20:00 PST
 **Focus**: Complete ISSUE-046 flaky test resolution
-**Tests Run**: Targeted isolation and file-level tests
-**Result**: ✅ **ALL 7 ISSUE-046 FLAKY TESTS NOW RESOLVED**
+**Tests Run**: Targeted isolation, file-level, and comprehensive suite tests
+**Result**: ⚠️ **6 of 7 ISSUE-046 TESTS RESOLVED** (1 context-dependent failure remains)
 
 ### Summary of Work
 
-**3 Additional Flaky Tests Fixed Today:**
-1. ✅ `16-gmail-sync-integration.spec.ts:229` - "should allow approving jobs synced from Gmail"
-2. ✅ `03-job-status-updates.spec.ts:183` - "should allow approving multiple jobs in sequence"
-3. ✅ `03-job-status-updates.spec.ts:417` - "should handle rapid sequential approvals"
+**3 Additional Flaky Tests Addressed Today:**
+1. ✅ `16-gmail-sync-integration.spec.ts:229` - "should allow approving jobs synced from Gmail" - **FIXED**
+2. ⚠️ `03-job-status-updates.spec.ts:183` - "should allow approving multiple jobs in sequence" - **CONTEXT-DEPENDENT FAILURE**
+3. ✅ `03-job-status-updates.spec.ts:417` - "should handle rapid sequential approvals" - **FIXED**
 
 **Combined with Previous Fixes (2025-11-15):**
 4. ✅ `03-job-status-updates.spec.ts:122` - "should update statistics immediately after approval"
@@ -104,11 +105,36 @@ last_updated: 2025-11-17 15:16:09 PST (ISSUE-046 additional fixes - 3 more flaky
 - Waits for job card count to reach expected value (initialCount - 3)
 - Load-aware timeout added
 
+### Step 4: Comprehensive Suite Verification (2025-11-17 15:16 PST)
+
+**Result**: ⚠️ **Line 183 FAILED under full comprehensive load**
+
+**Failed Test:**
+- `03-job-status-updates.spec.ts:183` - "should allow approving multiple jobs in sequence"
+  - **Runtime**: 30.6 seconds (exceeded 20s timeout)
+  - **Status**: Failed on first attempt, retry also failed
+  - **Context**: Passes in isolation (6.4s) and file-level (part of 15/15), but fails under comprehensive suite load (595 tests, 4 workers)
+
+**Passing Tests:**
+- `03-job-status-updates.spec.ts:417` - ✅ Passed in comprehensive suite (11.9s)
+- `16-gmail-sync-integration.spec.ts:229` - ✅ Passed in comprehensive suite
+
+**Analysis:**
+Test line 183 exhibits **context-dependent failure** - it passes in isolation but fails under heavy parallel load. This is characteristic of "Group B" hard failures where resource contention (database, CPU, DOM updates) causes operations to take significantly longer than expected.
+
+**Root Cause:**
+- Approving 2 jobs sequentially takes >30s under comprehensive load
+- Current 20s timeout is insufficient for worst-case system contention
+- Database operations and React state updates are significantly delayed when 595 tests run in parallel with 4 workers
+
 ### Current ISSUE-046 Status
 
-**RESOLVED**: All 7 flaky tests in ISSUE-046 now pass consistently in isolation and moderate-load scenarios.
+**6 of 7 RESOLVED**: Six tests now pass consistently across isolation, file-level, and comprehensive suite scenarios.
 
-**Next Step**: Run comprehensive test suite to verify fixes work under full parallel load with all 595 E2E tests.
+**1 REMAINING (Context-Dependent)**:
+- ❌ `03-job-status-updates.spec.ts:183` - Needs additional work (increase timeout to 40s+ or investigate performance issue)
+
+**Recommendation**: Move line 183 to "Group B Context-Dependent Failures" for investigation alongside other resource-contention issues.
 
 ---
 
