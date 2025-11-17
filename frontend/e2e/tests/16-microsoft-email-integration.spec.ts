@@ -779,7 +779,18 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
     test('Item 4: End-to-End Workflow - Microsoft job through full application flow', async ({ page }) => {
       // Navigate to New Jobs tab
       await page.getByRole('button', { name: /^new jobs$/i }).click();
-      await page.waitForTimeout(1000);
+
+      // Wait for tab switch using state polling
+      // Use load-aware timeout: 20s under load, 10s in isolation
+      const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 20000 : 10000;
+      await page.waitForFunction(
+        () => {
+          const newTabButton = document.querySelector('[data-testid="new-tab-button"]');
+          return newTabButton?.classList.contains('active') ||
+                 newTabButton?.getAttribute('aria-selected') === 'true';
+        },
+        { timeout: pollTimeout }
+      );
 
       // Find jobs (may be from any source)
       const jobCards = page.locator('[data-testid="job-card"]');
@@ -795,13 +806,16 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
 
       // Click first job to open details
       await jobCards.first().click();
-      await page.waitForTimeout(1000);
 
-      // Verify job modal/details opened
-      const modalOrDetails = page.locator('[data-testid="job-details"]').or(
-        page.locator('[data-testid="modal-overlay"]')
+      // Wait for modal to open using state polling
+      await page.waitForFunction(
+        () => {
+          const modal = document.querySelector('[data-testid="modal-overlay"]');
+          const details = document.querySelector('[data-testid="job-details"]');
+          return (modal && modal.clientHeight > 0) || (details && details.clientHeight > 0);
+        },
+        { timeout: pollTimeout }
       );
-      await expect(modalOrDetails.first()).toBeVisible({ timeout: 5000 });
 
       // Look for Approve button within the job context
       const approveButton = page.locator('[data-testid="job-card"]').first()

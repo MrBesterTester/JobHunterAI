@@ -76,11 +76,36 @@ test.describe('Refresh Buttons', () => {
     const refreshButton = descriptionSection.locator('button').first();
     await refreshButton.click();
 
-    // Should briefly show "Loading description..."
-    await expect(descriptionContainer).toHaveText('Loading description...', { timeout: 2000 });
+    // Wait for loading state to appear using state polling
+    // Use load-aware timeout: 20s under load, 10s in isolation
+    const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 20000 : 10000;
+    await page.waitForFunction(
+      () => {
+        const cards = document.querySelectorAll('[data-testid="job-card"]');
+        if (cards.length === 0) return false;
+        const firstCard = cards[0];
+        const descSection = firstCard.querySelector('strong:has-text("Condensed Description")');
+        if (!descSection) return false;
+        const container = descSection.closest('div')?.querySelector('div:last-child');
+        return container?.textContent?.includes('Loading description...') || false;
+      },
+      { timeout: pollTimeout }
+    );
 
-    // Then load the new description
-    await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
+    // Wait for new description to load using state polling
+    await page.waitForFunction(
+      () => {
+        const cards = document.querySelectorAll('[data-testid="job-card"]');
+        if (cards.length === 0) return false;
+        const firstCard = cards[0];
+        const descSection = firstCard.querySelector('strong:has-text("Condensed Description")');
+        if (!descSection) return false;
+        const container = descSection.closest('div')?.querySelector('div:last-child');
+        const text = container?.textContent || '';
+        return text.length > 10 && !text.includes('Loading description...');
+      },
+      { timeout: pollTimeout }
+    );
 
     // Get new description
     const newDescription = await descriptionContainer.textContent();

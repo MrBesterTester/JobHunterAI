@@ -96,13 +96,31 @@ test.describe('Condensed Description Quality', () => {
 
     let foundSubstantialDescription = false;
 
+    // Use load-aware timeout: 40s under load, 20s in isolation (LLM operations are slow)
+    const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 40000 : 20000;
+
     for (let i = 0; i < count; i++) {
       const card = jobCards.nth(i);
       // Find the condensed description section by looking for the strong tag with exact text
       const descriptionSection = card.locator('strong:has-text("Condensed Description")').locator('xpath=../..');
       const descriptionContainer = descriptionSection.locator('> div').last();
 
-      await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 20000 });
+      // Wait for description to load using state polling
+      const cardIndex = i;
+      await page.waitForFunction(
+        ({ idx }) => {
+          const cards = document.querySelectorAll('[data-testid="job-card"]');
+          if (idx >= cards.length) return false;
+          const card = cards[idx];
+          const descSection = card.querySelector('strong:has-text("Condensed Description")');
+          if (!descSection) return false;
+          const container = descSection.closest('div')?.querySelector('div:last-child');
+          const text = container?.textContent || '';
+          return text.length > 0 && !text.includes('Loading description...');
+        },
+        { idx: cardIndex },
+        { timeout: pollTimeout }
+      );
 
       const descriptionText = await descriptionContainer.textContent();
 
@@ -157,12 +175,30 @@ test.describe('Condensed Description Quality', () => {
     let jobCard: ReturnType<typeof page.locator> | undefined;
     let descriptionContainer: ReturnType<typeof page.locator> | undefined;
 
+    // Use load-aware timeout: 80s under load, 40s in isolation (LLM operations are very slow)
+    const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 80000 : 40000;
+
     for (let i = 0; i < count; i++) {
       const card = jobCards.nth(i);
       const tempDescSection = card.locator('strong:has-text("Condensed Description")').locator('xpath=../..');
       const tempDescContainer = tempDescSection.locator('> div').last();
 
-      await expect(tempDescContainer).not.toHaveText('Loading description...', { timeout: 20000 });
+      // Wait for description to load using state polling
+      const cardIndex = i;
+      await page.waitForFunction(
+        ({ idx }) => {
+          const cards = document.querySelectorAll('[data-testid="job-card"]');
+          if (idx >= cards.length) return false;
+          const card = cards[idx];
+          const descSection = card.querySelector('strong:has-text("Condensed Description")');
+          if (!descSection) return false;
+          const container = descSection.closest('div')?.querySelector('div:last-child');
+          const text = container?.textContent || '';
+          return text.length > 0 && !text.includes('Loading description...');
+        },
+        { idx: cardIndex },
+        { timeout: pollTimeout }
+      );
 
       const descText = await tempDescContainer.textContent();
       const wordCount = descText!.trim().split(/\s+/).length;
@@ -182,8 +218,20 @@ test.describe('Condensed Description Quality', () => {
     expect(jobCard).toBeDefined();
     expect(descriptionContainer).toBeDefined();
 
-    // Wait for initial description (increased timeout for system load)
-    await expect(descriptionContainer!).not.toHaveText('Loading description...', { timeout: 75000 });
+    // Wait for initial description using state polling
+    await page.waitForFunction(
+      (jid) => {
+        const card = document.querySelector(`[data-testid="job-card"][data-job-id="${jid}"]`);
+        if (!card) return false;
+        const descSection = card.querySelector('strong:has-text("Condensed Description")');
+        if (!descSection) return false;
+        const container = descSection.closest('div')?.querySelector('div:last-child');
+        const text = container?.textContent || '';
+        return text.length > 10 && !text.includes('Loading description...');
+      },
+      jobId,
+      { timeout: pollTimeout }
+    );
     const initialDescription = await descriptionContainer!.textContent();
 
     // Click refresh
@@ -191,12 +239,35 @@ test.describe('Condensed Description Quality', () => {
     const refreshButton = descriptionHeader.locator('..').locator('button');
     await refreshButton.click();
 
-    // Wait for "Loading..." state
-    await page.waitForTimeout(500);
+    // Wait for "Loading..." state to appear using state polling
+    await page.waitForFunction(
+      (jid) => {
+        const card = document.querySelector(`[data-testid="job-card"][data-job-id="${jid}"]`);
+        if (!card) return false;
+        const descSection = card.querySelector('strong:has-text("Condensed Description")');
+        if (!descSection) return false;
+        const container = descSection.closest('div')?.querySelector('div:last-child');
+        return container?.textContent?.includes('Loading description...') || false;
+      },
+      jobId,
+      { timeout: pollTimeout }
+    );
 
-    // Wait for new description (still tracking the same job by ID)
+    // Wait for new description to load using state polling
     // Note: LLM API calls can take 40-60+ seconds for jobs with long descriptions under load
-    await expect(descriptionContainer!).not.toHaveText('Loading description...', { timeout: 75000 });
+    await page.waitForFunction(
+      (jid) => {
+        const card = document.querySelector(`[data-testid="job-card"][data-job-id="${jid}"]`);
+        if (!card) return false;
+        const descSection = card.querySelector('strong:has-text("Condensed Description")');
+        if (!descSection) return false;
+        const container = descSection.closest('div')?.querySelector('div:last-child');
+        const text = container?.textContent || '';
+        return text.length > 10 && !text.includes('Loading description...');
+      },
+      jobId,
+      { timeout: pollTimeout }
+    );
 
     const newDescription = await descriptionContainer!.textContent();
 
