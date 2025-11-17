@@ -251,6 +251,7 @@ cd backend && cargo test && cd ../frontend && npm test
 - Current test status: `docs/TESTING_STATUS.md`
 - Test plan: `README_auto-test-plan.md`
 - Test history: `docs/TESTING_HISTORY.md`
+- **E2E best practices**: `docs/PLAYWRIGHT_BEST_PRACTICES.md` ← **Required reading for E2E test work**
 
 ---
 
@@ -469,6 +470,7 @@ The project uses a consistent structure for development and testing documentatio
 - **Results**: `docs/TESTING_STATUS.md` - Latest test run + workspace for next round
 - **Archive**: `docs/TESTING_HISTORY.md` - Completed testing work history (permanent record)
 - **Guide**: `docs/TESTING_GUIDE.md` - Testing principles and investigation workflows
+- **Playwright Best Practices**: `docs/PLAYWRIGHT_BEST_PRACTICES.md` ← **E2E test patterns & anti-patterns**
 
 **Key Pattern**: Plans → Results → Archive (with Results keeping only current state + terse history)
 
@@ -501,6 +503,16 @@ The project uses a consistent structure for development and testing documentatio
 - Use **Glob/Grep/Read** only for specific known targets
 - Never use bash `find`, `grep`, `cat` for file operations
 - **Full details**: See [CLAUDE_WORKFLOWS.md - File Discovery & Code Navigation](CLAUDE_WORKFLOWS.md#file-discovery--code-navigation)
+
+---
+
+**E2E Testing with Playwright**:
+- ⚠️ **CRITICAL**: Always consult `docs/PLAYWRIGHT_BEST_PRACTICES.md` when writing or fixing E2E tests
+- **Use `data-testid` attributes** for stable locators (especially when multiple similar elements exist)
+- **Use serial execution** for tests that modify shared database state or performance tests
+- **Use state polling** (`page.waitForFunction()`) instead of fixed timeouts (`page.waitForTimeout()`)
+- **Battle-tested patterns** from fixing 10+ flaky tests documented with code examples
+- **Full guidance**: See [docs/PLAYWRIGHT_BEST_PRACTICES.md](docs/PLAYWRIGHT_BEST_PRACTICES.md)
 
 ---
 
