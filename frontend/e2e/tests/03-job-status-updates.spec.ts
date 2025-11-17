@@ -194,12 +194,32 @@ test.describe('Job Status Updates', () => {
       // Approve first job
       const firstJob = await getJobCard(page, 0);
       await firstJob.approve();
-      await dashboardPage.waitForJobsUpdate();
+
+      // Wait for first job to be removed using state polling
+      // Use load-aware timeout: 20s under load, 10s in isolation
+      const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 20000 : 10000;
+      await page.waitForFunction(
+        (expectedCount) => {
+          const jobCards = document.querySelectorAll('[data-testid="job-card"]');
+          return jobCards.length === expectedCount;
+        },
+        initialCount - 1,
+        { timeout: pollTimeout }
+      );
 
       // Approve second job (which is now at index 0)
       const secondJob = await getJobCard(page, 0);
       await secondJob.approve();
-      await dashboardPage.waitForJobsUpdate();
+
+      // Wait for second job to be removed using state polling
+      await page.waitForFunction(
+        (expectedCount) => {
+          const jobCards = document.querySelectorAll('[data-testid="job-card"]');
+          return jobCards.length === expectedCount;
+        },
+        initialCount - 2,
+        { timeout: pollTimeout }
+      );
 
       // Verify both jobs were removed
       const finalCount = await dashboardPage.getVisibleJobCount();
@@ -433,8 +453,17 @@ test.describe('Job Status Updates', () => {
         await page.waitForTimeout(200);
       }
 
-      // Wait for all updates to complete
-      await page.waitForTimeout(2000);
+      // Wait for all updates to complete by polling actual state
+      // Use load-aware timeout: 20s under load, 10s in isolation
+      const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 20000 : 10000;
+      await page.waitForFunction(
+        (expectedCount) => {
+          const jobCards = document.querySelectorAll('[data-testid="job-card"]');
+          return jobCards.length === expectedCount;
+        },
+        initialCount - 3,
+        { timeout: pollTimeout }
+      );
 
       // Verify all 3 jobs were processed
       const finalCount = await dashboardPage.getVisibleJobCount();

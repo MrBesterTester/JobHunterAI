@@ -271,7 +271,9 @@ test.describe('Gmail Sync Integration', () => {
     await statsRefreshPromise;
     await page.waitForTimeout(500); // Give React time to update UI
 
-    // Wait for approved count to increase (with extended timeout to handle system load)
+    // Wait for approved count to increase (with load-aware timeout)
+    // Use longer timeout during comprehensive tests or CI to handle system load
+    const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 20000 : 10000;
     await page.waitForFunction(
       (expectedCount) => {
         const statElement = document.querySelector('[data-testid="stat-approved"]');
@@ -281,7 +283,7 @@ test.describe('Gmail Sync Integration', () => {
         return currentCount >= expectedCount;
       },
       initialApprovedCount + 1,
-      { timeout: 10000 } // Increased from 5000ms to handle load better
+      { timeout: pollTimeout }
     );
 
     // Verify approved count increased
