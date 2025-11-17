@@ -112,9 +112,18 @@ test.describe('Condensed Description Quality', () => {
           const cards = document.querySelectorAll('[data-testid="job-card"]');
           if (idx >= cards.length) return false;
           const card = cards[idx];
-          const descSection = card.querySelector('strong:has-text("Condensed Description")');
+          // Find strong tag containing "Condensed Description" text
+          const strongs = card.querySelectorAll('strong');
+          let descSection: Element | null = null;
+          for (const strong of strongs) {
+            if (strong.textContent?.includes('Condensed Description')) {
+              descSection = strong.parentElement?.parentElement;
+              break;
+            }
+          }
           if (!descSection) return false;
-          const container = descSection.closest('div')?.querySelector('div:last-child');
+          const divs = descSection.querySelectorAll('div');
+          const container = divs[divs.length - 1];
           const text = container?.textContent || '';
           return text.length > 0 && !text.includes('Loading description...');
         },
@@ -190,9 +199,18 @@ test.describe('Condensed Description Quality', () => {
           const cards = document.querySelectorAll('[data-testid="job-card"]');
           if (idx >= cards.length) return false;
           const card = cards[idx];
-          const descSection = card.querySelector('strong:has-text("Condensed Description")');
+          // Find strong tag containing "Condensed Description" text
+          const strongs = card.querySelectorAll('strong');
+          let descSection: Element | null = null;
+          for (const strong of strongs) {
+            if (strong.textContent?.includes('Condensed Description')) {
+              descSection = strong.parentElement?.parentElement;
+              break;
+            }
+          }
           if (!descSection) return false;
-          const container = descSection.closest('div')?.querySelector('div:last-child');
+          const divs = descSection.querySelectorAll('div');
+          const container = divs[divs.length - 1];
           const text = container?.textContent || '';
           return text.length > 0 && !text.includes('Loading description...');
         },
@@ -223,9 +241,18 @@ test.describe('Condensed Description Quality', () => {
       (jid) => {
         const card = document.querySelector(`[data-testid="job-card"][data-job-id="${jid}"]`);
         if (!card) return false;
-        const descSection = card.querySelector('strong:has-text("Condensed Description")');
+        // Find strong tag containing "Condensed Description" text
+        const strongs = card.querySelectorAll('strong');
+        let descSection: Element | null = null;
+        for (const strong of strongs) {
+          if (strong.textContent?.includes('Condensed Description')) {
+            descSection = strong.parentElement?.parentElement;
+            break;
+          }
+        }
         if (!descSection) return false;
-        const container = descSection.closest('div')?.querySelector('div:last-child');
+        const divs = descSection.querySelectorAll('div');
+        const container = divs[divs.length - 1];
         const text = container?.textContent || '';
         return text.length > 10 && !text.includes('Loading description...');
       },
@@ -244,9 +271,18 @@ test.describe('Condensed Description Quality', () => {
       (jid) => {
         const card = document.querySelector(`[data-testid="job-card"][data-job-id="${jid}"]`);
         if (!card) return false;
-        const descSection = card.querySelector('strong:has-text("Condensed Description")');
+        // Find strong tag containing "Condensed Description" text
+        const strongs = card.querySelectorAll('strong');
+        let descSection: Element | null = null;
+        for (const strong of strongs) {
+          if (strong.textContent?.includes('Condensed Description')) {
+            descSection = strong.parentElement?.parentElement;
+            break;
+          }
+        }
         if (!descSection) return false;
-        const container = descSection.closest('div')?.querySelector('div:last-child');
+        const divs = descSection.querySelectorAll('div');
+        const container = divs[divs.length - 1];
         return container?.textContent?.includes('Loading description...') || false;
       },
       jobId,
@@ -259,9 +295,18 @@ test.describe('Condensed Description Quality', () => {
       (jid) => {
         const card = document.querySelector(`[data-testid="job-card"][data-job-id="${jid}"]`);
         if (!card) return false;
-        const descSection = card.querySelector('strong:has-text("Condensed Description")');
+        // Find strong tag containing "Condensed Description" text
+        const strongs = card.querySelectorAll('strong');
+        let descSection: Element | null = null;
+        for (const strong of strongs) {
+          if (strong.textContent?.includes('Condensed Description')) {
+            descSection = strong.parentElement?.parentElement;
+            break;
+          }
+        }
         if (!descSection) return false;
-        const container = descSection.closest('div')?.querySelector('div:last-child');
+        const divs = descSection.querySelectorAll('div');
+        const container = divs[divs.length - 1];
         const text = container?.textContent || '';
         return text.length > 10 && !text.includes('Loading description...');
       },

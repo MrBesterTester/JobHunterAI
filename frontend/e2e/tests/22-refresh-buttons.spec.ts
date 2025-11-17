@@ -84,9 +84,18 @@ test.describe('Refresh Buttons', () => {
         const cards = document.querySelectorAll('[data-testid="job-card"]');
         if (cards.length === 0) return false;
         const firstCard = cards[0];
-        const descSection = firstCard.querySelector('strong:has-text("Condensed Description")');
+        // Find strong tag containing "Condensed Description" text
+        const strongs = firstCard.querySelectorAll('strong');
+        let descSection: Element | null = null;
+        for (const strong of strongs) {
+          if (strong.textContent?.includes('Condensed Description')) {
+            descSection = strong.parentElement?.parentElement;
+            break;
+          }
+        }
         if (!descSection) return false;
-        const container = descSection.closest('div')?.querySelector('div:last-child');
+        const divs = descSection.querySelectorAll('div');
+        const container = divs[divs.length - 1];
         return container?.textContent?.includes('Loading description...') || false;
       },
       { timeout: pollTimeout }
@@ -98,9 +107,18 @@ test.describe('Refresh Buttons', () => {
         const cards = document.querySelectorAll('[data-testid="job-card"]');
         if (cards.length === 0) return false;
         const firstCard = cards[0];
-        const descSection = firstCard.querySelector('strong:has-text("Condensed Description")');
+        // Find strong tag containing "Condensed Description" text
+        const strongs = firstCard.querySelectorAll('strong');
+        let descSection: Element | null = null;
+        for (const strong of strongs) {
+          if (strong.textContent?.includes('Condensed Description')) {
+            descSection = strong.parentElement?.parentElement;
+            break;
+          }
+        }
         if (!descSection) return false;
-        const container = descSection.closest('div')?.querySelector('div:last-child');
+        const divs = descSection.querySelectorAll('div');
+        const container = divs[divs.length - 1];
         const text = container?.textContent || '';
         return text.length > 10 && !text.includes('Loading description...');
       },
