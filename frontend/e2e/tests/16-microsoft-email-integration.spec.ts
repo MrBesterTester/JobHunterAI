@@ -49,8 +49,14 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       // Navigate to Intake tab
       await page.getByRole('button', { name: /^intake$/i }).click();
 
-      // Wait for Intake tab content to load
-      await page.waitForTimeout(500);
+      // Wait for Intake tab content to load using state polling
+      await page.waitForFunction(
+        () => {
+          const heading = document.querySelector('h3');
+          return heading?.textContent?.match(/microsoft email/i) !== null;
+        },
+        { timeout: 5000 }
+      );
 
       // Check for Microsoft Email Integration card
       const microsoftCard = page.locator('h3', { hasText: /microsoft email/i }).first();
@@ -60,7 +66,15 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
     test('should show Microsoft branding color (#0078d4)', async ({ page }) => {
       // Navigate to Intake tab
       await page.getByRole('button', { name: /^intake$/i }).click();
-      await page.waitForTimeout(500);
+
+      // Wait for Intake tab content to load using state polling
+      await page.waitForFunction(
+        () => {
+          const heading = document.querySelector('h3');
+          return heading?.textContent?.match(/microsoft email/i) !== null;
+        },
+        { timeout: 5000 }
+      );
 
       // Find Microsoft Email heading to locate the card
       const microsoftHeading = page.locator('h3', { hasText: /microsoft email/i }).first();
@@ -82,7 +96,15 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
     test('should display Authenticate button when not authenticated', async ({ page }) => {
       // Navigate to Intake tab
       await page.getByRole('button', { name: /^intake$/i }).click();
-      await page.waitForTimeout(1000);
+
+      // Wait for Intake tab content to load using state polling
+      await page.waitForFunction(
+        () => {
+          const heading = document.querySelector('h3');
+          return heading?.textContent?.match(/microsoft email/i) !== null;
+        },
+        { timeout: 5000 }
+      );
 
       // Check for either authentication button OR sync button (both are valid states)
       // Authentication button
@@ -543,7 +565,15 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
 
       // Navigate to Intake tab
       await page.getByRole('button', { name: /^intake$/i }).click();
-      await page.waitForTimeout(1000);
+
+      // Wait for Intake tab content to load using state polling
+      await page.waitForFunction(
+        () => {
+          const heading = document.querySelector('h3');
+          return heading?.textContent?.match(/microsoft email/i) !== null;
+        },
+        { timeout: 5000 }
+      );
 
       // Get initial job count
       const initialTotal = await page.getByText(/Total/i).last().textContent();
@@ -620,7 +650,15 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
 
       // Navigate to Intake tab
       await page.getByRole('button', { name: /^intake$/i }).click();
-      await page.waitForTimeout(1000);
+
+      // Wait for Intake tab content to load using state polling
+      await page.waitForFunction(
+        () => {
+          const heading = document.querySelector('h3');
+          return heading?.textContent?.match(/microsoft email/i) !== null;
+        },
+        { timeout: 5000 }
+      );
 
       // Trigger sync to generate metrics
       const microsoftSyncButton = page.locator('[data-testid="microsoft-sync-button"]');

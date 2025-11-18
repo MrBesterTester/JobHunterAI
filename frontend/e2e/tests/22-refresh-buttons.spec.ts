@@ -81,8 +81,9 @@ test.describe('Refresh Buttons', () => {
     await refreshButton.click();
 
     // Wait for loading state to appear using state polling
-    // Use load-aware timeout: 20s under load, 10s in isolation
-    const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 20000 : 10000;
+    // Use load-aware timeout: 60s under load (LLM operations), 30s in isolation
+    // Increased from 20s based on ISSUE-050 analysis - LLM operations can take longer under comprehensive test load
+    const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 60000 : 30000;
     await page.waitForFunction(
       () => {
         const cards = document.querySelectorAll('[data-testid="job-card"]');
@@ -167,12 +168,37 @@ test.describe('Refresh Buttons', () => {
     const refreshButton = descriptionSection.getByTestId('per-job-refresh-button');
     await refreshButton.click();
 
-    // Wait for the description to load
-    await page.waitForTimeout(1000);
-    await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
+    // Wait for the description to load using state polling
+    await page.waitForFunction(
+      () => {
+        const cards = document.querySelectorAll('[data-testid="job-card"]');
+        if (cards.length === 0) return false;
+        const firstCard = cards[0];
+        const strongs = firstCard.querySelectorAll('strong');
+        let descSection: HTMLElement | null | undefined = null;
+        for (const strong of strongs) {
+          if (strong.textContent?.includes('Condensed Description')) {
+            descSection = strong.parentElement?.parentElement;
+            break;
+          }
+        }
+        if (!descSection) return false;
+        const divs = descSection.querySelectorAll('div');
+        const container = divs[divs.length - 1];
+        const text = container?.textContent || '';
+        return text.length > 10 && !text.includes('Loading description...');
+      },
+      { timeout: 15000 }
+    );
 
     // Wait an additional 5 seconds to see if any more requests happen
-    await page.waitForTimeout(5000);
+    // Use time-based polling to avoid arbitrary timeout
+    const startTime = Date.now();
+    await page.waitForFunction(
+      (start) => Date.now() - start >= 5000,
+      startTime,
+      { timeout: 6000 }
+    );
 
     // Should have made a reasonable number of API calls (not 10+ like in an infinite loop)
     // We allow up to 4 calls due to React re-renders and timing
@@ -208,29 +234,78 @@ test.describe('Refresh Buttons', () => {
     const refreshButton = descriptionSection.getByTestId('per-job-refresh-button');
     await refreshButton.click();
 
-    // Wait for refresh to complete
-    await page.waitForTimeout(1000);
-    await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
+    // Wait for refresh to complete using state polling
+    await page.waitForFunction(
+      (expectedJobIdText) => {
+        const cards = document.querySelectorAll('[data-testid="job-card"]');
+        for (const card of cards) {
+          const badge = card.querySelector('[data-testid="job-id-badge"]');
+          if (badge?.textContent === expectedJobIdText) {
+            const strongs = card.querySelectorAll('strong');
+            let descSection: HTMLElement | null | undefined = null;
+            for (const strong of strongs) {
+              if (strong.textContent?.includes('Condensed Description')) {
+                descSection = strong.parentElement?.parentElement;
+                break;
+              }
+            }
+            if (!descSection) return false;
+            const divs = descSection.querySelectorAll('div');
+            const container = divs[divs.length - 1];
+            const text = container?.textContent || '';
+            return text.length > 10 && !text.includes('Loading description...');
+          }
+        }
+        return false;
+      },
+      jobIdText,
+      { timeout: 15000 }
+    );
 
     // Verify we're still looking at the same job (using stable locator)
     const currentJobIdBadge = stableJobCard.locator('[data-testid="job-id-badge"]');
     const currentJobId = await currentJobIdBadge.textContent();
     expect(currentJobId).toBe(jobIdText);
 
-    // Monitor for 3 more seconds - description should remain stable
-    // Even if the job list re-sorts, we're tracking the specific job by ID
-    const description1 = await descriptionContainer.textContent();
-    await page.waitForTimeout(1000);
-    const description2 = await descriptionContainer.textContent();
-    await page.waitForTimeout(1000);
-    const description3 = await descriptionContainer.textContent();
-    await page.waitForTimeout(1000);
-    const description4 = await descriptionContainer.textContent();
+    // Monitor for 3 seconds - description should remain stable
+    // Use state polling to verify stability over time
+    const initialDescription = await descriptionContainer.textContent();
+    const stabilityStartTime = Date.now();
+    await page.waitForFunction(
+      ({ startTime, expectedJobIdText, expectedDescription }) => {
+        // Has 3 seconds elapsed?
+        if (Date.now() - startTime < 3000) return false;
 
-    // All descriptions should be identical (stable, not changing)
-    expect(description1).toBe(description2);
-    expect(description2).toBe(description3);
-    expect(description3).toBe(description4);
+        // Find our specific job card
+        const cards = document.querySelectorAll('[data-testid="job-card"]');
+        for (const card of cards) {
+          const badge = card.querySelector('[data-testid="job-id-badge"]');
+          if (badge?.textContent === expectedJobIdText) {
+            const strongs = card.querySelectorAll('strong');
+            let descSection: HTMLElement | null | undefined = null;
+            for (const strong of strongs) {
+              if (strong.textContent?.includes('Condensed Description')) {
+                descSection = strong.parentElement?.parentElement;
+                break;
+              }
+            }
+            if (!descSection) return false;
+            const divs = descSection.querySelectorAll('div');
+            const container = divs[divs.length - 1];
+            const currentDescription = container?.textContent || '';
+            // Verify description hasn't changed
+            return currentDescription === expectedDescription;
+          }
+        }
+        return false;
+      },
+      { startTime: stabilityStartTime, expectedJobIdText: jobIdText, expectedDescription: initialDescription },
+      { timeout: 6000 }
+    );
+
+    // Final verification - description should still match initial
+    const finalDescription = await descriptionContainer.textContent();
+    expect(finalDescription).toBe(initialDescription);
   });
 
   test('global refresh button should clear all caches', async ({ page }) => {
@@ -263,8 +338,36 @@ test.describe('Refresh Buttons', () => {
       expect(text).toBeTruthy();
     }
 
-    // Wait for all to reload
-    await page.waitForTimeout(5000);
+    // Wait for all cards to reload using state polling
+    await page.waitForFunction(
+      (expectedCount) => {
+        const cards = document.querySelectorAll('[data-testid="job-card"]');
+        let loadedCount = 0;
+
+        for (let i = 0; i < Math.min(cards.length, expectedCount); i++) {
+          const card = cards[i];
+          const strongs = card.querySelectorAll('strong');
+          let descSection: HTMLElement | null | undefined = null;
+          for (const strong of strongs) {
+            if (strong.textContent?.includes('Condensed Description')) {
+              descSection = strong.parentElement?.parentElement;
+              break;
+            }
+          }
+          if (!descSection) continue;
+          const divs = descSection.querySelectorAll('div');
+          const container = divs[divs.length - 1];
+          const text = container?.textContent || '';
+          if (text.length > 10 && !text.includes('Loading description...')) {
+            loadedCount++;
+          }
+        }
+
+        return loadedCount >= expectedCount;
+      },
+      count,
+      { timeout: 20000 }
+    );
 
     // Verify all have loaded descriptions
     for (let i = 0; i < count; i++) {
