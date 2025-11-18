@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-17 17:29:04 PST
-last_updated: 2025-11-17 18:40:00 PST (ISSUE-051 created - 12 anti-patterns documented)
+last_updated: 2025-11-17 19:50:00 PST (ISSUE-051 fixed - 12 anti-patterns resolved, ISSUE-050 timeout increased to 60s)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -101,23 +101,32 @@ last_updated: 2025-11-17 18:40:00 PST (ISSUE-051 created - 12 anti-patterns docu
   - **VERIFIED (2025-11-17 18:17 PST)**: Test already uses stable locator
     - Uses `data-testid="microsoft-sync-button"` (follows best practices)
     - Button test ID audit confirmed locator strategy is correct
+  - **NEW (2025-11-17 19:45 PST)**: ✅ **Anti-pattern fixes applied** (commit a2bec4c, ISSUE-051)
+    - Fixed 5 `waitForTimeout()` anti-patterns in tab navigation (lines 52, 62, 84, 546, 623)
+    - All replaced with `page.waitForFunction()` state polling
+    - Failing test (line 533) already followed correct patterns
 - **Why still failing**: May require longer timeouts (>120s) or different waiting strategy for Microsoft API operations
 - **Screenshot**: `test-results/16-microsoft-email-integra-d42c3-lity-with-archiving-enabled-chromium/test-failed-1.png`
-- **Related**: ISSUE-049, ISSUE-051 (comprehensive review found 5 anti-patterns in file)
+- **Related**: ISSUE-049, ISSUE-051 (fixed)
 
 **2. `22-refresh-buttons.spec.ts:61` - Refresh Single Job Description**
-- **Status**: Still fails under comprehensive load, but improved locators
+- **Status**: May now pass under comprehensive load with increased timeout
 - **Applied fixes**:
   - Serial execution (eliminates resource contention)
-  - State polling + load-aware timeouts (current: 20s)
+  - State polling + load-aware timeouts (current: 20s → **60s** ✅)
   - DOM query approach
-  - **NEW (2025-11-17 18:17 PST)**: Stable test ID locators
+  - **DONE (2025-11-17 18:17 PST)**: Stable test ID locators
     - Added `data-testid="per-job-refresh-button"` and `data-testid="global-refresh-button"`
     - Test now uses `getByTestId()` instead of structural locators
     - ✅ Test passes 8/8 in isolation (46s runtime)
-- **Why still failing under load**: LLM operations may need longer timeouts (current: 20s, recommend: 60s per ISSUE-050)
-- **Screenshot**: `test-results/22-refresh-buttons-Refresh-3bc5c-when-per-job-button-clicked-chromium/test-failed-1.png`
-- **Related**: ISSUE-050, ISSUE-051 (comprehensive review found 7 anti-patterns in file), commits b8592c2, 4bb7919
+  - **NEW (2025-11-17 19:45 PST)**: ✅ **Timeout increased + anti-patterns fixed** (commit a2bec4c, ISSUE-051)
+    - Increased LLM pollTimeout from 20s → **60s** per ISSUE-050 Option 1
+    - Fixed 7 `waitForTimeout()` anti-patterns in other tests (lines 171, 175, 212, 223-228, 267)
+    - All replaced with `page.waitForFunction()` state polling
+    - Failing test (line 61) retained correct state polling patterns
+    - **Expected**: Should now pass under comprehensive load with 60s timeout
+- **Screenshot**: `test-results/22-refresh-buttons-Refresh-3bc5c-when-per-job-button-clicked-chromium/test-failed-1.png` (from previous run with 20s timeout)
+- **Related**: ISSUE-050, ISSUE-051 (fixed), commits b8592c2, 4bb7919, a2bec4c
 
 ### Serial Mode Implementation
 
