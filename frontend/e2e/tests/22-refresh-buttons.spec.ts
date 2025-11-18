@@ -225,7 +225,7 @@ test.describe('Refresh Buttons', () => {
 
     // Get elements relative to the stable job card locator
     const descriptionSection = stableJobCard.locator('div:has-text("Condensed Description")').first();
-    const descriptionContainer = descriptionSection.locator('div').nth(1);
+    const descriptionContainer = descriptionSection.locator('[data-testid="condensed-description-text"]');
 
     // Wait for initial load
     await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
@@ -250,8 +250,7 @@ test.describe('Refresh Buttons', () => {
               }
             }
             if (!descSection) return false;
-            const divs = descSection.querySelectorAll('div');
-            const container = divs[divs.length - 1];
+            const container = descSection.querySelector('[data-testid="condensed-description-text"]');
             const text = container?.textContent || '';
             return text.length > 10 && !text.includes('Loading description...');
           }
@@ -290,8 +289,7 @@ test.describe('Refresh Buttons', () => {
               }
             }
             if (!descSection) return false;
-            const divs = descSection.querySelectorAll('div');
-            const container = divs[divs.length - 1];
+            const container = descSection.querySelector('[data-testid="condensed-description-text"]');
             const currentDescription = container?.textContent || '';
             // Verify description hasn't changed
             return currentDescription === expectedDescription;

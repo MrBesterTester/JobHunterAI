@@ -355,6 +355,14 @@ cd frontend && npx playwright test e2e/tests/16-microsoft-email-integration.spec
   - Fixed 5 `waitForTimeout()` anti-patterns in tab navigation (lines 52, 62, 84, 546, 623)
   - Test line 533 (failing test) retained correct state polling patterns
   - **Note**: Failing test already followed best practices; fix improves other tests in same file
+- 2025-11-17 19:33:47 PST: ❌ **NEW FAILURE MODE DISCOVERED** - Test now fails at different point
+  - Test run: ✘ FAILED (both attempts, 11.1s and 11.2s)
+  - **Failure point changed**: Now failing at line 570 (tab navigation) instead of line 581+ (sync operation)
+  - Error: `TimeoutError: page.waitForFunction: Timeout 10000ms exceeded` (was 5000ms in code, ran for 10s?)
+  - Tab navigation check: Looking for "Microsoft Email" heading after clicking Intake tab
+  - **Root cause**: Tab navigation state polling not finding expected heading
+  - **Impact**: Test never reaches the original sync operation that was timing out
+  - **Status**: Still FAILING, but different failure point than originally documented
 
 ## Notes
 

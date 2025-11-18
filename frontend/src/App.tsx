@@ -2339,17 +2339,19 @@ const JobHunterDashboard: React.FC = () => {
             <RefreshCw style={{ width: '12px', height: '12px' }} />
           </button>
         </div>
-        <div style={{
-          padding: '8px',
-          backgroundColor: '#fff',
-          border: '1px solid #fbbf24',
-          borderRadius: '4px',
-          fontSize: '11px',
-          lineHeight: '1.5',
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-word',
-          color: '#374151'
-        }}>
+        <div
+          data-testid="condensed-description-text"
+          style={{
+            padding: '8px',
+            backgroundColor: '#fff',
+            border: '1px solid #fbbf24',
+            borderRadius: '4px',
+            fontSize: '11px',
+            lineHeight: '1.5',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+            color: '#374151'
+          }}>
           {condensedDescriptions[job.job_id] || 'Loading description...'}
         </div>
       </div>
