@@ -327,7 +327,43 @@ test('should preserve sync functionality with archiving enabled', async ({ page 
 4. **Real-world scenario**: Comprehensive load doesn't represent production usage
 5. **Can revisit**: If test becomes more critical, can apply Option 1
 
-**Recommendation**: **Option 3** unless user specifically wants 100% pass rate in comprehensive mode, then use **Option 1**
+**Why Option 2 Has Lower Success Probability Despite Seeming More Robust**:
+
+At first glance, Option 2 (data validation) seems more robust than Option 1 (simple timeout increase). However, it has **lower success probability (60-70% vs 70-80%)** because:
+
+1. **More moving parts**: Backend API call + UI check vs just UI check
+   - Adds dependency on backend API endpoint existing and working correctly
+   - API call itself could be slow/flaky under load
+   - Creates new failure modes that don't exist in Option 1
+
+2. **Doesn't eliminate the root problem**: If sync takes 180s, you still need 180s+ timeout for UI to update
+   - Option 2 adds diagnostic capability but doesn't reduce wait time
+   - Still need to wait for UI to reflect backend data
+   - Timeout increases likely needed anyway
+
+3. **Test scope creep**: E2E test becomes dependent on specific backend API structure
+   - Requires `/api/jobs/count` or similar endpoint to exist
+   - Must handle API failures gracefully
+   - Increases maintenance burden
+
+4. **Complexity increases failure risk**: More code = more chances for bugs
+   - Backend API call could timeout
+   - API could return wrong data structure
+   - Error handling adds more code paths
+
+**The key insight**: Option 2 is more **diagnostic** (helps identify root cause: backend slow vs UI slow) but not more **robust** (fewer failure modes). It adds complexity which actually increases the chance something will break.
+
+**If the real issue is "sync takes 180s under load"**:
+- Option 1: Just wait 240s → ✅ Works
+- Option 2: Check backend at 180s (data ready), then wait for UI update → ✅ Works but with extra steps
+
+**If the real issue is "sync hangs and never completes"**:
+- Option 1: Wait 240s → ❌ Fails (but no fix possible)
+- Option 2: Backend check times out → ❌ Also fails (same problem)
+
+**Conclusion**: Option 1 has higher success probability because it's **simpler and directly addresses the likely root cause** (operations taking longer than timeout). Option 2 can be pursued later if Option 1 doesn't work and we need better diagnostics.
+
+**Recommendation**: Proceed with **Option 1** first (can always do Option 2 later if needed), or use **Option 3** for pragmatism
 
 ## Testing
 
@@ -381,6 +417,15 @@ cd frontend && npx playwright test e2e/tests/16-microsoft-email-integration.spec
   - **New failure point**: Line 608 - Sync button stays disabled for 60+ seconds after click
   - **Status**: Tab navigation working, now hitting ORIGINAL sync timeout issue that ISSUE-049 documented
   - **Conclusion**: Successfully fixed the anti-pattern I introduced; test now progresses to the actual Microsoft sync operation problem
+- 2025-11-17 20:03:27 PST: ⚠️ **Option 1 Implemented - Test is FLAKY**
+  - Increased timeouts: 120s → 240s (under load), 60s → 120s (isolation)
+  - Added test-level timeout: `test.setTimeout(300000)` (5 minutes)
+  - Test run results: **1 flaky (passed on retry)**
+    - **Attempt 1**: ✘ FAILED after 3.7 minutes (222 seconds) - Timeout at line 614 (Total count update wait)
+    - **Attempt 2**: ✓ **PASSED** in 4.9 seconds (fast/cached sync operation)
+  - **Status**: Test CAN pass with increased timeouts, but is **flaky** (not 100% reliable)
+  - **Conclusion**: Option 1 helps significantly (runs 222s vs previous 30s), but doesn't guarantee 100% pass rate
+  - **Recommendation**: Accept as flaky OR pursue Option 2 for better diagnostics
 
 ## How You Can't Win 'Em All: Lessons in Anti-Pattern Introduction
 
@@ -432,8 +477,11 @@ await page.waitForFunction(
 3. Feature works correctly in production (manual testing confirms)
 4. Failure only occurs under extreme comprehensive test load (not representative of real usage)
 5. Serial mode eliminated resource contention but didn't fix this specific test
-6. **Current status (2025-11-17 19:48 PST)**: Tab navigation anti-pattern fixed; test now reaching original sync timeout at line 608
-7. **Original issue confirmed**: Microsoft sync button clicks successfully but stays disabled for 60+ seconds (expected to re-enable when sync completes)
+6. **Current status (2025-11-17 20:03 PST)**: Tab navigation anti-pattern fixed; Option 1 implemented; test is **flaky**
+7. **Original issue confirmed**: Microsoft sync operations can take 2-4 minutes under load
+8. **Option 1 results**: Test passes on retry (4.9s) but fails on first attempt (222s timeout)
+9. **Flakiness pattern**: First run takes >3 minutes and times out; retry passes quickly (cached/fast path)
+10. **Recommendation**: Accept as flaky test OR mark with `.skip()` in comprehensive mode (99.5% pass rate is acceptable)
 
 **Related Work**:
 - ISSUE-046: Flaky E2E tests - resolved 7 tests with similar patterns

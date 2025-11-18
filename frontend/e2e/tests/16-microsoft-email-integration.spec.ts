@@ -554,6 +554,8 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
 
     test('should preserve sync functionality with archiving enabled', async ({ page }) => {
       // This test ensures that adding archiving doesn't break the existing sync workflow
+      // Increase test timeout to 5 minutes - Microsoft sync operations are slow (2-4 min under load)
+      test.setTimeout(300000); // 5 minutes
 
       // Check if Microsoft OAuth credentials exist
       const hasCredentials = await hasMicrosoftOAuthCredentials();
@@ -603,8 +605,9 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       await microsoftSyncButton.click();
 
       // Wait for sync button to re-enable (indicates sync completion)
-      // Use load-aware timeout: 120s under load, 60s in isolation (Microsoft sync is slow)
-      const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 120000 : 60000;
+      // Use load-aware timeout: 240s under load, 120s in isolation (Microsoft sync is slow)
+      // Increased from 120s/60s per ISSUE-049 Option 1 - sync operations take 2-4 minutes under load
+      const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 240000 : 120000;
       await expect(microsoftSyncButton).toBeEnabled({ timeout: pollTimeout });
 
       // Wait for Total count to update using state polling
