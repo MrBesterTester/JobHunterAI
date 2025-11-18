@@ -33,7 +33,7 @@ test.describe('Refresh Buttons', () => {
 
   test('should display global refresh button in header', async ({ page }) => {
     // Check for global refresh button
-    const globalRefreshButton = page.locator('button:has-text("Refresh Descriptions")');
+    const globalRefreshButton = page.getByTestId('global-refresh-button');
     await expect(globalRefreshButton).toBeVisible();
 
     // Check for refresh icon
@@ -49,7 +49,7 @@ test.describe('Refresh Buttons', () => {
 
     // Look for the refresh button in the Condensed Description section (no Debug Info wrapper)
     const descriptionSection = jobCard.locator('div:has-text("Condensed Description")').first();
-    const refreshButton = descriptionSection.locator('button').first();
+    const refreshButton = descriptionSection.getByTestId('per-job-refresh-button');
 
     await expect(refreshButton).toBeVisible();
 
@@ -77,7 +77,7 @@ test.describe('Refresh Buttons', () => {
     const initialDescription = await descriptionContainer.textContent();
 
     // Find and click the refresh button (in the header div)
-    const refreshButton = descriptionSection.locator('button').first();
+    const refreshButton = descriptionSection.getByTestId('per-job-refresh-button');
     await refreshButton.click();
 
     // Wait for loading state to appear using state polling
@@ -164,7 +164,7 @@ test.describe('Refresh Buttons', () => {
     apiCalls.length = 0;
 
     // Click refresh button
-    const refreshButton = descriptionSection.locator('button').first();
+    const refreshButton = descriptionSection.getByTestId('per-job-refresh-button');
     await refreshButton.click();
 
     // Wait for the description to load
@@ -205,7 +205,7 @@ test.describe('Refresh Buttons', () => {
     await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
 
     // Click refresh
-    const refreshButton = descriptionSection.locator('button').first();
+    const refreshButton = descriptionSection.getByTestId('per-job-refresh-button');
     await refreshButton.click();
 
     // Wait for refresh to complete
@@ -249,7 +249,7 @@ test.describe('Refresh Buttons', () => {
     }
 
     // Click global refresh button
-    const globalRefreshButton = page.locator('button:has-text("Refresh Descriptions")');
+    const globalRefreshButton = page.getByTestId('global-refresh-button');
     await globalRefreshButton.click();
 
     // All visible cards should show "Loading description..." briefly
@@ -283,7 +283,7 @@ test.describe('Refresh Buttons', () => {
     const descriptionSection = jobCard.locator('div:has-text("Condensed Description")').first();
 
     // Find the refresh button
-    const refreshButton = descriptionSection.locator('button').first();
+    const refreshButton = descriptionSection.getByTestId('per-job-refresh-button');
 
     // Button should be clickable (enabled)
     await expect(refreshButton).toBeEnabled();
@@ -294,7 +294,7 @@ test.describe('Refresh Buttons', () => {
   });
 
   test('global refresh button should be clickable', async ({ page }) => {
-    const globalRefreshButton = page.locator('button:has-text("Refresh Descriptions")');
+    const globalRefreshButton = page.getByTestId('global-refresh-button');
 
     // Button should be clickable (enabled)
     await expect(globalRefreshButton).toBeEnabled();

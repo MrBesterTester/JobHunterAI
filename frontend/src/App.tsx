@@ -2304,6 +2304,7 @@ const JobHunterDashboard: React.FC = () => {
             </span>
           )}
           <button
+            data-testid="per-job-refresh-button"
             onClick={(e) => {
               e.stopPropagation(); // Prevent triggering job card click
               refreshSingleDescription(job.job_id);
@@ -2634,6 +2635,7 @@ const JobHunterDashboard: React.FC = () => {
               ⭐ Rescore All
             </button>
             <button
+              data-testid="global-refresh-button"
               onClick={clearAllDescriptions}
               style={{
                 padding: '10px 20px',
