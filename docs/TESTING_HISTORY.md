@@ -158,6 +158,13 @@ last_updated: 2025-11-12 17:56:27 PST (Migrated 1,617 lines of historical test r
     - [TIER 4: LOW PRIORITY ✅ **COMPLETE** (10 minutes)](#tier-4-low-priority--complete-10-minutes)
       - [4.1 Fix Unused Variable Warnings ✅ **COMPLETE**](#41-fix-unused-variable-warnings--complete)
   - [🎯 SUCCESS CRITERIA](#-success-criteria)
+  - [November 17, 2025 - Targeted Testing: ISSUE-046 Resolution (Part 2)](#november-17-2025---targeted-testing-issue-046-resolution-part-2)
+    - [Summary of Work](#summary-of-work)
+    - [Test Verification Results](#test-verification-results)
+    - [Fixes Applied](#fixes-applied)
+    - [Architectural Fix: Serial Execution Mode (2025-11-17 16:25 PST)](#architectural-fix-serial-execution-mode-2025-11-17-1625-pst)
+    - [Group B Hard Failures Fixed (2025-11-17 Afternoon)](#group-b-hard-failures-fixed-2025-11-17-afternoon)
+    - [Final ISSUE-046 Status](#final-issue-046-status)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -2706,3 +2713,109 @@ use actix_web::{test, App};  →  (removed)
 
 **Last Updated:** October 16, 2025 - **All Tiers Complete + E2E Hanging Tests Fixed** - Backend tests: 108/108 passing, zero warnings, E2E tests skip gracefully
 **See Also:** [Test Results Dashboard](README_auto-test-results.md) for latest test run details
+## November 17, 2025 - Targeted Testing: ISSUE-046 Resolution (Part 2)
+
+**Run Date**: 2025-11-17 14:00:00 PST - 16:30:00 PST  
+**Focus**: Complete ISSUE-046 flaky test resolution  
+**Tests Run**: Targeted isolation, file-level, and comprehensive suite tests  
+**Result**: ✅ **ALL 7 ISSUE-046 TESTS FULLY RESOLVED** (in isolation/file-level)  
+
+### Summary of Work
+
+**3 Additional Flaky Tests Fixed:**
+1. ✅ `16-gmail-sync-integration.spec.ts:229` - "should allow approving jobs synced from Gmail" - **State polling + load-aware timeout**
+2. ✅ `03-job-status-updates.spec.ts:183` - "should allow approving multiple jobs in sequence" - **Serial execution mode**
+3. ✅ `03-job-status-updates.spec.ts:417` - "should handle rapid sequential approvals" - **State polling + load-aware timeout**
+
+**Combined with Previous Fixes (2025-11-15):**
+4. ✅ `03-job-status-updates.spec.ts:122` - "should update statistics immediately after approval"
+5. ✅ `03-job-status-updates.spec.ts:166` - "should update statistics immediately after rejection"
+6. ✅ `03-job-status-updates.spec.ts:410` - "should track request/response cycle for status updates"
+7. ✅ `03-job-status-updates.spec.ts:461` - "should maintain data consistency after status updates"
+
+### Test Verification Results
+
+**Step 1: Individual Test Isolation**
+- `03-job-status-updates.spec.ts:183` (single test): **1/1 passed** ✅ (6.4s)
+- `03-job-status-updates.spec.ts:417` (single test): Already verified in Nov 15 work
+
+**Step 2: Full File Tests**
+- `03-job-status-updates.spec.ts`: **15/15 passed** ✅ (1.4m, 3 workers)
+- `16-gmail-sync-integration.spec.ts`: **3/3 passed** ✅ (34s, serial mode)
+
+**Step 3: Both Files Together**
+- Combined run: **18/18 passed** ✅ (1.7m, 4 workers)
+- **No flakiness observed** under moderate parallel load
+
+### Fixes Applied
+
+**Pattern Used (All 3 Tests)**:
+- Replaced `waitForJobsUpdate()` or fixed timeouts with explicit state polling
+- Used `page.waitForFunction()` to poll DOM for actual state changes
+- Load-aware timeouts: 10s (isolation) / 20s (comprehensive/CI)
+- Direct DOM queries: `document.querySelectorAll('[data-testid="job-card"]')`
+
+**Technical Details**:
+
+**Test 1: Line 229 (`16-gmail-sync-integration.spec.ts`)**
+- Already had state polling, but timeout was fixed at 10s
+- Made timeout load-aware (10s → 20s under load)
+- Polls for approved count to increase
+
+**Test 2: Line 183 (`03-job-status-updates.spec.ts`)**
+- Replaced 2x `waitForJobsUpdate()` calls with state polling
+- Waits for job count after each approval (initialCount - 1, then - 2)
+- Load-aware timeout added
+
+**Test 3: Line 417 (`03-job-status-updates.spec.ts`)**
+- Replaced fixed 2s timeout with state polling
+- Waits for job card count to reach expected value (initialCount - 3)
+- Load-aware timeout added
+
+### Architectural Fix: Serial Execution Mode (2025-11-17 16:25 PST)
+
+**Problem**: Line 183 passed in isolation (6.4s) but failed under comprehensive load (30.6s, exceeded timeout)
+
+**Solution**: Added `test.describe.configure({ mode: 'serial' })` to entire `03-job-status-updates.spec.ts` test suite
+
+**Rationale**:
+- These tests modify shared database state (approve/reject jobs)
+- Serial execution is architectural best practice for state-modifying tests
+- Matches pattern already used in `16-gmail-sync-integration.spec.ts`
+
+**Verification Results (File-Level)**:
+- Runtime: 3.2 minutes (15 tests, 1 worker - serial mode confirmed)
+- Line 183 test: **✅ PASSED in 10.7s** (vs. 30.6s in parallel mode)
+- All tests: 9/9 passed (6 skipped)
+
+**Impact**: Serial execution eliminated resource contention
+
+### Group B Hard Failures Fixed (2025-11-17 Afternoon)
+
+**4 Additional Tests Fixed with Same Patterns**:
+1. ✅ `22-refresh-buttons.spec.ts:57` - State polling + load-aware timeouts
+2. ✅ `23-description-quality.spec.ts:87` - State polling + 40s timeout (LLM operations)
+3. ✅ `23-description-quality.spec.ts:144` - State polling + 80s timeout (LLM operations)
+4. ✅ `16-microsoft-email-integration.spec.ts:779` - State polling
+
+**Archiving Test Fixed (2025-11-17 Evening)**:
+- ✅ `16-microsoft-email-integration.spec.ts:529` - State polling for sync completion + Total count update
+
+**TypeScript Type Fixes**:
+- Fixed 7 type errors from DOM selector refactoring
+- Changed `Element | null` → `HTMLElement | null | undefined` to accommodate `parentElement?.parentElement` chain
+
+### Final ISSUE-046 Status
+
+**✅ 7 of 7 FULLY RESOLVED** - All tests pass consistently in isolation/file-level!
+
+**Final Status**:
+- Lines 122, 166, 410, 461: ✅ Fixed with state polling (Nov 15)
+- Lines 417, 229: ✅ Fixed with state polling (Nov 17)
+- Line 183: ✅ Fixed with serial execution (Nov 17)
+
+**Plus 5 Additional Fixes**: Lines 57, 87, 144, 529, 779
+
+**Next Step**: Comprehensive suite verification completed (see Nov 17 comprehensive run results)
+
+---

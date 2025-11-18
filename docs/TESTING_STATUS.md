@@ -10,164 +10,160 @@ related_docs:
   - TESTING_HISTORY.md (historical archive)
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
-last_comprehensive_run: 2025-11-17 16:20:00 PST
-last_targeted_testing: 2025-11-17 16:49:00 PST
-last_updated: 2025-11-17 16:49:00 PST (🎉 ALL 12 timing/context-dependent failures fixed! ISSUE-046 + Group B + Line 529)
+last_comprehensive_run: 2025-11-17 15:57:20 PST
+last_updated: 2025-11-17 17:16:56 PST (Comprehensive test run completed - mixed results on timing fixes)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Testing Status](#testing-status)
-  - [🎯 Latest Targeted Testing (2025-11-17)](#-latest-targeted-testing-2025-11-17)
-    - [Summary of Work](#summary-of-work)
-    - [Test Verification Results](#test-verification-results)
-    - [Fixes Applied](#fixes-applied)
-    - [Step 4: Comprehensive Suite Verification (2025-11-17 15:16 PST)](#step-4-comprehensive-suite-verification-2025-11-17-1516-pst)
-    - [Step 5: Architectural Fix Applied (2025-11-17 16:25 PST)](#step-5-architectural-fix-applied-2025-11-17-1625-pst)
-    - [Current ISSUE-046 Status](#current-issue-046-status)
-  - [📊 Previous Comprehensive Test Run (2025-11-15)](#-previous-comprehensive-test-run-2025-11-15)
+  - [🎯 Latest Comprehensive Test Run (2025-11-17)](#-latest-comprehensive-test-run-2025-11-17)
     - [Test Results Summary](#test-results-summary)
+    - [Critical Finding: Timing Fixes Partially Ineffective](#critical-finding-timing-fixes-partially-ineffective)
+    - [Hard Failures (5 tests)](#hard-failures-5-tests)
+    - [Flaky Tests (2 tests - passed on retry)](#flaky-tests-2-tests---passed-on-retry)
+    - [Analysis: Why Our Fixes Didn't Work](#analysis-why-our-fixes-didnt-work)
+    - [What We Learned](#what-we-learned)
+  - [📊 Previous Comprehensive Test Run (2025-11-15)](#-previous-comprehensive-test-run-2025-11-15)
+    - [Test Results Summary](#test-results-summary-1)
     - [Test Failure Breakdown](#test-failure-breakdown)
-    - [Detailed Failure Analysis](#detailed-failure-analysis)
-      - [Isolation Test Results (2025-11-15 17:00 PST)](#isolation-test-results-2025-11-15-1700-pst)
-      - [Context-Dependent Test Architecture Problem](#context-dependent-test-architecture-problem)
-    - [Comparison to Previous Run](#comparison-to-previous-run)
-  - [🔧 Work Since Last Comprehensive Run](#-work-since-last-comprehensive-run)
-    - [Major Improvements Implemented](#major-improvements-implemented)
-    - [Current Status After Latest Run](#current-status-after-latest-run)
+  - [🔧 Work Between Runs](#-work-between-runs)
   - [Next Steps](#next-steps)
     - [Immediate Priorities](#immediate-priorities)
-    - [Current Test Health](#current-test-health)
+    - [Open Questions](#open-questions)
   - [Related Files](#related-files)
-  - [Related Commits](#related-commits)
   - [Quick Commands](#quick-commands)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # Testing Status
 
-## 🎯 Latest Targeted Testing (2025-11-17)
+## 🎯 Latest Comprehensive Test Run (2025-11-17)
 
-**Run Date**: 2025-11-17 14:00:00 PST - 16:30:00 PST
-**Focus**: Complete ISSUE-046 flaky test resolution
-**Tests Run**: Targeted isolation, file-level, and comprehensive suite tests
-**Result**: ✅ **ALL 7 ISSUE-046 TESTS FULLY RESOLVED**
+**Run Date**: 2025-11-17 15:57:20 PST - 16:14:00 PST
+**Runtime**: ~17 minutes (clean rebuild + all tests)
+**Exit Code**: 1 (FAILED - 5 E2E hard failures)
 
-### Summary of Work
+### Test Results Summary
 
-**3 Additional Flaky Tests Fixed Today:**
-1. ✅ `16-gmail-sync-integration.spec.ts:229` - "should allow approving jobs synced from Gmail" - **State polling + load-aware timeout**
-2. ✅ `03-job-status-updates.spec.ts:183` - "should allow approving multiple jobs in sequence" - **Serial execution mode**
-3. ✅ `03-job-status-updates.spec.ts:417` - "should handle rapid sequential approvals" - **State polling + load-aware timeout**
+| Test Suite | Passed | Failed | Flaky | Skipped | Pass Rate | Runtime | Status |
+|------------|--------|--------|-------|---------|-----------|---------|--------|
+| **Preflight** | ✅ | - | - | - | **100%** | ~27s | ✅ **PASSING** |
+| **Backend Build** | ✅ | - | - | - | **100%** | ~87s | ✅ **PASSING** |
+| **Frontend Build** | ✅ | - | - | - | **100%** | ~10s | ✅ **PASSING** |
+| **E2E Type-check** | ✅ | - | - | - | **100%** | ~3s | ✅ **PASSING** |
+| **Backend Tests** | 164 | 0 | 0 | 6 | **100%** | ~70s | ✅ **PASSING** |
+| **Frontend Unit** | 516 | 0 | 0 | 1 | **100%** | ~19s | ✅ **PASSING** |
+| **E2E Tests** | 386 | 5 | 2 | 202 | **98.2%** | ~10.5m | ❌ **5 FAILURES + 2 FLAKY** |
+| **TOTAL (Active)** | **1066** | **5** | **2** | **209** | **99.3%** | **~17 min** | ❌ **5 FAILURES + 2 FLAKY** |
 
-**Combined with Previous Fixes (2025-11-15):**
-4. ✅ `03-job-status-updates.spec.ts:122` - "should update statistics immediately after approval"
-5. ✅ `03-job-status-updates.spec.ts:166` - "should update statistics immediately after rejection"
-6. ✅ `03-job-status-updates.spec.ts:410` - "should track request/response cycle for status updates"
-7. ✅ `03-job-status-updates.spec.ts:461` - "should maintain data consistency after status updates"
+**Key Observation**: 🎉 OAuth tokens automatically refreshed - no manual intervention required!
 
-### Test Verification Results
+### Critical Finding: Timing Fixes Partially Ineffective
 
-**Step 1: Individual Test Isolation**
-- `03-job-status-updates.spec.ts:183` (single test): **1/1 passed** ✅ (6.4s)
-- `03-job-status-updates.spec.ts:417` (single test): Already verified in Nov 15 work
+**Expected**: All 12 timing/context-dependent tests fixed (7 ISSUE-046 + 4 Group B + 1 archiving test)
+**Actual**: 4 of our "fixes" still fail under full comprehensive parallel load
 
-**Step 2: Full File Tests**
-- `03-job-status-updates.spec.ts`: **15/15 passed** ✅ (1.4m, 3 workers)
-- `16-gmail-sync-integration.spec.ts`: **3/3 passed** ✅ (34s, serial mode)
+**Tests that improved but still fail**:
+1. ❌ `16-microsoft-email-integration.spec.ts:529` - Archiving test (we thought this was fixed!)
+2. ❌ `22-refresh-buttons.spec.ts:57` - Refresh button (we thought this was fixed!)
+3. ❌ `23-description-quality.spec.ts:87` - Job content test (we thought this was fixed!)
+4. ❌ `23-description-quality.spec.ts:171` - Refresh description (not in our fix list)
 
-**Step 3: Both Files Together**
-- Combined run: **18/18 passed** ✅ (1.7m, 4 workers)
-- **No flakiness observed** under moderate parallel load
+**Tests that showed improvement**:
+- 🟡 `16-gmail-sync-integration.spec.ts:229` - **Improved from hard failure → flaky** (passed on retry)
 
-### Fixes Applied
+**Tests that worked**:
+- ✅ All 7 ISSUE-046 tests passed (no failures, no flaky behavior)
+- ✅ Serial execution mode worked for `03-job-status-updates.spec.ts`
 
-**Pattern Used (All 3 Tests)**:
-- Replaced `waitForJobsUpdate()` or fixed timeouts with explicit state polling
-- Used `page.waitForFunction()` to poll DOM for actual state changes
-- Load-aware timeouts: 10s (isolation) / 20s (comprehensive/CI)
-- Direct DOM queries: `document.querySelectorAll('[data-testid="job-card"]')`
+### Hard Failures (5 tests)
 
-**Technical Details**:
+**1. `16-microsoft-email-integration.spec.ts:529` - Email Archiving Test**
+- **Error**: Test timeout exceeded during `switchToTab('new')` - no job cards found
+- **We applied**: State polling for sync completion + Total count update
+- **Status**: Still fails under comprehensive load
+- **Why**: Possibly timing issue earlier in test, or data availability problem
 
-**Test 1: Line 229 (`16-gmail-sync-integration.spec.ts`)**
-- Already had state polling, but timeout was fixed at 10s
-- Made timeout load-aware (10s → 20s under load)
-- Polls for approved count to increase
+**2. `22-refresh-buttons.spec.ts:57` - Refresh Single Job Description**
+- **Error**: Test timeout during description refresh operation
+- **We applied**: State polling + load-aware timeouts
+- **Status**: Still fails under comprehensive load
+- **Why**: LLM operations may need even longer timeouts, or more robust waiting strategy
 
-**Test 2: Line 183 (`03-job-status-updates.spec.ts`)**
-- Replaced 2x `waitForJobsUpdate()` calls with state polling
-- Waits for job count after each approval (initialCount - 1, then - 2)
-- Load-aware timeout added
+**3. `23-description-quality.spec.ts:87` - Show Actual Job Content**
+- **Error**: Timeout waiting for job cards after tab switch
+- **We applied**: State polling with 40s timeout for LLM operations
+- **Status**: Still fails under comprehensive load
+- **Why**: Tab navigation timeout (10s) may be insufficient before reaching our polling code
 
-**Test 3: Line 417 (`03-job-status-updates.spec.ts`)**
-- Replaced fixed 2s timeout with state polling
-- Waits for job card count to reach expected value (initialCount - 3)
-- Load-aware timeout added
+**4. `23-description-quality.spec.ts:171` - Refresh Should Regenerate Description**
+- **Error**: Similar timeout issue
+- **We applied**: State polling with 80s timeout
+- **Status**: Still fails (this one wasn't in our focused fix list)
+- **Why**: Complex LLM operations under heavy system load
 
-### Step 4: Comprehensive Suite Verification (2025-11-17 15:16 PST)
+**5. `16-microsoft-email-integration.spec.ts:801` - End-to-End Workflow Test**
+- **Error**: Not analyzed yet (new failure)
+- **Status**: Needs investigation
+- **Why**: Unknown - could be related to other timing issues
 
-**Result**: ⚠️ **Line 183 FAILED under full comprehensive load**
+### Flaky Tests (2 tests - passed on retry)
 
-**Failed Test:**
-- `03-job-status-updates.spec.ts:183` - "should allow approving multiple jobs in sequence"
-  - **Runtime**: 30.6 seconds (exceeded 20s timeout)
-  - **Status**: Failed on first attempt, retry also failed
-  - **Context**: Passes in isolation (6.4s) and file-level (part of 15/15), but fails under comprehensive suite load (595 tests, 4 workers)
+**1. `16-gmail-sync-integration.spec.ts:229` - Approving Gmail Jobs** 🎉
+- **Progress**: Hard failure (Nov 15) → Flaky (Nov 17) → **Passed on retry**
+- **We applied**: Load-aware timeout (10s → 20s)
+- **Status**: ✅ **IMPROVEMENT** - no longer hard failure!
+- **Next**: May need slightly longer timeout or additional robustness
 
-**Passing Tests:**
-- `03-job-status-updates.spec.ts:417` - ✅ Passed in comprehensive suite (11.9s)
-- `16-gmail-sync-integration.spec.ts:229` - ✅ Passed in comprehensive suite
+**2. `13-follow-ups-management.spec.ts:40` - Display Pending Follow-ups**
+- **Error**: Test timeout during page load (`waitForLoadState('networkidle')`)
+- **Status**: Flaky (not in our fix scope)
+- **Why**: Slow page load under comprehensive load (30s default timeout)
 
-**Analysis:**
-Test line 183 exhibits **context-dependent failure** - it passes in isolation but fails under heavy parallel load. This is characteristic of "Group B" hard failures where resource contention (database, CPU, DOM updates) causes operations to take significantly longer than expected.
+### Analysis: Why Our Fixes Didn't Work
 
-**Root Cause:**
-- Approving 2 jobs sequentially takes >30s under comprehensive load
-- Current 20s timeout is insufficient for worst-case system contention
-- Database operations and React state updates are significantly delayed when 595 tests run in parallel with 4 workers
+**Root Cause**: Tests pass in isolation but fail under full parallel load due to:
 
-### Step 5: Architectural Fix Applied (2025-11-17 16:25 PST)
+1. **Resource Contention Worse Than Expected**
+   - 593 E2E tests + backend/frontend tests running simultaneously
+   - Database, CPU, DOM operations all delayed under load
+   - Our load-aware timeouts (10s → 20s, 20s → 40s) still insufficient
 
-**Solution Implemented: Option 3 - Serial Execution**
+2. **Cascading Timeouts**
+   - Tab navigation helpers have fixed 10s timeout
+   - Even if our polling code has 40s timeout, earlier steps may timeout first
+   - Need to review ALL timeouts in test helpers, not just test code
 
-Added `test.describe.configure({ mode: 'serial' })` to the entire `03-job-status-updates.spec.ts` test suite. This prevents the file from running in parallel with other tests, eliminating resource contention that caused the 30s+ execution time.
+3. **Serial Execution Works**
+   - `03-job-status-updates.spec.ts` (serial mode): ✅ ALL TESTS PASSED
+   - Proves that serial execution eliminates resource contention
+   - But can't make everything serial (would make test suite very slow)
 
-**Rationale:**
-- These tests modify shared database state (approve/reject jobs)
-- Serial execution is the architectural best practice for state-modifying tests
-- Matches pattern already used in `16-gmail-sync-integration.spec.ts`
-- Quick, reliable fix (vs. investigating performance issues or increasing timeouts)
+4. **Partial Success**
+   - Line 229 improved: hard failure → flaky (progress!)
+   - 7 ISSUE-046 tests: all passing (no failures, no flakes)
+   - Shows our approach works for *some* tests
 
-**Change Made:**
-```typescript
-test.describe('Job Status Updates', () => {
-  // Configure serial mode for this suite
-  test.describe.configure({ mode: 'serial' });
-  // ... rest of tests
-});
-```
+### What We Learned
 
-**Verification Results (File-Level Test):**
-- Runtime: 3.2 minutes (15 tests, 1 worker - serial mode confirmed)
-- Line 183 test: **✅ PASSED in 10.7s** (vs. 30.6s in parallel mode)
-- All tests: 9/9 passed (6 skipped)
-- Exit code: 0 (SUCCESS)
+**✅ What Worked:**
+- State polling pattern is fundamentally sound
+- Serial execution mode eliminates resource contention
+- Load-aware timeouts help but need to be more aggressive
+- DOM query approach (no Playwright selectors in waitForFunction) is correct
 
-**Impact:**
-Serial execution eliminated resource contention - the problematic test now runs in ~10s instead of 30s+, well within timeout limits.
+**❌ What Didn't Work:**
+- Our timeout increases weren't aggressive enough
+- Need to address timeouts in helper functions, not just tests
+- Can't fix all timing issues with polling alone under extreme load
 
-### Current ISSUE-046 Status
-
-**✅ 7 of 7 FULLY RESOLVED** - All ISSUE-046 flaky tests now pass consistently!
-
-**Final Status:**
-- Lines 122, 166, 410, 461: ✅ Fixed with state polling (Nov 15)
-- Lines 417, 229: ✅ Fixed with state polling (Nov 17)
-- Line 183: ✅ Fixed with serial execution (Nov 17)
-
-**Next Step:** Verify in comprehensive suite (595 tests) to confirm serial mode prevents the context-dependent failure
+**🤔 Open Questions:**
+- Should we increase timeouts even more (40s → 60s, 80s → 120s)?
+- Should we apply serial execution to more test files?
+- Are there data availability issues (not just timing)?
+- Should we reduce parallel worker count (4 → 2)?
 
 ---
 
@@ -181,154 +177,40 @@ Serial execution eliminated resource contention - the problematic test now runs 
 
 | Test Suite | Passed | Failed | Flaky | Skipped | Pass Rate | Runtime | Status |
 |------------|--------|--------|-------|---------|-----------|---------|--------|
-| **Preflight** | ✅ | - | - | - | **100%** | ~25s | ✅ **PASSING** |
-| **Backend Build** | ✅ | - | - | - | **100%** | ~90s | ✅ **PASSING** |
-| **Frontend Build** | ✅ | - | - | - | **100%** | ~3s | ✅ **PASSING** |
-| **E2E Type-check** | ✅ | - | - | - | **100%** | ~3s | ✅ **PASSING** |
 | **Backend Tests** | 164 | 0 | 0 | 6 | **100%** | 90s | ✅ **PASSING** |
 | **Frontend Unit** | 516 | 0 | 0 | 1 | **100%** | 25s | ✅ **PASSING** |
 | **E2E Tests** | 388 | 4 | 6 | 197 | **98.0%** | ~18m | ⚠️ **4 FAILURES + 6 FLAKY** |
 | **TOTAL (Active)** | **1068** | **4** | **6** | **204** | **99.6%** | **~20 min** | ⚠️ **4 FAILURES + 6 FLAKY** |
 
-**Key Achievement**: 🎉 OAuth tokens automatically refreshed - no manual intervention required during test runs!
-
 ### Test Failure Breakdown
 
-**10 Context-Dependent Failures** (~2.5% of E2E tests - all pass in isolation, fail under load):
+**10 Context-Dependent Failures** (~2.5% of E2E tests):
 
-**Group A - ISSUE-046 Flaky Tests** (fail on first attempt, pass on retry):
-- 5 tests in `03-job-status-updates.spec.ts` (approval/rejection workflows)
-- 1 test in `16-gmail-sync-integration.spec.ts:229` (Gmail job approval)
-- **Error**: Timeout waiting for job cards (10s timeout exceeded)
-- **Status**: State polling applied to 5 tests, improved from "failed" to "flaky"
+**Group A - ISSUE-046 Flaky Tests** (6 tests - pass on retry):
+- Lines 122, 166, 229, 410, 417, 461 in `03-job-status-updates.spec.ts` and `16-gmail-sync-integration.spec.ts`
 
-**Group B - Context-Dependent Hard Failures** (don't pass on retry, verified passing in isolation 2025-11-15):
-- `16-microsoft-email-integration.spec.ts:779` - End-to-end Microsoft workflow
-- `22-refresh-buttons.spec.ts:57` - Refresh single job description
-- `23-description-quality.spec.ts:87` - Show actual job content
-- `23-description-quality.spec.ts:144` - Regenerate description after prompt change
-- **Verification**: All 4 tests pass 100% when run in isolation
-- **Status**: Requires same fixes as ISSUE-046 (state polling, increased timeouts, or serial execution)
-
-**Common Root Cause**: All 10 tests affected by architectural test isolation issues - cross-file parallelism, shared database state, and resource contention under load.
-
-**Overall Assessment**:
-- ✅ **99.6% pass rate** (1068/1078 active tests)
-- ✅ **Backend/Frontend: 100% passing**
-- ⚠️ **E2E: 98.0% pass rate** (388 passed, 4 failed, 6 flaky)
-- ⚠️ **10 tests need attention** (4 hard failures + 6 flaky)
-
-### Detailed Failure Analysis
-
-#### Isolation Test Results (2025-11-15 17:00 PST)
-
-**Systematic investigation of all 4 "hard failures" confirmed they are context-dependent**:
-
-**Test File: `23-description-quality.spec.ts`** (7/7 passed)
-- ✅ Line 87: "should show actual job content" - PASSED in isolation (5.4s)
-- ✅ Line 144: "refresh should regenerate description" - PASSED in isolation (5.3s)
-- **Runtime**: 19.6s total
-
-**Test File: `22-refresh-buttons.spec.ts`** (8/8 passed)
-- ✅ Line 57: "should refresh single job description" - PASSED in isolation (6.2s)
-- **Runtime**: 21.3s total
-
-**Test File: `16-microsoft-email-integration.spec.ts`** (15/23 passed, 7 skipped)
-- ✅ Line 779: "End-to-End Workflow" - PASSED in isolation (3.1s)
-- ❌ Line 529: "preserve sync functionality with archiving" - FAILED (expected >= 25, got 0)
-- **Runtime**: 60.0s total
-- **Note**: Line 529 is a DIFFERENT test (not in original list of 4 hard failures)
-
-**Conclusion**: All 4 "hard failures" from comprehensive run pass 100% in isolation, confirming they are context-dependent like the 6 ISSUE-046 flaky tests.
-
-#### Context-Dependent Test Architecture Problem
-
-**10 tests total** affected by same root cause:
-- **Group A** (6 tests - ISSUE-046): Fail on first attempt, pass on retry
-- **Group B** (4 tests): Fail completely in comprehensive suite, pass in isolation
-
-**Common characteristics**:
-- Pass 100% when run in isolation
-- Fail under comprehensive suite load
-- Share same root cause: Architectural test isolation issues
-
-**Root Cause Analysis**:
-1. Cross-file test interference (parallel execution)
-2. Shared database state (no per-test isolation)
-3. Resource contention under load (CPU, memory, database connections)
-4. Timing sensitivity (tests adequate in isolation, inadequate under load)
-
-**See ISSUE-046** for detailed analysis, proposed solutions, and implementation status.
-
-### Comparison to Previous Run
-
-**Previous Run** (2025-11-15 12:38:10 PST):
-- Backend: 164 passing (100%)
-- Frontend Unit: 516 passing (100%)
-- E2E: 385 passed, 6 failed, 5 flaky (97.6% pass rate)
-- **Total pass rate: 99.4%**
-
-**Current Run** (2025-11-15 16:48:00 PST):
-- Backend: 164 passing (100%)
-- Frontend Unit: 516 passing (100%)
-- E2E: 388 passed, 4 failed, 6 flaky (98.0% pass rate)
-- **Total pass rate: 99.6%**
-
-**Changes**:
-- ✅ E2E passed: 385 → 388 (+3 tests, **+0.8%**)
-- ✅ E2E hard failures: 6 → 4 (-2 failures, **-33%**)
-- ⚠️ E2E flaky: 5 → 6 (+1 flaky test)
-- ✅ E2E pass rate: 97.6% → 98.0% (+0.4%)
-- ✅ Total pass rate: 99.4% → 99.6% (+0.2%)
-
-**Key Achievements**:
-- ✅ **OAuth token auto-refresh** - Comprehensive testing now fully automated (no manual OAuth flows)
-- ✅ **ISSUE-046 state polling** - 5 tests improved from "failed" to "flaky" (~50% severity reduction)
-- ⚠️ **4 hard failures** - Previously verified as false positives, now failing again (needs investigation)
+**Group B - Hard Failures** (4 tests - fail completely):
+- Lines 57, 87, 144, 779 in various test files
 
 ---
 
-## 🔧 Work Since Last Comprehensive Run
+## 🔧 Work Between Runs
 
-**Date**: 2025-11-15 (post 12:38 PST run, leading to 16:48 PST run)
+**Targeted Testing (2025-11-17 14:00 - 16:30 PST)**:
+- Fixed all 7 ISSUE-046 flaky tests with state polling + load-aware timeouts
+- Fixed line 183 with serial execution mode (context-dependent failure)
+- Fixed 4 Group B hard failures (lines 57, 87, 144, 779) with state polling
+- Fixed line 529 archiving test with state polling
+- Fixed 7 TypeScript type errors from DOM selector refactoring
+- **Total**: 12 timing/context-dependent tests addressed
 
-### Major Improvements Implemented
+**Verification Work**:
+- ✅ Individual test isolation: All passing
+- ✅ File-level tests: All passing
+- ✅ Combined file tests: All passing (18/18)
+- ❌ Comprehensive suite: Mixed results (5 still fail, 1 improved to flaky)
 
-**1. Automatic OAuth Token Refresh** (Commit `e8f9c2a`)
-- **Problem**: Manual OAuth flows required during comprehensive testing when tokens expired
-- **Solution**: Added `refresh_gmail_token_automatically()` and `refresh_msmail_token_automatically()` functions
-- **Implementation**: Modified `helper-scripts/run-comprehensive-tests.sh` to use refresh tokens
-- **Result**: ✅ Comprehensive testing now fully automated - no manual intervention required
-- **Impact**: Eliminates 5-10 minute manual OAuth workflows during test runs
-
-**2. ISSUE-046 State Polling Fix** (Commit `c4d7e1b`)
-- **Problem**: 5 tests in `03-job-status-updates.spec.ts` failed in comprehensive suite (context-dependent flakiness)
-- **Solution**: Replaced 4 fixed timeouts with `page.waitForFunction()` for state polling
-- **Implementation**:
-  - Lines 122, 166, 461: State polling for exact stat values
-  - Line 410: Load-aware performance assertion (20s under load vs 10s isolation)
-- **Result**: Tests improved from "failed" to "flaky" (~50% severity reduction)
-- **Status**: Tests now pass on retry (within 2 attempts) instead of failing completely
-
-**3. ISSUE-046 Documentation** (Commit `3d5d0fe`)
-- Expanded scope from 5 to 6 flaky tests
-- Added comprehensive test results (388 passed, 4 failed, 6 flaky)
-- Documented all 6 tests share same error pattern: timeout waiting for job cards
-- Updated with next steps and improvement recommendations
-
-### Current Status After Latest Run
-
-**Test Suite Health**:
-- ✅ **Backend: 100%** (164/164 tests)
-- ✅ **Frontend: 100%** (516/516 tests)
-- ⚠️ **E2E: 98.0%** (388 passed, 4 failed, 6 flaky)
-- ✅ **Overall: 99.6%** (1068/1078 active tests)
-
-**Remaining Issues**:
-- **4 hard failures** requiring investigation (previously false positives)
-- **6 flaky tests** documented in ISSUE-046 (improved but not fully resolved)
-
-**Detailed work history**: See `docs/TESTING_HISTORY.md`
+**See TESTING_HISTORY.md** for full details of targeted testing session
 
 ---
 
@@ -336,137 +218,83 @@ Serial execution eliminated resource contention - the problematic test now runs 
 
 ### Immediate Priorities
 
-**1. ✅ ISSUE-046: All 7 Flaky Tests Resolved** (Completed 2025-11-17)
-   - **Status**: All 7 tests now pass consistently in isolation and moderate-load scenarios
-   - **Fixes Applied**:
-     - 6 tests: State polling with load-aware timeouts (10s/20s)
-     - 1 test (line 183): Serial execution mode (architectural fix)
-   - **Verification**: Passed individual, file-level, and multi-file tests
-   - **⏳ TODO**: Run comprehensive test suite later to verify under full parallel load (595 E2E tests)
+**Option 1: Increase Timeouts Aggressively**
+- Current: 10s → 20s, 20s → 40s, 40s → 80s
+- Try: 20s → 40s, 40s → 80s, 80s → 160s
+- Update tab navigation helpers to use load-aware timeouts
+- **Pros**: May fix remaining failures
+- **Cons**: Tests become very slow
 
-   **Tests Fixed (2025-11-17)**:
-   - ✅ `16-gmail-sync-integration.spec.ts:229`
-   - ✅ `03-job-status-updates.spec.ts:183`
-   - ✅ `03-job-status-updates.spec.ts:417`
+**Option 2: Apply Serial Execution to More Files**
+- Mark `22-refresh-buttons.spec.ts`, `23-description-quality.spec.ts`, `16-microsoft-email-integration.spec.ts` as serial
+- **Pros**: Proven to work (03-job-status-updates.spec.ts worked)
+- **Cons**: Significantly increases total test runtime
 
-   **Tests Previously Fixed (2025-11-15)**:
-   - ✅ `03-job-status-updates.spec.ts:122`
-   - ✅ `03-job-status-updates.spec.ts:166`
-   - ✅ `03-job-status-updates.spec.ts:410`
-   - ✅ `03-job-status-updates.spec.ts:461`
+**Option 3: Reduce Worker Count**
+- Current: 4 workers
+- Try: 2 workers (reduces resource contention)
+- **Pros**: May eliminate timing issues across the board
+- **Cons**: Doubles test runtime (~17min → ~34min)
 
-**2. ✅ Fix Group B Context-Dependent Hard Failures** (Completed 2025-11-17)
-   - **Total affected**: 4 tests (pass in isolation, fail in comprehensive suite)
-   - **Root cause**: Same as ISSUE-046 - architectural test isolation issues
-   - **Tests Fixed**:
-     1. ✅ `22-refresh-buttons.spec.ts:57` - "should refresh single job description" (**Verified**: 5.1s)
-     2. ✅ `23-description-quality.spec.ts:87` - "should show actual job content"
-     3. ✅ `23-description-quality.spec.ts:144` - "should regenerate description after prompt change"
-     4. ✅ `16-microsoft-email-integration.spec.ts:779` - "End-to-End Microsoft workflow"
-   - **Fixes Applied**: Same patterns used for ISSUE-046:
-     - State polling with `page.waitForFunction()`
-     - Load-aware timeouts: 10s/20s (standard), 20s-40s/40s-80s (LLM operations)
-     - Native DOM queries (fixed Playwright selector issue in `waitForFunction`)
-   - **Status**: ✅ Fixes implemented and verified in isolation
-   - **⏳ TODO**: Run comprehensive test suite later to verify under full parallel load
-   - **Expected impact**: E2E pass rate 98.0% → ~99.0%, Overall 99.6% → ~99.7%
+**Option 4: Investigate Data Availability**
+- Check if test data is properly seeded
+- Verify job cards exist before attempting operations
+- **Pros**: May reveal root cause
+- **Cons**: Time-consuming investigation
 
-   **Technical Note**: Fixed SyntaxError caused by using Playwright-specific `:has-text()` selector
-   inside `page.waitForFunction()`. Replaced with native DOM iteration (querySelectorAll + loop).
+**Option 5: Accept Current State**
+- Pass rate: 99.3% (1066/1073 active tests)
+- Only 5 hard failures out of 393 E2E tests
+- Mark remaining as known flaky, focus on new features
+- **Pros**: Move forward with development
+- **Cons**: Test suite not fully reliable
 
-**3. ⏳ Investigate 197 Skipped E2E Tests** (Priority: Low)
-   - **Count**: 197 E2E tests skipped in last comprehensive run
-   - **Action Needed**: Review skipped tests to confirm skipping is intentional
-   - **Expected**: Most should be for unimplemented features or conditional tests
-   - **Purpose**: Ensure no accidentally disabled tests
+### Open Questions
 
-**4. ✅ Fix Microsoft Archiving Test** (Completed 2025-11-17)
-   - `16-microsoft-email-integration.spec.ts:529` - "preserve sync functionality with archiving"
-   - **Error (was)**: Expected >= 25, Received: 0 (timing race condition)
-   - **Root cause**: Another timing issue - used fixed 15s timeout instead of state polling
-   - **Fix Applied**: Wait for sync button re-enable + state poll for Total count update
-   - **Verification**: ✅ PASSED in isolation (16.7s)
-   - **Status**: ✅ RESOLVED - This was timing issue #12!
-
-**5. Optional: Document Test Isolation Architecture** (Priority: Low)
-   - Create design document for test data isolation strategy
-   - Evaluate options: database transactions, per-test-file data pools, serial execution
-   - **Purpose**: Prevent future context-dependent flakiness issues
-
-### Current Test Health
-
-**As of 2025-11-17 15:16:09 PST (Targeted Testing)**:
-- ✅ **Backend: 100%** (164/164 tests)
-- ✅ **Frontend: 100%** (516/516 tests)
-- ✅ **E2E (Targeted): 100%** (18/18 tests in ISSUE-046 scope)
-- ⚠️ **E2E (Last Comprehensive): 98.0%** (388 passed, 4 failed, 6 flaky from 2025-11-15)
-
-**Expected Next Comprehensive Run**:
-- ✅ **All 12 timing/context-dependent tests**: Now expected to pass consistently
-  - 7 ISSUE-046 flaky tests
-  - 4 Group B hard failures
-  - 1 Archiving test (line 529)
-- ✅ **Projected E2E pass rate**: ~99.2% (393 passed, 0 failed, 0 flaky from timing issues)
-- ✅ **Projected overall**: 99.8% (1073/1078 active tests)
-
-**Assessment**: Test suite health **significantly improved**:
-
-✅ **Functionality**:
-- Core application functionality verified working correctly (all tests pass in isolation)
-- OAuth automation working perfectly (no manual intervention required)
-- No actual functional bugs found in this investigation
-
-✅ **All Timing/Context-Dependent Issues Resolved**:
-- **All 12 timing-sensitive tests now fixed** with state polling + load-aware timeouts
-  - 7 ISSUE-046 flaky tests (Nov 15 + Nov 17)
-  - 4 Group B hard failures (Nov 17)
-  - 1 Archiving test line 529 (Nov 17)
-- Verified in isolation testing
-- Ready for comprehensive suite verification
-
-⚠️ **Remaining Work (Optional)**:
-- Review 197 skipped E2E tests to confirm intentional skipping
-- No known test failures or flaky tests remaining!
-
-🎯 **Achievement**: Fixed all test isolation issues - test suite now expected at ~99.8% pass rate!
+1. **Should we pursue Option 1, 2, 3, 4, or 5?**
+2. **Are there other root causes we're missing?** (data, infrastructure, etc.)
+3. **Should we review helper functions for fixed timeouts?** (especially `switchToTab`)
+4. **Is there a hybrid approach?** (serial execution for some, longer timeouts for others)
 
 ---
 
 ## Related Files
 
-- **Test Plan**: `README_auto-test-plan.md`
-- **Test History**: `docs/TESTING_HISTORY.md`
-- **Testing Guide**: `docs/TESTING_GUIDE.md`
-- **Comprehensive Test Script**: `helper-scripts/run-comprehensive-tests.sh`
+- **Test Plan**: `README_auto-test-plan.md` - Comprehensive testing strategy
+- **Test Guide**: `docs/TESTING_GUIDE.md` - Testing principles and investigation workflows
+- **Test History**: `docs/TESTING_HISTORY.md` - Historical archive of completed testing work
+- **Playwright Best Practices**: `docs/PLAYWRIGHT_BEST_PRACTICES.md` - E2E test patterns & anti-patterns
+- **Project Status**: `docs/PROJECT_STATUS.md` - Overall project health and priorities
+- **Bug Tracking**: `bugs/README.md` - Bug index and tracking
+- **ISSUE-046**: `bugs/mitigated/ISSUE-046-flaky-e2e-tests-comprehensive-suite.md` - Flaky test tracking
 
-## Related Commits
-
-**OAuth Automation** (from last comprehensive run):
-- `e1aaf48` - fix: Reorder preflight checks to seed database BEFORE OAuth validation (2025-11-15)
-- `97b6696` - docs: Update TESTING_STATUS.md with OAuth fix results (2025-11-15 13:15 PST)
-
-**Post-Run Improvements**:
-- `f4aff38` - fix: Gmail auth button test timing issue - wait for loading state (2025-11-15 13:39 PST)
-- `2485e93` - refactor: Add data-testid attributes to all Intake Tab buttons for robust testing (2025-11-15 13:52 PST)
-- `e81e674` - docs: Update TESTING_STATUS.md with data-testid improvements (2025-11-15 13:52 PST)
-- `b44bf14` - fix: Gmail sync integration test - update obsolete "Inbox" → "New Jobs" tab reference (2025-11-15 14:05 PST)
-- `4a6c0a3` - fix: Resolve flaky test - use stable job ID locator instead of position-based selector (2025-11-15 14:35 PST)
+---
 
 ## Quick Commands
 
 ```bash
-# Run comprehensive test suite (fully automated now!)
+# Run comprehensive test suite (requires manual OAuth)
 ./helper-scripts/run-comprehensive-tests.sh
 
-# Run only backend tests
+# Run backend tests only
 cd backend && cargo test
 
-# Run only frontend tests
+# Run frontend tests only
 cd frontend && npm test
 
 # Run specific E2E test file
-cd frontend && npx playwright test e2e/tests/15-intake-tab.spec.ts
+cd frontend && npx playwright test e2e/tests/22-refresh-buttons.spec.ts
 
-# View latest E2E test report
+# Run specific E2E test line
+cd frontend && npx playwright test e2e/tests/22-refresh-buttons.spec.ts:57
+
+# View Playwright report
 cd frontend && npx playwright show-report
+
+# Check test status and history
+cat docs/TESTING_STATUS.md
+cat docs/TESTING_HISTORY.md
+
+# Tag session (after significant testing work)
+./helper-scripts/tag-session.sh end-of-pm "Description of work"
 ```
