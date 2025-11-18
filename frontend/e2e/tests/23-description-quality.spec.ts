@@ -28,6 +28,10 @@ test.describe('Condensed Description Quality', () => {
   // Configure retries for this suite (LLM-dependent, flaky under load)
   test.describe.configure({ retries: 2 });
 
+  // Configure serial mode for this suite
+  // Serial mode prevents parallel execution - critical for LLM operations under load
+  test.describe.configure({ mode: 'serial' });
+
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:3000');
     await page.waitForLoadState('networkidle');

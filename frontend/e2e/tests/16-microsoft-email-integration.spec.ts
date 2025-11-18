@@ -33,6 +33,10 @@ async function hasMicrosoftOAuthCredentials(): Promise<boolean> {
 }
 
 test.describe('Microsoft Email Integration (Phase 2.7)', () => {
+  // Configure serial mode for this suite
+  // Serial mode prevents parallel execution - critical for email sync and archiving operations
+  test.describe.configure({ mode: 'serial' });
+
   let dashboardPage: DashboardPage;
 
   test.beforeEach(async ({ page }) => {

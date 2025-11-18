@@ -22,6 +22,10 @@ if (!shouldRunTest('refresh-buttons')) {
  */
 
 test.describe('Refresh Buttons', () => {
+  // Configure serial mode for this suite
+  // Serial mode prevents parallel execution - reduces resource contention for LLM operations
+  test.describe.configure({ mode: 'serial' });
+
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:3000');
     await page.waitForLoadState('networkidle');
