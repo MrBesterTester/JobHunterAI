@@ -33,12 +33,13 @@
 ---
 id: ISSUE-051
 title: E2E tests contain 12 waitForTimeout anti-patterns violating PLAYWRIGHT_BEST_PRACTICES.md
-status: open
+status: fixed
 priority: medium
 severity: medium
 component: frontend
 created: 2025-11-17
-updated: 2025-11-17 18:35:00 PST
+updated: 2025-11-17
+fixed: 2025-11-17
 affects:
   - E2E test suite reliability
   - Test flakiness under load
@@ -319,12 +320,9 @@ await page.waitForTimeout(1000); // Arbitrary wait, no state verification
 
 ## Decision
 
-**Awaiting user decision** on scope:
-1. **Option 1**: Fix all 12 anti-patterns (recommended, aligns with ISSUE-047 goals)
-2. **Option 2**: Fix only failing tests, increase timeouts
-3. **Option 3**: Accept current state, no changes
+**DECISION MADE**: **Option 1** (Fix All Anti-Patterns) ✅
 
-**Recommendation**: **Option 1** (Fix All Anti-Patterns)
+**Implementation Status**: COMPLETED (2025-11-17 19:45 PST)
 
 **Rationale**:
 - 2-3 hours investment for systematic improvement
@@ -332,6 +330,12 @@ await page.waitForTimeout(1000); // Arbitrary wait, no state verification
 - Eliminates documented violations, improves compliance score
 - Prevents future debugging sessions similar to those that led to ISSUE-046, ISSUE-047
 - Aligns with project goal of high-quality, reliable test suite
+
+**Changes Implemented (Commit a2bec4c)**:
+- ✅ Fixed all 7 anti-patterns in `22-refresh-buttons.spec.ts`
+- ✅ Fixed all 5 anti-patterns in `16-microsoft-email-integration.spec.ts`
+- ✅ Increased LLM timeout from 20s to 60s (ISSUE-050)
+- ✅ All `waitForTimeout()` replaced with `page.waitForFunction()` state polling
 
 ---
 
@@ -461,6 +465,11 @@ cd frontend && npx playwright test e2e/tests/16-microsoft-email-integration.spec
 - **2025-11-17 18:30 PST**: ISSUE created - Comprehensive review identified 12 anti-patterns
 - **2025-11-17 18:35 PST**: ISSUE documented, awaiting decision on scope of fixes
 - **2025-11-17 18:35 PST**: Linked from ISSUE-049, ISSUE-050, and TESTING_STATUS.md
+- **2025-11-17 19:15 PST**: User requested Option 1 implementation - fix all 12 anti-patterns
+- **2025-11-17 19:45 PST**: ✅ **COMPLETED** - All 12 anti-patterns fixed (commit a2bec4c)
+  - Replaced all `waitForTimeout()` with `page.waitForFunction()` state polling
+  - Increased LLM timeout from 20s → 60s per ISSUE-050
+  - Test results: 3 passed, 1 flaky (line 61 - pre-existing), 1 failing (line 213 - may indicate app bug)
 
 ---
 

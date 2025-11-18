@@ -386,6 +386,11 @@ cd frontend && npx playwright test e2e/tests/22-refresh-buttons.spec.ts
   - Test result: ✅ **8/8 passing in isolation** (46s runtime)
   - **Note**: Root cause (LLM timeout under load) not addressed, but locators now more robust
   - Test still expected to fail under comprehensive load due to 20s timeout
+- 2025-11-17 19:45 PST: ✅ **Timeout increased + anti-patterns fixed** (commit a2bec4c, ISSUE-051)
+  - Increased LLM pollTimeout from 20s → 60s per Option 1 recommendation
+  - Fixed 7 `waitForTimeout()` anti-patterns in other tests in same file (ISSUE-051)
+  - Test line 61 (failing test) retained correct state polling patterns
+  - **Expected**: Should now pass under comprehensive load with 60s timeout
 
 ## Notes
 

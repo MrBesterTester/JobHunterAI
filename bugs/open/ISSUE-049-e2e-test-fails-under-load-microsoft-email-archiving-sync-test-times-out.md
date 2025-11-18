@@ -351,6 +351,10 @@ cd frontend && npx playwright test e2e/tests/16-microsoft-email-integration.spec
   - Locator follows PLAYWRIGHT_BEST_PRACTICES.md guidelines (no changes needed)
   - Button test ID has been present since initial implementation
   - **Conclusion**: Locator strategy is correct; timeout issue is root cause (not locator issue)
+- 2025-11-17 19:45 PST: ✅ **Anti-patterns fixed in other tests** (commit a2bec4c, ISSUE-051)
+  - Fixed 5 `waitForTimeout()` anti-patterns in tab navigation (lines 52, 62, 84, 546, 623)
+  - Test line 533 (failing test) retained correct state polling patterns
+  - **Note**: Failing test already followed best practices; fix improves other tests in same file
 
 ## Notes
 
