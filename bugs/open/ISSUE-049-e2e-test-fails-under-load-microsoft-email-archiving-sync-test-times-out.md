@@ -8,7 +8,7 @@ component: e2e-tests
 created: 2025-11-17
 updated: 2025-11-17 18:25:00 PST
 affects: []
-related: [ISSUE-046, ISSUE-048]
+related: [ISSUE-046, ISSUE-048, ISSUE-051]
 ---
 
 # ISSUE-049: E2E test fails under load - Microsoft email archiving sync test times out
@@ -364,6 +364,8 @@ cd frontend && npx playwright test e2e/tests/16-microsoft-email-integration.spec
 **Related Work**:
 - ISSUE-046: Flaky E2E tests - resolved 7 tests with similar patterns
 - ISSUE-048: Background bash notifications - monitoring comprehensive tests
+- **ISSUE-051**: Comprehensive review found 5 `waitForTimeout()` anti-patterns in this test file (see `test-review-2025-11-17-issues-049-050.md`)
+  - Note: Failing test (line 533) uses CORRECT patterns, anti-patterns are in other tests
 
 **Context**:
 - Part of Phase 2.7 (Microsoft Email Integration)

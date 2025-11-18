@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-17 17:29:04 PST
-last_updated: 2025-11-17 18:25:00 PST (Button test ID audit complete - ISSUE-049 and ISSUE-050 updated)
+last_updated: 2025-11-17 18:40:00 PST (ISSUE-051 created - 12 anti-patterns documented)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -103,7 +103,7 @@ last_updated: 2025-11-17 18:25:00 PST (Button test ID audit complete - ISSUE-049
     - Button test ID audit confirmed locator strategy is correct
 - **Why still failing**: May require longer timeouts (>120s) or different waiting strategy for Microsoft API operations
 - **Screenshot**: `test-results/16-microsoft-email-integra-d42c3-lity-with-archiving-enabled-chromium/test-failed-1.png`
-- **Related**: ISSUE-049
+- **Related**: ISSUE-049, ISSUE-051 (comprehensive review found 5 anti-patterns in file)
 
 **2. `22-refresh-buttons.spec.ts:61` - Refresh Single Job Description**
 - **Status**: Still fails under comprehensive load, but improved locators
@@ -117,7 +117,7 @@ last_updated: 2025-11-17 18:25:00 PST (Button test ID audit complete - ISSUE-049
     - ✅ Test passes 8/8 in isolation (46s runtime)
 - **Why still failing under load**: LLM operations may need longer timeouts (current: 20s, recommend: 60s per ISSUE-050)
 - **Screenshot**: `test-results/22-refresh-buttons-Refresh-3bc5c-when-per-job-button-clicked-chromium/test-failed-1.png`
-- **Related**: ISSUE-050, commits b8592c2, 4bb7919
+- **Related**: ISSUE-050, ISSUE-051 (comprehensive review found 7 anti-patterns in file), commits b8592c2, 4bb7919
 
 ### Serial Mode Implementation
 

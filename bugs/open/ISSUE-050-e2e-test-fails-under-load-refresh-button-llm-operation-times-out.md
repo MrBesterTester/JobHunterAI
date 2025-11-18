@@ -8,7 +8,7 @@ component: e2e-tests
 created: 2025-11-17
 updated: 2025-11-17 18:25:00 PST
 affects: []
-related: [ISSUE-046, ISSUE-048, ISSUE-049]
+related: [ISSUE-046, ISSUE-048, ISSUE-049, ISSUE-051]
 ---
 
 # ISSUE-050: E2E test fails under load - Refresh button LLM operation times out
@@ -400,6 +400,8 @@ cd frontend && npx playwright test e2e/tests/22-refresh-buttons.spec.ts
 - ISSUE-046: Flaky E2E tests - resolved 7 tests with similar patterns
 - ISSUE-048: Background bash notifications - monitoring comprehensive tests
 - ISSUE-049: Microsoft archiving test - similar load-dependent failure
+- **ISSUE-051**: Comprehensive review found 7 `waitForTimeout()` anti-patterns in this test file (see `test-review-2025-11-17-issues-049-050.md`)
+  - Note: Failing test (line 61) uses CORRECT patterns, anti-patterns are in other tests (lines 171-267)
 
 **Context**:
 - Part of condensed description feature
