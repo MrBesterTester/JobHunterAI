@@ -6,7 +6,7 @@ priority: low
 severity: low
 component: e2e-tests
 created: 2025-11-17
-updated: 2025-11-17
+updated: 2025-11-17 18:25:00 PST
 affects: []
 related: [ISSUE-046, ISSUE-048, ISSUE-049]
 ---
@@ -379,6 +379,13 @@ cd frontend && npx playwright test e2e/tests/22-refresh-buttons.spec.ts
 - 2025-11-17: Applied serial mode - **STILL FAILS**
 - 2025-11-17: Applied state polling + 20s timeout - **STILL FAILS**
 - 2025-11-17: Analysis complete - recommended Option 1 (increase timeout to 60s)
+- 2025-11-17 17:28-18:17 PST: **Button test ID improvements applied** (commits b8592c2, 4bb7919)
+  - Added `data-testid="per-job-refresh-button"` to App.tsx:2307
+  - Added `data-testid="global-refresh-button"` to App.tsx:2638
+  - Updated test to use `getByTestId()` instead of structural locators
+  - Test result: ✅ **8/8 passing in isolation** (46s runtime)
+  - **Note**: Root cause (LLM timeout under load) not addressed, but locators now more robust
+  - Test still expected to fail under comprehensive load due to 20s timeout
 
 ## Notes
 

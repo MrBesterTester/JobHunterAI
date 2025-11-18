@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-17 17:29:04 PST
-last_updated: 2025-11-17 18:17:46 PST (STABLE-A tag created - refresh button test IDs added)
+last_updated: 2025-11-17 18:25:00 PST (Button test ID audit complete - ISSUE-049 and ISSUE-050 updated)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -64,6 +64,10 @@ last_updated: 2025-11-17 18:17:46 PST (STABLE-A tag created - refresh button tes
 - 🎉 **No flaky tests** (previous run had 2 flaky tests)
 - ⚡ **2 minutes faster** than previous run (15min vs 17min)
 - 🏷️ **STABLE-A tag created** (2025-11-17 17:28 PST) - Refresh button test IDs added, baseline for broader test ID implementation
+- 🎯 **Button test ID audit complete** (2025-11-17 18:17 PST) - 100% coverage (43/43 buttons)
+  - ISSUE-050: Refresh buttons now use stable `getByTestId()` locators (passes 8/8 in isolation)
+  - ISSUE-049: Microsoft sync button verified to already follow best practices
+  - Both tests still expected to fail under comprehensive load due to timeout issues (not locator issues)
 
 ### 🎉 Major Success: Serial Mode Reduced Failures by 60%
 
@@ -88,23 +92,32 @@ last_updated: 2025-11-17 18:17:46 PST (STABLE-A tag created - refresh button tes
 
 ### Remaining Failures (2 tests)
 
-**1. `16-microsoft-email-integration.spec.ts` - Email Archiving Test**
+**1. `16-microsoft-email-integration.spec.ts:533` - Email Archiving Test**
 - **Status**: Still fails even with serial mode
 - **Applied fixes**:
   - Serial execution (eliminates resource contention)
-  - State polling for sync completion
+  - State polling for sync completion (120s timeout)
   - Total count update waiting
-- **Why still failing**: May require longer timeouts or different waiting strategy
+  - **VERIFIED (2025-11-17 18:17 PST)**: Test already uses stable locator
+    - Uses `data-testid="microsoft-sync-button"` (follows best practices)
+    - Button test ID audit confirmed locator strategy is correct
+- **Why still failing**: May require longer timeouts (>120s) or different waiting strategy for Microsoft API operations
 - **Screenshot**: `test-results/16-microsoft-email-integra-d42c3-lity-with-archiving-enabled-chromium/test-failed-1.png`
+- **Related**: ISSUE-049
 
-**2. `22-refresh-buttons.spec.ts:57` - Refresh Single Job Description**
-- **Status**: Still fails even with serial mode
+**2. `22-refresh-buttons.spec.ts:61` - Refresh Single Job Description**
+- **Status**: Still fails under comprehensive load, but improved locators
 - **Applied fixes**:
   - Serial execution (eliminates resource contention)
-  - State polling + load-aware timeouts
+  - State polling + load-aware timeouts (current: 20s)
   - DOM query approach
-- **Why still failing**: LLM operations may need even longer timeouts (current: 20s)
+  - **NEW (2025-11-17 18:17 PST)**: Stable test ID locators
+    - Added `data-testid="per-job-refresh-button"` and `data-testid="global-refresh-button"`
+    - Test now uses `getByTestId()` instead of structural locators
+    - ✅ Test passes 8/8 in isolation (46s runtime)
+- **Why still failing under load**: LLM operations may need longer timeouts (current: 20s, recommend: 60s per ISSUE-050)
 - **Screenshot**: `test-results/22-refresh-buttons-Refresh-3bc5c-when-per-job-button-clicked-chromium/test-failed-1.png`
+- **Related**: ISSUE-050, commits b8592c2, 4bb7919
 
 ### Serial Mode Implementation
 
