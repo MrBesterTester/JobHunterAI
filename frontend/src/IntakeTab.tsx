@@ -961,7 +961,7 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
             <Mail style={{ width: '32px', height: '32px', color: '#0078d4' }} />
-            <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Microsoft Email (sam@samkirk.com)</h3>
+            <h3 data-testid="microsoft-email-heading" style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Microsoft Email (sam@samkirk.com)</h3>
           </div>
 
           <div style={{ marginBottom: '16px' }}>

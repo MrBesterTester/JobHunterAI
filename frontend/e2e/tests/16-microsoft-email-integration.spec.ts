@@ -52,7 +52,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       // Wait for Intake tab content to load using state polling
       await page.waitForFunction(
         () => {
-          const heading = document.querySelector('h3');
+          const heading = document.querySelector('[data-testid="microsoft-email-heading"]');
           return heading?.textContent?.match(/microsoft email/i) !== null;
         },
         { timeout: 5000 }
@@ -70,7 +70,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       // Wait for Intake tab content to load using state polling
       await page.waitForFunction(
         () => {
-          const heading = document.querySelector('h3');
+          const heading = document.querySelector('[data-testid="microsoft-email-heading"]');
           return heading?.textContent?.match(/microsoft email/i) !== null;
         },
         { timeout: 5000 }
@@ -100,7 +100,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       // Wait for Intake tab content to load using state polling
       await page.waitForFunction(
         () => {
-          const heading = document.querySelector('h3');
+          const heading = document.querySelector('[data-testid="microsoft-email-heading"]');
           return heading?.textContent?.match(/microsoft email/i) !== null;
         },
         { timeout: 5000 }
@@ -569,7 +569,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       // Wait for Intake tab content to load using state polling
       await page.waitForFunction(
         () => {
-          const heading = document.querySelector('h3');
+          const heading = document.querySelector('[data-testid="microsoft-email-heading"]');
           return heading?.textContent?.match(/microsoft email/i) !== null;
         },
         { timeout: 5000 }
@@ -654,7 +654,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       // Wait for Intake tab content to load using state polling
       await page.waitForFunction(
         () => {
-          const heading = document.querySelector('h3');
+          const heading = document.querySelector('[data-testid="microsoft-email-heading"]');
           return heading?.textContent?.match(/microsoft email/i) !== null;
         },
         { timeout: 5000 }
