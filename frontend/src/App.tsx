@@ -824,6 +824,7 @@ const JobDetails: React.FC<{
           {(job.status === 'new' || job.status === 'filtered' || job.status === 'rejected') && (
             <>
               <button
+                data-testid="approve-job-button-modal"
                 onClick={() => { updateJobStatus(job.job_id, 'approved'); onClose(); }}
                 style={{
                   flex: 1,
@@ -859,6 +860,7 @@ const JobDetails: React.FC<{
           {job.status === 'approved' && (
             <>
               <button
+                data-testid="generate-content-button-modal"
                 onClick={async () => {
                   await generateContent(job.job_id);
                   onClose();
@@ -877,6 +879,7 @@ const JobDetails: React.FC<{
                 Generate Resume & Cover Letter
               </button>
               <button
+                data-testid="mark-applied-button-modal"
                 onClick={() => { updateJobStatus(job.job_id, 'applied'); onClose(); }}
                 style={{
                   flex: 1,
@@ -2412,6 +2415,7 @@ const JobHunterDashboard: React.FC = () => {
       {(job.status === 'new') && (
         <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
           <button
+            data-testid="approve-job-button"
             onClick={(e) => { e.stopPropagation(); updateJobStatus(job.job_id, 'approved'); }}
             style={{
               flex: 1,
@@ -2427,6 +2431,7 @@ const JobHunterDashboard: React.FC = () => {
             Approve
           </button>
           <button
+            data-testid="reject-job-button"
             onClick={(e) => { e.stopPropagation(); updateJobStatus(job.job_id, 'rejected'); }}
             style={{
               flex: 1,
@@ -2438,7 +2443,6 @@ const JobHunterDashboard: React.FC = () => {
               cursor: 'pointer',
               fontSize: '14px'
             }}
-            data-testid="reject-job-button"
           >
             Reject
           </button>
@@ -2530,6 +2534,7 @@ const JobHunterDashboard: React.FC = () => {
           </div>
           <div style={{ display: 'flex', gap: '12px' }}>
             <button
+              data-testid="refresh-data-button"
               onClick={handleRefresh}
               disabled={refreshing}
               style={{
@@ -2571,6 +2576,7 @@ const JobHunterDashboard: React.FC = () => {
               {refreshing ? 'Refreshing...' : 'Refresh Data'}
             </button>
             <button
+              data-testid="configure-criteria-button"
               onClick={handleOpenCriteriaConfig}
               style={{
                 padding: '10px 20px',
@@ -2601,6 +2607,7 @@ const JobHunterDashboard: React.FC = () => {
               Configure Criteria
             </button>
             <button
+              data-testid="rescore-all-button"
               onClick={handleRescoreAll}
               disabled={refreshing}
               style={{
@@ -2827,6 +2834,7 @@ const JobHunterDashboard: React.FC = () => {
               }}>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                   <button
+                    data-testid="select-all-gmail-button"
                     onClick={selectAllGmailJobs}
                     disabled={filterJobs('rejected').filter(j => j.source === 'gmail').length === 0}
                     style={{
@@ -2844,6 +2852,7 @@ const JobHunterDashboard: React.FC = () => {
                     Select All Gmail
                   </button>
                   <button
+                    data-testid="deselect-all-button"
                     onClick={deselectAllJobs}
                     disabled={selectedJobsForDeletion.size === 0}
                     style={{
@@ -2862,6 +2871,7 @@ const JobHunterDashboard: React.FC = () => {
                   </button>
                 </div>
                 <button
+                  data-testid="delete-selected-button"
                   onClick={() => setShowDeleteConfirmDialog(true)}
                   disabled={selectedJobsForDeletion.size === 0 || isDeletingJobs}
                   style={{
@@ -3522,6 +3532,7 @@ const JobHunterDashboard: React.FC = () => {
             </p>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
               <button
+                data-testid="delete-confirm-cancel-button"
                 onClick={() => setShowDeleteConfirmDialog(false)}
                 disabled={isDeletingJobs}
                 style={{
@@ -3539,6 +3550,7 @@ const JobHunterDashboard: React.FC = () => {
                 Cancel
               </button>
               <button
+                data-testid="delete-confirm-execute-button"
                 onClick={handleBulkDeleteJobs}
                 disabled={isDeletingJobs}
                 style={{

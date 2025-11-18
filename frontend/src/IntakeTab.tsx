@@ -717,6 +717,7 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
               <option value="all_filtered">All Filtered Jobs</option>
             </select>
             <button
+              data-testid="refilter-jobs-button"
               onClick={handleRefilter}
               disabled={refiltering || syncingAll || syncingSource !== null}
               style={{
@@ -1299,6 +1300,7 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
             </p>
           </div>
           <button
+            data-testid="prompt-editor-toggle-button"
             onClick={() => setShowPromptEditor(!showPromptEditor)}
             style={{
               padding: '8px 16px',
@@ -1370,6 +1372,7 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
 
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
               <button
+                data-testid="prompt-editor-cancel-button"
                 onClick={() => {
                   setPromptContent(extractionPrompt?.prompt_content || '');
                   setPromptNotes(extractionPrompt?.notes || '');
@@ -1390,6 +1393,7 @@ const IntakeTab: React.FC<IntakeTabProps> = ({ onJobsUpdated }) => {
                 Cancel
               </button>
               <button
+                data-testid="prompt-editor-save-button"
                 onClick={updateExtractionPrompt}
                 disabled={savingPrompt || !promptContent.trim()}
                 style={{
