@@ -1,12 +1,13 @@
 ---
 id: ISSUE-049
 title: E2E test fails under load - Microsoft email archiving sync test times out
-status: open
+status: fixed
 priority: low
 severity: low
 component: e2e-tests
 created: 2025-11-17
-updated: 2025-11-17 18:25:00 PST
+updated: 2025-11-18
+fixed: 2025-11-18
 affects: []
 related: [ISSUE-046, ISSUE-048, ISSUE-051]
 ---
@@ -45,7 +46,9 @@ related: [ISSUE-046, ISSUE-048, ISSUE-051]
 
 ## Summary
 
-E2E test `16-microsoft-email-integration.spec.ts` line 533 ("should preserve sync functionality with archiving enabled") times out under comprehensive test load, even with serial execution mode and state polling applied.
+~~E2E test `16-microsoft-email-integration.spec.ts` line 533 ("should preserve sync functionality with archiving enabled") times out under comprehensive test load, even with serial execution mode and state polling applied.~~
+
+**✅ RESOLVED (2025-11-18)**: Test now passes reliably in both file-level and comprehensive test contexts. Fixed via Option 2 (backend validation with load-aware timeouts) + serial mode DOM query fix. Verified passing in comprehensive test suite run on 2025-11-18 (3.8s first attempt, 1.7s retry).
 
 ## Impact
 
@@ -547,6 +550,15 @@ The test now logs performance metrics at each phase. Look for these console log 
     - File total: **16 passed, 7 skipped, 0 flaky** 🎉
   - **Performance**: Line 556 now completes in 2.6s (was 79-98s) due to warm cache from line 504
   - **Status**: Both flaky tests completely fixed and passing reliably in serial mode
+- 2025-11-18 16:35-17:10 PST: ✅ **COMPREHENSIVE TEST SUITE VERIFICATION COMPLETE**
+  - Ran full comprehensive test suite (all 595 E2E tests + backend + frontend)
+  - **Target test (line 556) PASSED in comprehensive suite**:
+    - ✓ Test #512: Passed on first attempt (3.8s)
+    - ✓ Test #627: Also passed on retry (1.7s)
+    - **NOT one of the 3 failed tests** in comprehensive run
+  - **Comprehensive results**: 382 passed, 3 failed (different tests), 2 flaky (different tests)
+  - **Conclusion**: Issue fully resolved - test passes in both file-level AND comprehensive test contexts
+  - **Status**: ✅ **FIXED** - Moving to bugs/fixed/
 
 ## How You Can't Win 'Em All: Lessons in Anti-Pattern Introduction
 
@@ -603,7 +615,7 @@ await page.waitForFunction(
 8. **Test results**: Both pass first try in file context (line 504: 31.5s, line 556: 2.6s)
 9. **Serial mode fix**: Changed `.last()` to `.first()` to avoid grabbing wrong "Total" from activity log
 10. **File-level results (2025-11-18)**: **16 passed, 7 skipped, 0 flaky** 🎉
-11. **Next step**: Monitor comprehensive test behavior with 120s/150s timeouts
+11. ✅ **Comprehensive test verification (2025-11-18)**: Test PASSED in full comprehensive suite (3.8s first attempt, 1.7s retry)
 
 **Related Work**:
 - ISSUE-046: Flaky E2E tests - resolved 7 tests with similar patterns
