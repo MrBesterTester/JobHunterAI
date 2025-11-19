@@ -937,16 +937,18 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       );
 
       // Find jobs (may be from any source)
-      const jobCards = page.locator('[data-testid="job-card"]');
-      const jobCount = await jobCards.count();
+      const jobCards = page.getByTestId('job-card');
 
-      if (jobCount === 0) {
+      // Wait for job cards to be visible before counting
+      try {
+        await jobCards.first().waitFor({ state: 'visible', timeout: pollTimeout });
+        const jobCount = await jobCards.count();
+        console.log(`Found ${jobCount} jobs for workflow testing`);
+      } catch (error) {
         console.log('No jobs available for end-to-end workflow test');
         test.skip();
         return;
       }
-
-      console.log(`Found ${jobCount} jobs for workflow testing`);
 
       // Click first job to open details
       await jobCards.first().click();

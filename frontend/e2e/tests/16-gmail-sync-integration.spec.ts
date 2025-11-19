@@ -214,8 +214,8 @@ test.describe('Gmail Sync Integration', () => {
     const gmailSyncButton = page.getByRole('button', { name: /Sync Now/i }).first();
     await gmailSyncButton.click();
 
-    // Wait for sync
-    await page.waitForTimeout(5000);
+    // Wait for sync button to re-enable (indicates sync complete)
+    await expect(gmailSyncButton).toBeEnabled({ timeout: 30000 });
 
     // Check stats updated
     const newTotal = await page.getByText(/Total/i).last().textContent();
@@ -269,7 +269,6 @@ test.describe('Gmail Sync Integration', () => {
     // Wait for status update and stats refresh to complete
     await statusUpdatePromise;
     await statsRefreshPromise;
-    await page.waitForTimeout(500); // Give React time to update UI
 
     // Wait for approved count to increase (with load-aware timeout)
     // Use longer timeout during comprehensive tests or CI to handle system load

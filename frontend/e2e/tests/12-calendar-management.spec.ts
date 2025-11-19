@@ -123,12 +123,16 @@ test.describe('Calendar Management - Phase 5.1', () => {
         response.url().includes('/api/interviews/upcoming') && response.status() === 200
       );
 
-      // Check for interview cards or list
-      const interviewsList = page.locator('[data-testid="interviews-list"], .interview-card').first();
-      const count = await interviewsList.count();
+      // Wait for UI to render after API response
+      const interviewsList = page.getByTestId('interviews-list');
+      await expect(interviewsList).toBeVisible({ timeout: 10000 });
+
+      // Now safe to check if interviews exist
+      const interviews = page.getByTestId('interview-card');
+      const count = await interviews.count();
 
       if (count > 0) {
-        await expect(interviewsList).toBeVisible();
+        await expect(interviews.first()).toBeVisible();
       }
     });
 

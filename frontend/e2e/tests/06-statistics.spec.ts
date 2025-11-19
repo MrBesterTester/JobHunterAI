@@ -356,19 +356,30 @@ test.describe('Statistics & Real-time Updates', () => {
         return;
       }
 
+      // Get initial "New" stat count
+      const initialNew = await dashboardPage.getStatCount('new');
+
       // Rapidly approve multiple jobs
       for (let i = 0; i < 3; i++) {
         const job = await getJobCard(page, 0);
         await job.approve();
-        await page.waitForTimeout(300); // Brief delay
+
+        // Wait for stat to update using state polling
+        await page.waitForFunction(
+          (expectedNew) => {
+            const statElement = document.querySelector('[data-testid="stat-new"]');
+            const match = statElement?.textContent?.match(/\d+/);
+            const currentCount = match ? parseInt(match[0]) : 0;
+            return currentCount === expectedNew;
+          },
+          initialNew - (i + 1),
+          { timeout: 5000 }
+        );
       }
 
-      // Wait for all updates
-      await page.waitForTimeout(2000);
-
-      // Verify statistics are consistent
+      // Verify statistics are consistent (should already be updated from loop above)
       const newCount = await dashboardPage.getStatCount('new');
-      expect(newCount).toBe(initialCount - 3);
+      expect(newCount).toBe(initialNew - 3);
     });
 
     test('should maintain data integrity during updates', async ({ page }) => {
@@ -386,7 +397,18 @@ test.describe('Statistics & Real-time Updates', () => {
       if ((await dashboardPage.getVisibleJobCount()) > 0) {
         const firstJob = await getJobCard(page, 0);
         await firstJob.approve();
-        await page.waitForTimeout(1500);
+
+        // Wait for "approved" stat to update using state polling
+        await page.waitForFunction(
+          (expectedApproved) => {
+            const statElement = document.querySelector('[data-testid="stat-approved"]');
+            const match = statElement?.textContent?.match(/\d+/);
+            const currentCount = match ? parseInt(match[0]) : 0;
+            return currentCount === expectedApproved;
+          },
+          initialApproved + 1,
+          { timeout: 5000 }
+        );
       }
 
       // Get new total
