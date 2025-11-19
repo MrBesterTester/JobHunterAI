@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-18 21:17:51 PST
-last_updated: 2025-11-18 23:36:53 PST (Moved 2025-11-17 run to TESTING_HISTORY.md per 2-run policy)
+last_updated: 2025-11-18 23:44:07 PST (Added Next Steps to current run, removed global Next Steps)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -35,6 +35,7 @@ last_updated: 2025-11-18 23:36:53 PST (Moved 2025-11-17 run to TESTING_HISTORY.m
     - [ISSUE-055 Target Tests - Final Assessment (2025-11-18 21:17 PST Run)](#issue-055-target-tests---final-assessment-2025-11-18-2117-pst-run)
     - [Key Observations](#key-observations)
     - [Comparison to Previous Run (2025-11-18 19:24 PST)](#comparison-to-previous-run-2025-11-18-1924-pst)
+    - [Next Steps (Based on 21:17 PST Run)](#next-steps-based-on-2117-pst-run)
   - [🔬 ISSUE-055 Priority 1 Targeted Testing (2025-11-18 20:15-20:48 PST)](#-issue-055-priority-1-targeted-testing-2025-11-18-2015-2048-pst)
     - [Individual Test Results (Isolation - No Parallel Workers)](#individual-test-results-isolation---no-parallel-workers)
     - [Full File Test Results (4 Parallel Workers + COMPREHENSIVE_TESTS=true)](#full-file-test-results-4-parallel-workers--comprehensive_teststrue)
@@ -45,10 +46,6 @@ last_updated: 2025-11-18 23:36:53 PST (Moved 2025-11-17 run to TESTING_HISTORY.m
     - [Test Results Summary](#test-results-summary-1)
     - [Failures (19:24 Run)](#failures-1924-run)
     - [Flaky Tests (19:24 Run)](#flaky-tests-1924-run)
-  - [Next Steps](#next-steps)
-    - [Priority 1: ISSUE-055 Test Fixes](#priority-1-issue-055-test-fixes)
-    - [Priority 2: ISSUE-053 - ✅ CLOSED](#priority-2-issue-053----closed)
-    - [Priority 3: Resume Feature Development](#priority-3-resume-feature-development)
   - [Related Files](#related-files)
   - [Quick Commands](#quick-commands)
 
@@ -293,6 +290,26 @@ TimeoutError: page.waitForFunction: Timeout 10000ms exceeded
 - ⚠️ **Test #504 still failing**: Fix applied but not yet verified
 - ⚡ **Faster runtime**: No clean rebuild this run
 
+### Next Steps (Based on 21:17 PST Run)
+
+**Priority 1: Fix Test #504** ⏳
+- **Status**: Fix applied (2025-11-18 23:31:26 PST), awaiting verification
+- **What was done**: Added `test.setTimeout(180000)` to match Test #511 pattern
+- **Next action**: Verify fix in next comprehensive run
+
+**Priority 2: Investigate Test #547** ⚠️
+- **Status**: Requires investigation (not a timeout issue)
+- **Problem**: Page content missing 'Title' or 'Company' fields
+- **Degradation**: Flaky → hard failure (concerning trend)
+- **Next action**: Debug test to understand root cause (data/state/navigation issue)
+
+**Priority 3: Monitor Test #441** ✅
+- **Status**: Acceptable flakiness (passes on retry)
+- **Current behavior**: Flaky but reliable with retry mechanism
+- **Next action**: Monitor in future runs; acceptable as-is
+
+**Overall Test Suite Health**: 99.8% pass rate (1064/1066) - Excellent state for development
+
 ---
 
 ## 🔬 ISSUE-055 Priority 1 Targeted Testing (2025-11-18 20:15-20:48 PST)
@@ -416,76 +433,6 @@ TimeoutError: page.waitForFunction: Timeout 10000ms exceeded
 
 1. **Test #441** (`16-gmail-sync-integration.spec.ts:229`) - Passed on retry
 2. **Test #547** (`16-microsoft-email-integration.spec.ts:923`) - Passed on retry
-
----
-
-## Next Steps
-
-**Status**: ✅ **ISSUE-053 COMPLETE** - 5/5 target tests now pass (3 solid, 2 flaky but reliable)
-
-### Priority 1: ISSUE-055 Test Fixes
-
-**Status**: ⚠️ **MOSTLY COMPLETE** - 3/4 tests resolved, 1 test needs separate investigation
-
-**Latest Results** (2025-11-18 21:17 PST comprehensive run):
-
-**1. Test #511**: `23-description-quality.spec.ts:175` - ✅ **VERIFIED FIXED**
-- **Status**: ✅ **COMPLETELY FIXED** (verified in 21:17 comprehensive run)
-- **Fix**: API response wait pattern (replaced UI loading state polling)
-- **Result**: Passes reliably under 4-worker parallel load
-- **Performance**: Much faster (1.7s vs 4+ sec)
-- **Commit**: cd5e440
-
-**2. Test #441**: `16-gmail-sync-integration.spec.ts:229` - ✅ **IMPROVED**
-- **Status**: ⚠️ **FLAKY BUT RELIABLE** (passes on retry)
-- **Fix**: Tab navigation timeout increased from 30s → 45s
-- **Result**: Acceptable flakiness - retry mechanism handles it
-- **File**: `frontend/e2e/helpers/tab-navigation.ts:57`
-
-**3. Test #504**: `22-refresh-buttons.spec.ts:61` - ⏳ **FIX APPLIED, NEEDS VERIFICATION**
-- **Status**: ⏳ **AWAITING VERIFICATION** (fix applied 2025-11-18 23:31:26 PST)
-- **Fix**: Added `test.setTimeout(180000)` (was missing test-level timeout)
-- **Root Cause**: Poll timeout was 120s but test timeout was only 30s
-- **Next Step**: Verify in next comprehensive run
-- **File**: `frontend/e2e/tests/22-refresh-buttons.spec.ts:61-64`
-
-**4. Test #547**: `16-microsoft-email-integration.spec.ts:923` - ⚠️ **REQUIRES INVESTIGATION**
-- **Status**: ⚠️ **NOT FIXED BY ISSUE-055** (separate issue)
-- **Problem**: Page content missing 'Title' or 'Company' fields
-- **Not a timeout issue**: Different failure mode than other ISSUE-055 tests
-- **Degradation**: Was flaky (passed retry) in 19:24 run, now hard failure in 21:17 run
-- **Next Step**: Separate investigation needed (possibly data/state/navigation issue)
-
-**ISSUE-055 Summary**:
-- ✅ Test #511: Verified fixed with API wait pattern
-- ✅ Test #441: Improved (flaky but reliable with retry)
-- ⏳ Test #504: Fix applied, awaiting verification
-- ⚠️ Test #547: Requires separate investigation (out of ISSUE-055 scope)
-
-### Priority 2: ISSUE-053 - ✅ CLOSED
-
-**Status**: ✅ **CLOSED** (2025-11-18 19:35:21 PST)
-
-**Completion Summary**:
-- ✅ Phase 1, 2, 3 complete (~2.7 hours implementation)
-- ✅ ISSUE-054 bonus fix completed
-- ✅ 5/5 target tests now pass (3 solid, 2 reliable via retry)
-- ✅ Overall test suite improvement: 98.2% → 99.5% (+1.3%)
-- ✅ Moved to `bugs/fixed/ISSUE-053-*`
-- ✅ Commit tagged as **STABLE-B**
-
-**Outcome**: All objectives met. Regression identified as separate issue (ISSUE-055)
-
-### Priority 3: Resume Feature Development
-
-**After audit completion**: Return to feature development with confidence in test suite reliability
-
-**Available Work**:
-- Continue Phase 2 sub-phase implementation
-- Address other open issues
-- New feature development
-
-**Test Suite Health**: 99.8% overall pass rate (1063/1065) - Excellent state for active development
 
 ---
 
