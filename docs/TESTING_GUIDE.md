@@ -9,7 +9,7 @@ related_docs:
   - README_auto-test-plan.md (testing plan)
   - TESTING_STATUS.md (testing results)
   - CLAUDE.md (core testing standards)
-last_updated: 2025-11-07
+last_updated: 2025-11-19
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -30,6 +30,19 @@ last_updated: 2025-11-07
     - [Issue: Mock not returning expected data](#issue-mock-not-returning-expected-data)
     - [Issue: Timing/async problems](#issue-timingasync-problems)
     - [Issue: Orphaned processes causing slowdown](#issue-orphaned-processes-causing-slowdown)
+  - [Case Study: Pattern Recognition in Test Failures](#case-study-pattern-recognition-in-test-failures)
+    - [The Investigation Process](#the-investigation-process)
+      - [1. **Initial Clue: Description Suggests Timing, Not Breakage**](#1-initial-clue-description-suggests-timing-not-breakage)
+      - [2. **Read the Test Code - Spot the Anti-Pattern**](#2-read-the-test-code---spot-the-anti-pattern)
+      - [3. **The Smoking Gun: Test Passes in Isolation**](#3-the-smoking-gun-test-passes-in-isolation)
+      - [4. **Pattern Matching Against Known Issues**](#4-pattern-matching-against-known-issues)
+      - [5. **The Pattern Match Table**](#5-the-pattern-match-table)
+      - [6. **Key Insight: Two Descriptions, Same Phenomenon**](#6-key-insight-two-descriptions-same-phenomenon)
+      - [7. **Hypothesis Verification**](#7-hypothesis-verification)
+    - [The Solution Applied](#the-solution-applied)
+    - [Key Lessons](#key-lessons)
+    - [Investigation Checklist for "Fails Under Load" Pattern](#investigation-checklist-for-fails-under-load-pattern)
+    - [Why Documentation Matters](#why-documentation-matters)
   - [Accountability Checklist](#accountability-checklist)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -400,6 +413,199 @@ grep "IntakeTab.test.tsx" logs/frontend-tests/test-run-TIMESTAMP.log
 3. Identify orphaned processes
 
 **Solution**: Run `./system-health-check.sh --cleanup`
+
+---
+
+## Case Study: Pattern Recognition in Test Failures
+
+**Real Example**: How Test #504 was diagnosed as identical to Test #511 (2025-11-19)
+
+**Scenario**: Test #504 appears in TESTING_STATUS.md Priority 2 with description:
+> "Refresh button click doesn't trigger LLM extraction - description never changes"
+> "Test waits 120s for 'Loading description...' but it never appears"
+
+### The Investigation Process
+
+#### 1. **Initial Clue: Description Suggests Timing, Not Breakage**
+
+The phrasing "doesn't trigger" and "never appears" suggested this wasn't truly **broken** (functional issue), but rather a **timing/observation issue** - the test is *waiting* for something that doesn't happen.
+
+**Key insight**: If the button was truly broken, the description would be "button click has no effect" or "handler not firing." Instead, it says the result "never appears" - suggesting the operation happens, but the expected outcome isn't observed.
+
+#### 2. **Read the Test Code - Spot the Anti-Pattern**
+
+Read `frontend/e2e/tests/22-refresh-buttons.spec.ts:61`:
+
+```typescript
+// Line 82: await refreshButton.click();
+// Line 88: await expect(descriptionText).toHaveText('Loading description...', { timeout: pollTimeout });
+```
+
+**Pattern observed**:
+- Click button
+- Wait for UI "Loading..." state to appear
+- LLM operation in the background
+
+This is a known anti-pattern from previous investigations.
+
+#### 3. **The Smoking Gun: Test Passes in Isolation**
+
+Ran the test: `npx playwright test e2e/tests/22-refresh-buttons.spec.ts:61`
+
+**Result**: ✅ PASSED in 5.7 seconds
+
+**Critical reasoning**:
+- If it was a **functional issue** (button broken, event handler not firing, state management bug), it would **fail in isolation** too
+- But it **passed**, which proves:
+  - ✅ Button works
+  - ✅ Event handler fires
+  - ✅ API call happens
+  - ✅ UI updates
+
+**Conclusion**: The ONLY difference between isolation (passes) and comprehensive suite (fails) is **LOAD**.
+
+#### 4. **Pattern Matching Against Known Issues**
+
+Searched `docs/TESTING_STATUS.md` for similar patterns and found Test #511 (lines 384-409):
+
+> **Root Cause**: Test waited for UI loading state, but under heavy load (4 parallel workers):
+> - Backend LLM queue is backed up from other test files
+> - UI doesn't show "Loading..." because API call is queued (not started yet)
+> - Test times out waiting for state that never appears
+
+> **Solution Applied**: Replace UI state wait with API response wait
+
+#### 5. **The Pattern Match Table**
+
+| Aspect | Test #504 | Test #511 |
+|--------|-----------|-----------|
+| **Operation** | Refresh button (LLM) | Refresh button (LLM) |
+| **Test Pattern** | Wait for "Loading..." UI state | Wait for "Loading..." UI state |
+| **Isolation** | ✅ Passes (5.7s) | ✅ Passed (4.7s) |
+| **Under Load** | ❌ Fails (2.1m timeout) | ❌ Failed (120s timeout) |
+| **Root Cause** | LLM queue backed up | LLM queue backed up |
+| **Fix** | API response wait | API response wait |
+
+**Patterns matched exactly.**
+
+#### 6. **Key Insight: Two Descriptions, Same Phenomenon**
+
+**Test #504 description** (external observation):
+> "Refresh button click doesn't trigger LLM extraction"
+
+**Test #511 root cause** (after investigation):
+> "LLM queue backlog prevented UI from showing 'Loading...' state under load"
+
+These describe **the same phenomenon from different perspectives**:
+- **User sees**: Button doesn't work
+- **Reality**: Button works, but LLM queue is backed up, so UI state never appears before timeout
+
+#### 7. **Hypothesis Verification**
+
+**Hypothesis**: "Test #504 = Test #511 pattern because it passes in isolation"
+
+**Predictions if hypothesis is true**:
+- Test should pass in isolation → ✅ Confirmed (5.7s)
+- Same fix (API response wait) should work → ✅ Confirmed (5.4s after fix)
+
+**Predictions if hypothesis is false**:
+- Test would fail in isolation → ❌ But it passed!
+- Fix wouldn't help → ❌ But it did!
+
+**Conclusion**: Hypothesis validated. Test #504 is the same pattern as Test #511.
+
+### The Solution Applied
+
+Applied the proven Test #511 fix:
+
+```typescript
+// Set up API response wait BEFORE clicking (avoids race condition)
+const responsePromise = page.waitForResponse(
+  response => response.url().includes('/condense-description') && response.status() === 200,
+  { timeout: 120000 }
+);
+
+// Click refresh button
+await refreshButton.click();
+
+// Wait for API response (guarantees operation completed)
+await responsePromise;
+
+// Verify UI updated
+await expect(descriptionText).not.toHaveText('Loading description...', { timeout: 10000 });
+```
+
+**Result**: Test #504 now passes reliably (5.4s) with API wait pattern.
+
+### Key Lessons
+
+**1. "Doesn't work" ≠ Broken**
+
+When tests "don't work" under load but pass in isolation:
+- It's usually NOT a functional bug
+- It's usually a timing/observation issue
+- The operation happens, but test can't observe the expected intermediate states
+
+**2. Run in Isolation First**
+
+Before deep investigation, always run the test in isolation:
+```bash
+npx playwright test path/to/test.spec.ts:line
+```
+
+If it passes, you immediately know:
+- ✅ Code is functionally correct
+- ❌ Test has load/timing issue
+- 🎯 Focus investigation on race conditions and state observation
+
+**3. Pattern Matching Saves Time**
+
+Good documentation enables pattern recognition:
+- Test #511 was investigated thoroughly and documented
+- When Test #504 appeared with similar symptoms, pattern matching was instant
+- Without that documentation, would have re-investigated the same root cause
+
+**4. Empirical Evidence Beats Assumptions**
+
+Don't assume based on error message alone:
+- **Error message**: "Button doesn't trigger extraction"
+- **Assumption**: Button is broken
+- **Empirical test**: Runs in isolation → passes → button works!
+- **Reality**: LLM queue backlog prevents UI state observation
+
+### Investigation Checklist for "Fails Under Load" Pattern
+
+When a test fails under comprehensive suite load but passes in isolation:
+
+- [ ] **Run test in isolation** - Confirms functional correctness
+- [ ] **Check for UI state waits** - Look for `expect(...).toHaveText('Loading...')`
+- [ ] **Check for async operations** - API calls, LLM operations, database queries
+- [ ] **Search for similar patterns** - Review TESTING_STATUS.md and TESTING_HISTORY.md
+- [ ] **Consider race conditions** - Does test wait for state that might never appear?
+- [ ] **Replace UI waits with API waits** - Use `page.waitForResponse()` instead
+- [ ] **Verify fix in isolation** - Test should still pass
+- [ ] **Document the pattern** - Add to test investigation history for future reference
+
+### Why Documentation Matters
+
+This case study demonstrates the **compound value of good documentation**:
+
+1. **Test #511** was investigated → root cause identified → solution documented
+2. **Test #504** appeared months later with similar symptoms
+3. **Pattern recognition** was instant because Test #511 was well-documented
+4. **Solution** was applied in minutes instead of hours
+5. **This case study** now documents the meta-reasoning for future investigations
+
+**Time saved**: ~2 hours (deep investigation avoided through pattern recognition)
+
+**Documentation used**:
+- `docs/TESTING_STATUS.md` (Test #511 root cause and solution)
+- `docs/PLAYWRIGHT_BEST_PRACTICES.md` (API wait vs UI state wait patterns)
+- Test code reading (recognizing the anti-pattern)
+
+**Related Commits**:
+- Test #511 fix: `cd5e440` (ISSUE-055 Priority 1)
+- Test #504 fix: `6658f43` (applied same pattern)
 
 ---
 
