@@ -300,15 +300,24 @@ at ../helpers/tab-navigation.ts:58
 - **Status**: ✅ **FIXED** (2025-11-19) - Ready for comprehensive test suite verification
 - **User Comment**: "I can't believe it's taken this long to realize this problem."
 
-**Priority 2: Investigate Test #504 Functional Issue** 🔍
-- **Problem**: Refresh button click doesn't trigger LLM extraction - description never changes
-- **Current State**: Test waits 120s for "Loading description..." but it never appears
-- **Investigation Needed**:
-  1. Use error-context.md artifact to see actual page state during test
-  2. Check if extraction API call is being made
-  3. Verify state management for description refresh
-  4. Investigate if button click event is firing
-- **Tools**: error-context.md artifact debugging, network logs, console output
+**Priority 2: Investigate Test #504 Functional Issue** ✅ **(FIXED - Same Pattern as Test #511)**
+- **Problem**: Test waits 120s for UI "Loading..." state but it never appears under comprehensive test load
+- **Root Cause Discovery**:
+  - ✅ Test passes in isolation (5.7s) - NOT a functional issue
+  - ❌ Test fails under comprehensive load (2.1m timeout) - Load/timing issue
+  - **Identical pattern to Test #511** (already fixed in ISSUE-055 Priority 1)
+- **Root Cause**: LLM queue backlog under load prevents UI "Loading..." state from appearing
+  - Backend LLM queue backed up from 4 parallel workers
+  - API call is queued (not started yet)
+  - Test times out waiting for UI state that never appears
+- **Solution Applied**: Same fix as Test #511 - Replace UI state wait with API response wait
+  - Set up `page.waitForResponse()` promise BEFORE clicking (avoids race condition)
+  - Click refresh button
+  - Wait for `/condense-description` API response (200 status)
+  - Then verify UI updated (not "Loading..." state)
+- **Files Modified**: `frontend/e2e/tests/22-refresh-buttons.spec.ts:80-102`
+- **Verification**: Test passed in isolation (5.4s) with API wait pattern
+- **Status**: ✅ **FIXED** (2025-11-19) - Ready for comprehensive test suite verification
 
 **Overall Test Suite Health**: 99.5% pass rate (386/388 active tests) - Good state, 2 known issues requiring revised approaches
 

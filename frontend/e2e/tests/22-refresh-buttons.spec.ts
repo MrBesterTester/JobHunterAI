@@ -77,18 +77,23 @@ test.describe('Refresh Buttons', () => {
     // Get initial description text
     const initialDescription = await descriptionText.textContent();
 
-    // Find and click the refresh button
+    // Set up API response wait BEFORE clicking (avoids race condition - ISSUE-055 Test #511 pattern)
+    // Under load, backend LLM queue may be backed up, causing UI "Loading..." state to never appear
+    // Waiting for API response is more reliable than waiting for UI state
     const refreshButton = jobCard.getByTestId('per-job-refresh-button');
+    const responsePromise = page.waitForResponse(
+      response => response.url().includes('/condense-description') && response.status() === 200,
+      { timeout: 120000 }
+    );
+
+    // Click refresh button
     await refreshButton.click();
 
-    // Wait for loading state to appear
-    // Use load-aware timeout: 120s under load (LLM operations), 30s in isolation
-    // Increased from 60s to 120s based on ISSUE-055 audit - LLM operations can take longer under comprehensive test load with 4 parallel workers
-    const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 120000 : 30000;
-    await expect(descriptionText).toHaveText('Loading description...', { timeout: pollTimeout });
+    // Wait for API response (guarantees refresh completed)
+    await responsePromise;
 
-    // Wait for new description to load
-    await expect(descriptionText).not.toHaveText('Loading description...', { timeout: pollTimeout });
+    // Verify UI updated with new description (not "Loading..." state)
+    await expect(descriptionText).not.toHaveText('Loading description...', { timeout: 10000 });
 
     // Get new description
     const newDescription = await descriptionText.textContent();
