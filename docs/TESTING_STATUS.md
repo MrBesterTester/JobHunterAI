@@ -287,16 +287,18 @@ at ../helpers/tab-navigation.ts:58
 
 ### Next Steps (Based on 01:36 PST Run)
 
-**Priority 1: Fix COMPREHENSIVE_TESTS Environment Variable** 🔧 **(REVISED APPROACH NEEDED)**
-- **Previous Attempt**: Changed to `COMPREHENSIVE_TESTS=true npx playwright test` - **UNSUCCESSFUL**
-- **Problem**: Playwright workers don't inherit command-line environment variables
-- **Impact**: Test #441 + all load-aware timeouts stuck at 10s instead of 45s
-- **New Approach Options**:
-  1. **Playwright test fixtures** - Pass config through test context
-  2. **Global setup** - Set env var in globalSetup.ts before workers spawn
-  3. **Config-based solution** - Use playwright.config.ts to set timeout directly
-  4. **Accept flakiness** - Consider 10s insufficient and just increase base timeout to 45s
-- **Recommendation**: Research Playwright's worker process model and configuration propagation
+**Priority 1: Fix COMPREHENSIVE_TESTS Environment Variable** ✅ **(FIXED - ISSUE-056)**
+- **Issue**: [ISSUE-056](../bugs/open/ISSUE-056-playwright-comprehensivetests-env-var-not-reaching-worker-processes.md) - Environment variable not reaching Playwright workers
+- **Previous Attempts**:
+  1. `export COMPREHENSIVE_TESTS=true` - Did not reach workers ❌
+  2. `COMPREHENSIVE_TESTS=true npx playwright test` - Did not reach workers ❌
+- **Root Cause**: Playwright workers spawn as separate OS processes with independent environments; command-line env vars don't reliably propagate
+- **Solution Implemented**: Use globalSetup to detect and re-set environment variable
+  - Modified: `frontend/e2e/global-setup.ts:92-100`
+  - Pattern documented in: `docs/PLAYWRIGHT_BEST_PRACTICES.md` (Section 6)
+- **Verification**: Test #441 passed in 4.8s with "✅ COMPREHENSIVE_TESTS detected - enabling extended timeouts (45s)" message
+- **Status**: ✅ **FIXED** (2025-11-19) - Ready for comprehensive test suite verification
+- **User Comment**: "I can't believe it's taken this long to realize this problem."
 
 **Priority 2: Investigate Test #504 Functional Issue** 🔍
 - **Problem**: Refresh button click doesn't trigger LLM extraction - description never changes

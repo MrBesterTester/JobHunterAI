@@ -89,6 +89,16 @@ async function calculateAllJobScores(): Promise<void> {
 async function globalSetup() {
   console.log('🧪 Setting up test environment...');
 
+  // Detect and propagate COMPREHENSIVE_TESTS environment variable to worker processes
+  // (ISSUE-056: Playwright workers don't inherit command-line env vars reliably)
+  if (process.env.COMPREHENSIVE_TESTS) {
+    console.log('✅ COMPREHENSIVE_TESTS detected - enabling extended timeouts (45s)');
+    // Explicitly set in globalSetup to ensure worker processes inherit it
+    process.env.COMPREHENSIVE_TESTS = 'true';
+  } else {
+    console.log('ℹ️  COMPREHENSIVE_TESTS not set - using default timeouts (10s)');
+  }
+
   // Note: E2E tests use jobhunter_personal database (set by SessionStart hook)
   // Decision: Single database is simpler and avoids OAuth credential sync issues
   // Test data will be seeded into personal database alongside real data

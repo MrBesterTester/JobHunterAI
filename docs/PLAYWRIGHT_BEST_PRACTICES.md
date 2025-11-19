@@ -27,13 +27,19 @@ This document consolidates hard-earned lessons from fixing flaky E2E tests in th
   - [What Playwright Auto-Waits For](#what-playwright-auto-waits-for)
   - [Web-First Assertions (Recommended)](#web-first-assertions-recommended)
   - [Anti-Pattern: Manual Assertions](#anti-pattern-manual-assertions)
-- [6. Common Anti-Patterns and How to Fix Them](#6-common-anti-patterns-and-how-to-fix-them)
+- [6. Configuration Propagation to Test Workers](#6-configuration-propagation-to-test-workers)
+  - [The Problem: Environment Variables Not Reaching Workers](#the-problem-environment-variables-not-reaching-workers)
+  - [The Solution: Propagate Configuration via globalSetup](#the-solution-propagate-configuration-via-globalsetup)
+  - [Battle-Tested Pattern: Load-Aware Timeouts](#battle-tested-pattern-load-aware-timeouts)
+  - [Alternative Approaches (For Reference)](#alternative-approaches-for-reference)
+- [7. Common Anti-Patterns and How to Fix Them](#7-common-anti-patterns-and-how-to-fix-them)
   - [❌ Anti-Pattern 1: Position-Based Selectors](#-anti-pattern-1-position-based-selectors)
   - [❌ Anti-Pattern 2: Fixed Timeouts for State Changes](#-anti-pattern-2-fixed-timeouts-for-state-changes)
   - [❌ Anti-Pattern 3: CSS Class Selectors](#-anti-pattern-3-css-class-selectors)
   - [❌ Anti-Pattern 4: Parallel Tests with Shared Database State](#-anti-pattern-4-parallel-tests-with-shared-database-state)
   - [❌ Anti-Pattern 5: Testing Implementation Details](#-anti-pattern-5-testing-implementation-details)
-- [7. Quick Reference: Decision Trees](#7-quick-reference-decision-trees)
+- [8. Quick Reference: Decision Trees](#8-quick-reference-decision-trees)
+  - [How Should I Pass Configuration to Tests?](#how-should-i-pass-configuration-to-tests)
   - [Which Locator Should I Use?](#which-locator-should-i-use)
   - [Should I Use Serial Mode?](#should-i-use-serial-mode)
   - [Should I Use a Fixed Timeout?](#should-i-use-a-fixed-timeout)
@@ -519,7 +525,167 @@ await expect(page.getByText('welcome')).toBeVisible();
 
 ---
 
-## 6. Common Anti-Patterns and How to Fix Them
+## 6. Configuration Propagation to Test Workers
+
+### The Problem: Environment Variables Not Reaching Workers
+
+Playwright runs tests in separate worker processes for parallelization. These worker processes have independent environments, and **environment variables set via command line may not always propagate correctly** to test code running inside workers.
+
+**Symptoms:**
+- Tests work in globalSetup but fail in test functions
+- `process.env.VARIABLE_NAME` returns `undefined` in tests despite being set
+- Load-aware timeouts default to shorter values even when environment variable is exported
+- Feature flags or configuration not being respected in tests
+
+**Real Example from JobHunter (ISSUE-055 Priority 1):**
+
+```typescript
+// In tab-navigation.ts helper (called from tests)
+const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 45000 : 10000;
+```
+
+**Problem observed:**
+```bash
+# Script exports environment variable
+export COMPREHENSIVE_TESTS=true
+COMPREHENSIVE_TESTS=true npx playwright test
+
+# But in worker process:
+# process.env.COMPREHENSIVE_TESTS === undefined ❌
+# Timeout defaults to 10s instead of 45s
+# Result: Test times out and fails under load
+```
+
+**Why this happens:**
+- Playwright workers spawn as separate OS processes
+- Environment variable inheritance can be inconsistent depending on how tests are invoked
+- npm/npx process spawning may filter or reset certain environment variables
+- Worker process model isolates execution environments for stability
+
+### The Solution: Propagate Configuration via globalSetup
+
+**Official Playwright guidance:** Environment variables set in `globalSetup` **ARE guaranteed** to be available in all test worker processes.
+
+**✅ Recommended Pattern:**
+
+```typescript
+// frontend/e2e/global-setup.ts
+async function globalSetup() {
+  console.log('🧪 Setting up test environment...');
+
+  // Detect and propagate environment variables to workers
+  if (process.env.COMPREHENSIVE_TESTS) {
+    console.log('✅ COMPREHENSIVE_TESTS detected - enabling extended timeouts (45s)');
+    // Explicitly set in globalSetup to ensure worker processes inherit it
+    process.env.COMPREHENSIVE_TESTS = 'true';
+  } else {
+    console.log('ℹ️  COMPREHENSIVE_TESTS not set - using default timeouts (10s)');
+  }
+
+  // ... rest of setup code
+}
+
+export default globalSetup;
+```
+
+**Why this works:**
+- ✅ Environment variables set in `globalSetup` are **guaranteed** by Playwright to reach all workers
+- ✅ Works regardless of how tests are invoked (npm, npx, direct)
+- ✅ Minimal code change (just detect and re-set the variable)
+- ✅ Backward compatible (if variable not set, defaults remain)
+- ✅ Self-documenting (logs show what configuration is active)
+
+**Using the configuration in tests:**
+
+```typescript
+// frontend/e2e/helpers/tab-navigation.ts
+export async function switchToTab(page: Page, tab: TabType) {
+  // ... tab switching logic ...
+
+  // Load-aware timeout automatically uses propagated env var
+  const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 45000 : 10000;
+  await page.waitForFunction(
+    () => document.querySelectorAll('[data-testid="job-card"]').length > 0,
+    { timeout: pollTimeout }
+  );
+}
+```
+
+### Battle-Tested Pattern: Load-Aware Timeouts
+
+**Use Case:** Different timeout thresholds for isolated tests vs comprehensive suite execution.
+
+**Problem:** Tests pass in isolation (10s timeout adequate) but fail under comprehensive test load (need 45s timeout).
+
+**Solution:** Environment variable-based configuration with globalSetup propagation.
+
+```typescript
+// Step 1: Set environment variable in test runner script
+// helper-scripts/run-e2e-tests.sh
+export COMPREHENSIVE_TESTS=true
+COMPREHENSIVE_TESTS=true npx playwright test
+
+// Step 2: Propagate via globalSetup
+// frontend/e2e/global-setup.ts
+async function globalSetup() {
+  if (process.env.COMPREHENSIVE_TESTS) {
+    process.env.COMPREHENSIVE_TESTS = 'true'; // Ensure workers inherit
+  }
+}
+
+// Step 3: Use in helpers and tests
+// frontend/e2e/helpers/tab-navigation.ts
+const pollTimeout = process.env.COMPREHENSIVE_TESTS ? 45000 : 10000;
+```
+
+**Benefits:**
+- ✅ Eliminates false negatives (tests failing due to insufficient timeout under load)
+- ✅ Keeps fast feedback loop for targeted test runs (10s timeout in isolation)
+- ✅ Adapts to system load automatically
+- ✅ Single source of truth for configuration
+
+**Key Insight:** Don't rely on command-line environment variables reaching workers. Always propagate configuration explicitly via globalSetup.
+
+### Alternative Approaches (For Reference)
+
+**Option 2: Use `.env` files with `dotenv`**
+```typescript
+// playwright.config.ts
+import dotenv from 'dotenv';
+dotenv.config({ path: path.resolve(__dirname, '.env.test') });
+```
+**Trade-offs:**
+- ✅ Standard pattern for environment configuration
+- ❌ Requires managing separate `.env` files
+- ❌ Less flexible than runtime detection
+- ❌ Can't easily override for different test runs
+
+**Option 3: Playwright config-based timeout**
+```typescript
+// playwright.config.ts
+export default defineConfig({
+  timeout: process.env.COMPREHENSIVE_TESTS ? 45000 : 30000,
+});
+```
+**Trade-offs:**
+- ✅ Centralized configuration
+- ❌ Applies globally to all tests (less granular control)
+- ❌ Can't vary timeouts by operation type (tab navigation vs API calls)
+
+**Option 4: Accept the limitation and increase base timeouts**
+```typescript
+const pollTimeout = 45000; // Always use maximum timeout
+```
+**Trade-offs:**
+- ✅ Simple, no configuration needed
+- ❌ Slower feedback loop for targeted tests
+- ❌ Hides real performance issues (tests take longer than necessary)
+
+**Recommendation:** Use globalSetup propagation (Option 1) for maximum flexibility and reliability.
+
+---
+
+## 7. Common Anti-Patterns and How to Fix Them
 
 ### ❌ Anti-Pattern 1: Position-Based Selectors
 
@@ -645,7 +811,33 @@ await expect(page.getByRole('heading', { name: 'Results' })).toBeVisible();
 
 ---
 
-## 7. Quick Reference: Decision Trees
+## 8. Quick Reference: Decision Trees
+
+### How Should I Pass Configuration to Tests?
+
+```
+START
+│
+├─ Do I need dynamic configuration based on execution context?
+│  (e.g., different timeouts for isolated vs comprehensive suite)
+│  └─ YES → Use globalSetup to propagate environment variables
+│         ✅ if (process.env.VAR) { process.env.VAR = 'true'; }
+│         ✅ Works across all workers guaranteed
+│
+├─ Do I have static configuration that rarely changes?
+│  └─ YES → Use .env file with dotenv
+│         ✅ dotenv.config() in playwright.config.ts
+│         ⚠️  Requires managing .env files
+│
+├─ Do I need global timeout adjustment only?
+│  └─ YES → Set in playwright.config.ts
+│         ✅ timeout: process.env.COMPREHENSIVE_TESTS ? 45000 : 30000
+│         ⚠️  Less granular control
+│
+└─ NEVER rely on command-line env vars alone
+   ❌ export VAR=true && npx playwright test  // May not reach workers
+   ✅ Use globalSetup to re-set: process.env.VAR = 'true'
+```
 
 ### Which Locator Should I Use?
 
@@ -725,10 +917,12 @@ START
 - [Locators](https://playwright.dev/docs/locators)
 - [Actionability](https://playwright.dev/docs/actionability)
 - [Test Parallelism](https://playwright.dev/docs/test-parallel)
+- [Global Setup and Teardown](https://playwright.dev/docs/test-global-setup-teardown)
 - [page.waitForFunction()](https://playwright.dev/docs/api/class-page#page-wait-for-function)
 
 **JobHunter Project References:**
 - ISSUE-046: E2E Test Suite Context-Dependent Flakiness (`bugs/open/ISSUE-046-*.md`)
+- ISSUE-055 Priority 1: Environment variable propagation to Playwright workers (2025-11-19)
 - Commit 2485e934: Add data-testid attributes to Intake Tab buttons
 - Commit 4a6c0a35: Use stable job ID locator instead of position-based selector
 - Commit f458c574: Make Gmail tests serial to prevent race conditions
@@ -742,6 +936,6 @@ START
 
 ---
 
-**Last Updated:** 2025-11-17
+**Last Updated:** 2025-11-19
 
 **Document Status:** Living document - update as new patterns emerge from test fixes
