@@ -65,7 +65,9 @@ log_info "This enables longer timeouts for tests under load"
 # for operations that are slower under comprehensive test load
 export COMPREHENSIVE_TESTS=true
 
-if npm run test:e2e 2>&1 | tee /tmp/e2e-test.log; then
+# Run Playwright directly instead of via npm to ensure environment variables are passed through
+# npm can sometimes filter or reset environment variables when spawning child processes
+if COMPREHENSIVE_TESTS=true npx playwright test 2>&1 | tee /tmp/e2e-test.log; then
     END_TIME=$(date +%s)
     RUNTIME=$((END_TIME - START_TIME))
     RUNTIME_MIN=$((RUNTIME / 60))
