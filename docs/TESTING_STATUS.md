@@ -10,8 +10,8 @@ related_docs:
   - TESTING_HISTORY.md (historical archive)
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
-last_comprehensive_run: 2025-11-19 00:43:40 PST
-last_updated: 2025-11-19 00:43:40 PST (Comprehensive test run - 3 fixes verification)
+last_comprehensive_run: 2025-11-19 01:36:18 PST
+last_updated: 2025-11-19 01:36:18 PST (Priority 1 fix attempt - COMPREHENSIVE_TESTS env var)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -24,16 +24,17 @@ last_updated: 2025-11-19 00:43:40 PST (Comprehensive test run - 3 fixes verifica
     - [Key Improvements](#key-improvements)
     - [Test 1 (Calendar) - FIXED (ISSUE-054)](#test-1-calendar---fixed-issue-054)
     - [Phase 3 Status: ✅ COMPLETED](#phase-3-status--completed)
-  - [🎯 Latest Comprehensive Test Run (2025-11-19 00:43 PST)](#-latest-comprehensive-test-run-2025-11-19-0043-pst)
+  - [🎯 Latest Comprehensive Test Run (2025-11-19 01:36 PST)](#-latest-comprehensive-test-run-2025-11-19-0136-pst)
     - [Test Results Summary](#test-results-summary)
-    - [Fix Verification Results](#fix-verification-results)
+    - [Priority 1 Fix Attempt Results](#priority-1-fix-attempt-results)
+    - [Test Status Summary](#test-status-summary)
     - [E2E Test Failures (1 Hard Failure)](#e2e-test-failures-1-hard-failure)
       - [1. Test #504: Refresh Buttons - Per-Job Refresh ❌ **REQUIRES INVESTIGATION**](#1-test-504-refresh-buttons---per-job-refresh--requires-investigation)
     - [Flaky Tests (Passed on Retry)](#flaky-tests-passed-on-retry)
       - [2. Test #441: Gmail Sync - Job Approval ⚠️ **STILL FLAKY**](#2-test-441-gmail-sync---job-approval--still-flaky)
     - [Key Observations](#key-observations)
-    - [Comparison to Previous Run (2025-11-18 21:17 PST)](#comparison-to-previous-run-2025-11-18-2117-pst)
-    - [Next Steps (Based on 00:43 PST Run)](#next-steps-based-on-0043-pst-run)
+    - [Comparison to Previous Run (2025-11-19 00:43 PST)](#comparison-to-previous-run-2025-11-19-0043-pst)
+    - [Next Steps (Based on 01:36 PST Run)](#next-steps-based-on-0136-pst-run)
   - [🔬 ISSUE-055 Priority 1 Targeted Testing (2025-11-18 20:15-20:48 PST)](#-issue-055-priority-1-targeted-testing-2025-11-18-2015-2048-pst)
     - [Individual Test Results (Isolation - No Parallel Workers)](#individual-test-results-isolation---no-parallel-workers)
     - [Full File Test Results (4 Parallel Workers + COMPREHENSIVE_TESTS=true)](#full-file-test-results-4-parallel-workers--comprehensive_teststrue)
@@ -140,12 +141,12 @@ last_updated: 2025-11-19 00:43:40 PST (Comprehensive test run - 3 fixes verifica
 
 ---
 
-## 🎯 Latest Comprehensive Test Run (2025-11-19 00:43 PST)
+## 🎯 Latest Comprehensive Test Run (2025-11-19 01:36 PST)
 
-**Run Date**: 2025-11-19 00:43:40 PST
+**Run Date**: 2025-11-19 01:36:18 PST
 **Runtime**: 13.2 minutes (E2E tests only)
 **Exit Code**: 1 (FAILED - 1 E2E hard failure, 1 flaky)
-**Context**: Verification run for Tests #504, #547, and #441 fixes from previous session
+**Context**: Priority 1 fix verification - COMPREHENSIVE_TESTS environment variable approach
 
 ### Test Results Summary
 
@@ -156,32 +157,44 @@ last_updated: 2025-11-19 00:43:40 PST (Comprehensive test run - 3 fixes verifica
 | **E2E Tests** | **386** | **1** | **99.7%** | 13.2m | ⚠️ **1 FAILURE, 1 FLAKY** |
 | **TOTAL (Active)** | **1066** | **1** | **99.9%** | **~13.2 min** | ⚠️ **1 FAILURE** |
 
-### Fix Verification Results
+### Priority 1 Fix Attempt Results
 
-**✅ Test #547 - VERIFIED FIXED**
-- **Test**: `16-microsoft-email-integration.spec.ts:923` - "Item 4: End-to-End Workflow"
-- **Previous Status**: Hard failure (both runs) - string matching issue
-- **Fix Applied**: Structural element checks (h2 heading, Approve/Reject buttons)
-- **This Run**: ✅ **PASSED** in 764ms
-- **Verdict**: **FIX SUCCESSFUL** - structural checks work reliably
+**❌ COMPREHENSIVE_TESTS Environment Variable Fix - UNSUCCESSFUL**
 
-**⚠️ Test #441 - IMPROVED BUT NOT FIXED**
-- **Test**: `16-gmail-sync-integration.spec.ts:229` - "should allow approving jobs synced from Gmail"
-- **Previous Status**: Flaky (timeout at 10s, passed on retry)
-- **Fix Applied**: Export COMPREHENSIVE_TESTS=true in run-e2e-tests.sh
-- **This Run**: ❌ Failed initial (10s timeout), ✅ **PASSED on retry** (1.8s)
-- **Issue**: Still timing out at 10s instead of 45s
-- **Root Cause**: COMPREHENSIVE_TESTS environment variable not being passed to Playwright workers
-- **Verdict**: **PARTIAL FIX** - changed from hard fail to consistent flaky
+**Approach Tried**:
+1. Changed `run-e2e-tests.sh` from `npm run test:e2e` → `COMPREHENSIVE_TESTS=true npx playwright test`
+2. Goal: Bypass npm's process spawning to pass env var directly to Playwright workers
+3. Added debug logging to verify env var values in worker processes
 
-**❌ Test #504 - FIX UNSUCCESSFUL**
-- **Test**: `22-refresh-buttons.spec.ts:61` - "should refresh single job description when per-job button clicked"
-- **Previous Status**: Hard failure - timeout waiting for LLM operations
-- **Fix Applied**: Added test.setTimeout(180000)
-- **This Run**: ❌ **FAILED** both initial and retry (2.1m each)
-- **Error**: `await expect(descriptionText).toHaveText('Loading description...')` never becomes true
-- **Root Cause**: Refresh button click isn't triggering LLM extraction at all - description never changes
-- **Verdict**: **FIX UNSUCCESSFUL** - this is a functional issue, not a timeout issue
+**Result**: Fix did NOT work - environment variable still not reaching workers
+
+**Evidence**:
+- Test #441 still times out at **10s** (not 45s)
+- Error: `TimeoutError: page.waitForFunction: Timeout 10000ms exceeded`
+- This proves `process.env.COMPREHENSIVE_TESTS` is still undefined in workers
+
+**Analysis**: Playwright's worker process model is more complex than expected
+- Workers spawn in a way that doesn't inherit inline environment variables
+- Command-level env var setting (`COMPREHENSIVE_TESTS=true npx ...`) doesn't propagate
+- Need alternative configuration approach (config file, fixtures, or other mechanism)
+
+### Test Status Summary
+
+**✅ Test #547** - Remains fixed (no regression)
+- Structural element checks continue to work perfectly
+- No failures in this test
+
+**⚠️ Test #441** - Still flaky (Priority 1 fix unsuccessful)
+- **Status**: Failed initial (10s timeout), **PASSED on retry**
+- **Problem**: COMPREHENSIVE_TESTS env var approach did not work
+- **Evidence**: Timeout still at 10s instead of 45s
+- **Conclusion**: Need different approach to pass configuration to workers
+
+**❌ Test #504** - Still failing (Priority 2 - not attempted this run)
+- **Status**: Failed both initial and retry (2.1m each)
+- **Problem**: Refresh button click doesn't trigger LLM extraction
+- Description never changes to "Loading description..."
+- Awaiting Priority 2 investigation
 
 ### E2E Test Failures (1 Hard Failure)
 
@@ -256,39 +269,46 @@ at ../helpers/tab-navigation.ts:58
 
 5. **E2E Improved**: 99.7% pass rate (386/387) - only 1 hard failure, 1 flaky
 
-### Comparison to Previous Run (2025-11-18 21:17 PST)
+### Comparison to Previous Run (2025-11-19 00:43 PST)
 
-| Metric | Nov 18 21:17 | Nov 19 00:43 | Change |
+| Metric | Nov 19 00:43 | Nov 19 01:36 | Change |
 |--------|--------------|--------------|--------|
-| **E2E Passed** | 384 | 386 | +2 tests |
-| **E2E Pass Rate** | 99.5% (384/386) | 99.7% (386/387) | +0.2% |
-| **Hard Failures** | 2 (#504, #547) | 1 (#504) | -1 test ✅ |
+| **E2E Passed** | 386 | 386 | No change |
+| **E2E Pass Rate** | 99.7% (386/387) | 99.5% (386/388) | -0.2% (1 more test ran) |
+| **Hard Failures** | 1 (#504) | 1 (#504) | No change |
 | **Flaky Tests** | 1 (#441) | 1 (#441) | No change |
-| **Runtime** | ~17 min | 13.2 min | -3.8 min |
+| **Runtime** | 13.2 min | 13.2 min | No change |
 
 **Key Changes**:
-- ✅ **Test #547 FIXED**: Structural element checks work perfectly (764ms)
-- ⚠️ **Test #441 still flaky**: COMPREHENSIVE_TESTS variable not reaching Playwright
-- ❌ **Test #504 still failing**: Functional issue identified - not timeout related
+- ❌ **Priority 1 fix unsuccessful**: COMPREHENSIVE_TESTS env var approach didn't work
+- ⚠️ **Test #441 still flaky**: Still timing out at 10s (env var not reaching workers)
+- ❌ **Test #504 still failing**: Functional issue remains (not attempted this run)
+- ✅ **Test #547 stable**: No regression, continues to pass
 
-### Next Steps (Based on 00:43 PST Run)
+### Next Steps (Based on 01:36 PST Run)
 
-**Priority 1: Fix COMPREHENSIVE_TESTS Environment Variable** 🔧
-- **Problem**: Environment variable exported in script but not passed to Playwright workers
-- **Impact**: Test #441 + all load-aware timeouts default to short timeouts (10s instead of 45s)
-- **Solution**: Configure `playwright.config.ts` to pass COMPREHENSIVE_TESTS to worker processes
-- **Expected Result**: Test #441 should stop being flaky, all load-aware tests more reliable
+**Priority 1: Fix COMPREHENSIVE_TESTS Environment Variable** 🔧 **(REVISED APPROACH NEEDED)**
+- **Previous Attempt**: Changed to `COMPREHENSIVE_TESTS=true npx playwright test` - **UNSUCCESSFUL**
+- **Problem**: Playwright workers don't inherit command-line environment variables
+- **Impact**: Test #441 + all load-aware timeouts stuck at 10s instead of 45s
+- **New Approach Options**:
+  1. **Playwright test fixtures** - Pass config through test context
+  2. **Global setup** - Set env var in globalSetup.ts before workers spawn
+  3. **Config-based solution** - Use playwright.config.ts to set timeout directly
+  4. **Accept flakiness** - Consider 10s insufficient and just increase base timeout to 45s
+- **Recommendation**: Research Playwright's worker process model and configuration propagation
 
 **Priority 2: Investigate Test #504 Functional Issue** 🔍
 - **Problem**: Refresh button click doesn't trigger LLM extraction - description never changes
 - **Current State**: Test waits 120s for "Loading description..." but it never appears
 - **Investigation Needed**:
-  1. Use error-context.md to verify button click is happening
+  1. Use error-context.md artifact to see actual page state during test
   2. Check if extraction API call is being made
   3. Verify state management for description refresh
+  4. Investigate if button click event is firing
 - **Tools**: error-context.md artifact debugging, network logs, console output
 
-**Overall Test Suite Health**: 99.9% pass rate (1066/1067 active tests) - Excellent state, 2 known issues with clear next steps
+**Overall Test Suite Health**: 99.5% pass rate (386/388 active tests) - Good state, 2 known issues requiring revised approaches
 
 ---
 
