@@ -10,8 +10,8 @@ related_docs:
   - TESTING_HISTORY.md (historical archive)
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
-last_comprehensive_run: 2025-11-18 21:17:51 PST
-last_updated: 2025-11-19 00:05:33 PST (Test #547 fixed using error-context artifact debugging)
+last_comprehensive_run: 2025-11-19 00:43:40 PST
+last_updated: 2025-11-19 00:43:40 PST (Comprehensive test run - 3 fixes verification)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -24,8 +24,18 @@ last_updated: 2025-11-19 00:05:33 PST (Test #547 fixed using error-context artif
     - [Key Improvements](#key-improvements)
     - [Test 1 (Calendar) - FIXED (ISSUE-054)](#test-1-calendar---fixed-issue-054)
     - [Phase 3 Status: ✅ COMPLETED](#phase-3-status--completed)
-  - [🎯 Latest Comprehensive Test Run (2025-11-18 21:17 PST)](#-latest-comprehensive-test-run-2025-11-18-2117-pst)
+  - [🎯 Latest Comprehensive Test Run (2025-11-19 00:43 PST)](#-latest-comprehensive-test-run-2025-11-19-0043-pst)
     - [Test Results Summary](#test-results-summary)
+    - [Fix Verification Results](#fix-verification-results)
+    - [E2E Test Failures (1 Hard Failure)](#e2e-test-failures-1-hard-failure)
+      - [1. Test #504: Refresh Buttons - Per-Job Refresh ❌ **REQUIRES INVESTIGATION**](#1-test-504-refresh-buttons---per-job-refresh--requires-investigation)
+    - [Flaky Tests (Passed on Retry)](#flaky-tests-passed-on-retry)
+      - [2. Test #441: Gmail Sync - Job Approval ⚠️ **STILL FLAKY**](#2-test-441-gmail-sync---job-approval--still-flaky)
+    - [Key Observations](#key-observations)
+    - [Comparison to Previous Run (2025-11-18 21:17 PST)](#comparison-to-previous-run-2025-11-18-2117-pst)
+    - [Next Steps (Based on 00:43 PST Run)](#next-steps-based-on-0043-pst-run)
+  - [📊 Previous Comprehensive Test Run (2025-11-18 21:17 PST)](#-previous-comprehensive-test-run-2025-11-18-2117-pst)
+    - [Test Results Summary](#test-results-summary-1)
     - [Major Achievements](#major-achievements)
     - [E2E Test Failures (2 Hard Failures)](#e2e-test-failures-2-hard-failures)
       - [1. Test #504: Refresh Buttons - Per-Job Refresh ✅ **FIXED** (2025-11-18 23:31 PST)](#1-test-504-refresh-buttons---per-job-refresh--fixed-2025-11-18-2331-pst)
@@ -33,19 +43,14 @@ last_updated: 2025-11-19 00:05:33 PST (Test #547 fixed using error-context artif
     - [Flaky Tests (Passed on Retry) ✅](#flaky-tests-passed-on-retry-)
       - [3. Test #441: Gmail Sync - Job Approval ✅ IMPROVED](#3-test-441-gmail-sync---job-approval--improved)
     - [ISSUE-055 Target Tests - Final Assessment (2025-11-18 21:17 PST Run)](#issue-055-target-tests---final-assessment-2025-11-18-2117-pst-run)
-    - [Key Observations](#key-observations)
+    - [Key Observations](#key-observations-1)
     - [Comparison to Previous Run (2025-11-18 19:24 PST)](#comparison-to-previous-run-2025-11-18-1924-pst)
-    - [Next Steps (Based on 21:17 PST Run)](#next-steps-based-on-2117-pst-run)
   - [🔬 ISSUE-055 Priority 1 Targeted Testing (2025-11-18 20:15-20:48 PST)](#-issue-055-priority-1-targeted-testing-2025-11-18-2015-2048-pst)
     - [Individual Test Results (Isolation - No Parallel Workers)](#individual-test-results-isolation---no-parallel-workers)
     - [Full File Test Results (4 Parallel Workers + COMPREHENSIVE_TESTS=true)](#full-file-test-results-4-parallel-workers--comprehensive_teststrue)
     - [Test #511 Deep Dive - Functional Issue Discovered](#test-511-deep-dive---functional-issue-discovered)
     - [Fixes Applied in ISSUE-055 Priority 1](#fixes-applied-in-issue-055-priority-1)
     - [Test #511 Investigation & Resolution (2025-11-18 21:00-21:10 PST)](#test-511-investigation--resolution-2025-11-18-2100-2110-pst)
-  - [📊 Previous Comprehensive Test Run (2025-11-18 19:24 PST)](#-previous-comprehensive-test-run-2025-11-18-1924-pst)
-    - [Test Results Summary](#test-results-summary-1)
-    - [Failures (19:24 Run)](#failures-1924-run)
-    - [Flaky Tests (19:24 Run)](#flaky-tests-1924-run)
   - [Related Files](#related-files)
   - [Quick Commands](#quick-commands)
 
@@ -146,12 +151,165 @@ last_updated: 2025-11-19 00:05:33 PST (Test #547 fixed using error-context artif
 
 ---
 
-## 🎯 Latest Comprehensive Test Run (2025-11-18 21:17 PST)
+## 🎯 Latest Comprehensive Test Run (2025-11-19 00:43 PST)
 
-**Run Date**: 2025-11-18 21:17:51 PST (approximately)
+**Run Date**: 2025-11-19 00:43:40 PST
+**Runtime**: 13.2 minutes (E2E tests only)
+**Exit Code**: 1 (FAILED - 1 E2E hard failure, 1 flaky)
+**Context**: Verification run for Tests #504, #547, and #441 fixes from previous session
+
+### Test Results Summary
+
+| Test Suite | Passed | Failed | Pass Rate | Runtime | Status |
+|------------|--------|--------|-----------|---------|--------|
+| **Backend Tests** | **164** | 0 | **100%** | ~90s | ✅ **PASSING** |
+| **Frontend Unit** | **516** | 0 | **100%** | ~25s | ✅ **PASSING** |
+| **E2E Tests** | **386** | **1** | **99.7%** | 13.2m | ⚠️ **1 FAILURE, 1 FLAKY** |
+| **TOTAL (Active)** | **1066** | **1** | **99.9%** | **~13.2 min** | ⚠️ **1 FAILURE** |
+
+### Fix Verification Results
+
+**✅ Test #547 - VERIFIED FIXED**
+- **Test**: `16-microsoft-email-integration.spec.ts:923` - "Item 4: End-to-End Workflow"
+- **Previous Status**: Hard failure (both runs) - string matching issue
+- **Fix Applied**: Structural element checks (h2 heading, Approve/Reject buttons)
+- **This Run**: ✅ **PASSED** in 764ms
+- **Verdict**: **FIX SUCCESSFUL** - structural checks work reliably
+
+**⚠️ Test #441 - IMPROVED BUT NOT FIXED**
+- **Test**: `16-gmail-sync-integration.spec.ts:229` - "should allow approving jobs synced from Gmail"
+- **Previous Status**: Flaky (timeout at 10s, passed on retry)
+- **Fix Applied**: Export COMPREHENSIVE_TESTS=true in run-e2e-tests.sh
+- **This Run**: ❌ Failed initial (10s timeout), ✅ **PASSED on retry** (1.8s)
+- **Issue**: Still timing out at 10s instead of 45s
+- **Root Cause**: COMPREHENSIVE_TESTS environment variable not being passed to Playwright workers
+- **Verdict**: **PARTIAL FIX** - changed from hard fail to consistent flaky
+
+**❌ Test #504 - FIX UNSUCCESSFUL**
+- **Test**: `22-refresh-buttons.spec.ts:61` - "should refresh single job description when per-job button clicked"
+- **Previous Status**: Hard failure - timeout waiting for LLM operations
+- **Fix Applied**: Added test.setTimeout(180000)
+- **This Run**: ❌ **FAILED** both initial and retry (2.1m each)
+- **Error**: `await expect(descriptionText).toHaveText('Loading description...')` never becomes true
+- **Root Cause**: Refresh button click isn't triggering LLM extraction at all - description never changes
+- **Verdict**: **FIX UNSUCCESSFUL** - this is a functional issue, not a timeout issue
+
+### E2E Test Failures (1 Hard Failure)
+
+#### 1. Test #504: Refresh Buttons - Per-Job Refresh ❌ **REQUIRES INVESTIGATION**
+
+**File**: `22-refresh-buttons.spec.ts:61`
+**Test**: "should refresh single job description when per-job button clicked"
+**Status**: Failed both initial run and retry (2.1m each)
+
+**Error**:
+```
+Error: expect(locator).toHaveText(expected) failed
+Locator: locator('[data-testid="job-card"]').first().getByTestId('condensed-description-text')
+Expected string: "Loading description..."
+Received string: "Manual and automated testing for web applications. Experience with Selenium required."
+Timeout: 120000ms
+```
+
+**Problem**: Test expects to see "Loading description..." after clicking refresh button, but:
+1. Description text never changes from original value
+2. "Loading description..." state never appears
+3. This suggests refresh button click isn't triggering the extraction at all
+
+**Previous Fix Attempt**: Added `test.setTimeout(180000)` (increased test-level timeout)
+- This addressed the wrong problem - issue is functional, not timeout-related
+
+**Next Steps**:
+1. Use error-context.md artifact to see actual page state during test
+2. Verify refresh button is being clicked correctly
+3. Check if extraction API is being called
+4. Investigate why description state isn't updating
+
+### Flaky Tests (Passed on Retry)
+
+#### 2. Test #441: Gmail Sync - Job Approval ⚠️ **STILL FLAKY**
+
+**File**: `16-gmail-sync-integration.spec.ts:229`
+**Test**: "should allow approving jobs synced from Gmail"
+**Status**: Failed initial (10.1s timeout), **PASSED on retry** (1.8s)
+
+**Error on first attempt**:
+```
+TimeoutError: page.waitForFunction: Timeout 10000ms exceeded.
+at ../helpers/tab-navigation.ts:58
+```
+
+**Root Cause**: COMPREHENSIVE_TESTS environment variable not being passed to Playwright workers
+- Script exports COMPREHENSIVE_TESTS=true
+- But Playwright workers don't inherit the environment variable
+- tab-navigation helper defaults to 10s timeout instead of 45s
+
+**Evidence**: Error shows timeout at 10s, not 45s as expected with COMPREHENSIVE_TESTS
+
+**Next Steps**: Configure Playwright to pass environment variable to workers
+
+### Key Observations
+
+1. **Test #547 Success** ✅: Structural element checking proves superior to string matching
+   - Resilient to data richness variations
+   - Always checks for elements that must exist
+   - Should be used as template for similar modal tests
+
+2. **COMPREHENSIVE_TESTS Not Working**: Environment variable export in script doesn't reach Playwright workers
+   - Need to configure Playwright config to pass variable through
+   - This affects all load-aware timeout logic
+
+3. **Test #504 Root Cause Clarified**: Not a timeout issue - refresh button isn't functioning
+   - Need to debug why button click doesn't trigger state change
+   - Likely issue with event handler or state management
+
+4. **Backend/Frontend Solid**: 100% pass rate continues (164/164 + 516/516) = 680 unit tests
+
+5. **E2E Improved**: 99.7% pass rate (386/387) - only 1 hard failure, 1 flaky
+
+### Comparison to Previous Run (2025-11-18 21:17 PST)
+
+| Metric | Nov 18 21:17 | Nov 19 00:43 | Change |
+|--------|--------------|--------------|--------|
+| **E2E Passed** | 384 | 386 | +2 tests |
+| **E2E Pass Rate** | 99.5% (384/386) | 99.7% (386/387) | +0.2% |
+| **Hard Failures** | 2 (#504, #547) | 1 (#504) | -1 test ✅ |
+| **Flaky Tests** | 1 (#441) | 1 (#441) | No change |
+| **Runtime** | ~17 min | 13.2 min | -3.8 min |
+
+**Key Changes**:
+- ✅ **Test #547 FIXED**: Structural element checks work perfectly (764ms)
+- ⚠️ **Test #441 still flaky**: COMPREHENSIVE_TESTS variable not reaching Playwright
+- ❌ **Test #504 still failing**: Functional issue identified - not timeout related
+
+### Next Steps (Based on 00:43 PST Run)
+
+**Priority 1: Fix COMPREHENSIVE_TESTS Environment Variable** 🔧
+- **Problem**: Environment variable exported in script but not passed to Playwright workers
+- **Impact**: Test #441 + all load-aware timeouts default to short timeouts (10s instead of 45s)
+- **Solution**: Configure `playwright.config.ts` to pass COMPREHENSIVE_TESTS to worker processes
+- **Expected Result**: Test #441 should stop being flaky, all load-aware tests more reliable
+
+**Priority 2: Investigate Test #504 Functional Issue** 🔍
+- **Problem**: Refresh button click doesn't trigger LLM extraction - description never changes
+- **Current State**: Test waits 120s for "Loading description..." but it never appears
+- **Investigation Needed**:
+  1. Use error-context.md to verify button click is happening
+  2. Check if extraction API call is being made
+  3. Verify state management for description refresh
+- **Tools**: error-context.md artifact debugging, network logs, console output
+
+**Overall Test Suite Health**: 99.9% pass rate (1066/1067 active tests) - Excellent state, 2 known issues with clear next steps
+
+---
+
+## 📊 Previous Comprehensive Test Run (2025-11-18 21:17 PST)
+
+**Run Date**: 2025-11-18 21:17:51 PST
 **Runtime**: ~17 minutes total (~11 minutes for E2E tests)
 **Exit Code**: 1 (FAILED - 2 E2E hard failures)
 **Context**: Post-ISSUE-055 Priority 1 fixes verification
+**Note**: This run's results and next steps have been superseded by the 2025-11-19 00:43 PST run above
 
 ### Test Results Summary
 
@@ -290,28 +448,6 @@ TimeoutError: page.waitForFunction: Timeout 10000ms exceeded
 - ⚠️ **Test #504 still failing**: Fix applied but not yet verified
 - ⚡ **Faster runtime**: No clean rebuild this run
 
-### Next Steps (Based on 21:17 PST Run)
-
-**Priority 1: Fix Test #504** ⏳
-- **Status**: Fix applied (2025-11-18 23:31:26 PST), awaiting verification
-- **What was done**: Added `test.setTimeout(180000)` to match Test #511 pattern
-- **Next action**: Verify fix in next comprehensive run
-
-**Priority 2: Test #547 Investigation** ✅ **FIXED** (2025-11-19 00:05:33 PST)
-- **Status**: ✅ **FIXED** using error-context.md artifact debugging
-- **Problem**: Test checked for 'Title'/'Company' strings that don't exist in modal UI
-- **Root Cause**: Modal structure varies by data richness; original check was too fragile
-- **Solution**: Check for elements that always exist (h2 job title, Approve/Reject buttons)
-- **Result**: Test now passes in 860ms
-- **Commit**: e158dc0
-
-**Priority 3: Monitor Test #441** ✅
-- **Status**: Acceptable flakiness (passes on retry)
-- **Current behavior**: Flaky but reliable with retry mechanism
-- **Next action**: Monitor in future runs; acceptable as-is
-
-**Overall Test Suite Health**: 99.8% pass rate (1064/1066) - Excellent state for development
-
 ---
 
 ## 🔬 ISSUE-055 Priority 1 Targeted Testing (2025-11-18 20:15-20:48 PST)
@@ -407,34 +543,6 @@ TimeoutError: page.waitForFunction: Timeout 10000ms exceeded
 **Impact**: API wait pattern is **much faster** (1.7s vs 4+ sec) and **more reliable** under load
 
 **Commit**: cd5e440 - `fix: ISSUE-055 Test #511 - Replace UI loading state wait with API response wait`
-
----
-
-## 📊 Previous Comprehensive Test Run (2025-11-18 19:24 PST)
-
-**Run Date**: 2025-11-18 18:58:06 PST - 19:24:38 PST
-**Runtime**: ~26.5 minutes (with OAuth auto-refresh + full rebuild)
-**Exit Code**: 0 (SUCCESS - 2 E2E failures but build passed)
-**Context**: Post-ISSUE-053 Phase 1-3 implementation + ISSUE-054 fix
-
-### Test Results Summary
-
-| Test Suite | Passed | Failed | Pass Rate | Runtime | Status |
-|------------|--------|--------|-----------|---------|--------|
-| **Backend Tests** | **164** | 0 | **100%** | 92s | ✅ **PASSING** |
-| **Frontend Unit** | **516** | 0 | **100%** | 21s | ✅ **PASSING** |
-| **E2E Tests** | **383** | **2** | **99.5%** | 11.3m | ⚠️ **2 FAILURES** |
-| **TOTAL** | **1063** | **2** | **99.8%** | **~26.5 min** | ⚠️ **2 FAILURES** |
-
-### Failures (19:24 Run)
-
-1. **Test #504** (`22-refresh-buttons.spec.ts:61`) - Failed both runs
-2. **Test #511** (`23-description-quality.spec.ts:175`) - Failed both runs
-
-### Flaky Tests (19:24 Run)
-
-1. **Test #441** (`16-gmail-sync-integration.spec.ts:229`) - Passed on retry
-2. **Test #547** (`16-microsoft-email-integration.spec.ts:923`) - Passed on retry
 
 ---
 
