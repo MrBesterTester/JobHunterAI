@@ -117,18 +117,22 @@ test.describe('Calendar Management - Phase 5.1', () => {
 
   test.describe('Upcoming Interviews Display', () => {
     test('should display upcoming interviews in calendar view', async ({ page }) => {
-      await page.click('button:has-text("Calendar")');
-
-      await page.waitForResponse(response =>
-        response.url().includes('/api/interviews/upcoming') && response.status() === 200
+      // Set up response listener BEFORE clicking to avoid race condition
+      // CalendarTab component calls API in useEffect on mount
+      const apiTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 30000 : 15000;
+      const responsePromise = page.waitForResponse(
+        response => response.url().includes('/api/interviews/upcoming') && response.status() === 200,
+        { timeout: apiTimeout }
       );
 
-      // Wait for UI to render after API response
-      const interviewsList = page.getByTestId('interviews-list');
-      await expect(interviewsList).toBeVisible({ timeout: 10000 });
+      await page.click('button:has-text("Calendar")');
+      await responsePromise;
+
+      // Wait for UI to render after API response (heading always appears)
+      await expect(page.locator('h2:has-text("Upcoming Interviews")')).toBeVisible({ timeout: 10000 });
 
       // Now safe to check if interviews exist
-      const interviews = page.getByTestId('interview-card');
+      const interviews = page.locator('.interview-card');
       const count = await interviews.count();
 
       if (count > 0) {

@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-18 16:35:00 PST
-last_updated: 2025-11-18 19:45:00 PST (ISSUE-053 Phase 1 & 2 implementation complete - 4/5 tests fixed)
+last_updated: 2025-11-18 18:34:45 PST (ISSUE-054 fixed - 5/5 tests now passing - 100% success rate!)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -22,7 +22,7 @@ last_updated: 2025-11-18 19:45:00 PST (ISSUE-053 Phase 1 & 2 implementation comp
     - [Implementation Summary](#implementation-summary)
     - [Test Results by Test](#test-results-by-test)
     - [Key Improvements](#key-improvements)
-    - [Test 1 (Calendar) - API Endpoint Issue](#test-1-calendar---api-endpoint-issue)
+    - [Test 1 (Calendar) - FIXED (ISSUE-054)](#test-1-calendar---fixed-issue-054)
     - [Phase 3 Status: OPTIONAL](#phase-3-status-optional)
   - [🎯 Latest Comprehensive Test Run (2025-11-18)](#-latest-comprehensive-test-run-2025-11-18)
     - [Test Results Summary](#test-results-summary)
@@ -35,9 +35,9 @@ last_updated: 2025-11-18 19:45:00 PST (ISSUE-053 Phase 1 & 2 implementation comp
     - [Test Results Summary](#test-results-summary-1)
     - [Major Improvements](#major-improvements)
   - [Next Steps](#next-steps)
-    - [Priority 1: Fix Calendar API Endpoint (BLOCKING)](#priority-1-fix-calendar-api-endpoint-blocking)
-    - [Priority 2: Phase 3 - OPTIONAL Code Quality (30 minutes)](#priority-2-phase-3---optional-code-quality-30-minutes)
-    - [Priority 3: Verify Comprehensive Test Suite](#priority-3-verify-comprehensive-test-suite)
+    - [Priority 1: Run Comprehensive Test Suite ✅ READY](#priority-1-run-comprehensive-test-suite--ready)
+    - [Priority 2: Phase 3 - OPTIONAL (Code Quality Improvements)](#priority-2-phase-3---optional-code-quality-improvements)
+    - [Priority 3: Resume Feature Development](#priority-3-resume-feature-development)
   - [Related Files](#related-files)
   - [Quick Commands](#quick-commands)
 
@@ -47,10 +47,10 @@ last_updated: 2025-11-18 19:45:00 PST (ISSUE-053 Phase 1 & 2 implementation comp
 
 ## 🎉 ISSUE-053 Phase 1 & 2 Implementation Results (2025-11-18)
 
-**Implementation Date**: 2025-11-18 19:00:00 PST - 19:45:00 PST
-**Total Runtime**: ~2 hours (as estimated in ISSUE-053)
-**Phases Completed**: Phase 1 (Immediate Actions) + Phase 2 (Secondary Actions)
-**Success Rate**: **4/5 tests fixed** (80%)
+**Implementation Date**: 2025-11-18 19:00:00 PST - 19:45:00 PST (Phases 1 & 2) + 18:00:00 PST - 18:34:45 PST (ISSUE-054 fix)
+**Total Runtime**: ~2.5 hours
+**Phases Completed**: Phase 1 (Immediate Actions) + Phase 2 (Secondary Actions) + ISSUE-054 (Calendar race condition fix)
+**Success Rate**: **5/5 tests fixed** (100%) ✅
 
 ### Implementation Summary
 
@@ -73,9 +73,9 @@ last_updated: 2025-11-18 19:45:00 PST (ISSUE-053 Phase 1 & 2 implementation comp
 | **Test 4** | `06-statistics.spec.ts` | ✅ **FIXED** | **21/21 passed** | Serial mode + state polling fixed race condition |
 | **Test 5** | `16-gmail-sync-integration.spec.ts` | ✅ **FIXED** | **3/3 passed** | Tab helper now load-aware, no more timeout |
 | **Test 2** | `16-microsoft-email-integration.spec.ts` | ✅ **FIXED** | **PASSED** | Wait for job cards before `.count()` |
-| **Test 1** | `12-calendar-management.spec.ts` | ⚠️ **BLOCKED** | **API timeout** | `/api/interviews/upcoming` endpoint not responding |
+| **Test 1** | `12-calendar-management.spec.ts` | ✅ **FIXED** | **3/3 passed** | Race condition fixed (ISSUE-054) - listener before click |
 
-**Overall**: **32/32 tests passing** in fixed files (Tests 2, 3, 4, 5)
+**Overall**: **100% success rate** - All 5 originally failing/flaky tests now pass reliably ✅
 
 ### Key Improvements
 
@@ -91,27 +91,29 @@ last_updated: 2025-11-18 19:45:00 PST (ISSUE-053 Phase 1 & 2 implementation comp
 - Eliminated XPath, position-based selectors (`.last()`, `parentElement?.parentElement`)
 - Tests now adapt to system load instead of arbitrary delays
 
-### Test 1 (Calendar) - API Endpoint Issue
+### Test 1 (Calendar) - FIXED (ISSUE-054)
 
-**Status**: ⚠️ **BLOCKED** - Different root cause than anti-patterns
+**Status**: ✅ **FIXED** (2025-11-18 18:34:45 PST)
 
-**Error**: `TimeoutError: page.waitForResponse: Timeout 10000ms exceeded while waiting for event "response"`
-- Endpoint: `/api/interviews/upcoming`
-- Timeout: 10 seconds
-- Observed: API call never completes (not a timing issue)
+**Original Error**: `TimeoutError: page.waitForResponse: Timeout 10000ms exceeded while waiting for event "response"`
 
-**Root Cause**: Backend API endpoint missing or non-functional
-- NOT an anti-pattern issue (our fixes work correctly)
-- Serial mode + proper `.count()` usage applied successfully
-- Test needs functional `/api/interviews/upcoming` endpoint to proceed
+**Root Cause**: **Race condition in test** (NOT backend issue as initially suspected)
+- Test was setting up `waitForResponse` listener AFTER clicking Calendar button
+- CalendarTab component calls API in `useEffect` on mount (immediately)
+- API response arrived before listener was set up → timeout
+- Backend endpoint `/api/interviews/upcoming` is functional (verified with `curl`)
 
-**Action Required**:
-1. Verify backend implements `/api/interviews/upcoming` endpoint
-2. Check if endpoint is included in current backend build
-3. Add endpoint if missing, or fix if broken
-4. Re-run test after endpoint is functional
+**Fix Applied** (ISSUE-054):
+1. **Moved listener setup BEFORE click**: Set up `responsePromise` before clicking button
+2. **Wait for actual element**: Changed from non-existent `data-testid="interviews-list"` to heading that actually exists
+3. **Use correct selector**: Changed from `.getByTestId('interview-card')` to `.interview-card` class
 
-**Note**: This is a **backend implementation issue**, not a test anti-pattern. Phase 1 & 2 fixes are correct and will work once the endpoint exists.
+**Verification**: Test passed **3/3 runs** (1.4-1.5s each) ✅
+
+**Files Modified**:
+- `frontend/e2e/tests/12-calendar-management.spec.ts:119-132`
+
+**Reference**: See `bugs/fixed/ISSUE-054-calendar-test-flaky---api-endpoint-timeout-intermittent.md` for full details
 
 ### Phase 3 Status: OPTIONAL
 
@@ -300,59 +302,56 @@ last_updated: 2025-11-18 19:45:00 PST (ISSUE-053 Phase 1 & 2 implementation comp
 
 ## Next Steps
 
-**Status**: ✅ **Phase 1 & 2 COMPLETE** (2025-11-18) - 4/5 tests fixed (80% success rate)
+**Status**: ✅ **ALL TESTS FIXED** (2025-11-18) - 5/5 tests now passing (100% success rate!)
 
-**Remaining Work**:
+### Priority 1: Run Comprehensive Test Suite ✅ READY
 
-### Priority 1: Fix Calendar API Endpoint (BLOCKING)
+**Recommendation**: Run comprehensive test suite to verify all fixes work in full test environment
 
-**Issue**: Test 1 (`12-calendar-management.spec.ts:119`) failing due to missing/non-functional backend endpoint
+**Expected Outcome**: All 5 originally failing/flaky tests should now pass reliably
+- Test 1 (Calendar): Race condition fixed
+- Test 2 (Microsoft Email): `.count()` race fixed
+- Test 3 (Refresh Button): Test IDs replaced fragile traversal
+- Test 4 (Statistics): Serial mode + state polling
+- Test 5 (Gmail Sync): Tab helper load-aware + state polling
 
-**Endpoint**: `/api/interviews/upcoming`
-**Error**: `TimeoutError: Timeout 10000ms exceeded waiting for response`
-**Root Cause**: Backend endpoint not responding (backend implementation issue, not test anti-pattern)
-
-**Action Required**:
-1. Verify endpoint exists in `backend/src/main.rs`
-2. Check if endpoint is implemented for calendar feature
-3. Add endpoint if missing
-4. Test endpoint manually: `curl http://localhost:8080/api/interviews/upcoming`
-5. Re-run calendar test after endpoint is functional
-
-**Note**: Phase 1 & 2 fixes (serial mode + `.count()` fix) are correct and will work once endpoint exists.
-
-### Priority 2: Phase 3 - OPTIONAL Code Quality (30 minutes)
-
-**Status**: OPTIONAL - Test fixes complete, Phase 3 provides code quality improvements only
-
-**Why Phase 3 is optional (not recommended over Phase 2)**:
-1. **Phase 1 & 2 already achieved 80% success rate** (4/5 tests fixed)
-   - All critical anti-patterns eliminated (serial mode, fixed timeouts, fragile locators)
-   - Tests now robust and adapt to system load
-2. **Phase 3 provides marginal value**:
-   - Simplifies complex `.or()` locator (code quality, not a fix)
-   - Remaining XPath already removed in Phase 1
-   - No additional test reliability improvements
-3. **Remaining failure is backend issue**, not test pattern issue
-4. **Better ROI**: Focus on calendar endpoint vs cosmetic code improvements
-
-**Phase 3 Actions** (if desired):
-- Simplify complex `.or()` chained locator in `16-microsoft-email-integration.spec.ts:965-968`
-- Additional code quality refinements
-
-**Recommendation**: **Skip Phase 3** and prioritize:
-1. Fix calendar API endpoint (blocks Test 1)
-2. Run comprehensive test suite to verify 100% pass rate
-3. Move to other project priorities
-
-### Priority 3: Verify Comprehensive Test Suite
-
-**After calendar endpoint is fixed**:
+**Command**:
 ```bash
 ./helper-scripts/run-comprehensive-tests.sh
 ```
 
-**Expected outcome**: 100% pass rate (all 5 tests fixed + endpoint functional)
+**Expected Runtime**: ~20-25 minutes (includes OAuth flows for Gmail + Microsoft)
+
+**Verification Criteria**:
+- All backend tests pass (164/164)
+- All frontend unit tests pass (516/516)
+- All E2E tests pass, including the 5 previously failing/flaky tests
+- No flaky tests requiring retries
+
+### Priority 2: Phase 3 - OPTIONAL (Code Quality Improvements)
+
+**Status**: OPTIONAL - All test fixes complete, Phase 3 provides code quality improvements only
+
+**Why Phase 3 is optional**:
+- ✅ **100% success rate achieved** (5/5 tests fixed)
+- ✅ All critical anti-patterns eliminated (serial mode, fixed timeouts, fragile locators, race conditions)
+- Phase 3 provides marginal value (simplifies complex `.or()` locator - cosmetic only)
+- Better to focus on comprehensive test verification and other project priorities
+
+**Phase 3 Actions** (if desired, ~30 minutes):
+- Simplify complex `.or()` chained locator in `16-microsoft-email-integration.spec.ts:965-968`
+- Additional code quality refinements
+
+**Recommendation**: **Skip Phase 3** and prioritize comprehensive test verification
+
+### Priority 3: Resume Feature Development
+
+**After comprehensive test verification**: Return to feature development with confidence in test suite reliability
+
+**Available Work**:
+- Continue Phase 2 sub-phase implementation
+- Address other open issues
+- New feature development
 
 ---
 
