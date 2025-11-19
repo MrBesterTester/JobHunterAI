@@ -2603,7 +2603,6 @@ const JobHunterDashboard: React.FC = () => {
                 e.currentTarget.style.color = '#8b5cf6';
               }}
               title="Configure job search criteria and filters"
-              data-testid="configure-criteria-button"
             >
               <Settings style={{ width: '18px', height: '18px' }} />
               Configure Criteria
