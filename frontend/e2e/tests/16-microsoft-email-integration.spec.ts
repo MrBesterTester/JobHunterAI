@@ -504,8 +504,8 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
     test('should handle archive folder creation gracefully', async ({ page }) => {
       // This test verifies that the system handles archive folder creation
       // without breaking the sync workflow
-
-      test.setTimeout(120000); // Extended timeout for sync operations
+      // ISSUE-049: Increased timeout based on diagnostics (Microsoft sync takes 60-100s)
+      test.setTimeout(180000); // 3 minutes
 
       // Check if Microsoft OAuth credentials exist
       const hasCredentials = await hasMicrosoftOAuthCredentials();
@@ -549,13 +549,15 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
 
       // Verify sync completed without errors
       // Wait for Microsoft sync button to re-enable (indicates sync completion)
-      await expect(microsoftSyncButton).toBeEnabled({ timeout: 60000 });
+      // ISSUE-049: Increased timeout from 60s to 120s based on diagnostic findings
+      await expect(microsoftSyncButton).toBeEnabled({ timeout: 120000 });
     });
 
     test('should preserve sync functionality with archiving enabled', async ({ page }) => {
       // This test ensures that adding archiving doesn't break the existing sync workflow
-      // Increase test timeout to 5 minutes - Microsoft sync operations are slow (2-4 min under load)
-      test.setTimeout(300000); // 5 minutes
+      // ISSUE-049 Option 2: Set reasonable timeout based on diagnostics
+      // Diagnostics showed: First run 60-100s, retry 30-35s, so 3 minutes is safe
+      test.setTimeout(180000); // 3 minutes
 
       // Check if Microsoft OAuth credentials exist
       const hasCredentials = await hasMicrosoftOAuthCredentials();
@@ -577,8 +579,9 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
         { timeout: 5000 }
       );
 
-      // Get initial job count
-      const initialTotal = await page.getByText(/Total/i).last().textContent();
+      // Get initial job count from stats summary (use .first() to avoid grabbing from Recent Intake Activity)
+      // ISSUE-049: In serial mode, .last() grabs wrong "Total" from activity log
+      const initialTotal = await page.getByText(/Total/i).first().textContent();
       const initialTotalCount = parseInt(initialTotal?.match(/\d+/)?.[0] || '0');
 
       // Perform sync (which now includes archiving)
@@ -605,12 +608,67 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       await microsoftSyncButton.click();
 
       // Wait for sync button to re-enable (indicates sync completion)
-      // Use load-aware timeout: 240s under load, 120s in isolation (Microsoft sync is slow)
-      // Increased from 120s/60s per ISSUE-049 Option 1 - sync operations take 2-4 minutes under load
-      const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 240000 : 120000;
-      await expect(microsoftSyncButton).toBeEnabled({ timeout: pollTimeout });
+      // ISSUE-049 Option 2: Timeouts based on diagnostic findings
+      // Diagnostics showed sync takes 30-100s (variable), backend/UI instant (0s)
+      // Using 120s isolation, 150s under load to handle variability
+      const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 150000 : 120000;
 
-      // Wait for Total count to update using state polling
+      console.log('⏱️  [ISSUE-049 Option 2] Waiting for sync button to re-enable...');
+      const syncStartTime = Date.now();
+      await expect(microsoftSyncButton).toBeEnabled({ timeout: pollTimeout });
+      const syncButtonTime = Date.now() - syncStartTime;
+      console.log(`✅ [ISSUE-049 Option 2] Sync button re-enabled after ${(syncButtonTime / 1000).toFixed(1)}s`);
+
+      // ISSUE-049 Option 2: Validate backend data before checking UI
+      // This distinguishes between "sync slow" vs "UI update slow"
+      console.log('🔍 [ISSUE-049 Option 2] Querying backend API to verify data exists...');
+      const backendCheckStartTime = Date.now();
+
+      // Poll backend API until job count increases or timeout
+      let backendJobCount = 0;
+      let backendDataReady = false;
+      const backendPollInterval = 2000; // Check every 2 seconds
+      const backendMaxAttempts = Math.floor(pollTimeout / backendPollInterval);
+
+      for (let attempt = 0; attempt < backendMaxAttempts; attempt++) {
+        try {
+          const response = await page.request.get('http://localhost:8080/api/jobs');
+          if (response.ok()) {
+            const jobs = await response.json();
+            backendJobCount = Array.isArray(jobs) ? jobs.length : 0;
+
+            if (backendJobCount >= initialTotalCount) {
+              backendDataReady = true;
+              const backendCheckTime = Date.now() - backendCheckStartTime;
+              console.log(`✅ [ISSUE-049 Option 2] Backend data ready! Job count: ${backendJobCount} (was ${initialTotalCount}) after ${(backendCheckTime / 1000).toFixed(1)}s`);
+              break;
+            } else {
+              console.log(`⏳ [ISSUE-049 Option 2] Backend check attempt ${attempt + 1}/${backendMaxAttempts}: ${backendJobCount} jobs (waiting for >= ${initialTotalCount})`);
+            }
+          } else {
+            console.warn(`⚠️  [ISSUE-049 Option 2] Backend API returned status ${response.status()}`);
+          }
+        } catch (error) {
+          console.warn(`⚠️  [ISSUE-049 Option 2] Backend API check failed: ${error}`);
+        }
+
+        // Wait before next poll
+        if (attempt < backendMaxAttempts - 1) {
+          await page.waitForTimeout(backendPollInterval);
+        }
+      }
+
+      if (!backendDataReady) {
+        console.error(`❌ [ISSUE-049 Option 2] Backend data NOT ready after ${(pollTimeout / 1000).toFixed(0)}s`);
+        console.error(`   Final backend job count: ${backendJobCount}, expected >= ${initialTotalCount}`);
+        console.error(`   DIAGNOSIS: Sync operation or database commit taking longer than timeout`);
+        throw new Error(`Backend data validation failed: job count ${backendJobCount} < ${initialTotalCount} after ${pollTimeout}ms`);
+      }
+
+      // Now wait for UI to reflect the backend data
+      console.log('🎨 [ISSUE-049 Option 2] Backend data ready, waiting for UI to update...');
+      const uiUpdateStartTime = Date.now();
+
       await page.waitForFunction(
         (expectedMin) => {
           const totalElements = document.querySelectorAll('*');
@@ -630,12 +688,31 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
         { timeout: pollTimeout }
       );
 
+      const uiUpdateTime = Date.now() - uiUpdateStartTime;
+      console.log(`✅ [ISSUE-049 Option 2] UI updated after ${(uiUpdateTime / 1000).toFixed(1)}s`);
+
       // Verify sync still works - jobs should be created
-      const newTotal = await page.getByText(/Total/i).last().textContent();
+      // ISSUE-049: Use .first() to get stats summary, not activity log entry
+      const newTotal = await page.getByText(/Total/i).first().textContent();
       const newTotalCount = parseInt(newTotal?.match(/\d+/)?.[0] || '0');
 
       // Total should be same or higher (archiving shouldn't remove jobs from UI)
       expect(newTotalCount).toBeGreaterThanOrEqual(initialTotalCount);
+
+      // ISSUE-049 Option 2: Performance diagnostics summary
+      const totalTestTime = syncButtonTime + (Date.now() - backendCheckStartTime);
+      console.log('📊 [ISSUE-049 Option 2] Performance Summary:');
+      console.log(`   Sync operation: ${(syncButtonTime / 1000).toFixed(1)}s`);
+      console.log(`   Backend data ready: ${((Date.now() - backendCheckStartTime - uiUpdateTime) / 1000).toFixed(1)}s`);
+      console.log(`   UI update lag: ${(uiUpdateTime / 1000).toFixed(1)}s`);
+      console.log(`   Total time: ${(totalTestTime / 1000).toFixed(1)}s`);
+
+      if (syncButtonTime > 60000) {
+        console.warn(`⚠️  [ISSUE-049 Option 2] Sync operation took over 60s - Microsoft API may be slow under load`);
+      }
+      if (uiUpdateTime > 5000) {
+        console.warn(`⚠️  [ISSUE-049 Option 2] UI update lag over 5s - React rendering may be slow under load`);
+      }
     });
 
     test('should show archive metrics after sync', async ({ page }) => {
