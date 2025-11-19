@@ -57,8 +57,8 @@ START_TIME=$(date +%s)
 
 log_section "RUNNING E2E TESTS (Playwright)"
 log_warning "E2E tests typically take 20-25 minutes"
-log_info "Running npm run test:e2e with COMPREHENSIVE_TESTS=true..."
-log_info "This enables longer timeouts for tests under load"
+log_info "Running Playwright with COMPREHENSIVE_TESTS=true..."
+log_info "This enables longer timeouts (45s vs 10s) for tests under load"
 
 # Export COMPREHENSIVE_TESTS environment variable
 # This tells E2E test helpers to use longer timeouts (45s vs 10s)
