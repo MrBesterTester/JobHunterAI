@@ -9,7 +9,7 @@ related_docs:
   - README_auto-test-plan.md (testing plan and strategy)
   - PROJECT_STATUS.md (overall project status)
 archive_start_date: 2025-10-23
-last_updated: 2025-11-12 17:56:27 PST (Migrated 1,617 lines of historical test results from README_auto-test-plan.md: Phase-by-Phase Coverage + Test Failure Remediation Plan)
+last_updated: 2025-11-18 17:31:52 PST (Added 2025-11-17 parallel mode comprehensive test run to history)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -194,6 +194,27 @@ last_updated: 2025-11-12 17:56:27 PST (Migrated 1,617 lines of historical test r
 ---
 
 ## Testing Journey Timeline
+
+**November 17, 2025 (15:57 PST)**: Comprehensive Test Run - Parallel Mode Baseline
+- **Total**: 1066 passed, 5 failed, 2 flaky, 209 skipped (99.3% pass rate)
+- **Backend**: 164/164 passed (100%)
+- **Frontend Unit**: 516/517 passed (99.8%, 1 skipped)
+- **E2E**: 386/393 passed, 5 failed, 2 flaky (98.2% pass rate)
+- **Runtime**: ~17 minutes
+- **Key Observations**:
+  - 🎉 OAuth tokens automatically refreshed - no manual intervention!
+  - Serial mode not yet applied
+  - Baseline for serial mode comparison
+- **Hard Failures** (5 tests):
+  1. `16-microsoft-email-integration.spec.ts:529` - Archiving test (later fixed with serial mode)
+  2. `22-refresh-buttons.spec.ts:57` - Refresh button (later ISSUE-050)
+  3. `23-description-quality.spec.ts:87` - Job content (fixed by serial mode)
+  4. `23-description-quality.spec.ts:171` - Refresh description (fixed by serial mode)
+  5. `16-microsoft-email-integration.spec.ts:801` - End-to-end workflow (fixed by serial mode)
+- **Flaky Tests** (2 tests - passed on retry):
+  1. `16-gmail-sync-integration.spec.ts:229` - Approving Gmail jobs (later stabilized)
+  2. `13-follow-ups-management.spec.ts:40` - Display pending follow-ups (later stabilized)
+- **Related Work**: Led to serial mode implementation and ISSUE-050/051/052 fixes
 
 **November 11, 2025 (15:15 PST)**: Comprehensive Test Run - Modal Fixes Session
 - **Total**: 1062 passed, 30 failed, 3 warnings, 190 skipped (97.3% pass rate)
