@@ -265,35 +265,23 @@ test.describe('Condensed Description Quality', () => {
     );
     const initialDescription = await descriptionContainer!.textContent();
 
+    // Set up API response promise BEFORE clicking (per Playwright best practices)
+    // This avoids race condition where API responds before we start waiting
+    const apiResponsePromise = page.waitForResponse(
+      response => response.url().includes('/condense-description') && response.status() === 200,
+      { timeout: pollTimeout }
+    );
+
     // Click refresh
     const descriptionHeader = jobCard!.locator('strong:has-text("Condensed Description")').first();
     const refreshButton = descriptionHeader.locator('..').locator('button');
     await refreshButton.click();
 
-    // Wait for "Loading..." state to appear using state polling
-    await page.waitForFunction(
-      (jid) => {
-        const card = document.querySelector(`[data-testid="job-card"][data-job-id="${jid}"]`);
-        if (!card) return false;
-        // Find strong tag containing "Condensed Description" text
-        const strongs = card.querySelectorAll('strong');
-        let descSection: HTMLElement | null | undefined = null;
-        for (const strong of strongs) {
-          if (strong.textContent?.includes('Condensed Description')) {
-            descSection = strong.parentElement?.parentElement;
-            break;
-          }
-        }
-        if (!descSection) return false;
-        const divs = descSection.querySelectorAll('div');
-        const container = divs[divs.length - 1];
-        return container?.textContent?.includes('Loading description...') || false;
-      },
-      jobId,
-      { timeout: pollTimeout }
-    );
+    // Wait for API response to complete (more reliable than waiting for UI loading state)
+    // Under heavy load (4 parallel workers), UI may not show "Loading..." if backend is slow
+    await apiResponsePromise;
 
-    // Wait for new description to load using state polling
+    // Wait for new description to appear in UI using state polling
     // Note: LLM API calls can take 40-60+ seconds for jobs with long descriptions under load
     await page.waitForFunction(
       (jid) => {
