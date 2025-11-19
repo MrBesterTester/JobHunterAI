@@ -64,74 +64,30 @@ test.describe('Refresh Buttons', () => {
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
 
-    // Find the condensed description section by looking for the strong tag with exact text
-    const descriptionSection = jobCard.locator('strong:has-text("Condensed Description")').locator('xpath=../..'); // Go up two levels to the section div
-
-    // The description text is in the last div child of the section
-    const descriptionContainer = descriptionSection.locator('> div').last();
+    // Use test ID to locate description text directly
+    const descriptionText = jobCard.getByTestId('condensed-description-text');
 
     // Wait for initial description to load
-    await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
+    await expect(descriptionText).not.toHaveText('Loading description...', { timeout: 15000 });
 
     // Get initial description text
-    const initialDescription = await descriptionContainer.textContent();
+    const initialDescription = await descriptionText.textContent();
 
-    // Find and click the refresh button (in the header div)
-    const refreshButton = descriptionSection.getByTestId('per-job-refresh-button');
+    // Find and click the refresh button
+    const refreshButton = jobCard.getByTestId('per-job-refresh-button');
     await refreshButton.click();
 
-    // Wait for loading state to appear using state polling
+    // Wait for loading state to appear
     // Use load-aware timeout: 60s under load (LLM operations), 30s in isolation
     // Increased from 20s based on ISSUE-050 analysis - LLM operations can take longer under comprehensive test load
     const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 60000 : 30000;
-    await page.waitForFunction(
-      () => {
-        const cards = document.querySelectorAll('[data-testid="job-card"]');
-        if (cards.length === 0) return false;
-        const firstCard = cards[0];
-        // Find strong tag containing "Condensed Description" text
-        const strongs = firstCard.querySelectorAll('strong');
-        let descSection: HTMLElement | null | undefined = null;
-        for (const strong of strongs) {
-          if (strong.textContent?.includes('Condensed Description')) {
-            descSection = strong.parentElement?.parentElement;
-            break;
-          }
-        }
-        if (!descSection) return false;
-        const divs = descSection.querySelectorAll('div');
-        const container = divs[divs.length - 1];
-        return container?.textContent?.includes('Loading description...') || false;
-      },
-      { timeout: pollTimeout }
-    );
+    await expect(descriptionText).toHaveText('Loading description...', { timeout: pollTimeout });
 
-    // Wait for new description to load using state polling
-    await page.waitForFunction(
-      () => {
-        const cards = document.querySelectorAll('[data-testid="job-card"]');
-        if (cards.length === 0) return false;
-        const firstCard = cards[0];
-        // Find strong tag containing "Condensed Description" text
-        const strongs = firstCard.querySelectorAll('strong');
-        let descSection: HTMLElement | null | undefined = null;
-        for (const strong of strongs) {
-          if (strong.textContent?.includes('Condensed Description')) {
-            descSection = strong.parentElement?.parentElement;
-            break;
-          }
-        }
-        if (!descSection) return false;
-        const divs = descSection.querySelectorAll('div');
-        const container = divs[divs.length - 1];
-        const text = container?.textContent || '';
-        return text.length > 10 && !text.includes('Loading description...');
-      },
-      { timeout: pollTimeout }
-    );
+    // Wait for new description to load
+    await expect(descriptionText).not.toHaveText('Loading description...', { timeout: pollTimeout });
 
     // Get new description
-    const newDescription = await descriptionContainer.textContent();
+    const newDescription = await descriptionText.textContent();
 
     // Should have loaded some description (might be the same if no changes to prompt)
     expect(newDescription?.length).toBeGreaterThan(10);

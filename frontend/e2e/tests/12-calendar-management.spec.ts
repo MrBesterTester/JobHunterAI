@@ -6,6 +6,8 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Calendar Management - Phase 5.1', () => {
+  test.describe.configure({ mode: 'serial' });
+
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:3000');
     await page.waitForLoadState('networkidle');

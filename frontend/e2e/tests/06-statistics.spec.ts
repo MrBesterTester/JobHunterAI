@@ -12,6 +12,8 @@ import { waitForApiCall } from '../fixtures/test-helpers';
  */
 
 test.describe('Statistics & Real-time Updates', () => {
+  test.describe.configure({ mode: 'serial' });
+
   let dashboardPage: DashboardPage;
 
   test.beforeEach(async ({ page }) => {

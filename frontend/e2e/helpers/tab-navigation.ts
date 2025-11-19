@@ -51,9 +51,13 @@ export async function switchToTab(
     // Wait for tab content container to appear
     await page.waitForSelector(`[data-testid="${tab}-tab-content"]`, { timeout: 5000 });
 
-    // Optionally wait for job cards
+    // Optionally wait for job cards with load-aware timeout
     if (expectJobCards) {
-      await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+      const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 30000 : 10000;
+      await page.waitForFunction(
+        () => document.querySelectorAll('[data-testid="job-card"]').length > 0,
+        { timeout: pollTimeout }
+      );
     }
   }
 }
