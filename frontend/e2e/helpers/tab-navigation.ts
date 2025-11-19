@@ -52,8 +52,9 @@ export async function switchToTab(
     await page.waitForSelector(`[data-testid="${tab}-tab-content"]`, { timeout: 5000 });
 
     // Optionally wait for job cards with load-aware timeout
+    // Increased from 30s to 45s based on ISSUE-055 audit - tab switch + API + render can take longer under comprehensive test load
     if (expectJobCards) {
-      const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 30000 : 10000;
+      const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 45000 : 10000;
       await page.waitForFunction(
         () => document.querySelectorAll('[data-testid="job-card"]').length > 0,
         { timeout: pollTimeout }

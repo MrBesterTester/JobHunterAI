@@ -78,9 +78,9 @@ test.describe('Refresh Buttons', () => {
     await refreshButton.click();
 
     // Wait for loading state to appear
-    // Use load-aware timeout: 60s under load (LLM operations), 30s in isolation
-    // Increased from 20s based on ISSUE-050 analysis - LLM operations can take longer under comprehensive test load
-    const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 60000 : 30000;
+    // Use load-aware timeout: 120s under load (LLM operations), 30s in isolation
+    // Increased from 60s to 120s based on ISSUE-055 audit - LLM operations can take longer under comprehensive test load with 4 parallel workers
+    const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 120000 : 30000;
     await expect(descriptionText).toHaveText('Loading description...', { timeout: pollTimeout });
 
     // Wait for new description to load

@@ -925,8 +925,9 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       await page.getByRole('button', { name: /^new jobs$/i }).click();
 
       // Wait for tab switch using state polling
-      // Use load-aware timeout: 20s under load, 10s in isolation
-      const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 20000 : 10000;
+      // Use load-aware timeout: 45s under load, 15s in isolation
+      // Increased from 20s to 45s based on ISSUE-055 audit - tab switch + API + render can take longer under comprehensive test load
+      const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 45000 : 15000;
       await page.waitForFunction(
         () => {
           const newTabButton = document.querySelector('[data-testid="new-tab-button"]');

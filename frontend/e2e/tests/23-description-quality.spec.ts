@@ -188,13 +188,13 @@ test.describe('Condensed Description Quality', () => {
     let jobCard: ReturnType<typeof page.locator> | undefined;
     let descriptionContainer: ReturnType<typeof page.locator> | undefined;
 
-    // Use load-aware timeout: 80s under load, 40s in isolation (LLM operations are very slow)
-    const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 80000 : 40000;
+    // Use load-aware timeout: 120s under load, 40s in isolation (LLM operations are very slow)
+    // Increased from 80s to 120s based on ISSUE-055 audit - LLM operations can take longer under comprehensive test load with 4 parallel workers
+    const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 120000 : 40000;
 
     for (let i = 0; i < count; i++) {
       const card = jobCards.nth(i);
-      const tempDescSection = card.locator('strong:has-text("Condensed Description")').locator('xpath=../..');
-      const tempDescContainer = tempDescSection.locator('> div').last();
+      const tempDescContainer = card.getByTestId('condensed-description-text');
 
       // Wait for description to load using state polling
       const cardIndex = i;
@@ -229,8 +229,7 @@ test.describe('Condensed Description Quality', () => {
       if (wordCount > 20 && descText !== 'No job description to be extracted.') {
         jobId = await card.getAttribute('data-job-id');
         jobCard = page.locator(`[data-testid="job-card"][data-job-id="${jobId}"]`);
-        const finalDescSection = jobCard.locator('strong:has-text("Condensed Description")').locator('xpath=../..');
-        descriptionContainer = finalDescSection.locator('> div').last();
+        descriptionContainer = jobCard.getByTestId('condensed-description-text');
         break;
       }
     }
