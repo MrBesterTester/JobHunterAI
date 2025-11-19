@@ -963,11 +963,9 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
         { timeout: pollTimeout }
       );
 
-      // Look for Approve button within the job context
-      const approveButton = page.locator('[data-testid="job-card"]').first()
-        .getByRole('button', { name: /approve/i }).or(
-          page.locator('[data-testid="modal-overlay"]').getByRole('button', { name: /approve/i })
-        ).first();
+      // Look for visible Approve button (simplified from complex .or() chain)
+      // Modal is already verified open, so find the currently visible button
+      const approveButton = page.getByRole('button', { name: /approve/i }).first();
 
       // Check if Approve button exists
       const approveExists = await approveButton.isVisible().catch(() => false);
