@@ -2529,7 +2529,7 @@ const JobHunterDashboard: React.FC = () => {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', overflowX: 'hidden', width: '100%' }}>
       <header style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb', width: '100%' }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '16px', boxSizing: 'border-box', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ maxWidth: '1600px', margin: '0 auto', padding: '16px', boxSizing: 'border-box', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h1 style={{ fontSize: '30px', fontWeight: 'bold', color: '#111827' }}>JobHunter</h1>
             <p style={{ color: '#6b7280' }}>Streamline your job search workflow</p>
@@ -2697,7 +2697,7 @@ const JobHunterDashboard: React.FC = () => {
       </header>
 
       <div style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb', width: '100%' }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '16px', boxSizing: 'border-box' }}>
+        <div style={{ maxWidth: '1600px', margin: '0 auto', padding: '16px', boxSizing: 'border-box' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '8px', width: '100%' }}>
             <div style={{ textAlign: 'center' }} data-testid="stat-ignored">
               <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#dc2626' }}>{stats.ignored || 0}</p>
@@ -2767,7 +2767,7 @@ const JobHunterDashboard: React.FC = () => {
         </div>
       </div>
 
-      <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 16px', boxSizing: 'border-box', width: '100%' }}>
+      <main style={{ maxWidth: '1600px', margin: '0 auto', padding: '24px 16px', boxSizing: 'border-box', width: '100%' }}>
         <nav style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid #e5e7eb', overflowX: 'auto' }}>
           {(['ignored', 'intake', 'filtered', 'failed', 'duplicates', 'new', 'approved', 'rejected', 'applied', 'follow-ups', 'calendar', 'ranked', 'all'] as TabType[]).map(tab => (
             <button
