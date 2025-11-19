@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-18 21:17:51 PST
-last_updated: 2025-11-18 23:44:07 PST (Added Next Steps to current run, removed global Next Steps)
+last_updated: 2025-11-19 00:05:33 PST (Test #547 fixed using error-context artifact debugging)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -297,11 +297,13 @@ TimeoutError: page.waitForFunction: Timeout 10000ms exceeded
 - **What was done**: Added `test.setTimeout(180000)` to match Test #511 pattern
 - **Next action**: Verify fix in next comprehensive run
 
-**Priority 2: Investigate Test #547** ⚠️
-- **Status**: Requires investigation (not a timeout issue)
-- **Problem**: Page content missing 'Title' or 'Company' fields
-- **Degradation**: Flaky → hard failure (concerning trend)
-- **Next action**: Debug test to understand root cause (data/state/navigation issue)
+**Priority 2: Test #547 Investigation** ✅ **FIXED** (2025-11-19 00:05:33 PST)
+- **Status**: ✅ **FIXED** using error-context.md artifact debugging
+- **Problem**: Test checked for 'Title'/'Company' strings that don't exist in modal UI
+- **Root Cause**: Modal structure varies by data richness; original check was too fragile
+- **Solution**: Check for elements that always exist (h2 job title, Approve/Reject buttons)
+- **Result**: Test now passes in 860ms
+- **Commit**: e158dc0
 
 **Priority 3: Monitor Test #441** ✅
 - **Status**: Acceptable flakiness (passes on retry)
