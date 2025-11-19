@@ -174,7 +174,8 @@ test.describe('Condensed Description Quality', () => {
 
   test('refresh should regenerate description (check for different content after prompt change)', async ({ page }) => {
     // Increase timeout to allow for slow LLM API calls under system load (can take 30-60+ seconds)
-    test.setTimeout(90000);
+    // Increased from 90s to 180s based on ISSUE-055 - multiple LLM operations under load (3x 120s waits possible)
+    test.setTimeout(180000);
 
     // Use New Jobs tab which has jobs with long source descriptions
     await switchToTab(page, 'new');
