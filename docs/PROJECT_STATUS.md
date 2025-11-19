@@ -11,7 +11,7 @@ related_docs:
   - TESTING_STATUS.md (testing results)
   - README_auto-test-plan.md (testing plan)
   - PRD.md (product requirements)
-last_updated: 2025-11-11 13:57:17 PST
+last_updated: 2025-11-18 23:57:57 PST
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -57,7 +57,7 @@ last_updated: 2025-11-11 13:57:17 PST
 
 # JobHunter Project Status
 
-**Last Updated**: 2025-11-11 14:31:13 PST (4 issues resolved today: ISSUE-017, ISSUE-013, ISSUE-009, ISSUE-029)
+**Last Updated**: 2025-11-18 23:57:57 PST (UI scrollbar fix + Test #504 fix applied)
 
 ---
 
@@ -95,6 +95,28 @@ The software implements all core job hunting workflows defined in the Product Re
 - Total: 1077/1077 tests passing (100%) across all test suites ✅
 
 **Recent Achievements** (Last 14 days - since 2025-10-27):
+- ✅ **UI SCROLLBAR FIX** (2025-11-18 23:57:57 PST) - Improved tab navigation UX
+  - **Problem**: 13 navigation tabs caused horizontal scrollbar (1280px width constraint)
+  - **Solution**: Increased page width from 1280px → 1600px (3 locations: header, stats, main)
+  - **Result**: All tabs now visible without scrollbar, better use of screen space
+  - **Benefits**: Improved navigation UX, may reduce tab-related E2E test flakiness
+  - **Commit**: 5b70b9f
+- ✅ **TEST #504 FIX APPLIED** (2025-11-18 23:31:26 PST) - E2E test timeout fix
+  - **Test**: `22-refresh-buttons.spec.ts:61` (Per-job refresh button)
+  - **Fix**: Added `test.setTimeout(180000)` - same pattern as Test #511
+  - **Root Cause**: Poll timeout was 120s but test-level timeout was only 30s
+  - **Status**: Awaiting verification in next comprehensive run
+  - **Commit**: a605b4b
+- ✅ **TEST #511 VERIFIED FIXED** (2025-11-18 21:17 PST) - Comprehensive test run validation
+  - **Test**: `23-description-quality.spec.ts:175` (Regenerate after prompt change)
+  - **Fix**: API response wait pattern (replaced UI loading state polling)
+  - **Result**: Passes reliably under 4-worker parallel load, faster (1.7s vs 4+ sec)
+  - **Commit**: cd5e440
+- ✅ **TESTING_STATUS.md REORGANIZED** (2025-11-18 23:44:07 PST)
+  - Maintains only latest 2 comprehensive test runs (per policy)
+  - Added Next Steps to current run (21:17 PST) with clear priorities
+  - Removed global Next Steps section (eliminated ambiguity)
+  - Current test suite: 99.8% pass rate (1064/1066)
 - ✅ **5 ISSUES RESOLVED TODAY** (2025-11-11) - Major documentation and testing cleanup
   - ✅ ISSUE-017: Badge system E2E test failures resolved (BUG-0004 fix unblocked tests)
   - ✅ ISSUE-013: TAP infrastructure resolved as acceptable technical debt
