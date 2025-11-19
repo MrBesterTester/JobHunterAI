@@ -17,6 +17,9 @@
     - [PROJECT_STATUS.md Organization](#project_statusmd-organization)
     - [TESTING_STATUS.md Organization](#testing_statusmd-organization)
     - [Testing Status Update Requirements](#testing-status-update-requirements)
+      - [Step 1: Archive Oldest Run (If Needed)](#step-1-archive-oldest-run-if-needed)
+      - [Step 2: Add New Run to TESTING_STATUS.md](#step-2-add-new-run-to-testing_statusmd)
+      - [Step 3: Commit Changes](#step-3-commit-changes)
   - [Development Commands](#development-commands)
     - [Database Setup](#database-setup)
     - [Backend (Rust)](#backend-rust)
@@ -360,9 +363,28 @@ date "+%Y-%m-%d %H:%M:%S %Z"  # Full timestamp with timezone
 
 ### Testing Status Update Requirements
 
-**REQUIRED**: When user requests testing status or after running comprehensive tests, ALWAYS update `docs/TESTING_STATUS.md` with:
+**REQUIRED**: When user requests testing status or after running comprehensive tests, follow this workflow:
 
-1. **Latest Test Run Results section** (at top of document):
+#### Step 1: Archive Oldest Run (If Needed)
+
+**Policy**: TESTING_STATUS.md keeps only **2 most recent comprehensive test runs**
+
+**When adding a 3rd run**:
+1. Copy oldest run section to `testing-history/TEST_STATUS_YYYY-MM-DD_HHMM.md`
+2. Use 24-hour time format (e.g., `TEST_STATUS_2025-11-19_0136.md` for 01:36 PST run)
+3. Update `testing-history/README.md` index with new entry
+4. Remove archived run from TESTING_STATUS.md
+
+**Archive format** (use run's timestamp in filename):
+```bash
+# Extract timestamp from run header (e.g., "2025-11-19 01:36:18 PST")
+# Convert to filename: TEST_STATUS_2025-11-19_0136.md
+```
+
+#### Step 2: Add New Run to TESTING_STATUS.md
+
+**Content to add**:
+1. **Latest Test Run Results section** (position #2 - after frontmatter):
    - Full date/time stamp in format: `YYYY-MM-DD HH:MM:SS TZ` (e.g., "2025-10-31 09:11:27 PDT")
    - Run type (Comprehensive, Backend only, E2E only, etc.)
    - Total runtime
@@ -371,41 +393,33 @@ date "+%Y-%m-%d %H:%M:%S %Z"  # Full timestamp with timezone
    - Comparison to previous run
    - Key observations
 
-2. **Comprehensive Test Suite Runtime section**:
-   - Update "Latest Actual Runtime" with timestamp
-   - Update all tables with actual results (not estimates)
-   - Document variance from estimates with explanations
-   - Update "Last Runtime Verification" timestamp
-
-3. **"Last Updated" timestamp** (at top of file):
+2. **Update "Last Updated" timestamp** (in frontmatter):
    - Format: `YYYY-MM-DD HH:MM:SS TZ (description)`
-   - Example: `2025-10-31 09:11:27 PDT (Comprehensive test suite execution completed)`
+   - Example: `2025-10-31 09:11:27 PDT (Added comprehensive test run results)`
 
-**Commands to get current timestamp:**
+3. **Update "Next Steps" section** (position #3):
+   - Reflect new priorities based on test results
+   - Mark completed priorities as ✅ FIXED
+   - Add new priorities if failures discovered
+
+#### Step 3: Commit Changes
+
 ```bash
-date "+%Y-%m-%d %H:%M:%S %Z"  # Full timestamp with timezone
-```
-
-**Example workflow when user asks "run tests":**
-```bash
-# 1. Run tests and capture results
-cargo test 2>&1 | tee /tmp/backend-test-results.log
-npm test 2>&1 | tee /tmp/frontend-test-results.log
-npm run test:e2e 2>&1 | tee /tmp/e2e-test-results.log
-
-# 2. Get timestamp
+# Get timestamp
 TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S %Z")
 
-# 3. Update TESTING_STATUS.md with:
-#    - Latest Test Run Results section (with $TIMESTAMP)
-#    - Actual test counts from logs
-#    - Runtime data
-#    - Comparison to previous run
-
-# 4. Commit the update
-git add docs/TESTING_STATUS.md
-git commit -m "docs: Update TESTING_STATUS.md with test results ($TIMESTAMP)"
+# Commit all changes
+git add docs/TESTING_STATUS.md testing-history/
+git commit -m "docs: Add test results ($TIMESTAMP), archive oldest run to testing-history"
 ```
+
+**Important Notes**:
+- TESTING_STATUS.md = workspace for **current + previous run only** (2 runs max)
+- testing-history/ = permanent archive of **all older runs** (one file per run)
+- Completed work summaries (like ISSUE-053) can stay in TESTING_STATUS.md for 1-2 weeks, then archive
+- Use `testing-history/README.md` as index to find specific runs
+
+**See also**: `testing-history/README.md` for full archive index
 
 **Why this matters:**
 - User can see exact test results at any point in time
@@ -499,12 +513,12 @@ The project uses a consistent structure for development and testing documentatio
 
 **Testing Track:**
 - **Plan**: `README_auto-test-plan.md` - Comprehensive testing strategy
-- **Results**: `docs/TESTING_STATUS.md` - Latest test run + workspace for next round
-- **Archive**: `docs/TESTING_HISTORY.md` - Completed testing work history (permanent record)
+- **Results**: `docs/TESTING_STATUS.md` - Latest 2 test runs only (current + previous)
+- **Archive**: `testing-history/` - All older test runs (one file per run, see `testing-history/README.md` for index)
 - **Guide**: `docs/TESTING_GUIDE.md` - Testing principles and investigation workflows
 - **Playwright Best Practices**: `docs/PLAYWRIGHT_BEST_PRACTICES.md` ← **E2E test patterns & anti-patterns**
 
-**Key Pattern**: Plans → Results → Archive (with Results keeping only current state + terse history)
+**Key Pattern**: Plans → Results → Archive (with Results keeping only 2 most recent runs)
 
 ---
 
@@ -513,8 +527,8 @@ The project uses a consistent structure for development and testing documentatio
 - **Feature Plans**: `planning/*.md` - Specific feature designs
 - **Bug Tracking**: `bugs/open/`, `bugs/mitigated/`, `bugs/fixed/` (see `bugs/README.md` for index)
 - **Test Reports**: `README_test-report-*.md` (root level)
-- **Testing Status**: `docs/TESTING_STATUS.md` ← **Current status & open issues**
-- **Testing History**: `docs/TESTING_HISTORY.md` ← **Completed work archive**
+- **Testing Status**: `docs/TESTING_STATUS.md` ← **Current + previous run only (2 runs max)**
+- **Testing History**: `testing-history/` ← **Archived test runs** (see `testing-history/README.md` for index)
 - **Work Summaries**: `README_work-summary-*.md` (root level, dated)
 - **Helper Scripts**: `helper-scripts/` directory (see `README_dev.md`)
 
@@ -524,10 +538,16 @@ The project uses a consistent structure for development and testing documentatio
 3. **Bug ID format**: `BUG-####` (bugs), `ISSUE-####` (issues)
 4. **Next available ID**: Run `./helper-scripts/create-bug.sh` to see next ID (scans all directories)
 
+**Finding Test Runs**:
+1. **Current + previous run**: `docs/TESTING_STATUS.md` (2 most recent runs only)
+2. **Older runs**: `testing-history/README.md` (index of all archived runs)
+3. **Specific date**: `testing-history/TEST_STATUS_YYYY-MM-DD_HHMM.md`
+4. **Use Glob for patterns**: `testing-history/TEST_STATUS_2025-11-*.md` (all November 2025 runs)
+
 **Navigation Tips**:
 - Use `@bugs/README.md` to see current bug list
-- Use `@docs/TESTING_STATUS.md` for current test status & open issues
-- Use `@docs/TESTING_HISTORY.md` for completed testing work history
+- Use `@docs/TESTING_STATUS.md` for current test status (2 most recent runs)
+- Use `@testing-history/README.md` to find specific archived test runs
 - All file paths use `./` prefix convention (ISSUE-011)
 
 **Efficient File Discovery**:

@@ -3,11 +3,11 @@ document_type: testing_status
 purpose: Results of most recent comprehensive test suite execution
 scope: Current and previous comprehensive test run only
 relationship: Contains RESULTS of README_auto-test-plan.md execution; older runs archived to TESTING_HISTORY.md
-update_policy: Keep current + previous run; move older results to TESTING_HISTORY.md
+update_policy: Keep current + previous run only; archive older runs to testing-history/
 content_lifecycle: Latest two runs only - workspace for current testing status
 related_docs:
   - README_auto-test-plan.md (the testing plan)
-  - TESTING_HISTORY.md (historical archive)
+  - testing-history/ (archived test runs - see testing-history/README.md for index)
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-19 01:36:18 PST
@@ -333,7 +333,7 @@ at ../helpers/tab-navigation.ts:58
 
 - **Test Plan**: `README_auto-test-plan.md` - Comprehensive testing strategy
 - **Test Guide**: `docs/TESTING_GUIDE.md` - Testing principles and investigation workflows
-- **Test History**: `docs/TESTING_HISTORY.md` - Historical archive of completed testing work
+- **Test History**: `testing-history/` - Archived test runs (see `testing-history/README.md` for index)
 - **Playwright Best Practices**: `docs/PLAYWRIGHT_BEST_PRACTICES.md` - E2E test patterns & anti-patterns
 - **Project Status**: `docs/PROJECT_STATUS.md` - Overall project health and priorities
 - **Bug Tracking**: `bugs/README.md` - Bug index and tracking
@@ -363,9 +363,14 @@ cd frontend && npx playwright test e2e/tests/12-calendar-management.spec.ts:117
 # View Playwright report
 cd frontend && npx playwright show-report
 
-# Check test status and history
+# Check test status (current + previous run)
 cat docs/TESTING_STATUS.md
-cat docs/TESTING_HISTORY.md
+
+# View archived test runs index
+cat testing-history/README.md
+
+# View specific archived run
+cat testing-history/TEST_STATUS_2025-11-19_0136.md
 
 # Tag session (after significant testing work)
 ./helper-scripts/tag-session.sh end-of-pm "Description of work"
