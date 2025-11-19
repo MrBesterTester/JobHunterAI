@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-18 19:24:38 PST
-last_updated: 2025-11-18 20:48:50 PST (ISSUE-055 Priority 1 targeted testing results)
+last_updated: 2025-11-18 21:01:50 PST (ISSUE-055 Priority 1 COMPLETE - all 4 tests fixed)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -41,7 +41,7 @@ last_updated: 2025-11-18 20:48:50 PST (ISSUE-055 Priority 1 targeted testing res
     - [Full File Test Results (4 Parallel Workers + COMPREHENSIVE_TESTS=true)](#full-file-test-results-4-parallel-workers--comprehensive_teststrue)
     - [Test #511 Deep Dive - Functional Issue Discovered](#test-511-deep-dive---functional-issue-discovered)
     - [Fixes Applied in ISSUE-055 Priority 1](#fixes-applied-in-issue-055-priority-1)
-    - [Next Steps for Test #511](#next-steps-for-test-511)
+    - [Test #511 Investigation & Resolution (2025-11-18 21:00-21:10 PST)](#test-511-investigation--resolution-2025-11-18-2100-2110-pst)
   - [📊 Previous Comprehensive Test Run (2025-11-17 - Serial Mode)](#-previous-comprehensive-test-run-2025-11-17---serial-mode)
     - [Test Results Summary](#test-results-summary-1)
     - [Major Improvements](#major-improvements)
@@ -343,15 +343,32 @@ last_updated: 2025-11-18 20:48:50 PST (ISSUE-055 Priority 1 targeted testing res
 4. `frontend/e2e/tests/16-microsoft-email-integration.spec.ts`:
    - Line 930: Timeout increased from 20s → 45s
 
-### Next Steps for Test #511
+### Test #511 Investigation & Resolution (2025-11-18 21:00-21:10 PST)
 
-**Recommended Investigation**:
-1. Check if refresh button click actually triggers API call (monitor network)
-2. Verify test data - does selected job actually have a description that can be refreshed?
-3. Check for state pollution from previous tests in file (run with `--workers=1` to isolate)
-4. Consider adding explicit wait for API request/response instead of UI loading state
+**Investigation Steps**:
+1. ✅ Ran full file with `--workers=1`: **PASSED** (4.5s) - confirmed not a test bug
+2. ✅ Identified root cause: **Cross-file resource contention** with 4 parallel workers
+3. ✅ Problem: LLM queue backlog prevented UI from showing "Loading..." state under load
 
-**Estimated Time**: 30-60 minutes additional investigation
+**Root Cause**: Test waited for UI loading state, but under heavy load (4 parallel workers):
+- Backend LLM queue is backed up from other test files
+- UI doesn't show "Loading..." because API call is queued (not started yet)
+- Test times out waiting for state that never appears
+
+**Solution Applied**: Replace UI state wait with API response wait (Playwright best practice)
+- Set up `page.waitForResponse()` promise BEFORE clicking (avoids race condition)
+- Click refresh button
+- Wait for `/condense-description` API response (200 status)
+- Then verify UI updated with new description
+
+**Results**:
+- ✅ Individual test: PASSED (4.6s)
+- ✅ Full file (--workers=1): PASSED (4.5s)
+- ✅ **All 4 files (--workers=4): PASSED (1.7s)** ← **FIXED!**
+
+**Impact**: API wait pattern is **much faster** (1.7s vs 4+ sec) and **more reliable** under load
+
+**Commit**: cd5e440 - `fix: ISSUE-055 Test #511 - Replace UI loading state wait with API response wait`
 
 ---
 
@@ -403,13 +420,14 @@ last_updated: 2025-11-18 20:48:50 PST (ISSUE-055 Priority 1 targeted testing res
 
 ### Priority 1: Fix E2E Test Issues (ISSUE-055)
 
-**Status**: ⚠️ **PARTIAL SUCCESS** - 3/4 tests fixed, Test #511 requires deeper investigation
+**Status**: ✅ **COMPLETE** - All 4 tests fixed and passing under parallel load
 
-**Implementation Results** (2025-11-18 20:15-20:48 PST):
-- ✅ **3/4 tests fully fixed** (#504, #441, #547) - pass in isolation AND under load
-- ⚠️ **Test #511 has functional issue** - passes in isolation (4.7s), fails under load (refresh button doesn't trigger loading state)
-- 📝 **Detailed findings**: See "🔬 ISSUE-055 Priority 1 Targeted Testing" section above
-- **Next**: Investigate Test #511 functional issue (est. 30-60 min)
+**Implementation Results** (2025-11-18 20:15-21:10 PST):
+- ✅ **All 4 tests FIXED** (#504, #441, #547, #511) - pass in isolation AND under 4-worker load
+- ✅ **Test #511 investigation complete** - replaced UI state wait with API response wait
+- ✅ **API wait pattern** proven more reliable and faster (1.7s vs 4+ sec)
+- 📝 **Detailed findings**: See "🔬 ISSUE-055 Priority 1 Targeted Testing" and "Test #511 Investigation & Resolution" sections above
+- **Runtime**: ~55 minutes total (testing + investigation + fixes)
 
 **Tests Requiring Fixes**:
 
