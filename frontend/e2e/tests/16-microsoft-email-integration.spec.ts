@@ -981,10 +981,17 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
         console.log('Approve button not found - job may already be approved');
       }
 
-      // Verify job details display (should show source info)
-      const pageContent = await page.content();
-      const hasJobInfo = pageContent.includes('Title') || pageContent.includes('Company');
-      expect(hasJobInfo).toBeTruthy();
+      // Verify job details modal is displaying content
+      // The modal always shows the job title (h2), company name, and basic fields
+      // Check for elements that are always present regardless of data richness
+      const jobTitleInModal = page.getByRole('heading', { level: 2 });
+      const approveButtonInModal = page.locator('[data-testid="modal-overlay"]').getByRole('button', { name: /approve|reject/i }).first();
+
+      // Verify modal has the job title heading
+      await expect(jobTitleInModal).toBeVisible({ timeout: 5000 });
+
+      // Verify modal has action buttons (Approve/Reject)
+      await expect(approveButtonInModal).toBeVisible({ timeout: 5000 });
     });
 
     test('Item 4: Content Generation - should allow generating resume/cover letter', async ({ page }) => {
