@@ -11,7 +11,7 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-18 21:17:51 PST
-last_updated: 2025-11-18 23:31:26 PST (Post-ISSUE-055 comprehensive test run + Test #504 fix)
+last_updated: 2025-11-18 23:36:53 PST (Moved 2025-11-17 run to TESTING_HISTORY.md per 2-run policy)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -45,9 +45,6 @@ last_updated: 2025-11-18 23:31:26 PST (Post-ISSUE-055 comprehensive test run + T
     - [Test Results Summary](#test-results-summary-1)
     - [Failures (19:24 Run)](#failures-1924-run)
     - [Flaky Tests (19:24 Run)](#flaky-tests-1924-run)
-  - [📊 Earlier Comprehensive Test Run (2025-11-17 - Serial Mode)](#-earlier-comprehensive-test-run-2025-11-17---serial-mode)
-    - [Test Results Summary](#test-results-summary-2)
-    - [Major Improvements](#major-improvements)
   - [Next Steps](#next-steps)
     - [Priority 1: ISSUE-055 Test Fixes](#priority-1-issue-055-test-fixes)
     - [Priority 2: ISSUE-053 - ✅ CLOSED](#priority-2-issue-053----closed)
@@ -419,48 +416,6 @@ TimeoutError: page.waitForFunction: Timeout 10000ms exceeded
 
 1. **Test #441** (`16-gmail-sync-integration.spec.ts:229`) - Passed on retry
 2. **Test #547** (`16-microsoft-email-integration.spec.ts:923`) - Passed on retry
-
----
-
-## 📊 Earlier Comprehensive Test Run (2025-11-17 - Serial Mode)
-
-**Run Date**: 2025-11-17 17:29:04 PST - 17:44:25 PST  
-**Runtime**: ~15 minutes (clean rebuild + all tests)  
-**Exit Code**: 1 (FAILED - 1 E2E flaky test)
-
-### Test Results Summary
-
-| Test Suite | Passed | Failed | Flaky | Skipped | Pass Rate | Runtime | Status |
-|------------|--------|--------|-------|---------|-----------|---------|--------|
-| **Preflight** | ✅ | - | - | - | **100%** | ~27s | ✅ **PASSING** |
-| **Backend Build** | ✅ | - | - | - | **100%** | ~94s | ✅ **PASSING** |
-| **Frontend Build** | ✅ | - | - | - | **100%** | ~3s | ✅ **PASSING** |
-| **E2E Type-check** | ✅ | - | - | - | **100%** | ~3s | ✅ **PASSING** |
-| **Backend Tests** | 164 | 0 | 0 | 6 | **100%** | ~94s | ✅ **PASSING** |
-| **Frontend Unit** | 516 | 0 | 0 | 1 | **100%** | ~23s | ✅ **PASSING** |
-| **E2E Tests** | 382 | 0 | 1 | 202 | **99.7%** | ~10.8m | ⚠️ **1 FLAKY** |
-| **TOTAL (Active)** | **1062** | **0** | **1** | **209** | **99.9%** | **~15 min** | ⚠️ **1 FLAKY** |
-
-### Major Improvements
-
-**Comparison to Parallel Mode Run** (2025-11-17 15:57 PST):
-
-| Metric | Parallel Mode | Serial Mode | **Improvement** |
-|--------|---------------|-------------|-----------------|
-| **E2E Pass Rate** | 98.2% (386/393) | 99.7% (382/383) | **+1.5%** 🎉 |
-| **Hard Failures** | 5 tests | 0 tests | **-100%** 🎉 |
-| **Flaky Tests** | 2 tests | 1 test | **-50%** ⚠️ |
-| **Total Failures** | 7 tests | 1 flaky | **-86%** 🎉 |
-| **Runtime** | 17 minutes | 15 minutes | **-12%** ⚡ |
-
-**Issues Fixed**:
-- ✅ **ISSUE-050**: LLM timeout increased 20s → 60s
-- ✅ **ISSUE-051**: 12 `waitForTimeout()` anti-patterns replaced
-- ✅ **ISSUE-052**: Element selection mismatch resolved
-
-**Remaining Issue**:
-- ⚠️ **ISSUE-049**: Microsoft archiving test flaky (passed on retry)
-  - Fixed in 2025-11-18 run ✓
 
 ---
 
