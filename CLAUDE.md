@@ -13,7 +13,9 @@
     - [Comprehensive Testing Policy](#comprehensive-testing-policy)
   - [Workflow Standards (Summary)](#workflow-standards-summary)
     - [Documentation Timestamp Standards](#documentation-timestamp-standards)
+    - [Results Document Organization (General Principle)](#results-document-organization-general-principle)
     - [PROJECT_STATUS.md Organization](#project_statusmd-organization)
+    - [TESTING_STATUS.md Organization](#testing_statusmd-organization)
     - [Testing Status Update Requirements](#testing-status-update-requirements)
   - [Development Commands](#development-commands)
     - [Database Setup](#database-setup)
@@ -303,6 +305,25 @@ date "+%Y-%m-%d %H:%M:%S %Z"  # Full timestamp with timezone
 - Tracks historical changes with minute-level precision
 - Prevents ambiguity when multiple updates happen same day
 
+### Results Document Organization (General Principle)
+
+**⭐ CRITICAL USER PREFERENCE**: All "Results" documents (living status docs) MUST have "Next Steps" near the top.
+
+**Why this matters**:
+- Provides immediate visibility of priorities without scrolling
+- Makes documents actionable, not just informational
+- User can see what to work on next first, then dive into details
+- Aligns with project management best practices
+
+**Applies to**:
+- `docs/PROJECT_STATUS.md` - Development priorities
+- `docs/TESTING_STATUS.md` - Testing priorities
+- Any other living status/results document
+
+**Structure requirement**: Next Steps should appear as section #2 or #3 (right after Last Updated / Current State, before detailed content).
+
+---
+
 ### PROJECT_STATUS.md Organization
 
 **REQUIRED**: When updating `docs/PROJECT_STATUS.md`, maintain this structure:
@@ -320,11 +341,22 @@ date "+%Y-%m-%d %H:%M:%S %Z"  # Full timestamp with timezone
 10. **Related Documentation** - Links to other docs
 11. **Last Updated** (at bottom) - Full timestamp with major updates history
 
-**Why "Recommended Next Steps" goes near the top**:
-- Provides immediate visibility of project priorities
-- User can see what to work on next without scrolling
-- Makes status document actionable, not just informational
-- Aligns with project management best practices
+---
+
+### TESTING_STATUS.md Organization
+
+**REQUIRED**: When updating `docs/TESTING_STATUS.md`, maintain this structure:
+
+**Document Order**:
+1. **Last Updated** (at top) - Full timestamp format
+2. **Latest Test Run Results** - Quick summary of most recent run
+3. **Next Steps / Priorities** ⭐ **MUST be here** - Immediate visibility of testing priorities
+4. **Detailed Test Results** - Full breakdown of latest run
+5. **Recent Testing Work** - Context from previous 1-2 runs
+6. **Related Files** - Links to test files and docs
+7. **Quick Commands** - Common testing commands
+
+**Why**: Users should see testing priorities immediately without scrolling through detailed test results.
 
 ### Testing Status Update Requirements
 
