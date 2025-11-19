@@ -59,6 +59,10 @@ test.describe('Refresh Buttons', () => {
   });
 
   test('should refresh single job description when per-job button clicked', async ({ page }) => {
+    // Increased from 30s default to 180s - test has multiple sequential LLM operations (initial load + refresh)
+    // Under comprehensive load with 4 parallel workers, each operation can take up to 120s
+    test.setTimeout(180000);
+
     // Navigate to All tab
     await switchToTab(page, 'all');
 
