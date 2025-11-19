@@ -11,21 +11,16 @@ related_docs:
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
 last_comprehensive_run: 2025-11-19 01:36:18 PST
-last_updated: 2025-11-19 01:36:18 PST (Priority 1 fix attempt - COMPREHENSIVE_TESTS env var)
+last_updated: 2025-11-19 15:46:47 PST (Reorganized per CLAUDE.md standards - Next Steps near top)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Testing Status](#testing-status)
-  - [🎉 ISSUE-053 Phase 1 & 2 Implementation Results (2025-11-18)](#-issue-053-phase-1--2-implementation-results-2025-11-18)
-    - [Implementation Summary](#implementation-summary)
-    - [Test Results by Test](#test-results-by-test)
-    - [Key Improvements](#key-improvements)
-    - [Test 1 (Calendar) - FIXED (ISSUE-054)](#test-1-calendar---fixed-issue-054)
-    - [Phase 3 Status: ✅ COMPLETED](#phase-3-status--completed)
-  - [🎯 Latest Comprehensive Test Run (2025-11-19 01:36 PST)](#-latest-comprehensive-test-run-2025-11-19-0136-pst)
-    - [Test Results Summary](#test-results-summary)
+  - [🎯 Latest Test Run Results (Quick Summary)](#-latest-test-run-results-quick-summary)
+  - [⭐ Next Steps (Testing Priorities)](#-next-steps-testing-priorities)
+  - [Latest Comprehensive Test Run - Detailed Results](#latest-comprehensive-test-run---detailed-results)
     - [Priority 1 Fix Attempt Results](#priority-1-fix-attempt-results)
     - [Test Status Summary](#test-status-summary)
     - [E2E Test Failures (1 Hard Failure)](#e2e-test-failures-1-hard-failure)
@@ -34,8 +29,7 @@ last_updated: 2025-11-19 01:36:18 PST (Priority 1 fix attempt - COMPREHENSIVE_TE
       - [2. Test #441: Gmail Sync - Job Approval ⚠️ **STILL FLAKY**](#2-test-441-gmail-sync---job-approval--still-flaky)
     - [Key Observations](#key-observations)
     - [Comparison to Previous Run (2025-11-19 00:43 PST)](#comparison-to-previous-run-2025-11-19-0043-pst)
-    - [Next Steps (Based on 01:36 PST Run)](#next-steps-based-on-0136-pst-run)
-  - [🔬 ISSUE-055 Priority 1 Targeted Testing (2025-11-18 20:15-20:48 PST)](#-issue-055-priority-1-targeted-testing-2025-11-18-2015-2048-pst)
+  - [🔬 Recent Testing Work - ISSUE-055 (2025-11-18)](#-recent-testing-work---issue-055-2025-11-18)
     - [Individual Test Results (Isolation - No Parallel Workers)](#individual-test-results-isolation---no-parallel-workers)
     - [Full File Test Results (4 Parallel Workers + COMPREHENSIVE_TESTS=true)](#full-file-test-results-4-parallel-workers--comprehensive_teststrue)
     - [Test #511 Deep Dive - Functional Issue Discovered](#test-511-deep-dive---functional-issue-discovered)
@@ -48,107 +42,12 @@ last_updated: 2025-11-19 01:36:18 PST (Priority 1 fix attempt - COMPREHENSIVE_TE
 
 # Testing Status
 
-## 🎉 ISSUE-053 Phase 1 & 2 Implementation Results (2025-11-18)
-
-**Implementation Date**: 2025-11-18 19:00:00 PST - 19:45:00 PST (Phases 1 & 2) + 18:00:00 PST - 18:34:45 PST (ISSUE-054 fix) + 18:35:00 PST - 18:45:00 PST (Phase 3)
-**Total Runtime**: ~2.7 hours
-**Phases Completed**: Phase 1 (Immediate Actions) + Phase 2 (Secondary Actions) + ISSUE-054 (Calendar race condition fix) + Phase 3 (Code Quality)
-**Success Rate**: **5/5 tests fixed** (100%) ✅
-
-### Implementation Summary
-
-**Phase 1: Immediate Actions (50 minutes)**
-1. ✅ **Serial mode** → `12-calendar-management.spec.ts` + `06-statistics.spec.ts`
-2. ✅ **Tab navigation helper fix** → `tab-navigation.ts:56` (load-aware 10s → 30s, state polling)
-3. ✅ **Test ID refactor** → `22-refresh-buttons.spec.ts` (eliminated XPath, `parentElement`, `.last()`)
-
-**Phase 2: Secondary Actions (50 minutes)**
-4. ✅ **Wait for job cards** → `16-microsoft-email-integration.spec.ts:940`
-5. ✅ **Fix `.count()` race** → `12-calendar-management.spec.ts:126`
-6. ✅ **State polling (stats)** → `06-statistics.spec.ts` (3 timeouts replaced)
-7. ✅ **State polling (Gmail)** → `16-gmail-sync-integration.spec.ts` (2 timeouts replaced)
-
-**Phase 3: Code Quality Improvements (10 minutes)** - OPTIONAL
-8. ✅ **Simplify complex locator** → `16-microsoft-email-integration.spec.ts:966-968` (`.or()` chain → single line)
-9. ✅ **Remove XPath** → Already completed in Phase 1 (`22-refresh-buttons.spec.ts`)
-
-### Test Results by Test
-
-| Test | File | Status | Result | Notes |
-|------|------|--------|--------|-------|
-| **Test 3** | `22-refresh-buttons.spec.ts` | ✅ **FIXED** | **8/8 passed** | Fragile DOM traversal eliminated with test IDs |
-| **Test 4** | `06-statistics.spec.ts` | ✅ **FIXED** | **21/21 passed** | Serial mode + state polling fixed race condition |
-| **Test 5** | `16-gmail-sync-integration.spec.ts` | ✅ **FIXED** | **3/3 passed** | Tab helper now load-aware, no more timeout |
-| **Test 2** | `16-microsoft-email-integration.spec.ts` | ✅ **FIXED** | **PASSED** | Wait for job cards before `.count()` |
-| **Test 1** | `12-calendar-management.spec.ts` | ✅ **FIXED** | **3/3 passed** | Race condition fixed (ISSUE-054) - listener before click |
-
-**Overall**: **100% success rate** - All 5 originally failing/flaky tests now pass reliably ✅
-
-### Key Improvements
-
-**Anti-Patterns Eliminated**:
-- 🔴 **Missing serial mode** → Fixed in 2 test files
-- 🔴 **Complex DOM traversal** → Replaced with test IDs
-- 🔴 **Fixed timeouts** → Replaced with state polling (5 instances)
-- 🟡 **Improper `.count()` usage** → Added proper waits (2 instances)
-- 🟡 **Tab helper not load-aware** → Now adapts to system load
-
-**Code Quality** (Phase 3):
-- Refresh button test: 70 lines → 30 lines (57% reduction)
-- Eliminated XPath, position-based selectors (`.last()`, `parentElement?.parentElement`)
-- Simplified complex `.or()` locator chain (MS email test:966-968)
-- Tests now adapt to system load instead of arbitrary delays
-
-### Test 1 (Calendar) - FIXED (ISSUE-054)
-
-**Status**: ✅ **FIXED** (2025-11-18 18:34:45 PST)
-
-**Original Error**: `TimeoutError: page.waitForResponse: Timeout 10000ms exceeded while waiting for event "response"`
-
-**Root Cause**: **Race condition in test** (NOT backend issue as initially suspected)
-- Test was setting up `waitForResponse` listener AFTER clicking Calendar button
-- CalendarTab component calls API in `useEffect` on mount (immediately)
-- API response arrived before listener was set up → timeout
-- Backend endpoint `/api/interviews/upcoming` is functional (verified with `curl`)
-
-**Fix Applied** (ISSUE-054):
-1. **Moved listener setup BEFORE click**: Set up `responsePromise` before clicking button
-2. **Wait for actual element**: Changed from non-existent `data-testid="interviews-list"` to heading that actually exists
-3. **Use correct selector**: Changed from `.getByTestId('interview-card')` to `.interview-card` class
-
-**Verification**: Test passed **3/3 runs** (1.4-1.5s each) ✅
-
-**Files Modified**:
-- `frontend/e2e/tests/12-calendar-management.spec.ts:119-132`
-
-**Reference**: See `bugs/fixed/ISSUE-054-calendar-test-flaky---api-endpoint-timeout-intermittent.md` for full details
-
-### Phase 3 Status: ✅ COMPLETED
-
-**Status**: ✅ **COMPLETED** (2025-11-18 18:35:00 PST - 18:45:00 PST)
-
-**Phase 3 Actions Completed**:
-1. ✅ **Simplified complex `.or()` locator** in `16-microsoft-email-integration.spec.ts:966-968`
-   - **Before**: `page.locator('[data-testid="job-card"]').first().getByRole('button', { name: /approve/i }).or(page.locator('[data-testid="modal-overlay"]').getByRole('button', { name: /approve/i })).first()`
-   - **After**: `page.getByRole('button', { name: /approve/i }).first()`
-   - **Benefit**: Simpler, more maintainable, easier to debug
-   - **Verified**: Test passed in 979ms ✅
-2. ✅ **XPath removal** - Already completed in Phase 1 (`22-refresh-buttons.spec.ts`)
-
-**Runtime**: 10 minutes (faster than estimated 30 minutes)
-
-**Impact**: Improved code maintainability and readability - all test improvements now complete
-
----
-
-## 🎯 Latest Comprehensive Test Run (2025-11-19 01:36 PST)
+## 🎯 Latest Test Run Results (Quick Summary)
 
 **Run Date**: 2025-11-19 01:36:18 PST
 **Runtime**: 13.2 minutes (E2E tests only)
 **Exit Code**: 1 (FAILED - 1 E2E hard failure, 1 flaky)
 **Context**: Priority 1 fix verification - COMPREHENSIVE_TESTS environment variable approach
-
-### Test Results Summary
 
 | Test Suite | Passed | Failed | Pass Rate | Runtime | Status |
 |------------|--------|--------|-----------|---------|--------|
@@ -156,6 +55,53 @@ last_updated: 2025-11-19 01:36:18 PST (Priority 1 fix attempt - COMPREHENSIVE_TE
 | **Frontend Unit** | **516** | 0 | **100%** | ~25s | ✅ **PASSING** |
 | **E2E Tests** | **386** | **1** | **99.7%** | 13.2m | ⚠️ **1 FAILURE, 1 FLAKY** |
 | **TOTAL (Active)** | **1066** | **1** | **99.9%** | **~13.2 min** | ⚠️ **1 FAILURE** |
+
+---
+
+## ⭐ Next Steps (Testing Priorities)
+
+**Priority 1: Fix COMPREHENSIVE_TESTS Environment Variable** ✅ **(FIXED - ISSUE-056)**
+- **Issue**: [ISSUE-056](../bugs/open/ISSUE-056-playwright-comprehensivetests-env-var-not-reaching-worker-processes.md) - Environment variable not reaching Playwright workers
+- **Previous Attempts**:
+  1. `export COMPREHENSIVE_TESTS=true` - Did not reach workers ❌
+  2. `COMPREHENSIVE_TESTS=true npx playwright test` - Did not reach workers ❌
+- **Root Cause**: Playwright workers spawn as separate OS processes with independent environments; command-line env vars don't reliably propagate
+- **Solution Implemented**: Use globalSetup to detect and re-set environment variable
+  - Modified: `frontend/e2e/global-setup.ts:92-100`
+  - Pattern documented in: `docs/PLAYWRIGHT_BEST_PRACTICES.md` (Section 6)
+- **Verification**: Test #441 passed in 4.8s with "✅ COMPREHENSIVE_TESTS detected - enabling extended timeouts (45s)" message
+- **Status**: ✅ **FIXED** (2025-11-19) - Ready for comprehensive test suite verification
+- **User Comment**: "I can't believe it's taken this long to realize this problem."
+
+**Priority 2: Investigate Test #504 Functional Issue** ✅ **(FIXED - Same Pattern as Test #511)**
+- **Problem**: Test waits 120s for UI "Loading..." state but it never appears under comprehensive test load
+- **Root Cause Discovery**:
+  - ✅ Test passes in isolation (5.7s) - NOT a functional issue
+  - ❌ Test fails under comprehensive load (2.1m timeout) - Load/timing issue
+  - **Identical pattern to Test #511** (already fixed in ISSUE-055 Priority 1)
+- **Root Cause**: LLM queue backlog under load prevents UI "Loading..." state from appearing
+  - Backend LLM queue backed up from 4 parallel workers
+  - API call is queued (not started yet)
+  - Test times out waiting for UI state that never appears
+- **Solution Applied**: Same fix as Test #511 - Replace UI state wait with API response wait
+  - Set up `page.waitForResponse()` promise BEFORE clicking (avoids race condition)
+  - Click refresh button
+  - Wait for `/condense-description` API response (200 status)
+  - Then verify UI updated (not "Loading..." state)
+- **Files Modified**: `frontend/e2e/tests/22-refresh-buttons.spec.ts:80-102`
+- **Verification**: Test passed in isolation (5.4s) with API wait pattern
+- **Status**: ✅ **FIXED** (2025-11-19) - Ready for comprehensive test suite verification
+
+**Overall Test Suite Health**: 99.5% pass rate (386/388 active tests) - Good state, 2 priorities fixed and ready for verification
+
+---
+
+## Latest Comprehensive Test Run - Detailed Results
+
+**Run Date**: 2025-11-19 01:36:18 PST
+**Runtime**: 13.2 minutes (E2E tests only)
+**Exit Code**: 1 (FAILED - 1 E2E hard failure, 1 flaky)
+**Context**: Priority 1 fix verification - COMPREHENSIVE_TESTS environment variable approach
 
 ### Priority 1 Fix Attempt Results
 
@@ -285,45 +231,9 @@ at ../helpers/tab-navigation.ts:58
 - ❌ **Test #504 still failing**: Functional issue remains (not attempted this run)
 - ✅ **Test #547 stable**: No regression, continues to pass
 
-### Next Steps (Based on 01:36 PST Run)
-
-**Priority 1: Fix COMPREHENSIVE_TESTS Environment Variable** ✅ **(FIXED - ISSUE-056)**
-- **Issue**: [ISSUE-056](../bugs/open/ISSUE-056-playwright-comprehensivetests-env-var-not-reaching-worker-processes.md) - Environment variable not reaching Playwright workers
-- **Previous Attempts**:
-  1. `export COMPREHENSIVE_TESTS=true` - Did not reach workers ❌
-  2. `COMPREHENSIVE_TESTS=true npx playwright test` - Did not reach workers ❌
-- **Root Cause**: Playwright workers spawn as separate OS processes with independent environments; command-line env vars don't reliably propagate
-- **Solution Implemented**: Use globalSetup to detect and re-set environment variable
-  - Modified: `frontend/e2e/global-setup.ts:92-100`
-  - Pattern documented in: `docs/PLAYWRIGHT_BEST_PRACTICES.md` (Section 6)
-- **Verification**: Test #441 passed in 4.8s with "✅ COMPREHENSIVE_TESTS detected - enabling extended timeouts (45s)" message
-- **Status**: ✅ **FIXED** (2025-11-19) - Ready for comprehensive test suite verification
-- **User Comment**: "I can't believe it's taken this long to realize this problem."
-
-**Priority 2: Investigate Test #504 Functional Issue** ✅ **(FIXED - Same Pattern as Test #511)**
-- **Problem**: Test waits 120s for UI "Loading..." state but it never appears under comprehensive test load
-- **Root Cause Discovery**:
-  - ✅ Test passes in isolation (5.7s) - NOT a functional issue
-  - ❌ Test fails under comprehensive load (2.1m timeout) - Load/timing issue
-  - **Identical pattern to Test #511** (already fixed in ISSUE-055 Priority 1)
-- **Root Cause**: LLM queue backlog under load prevents UI "Loading..." state from appearing
-  - Backend LLM queue backed up from 4 parallel workers
-  - API call is queued (not started yet)
-  - Test times out waiting for UI state that never appears
-- **Solution Applied**: Same fix as Test #511 - Replace UI state wait with API response wait
-  - Set up `page.waitForResponse()` promise BEFORE clicking (avoids race condition)
-  - Click refresh button
-  - Wait for `/condense-description` API response (200 status)
-  - Then verify UI updated (not "Loading..." state)
-- **Files Modified**: `frontend/e2e/tests/22-refresh-buttons.spec.ts:80-102`
-- **Verification**: Test passed in isolation (5.4s) with API wait pattern
-- **Status**: ✅ **FIXED** (2025-11-19) - Ready for comprehensive test suite verification
-
-**Overall Test Suite Health**: 99.5% pass rate (386/388 active tests) - Good state, 2 known issues requiring revised approaches
-
 ---
 
-## 🔬 ISSUE-055 Priority 1 Targeted Testing (2025-11-18 20:15-20:48 PST)
+## 🔬 Recent Testing Work - ISSUE-055 (2025-11-18)
 
 **Test Date**: 2025-11-18 20:15:00 PST - 20:48:50 PST
 **Objective**: Verify ISSUE-055 Priority 1 fixes for 4 problematic tests
