@@ -1139,11 +1139,23 @@ export class TestOrchestrator {
   }
 
   /**
+   * Format duration in mm:ss format
+   */
+  private formatDuration(durationMs: number): string {
+    const totalSeconds = Math.floor(durationMs / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  }
+
+  /**
    * Send desktop notification (macOS) + Pushover notification (iPhone/Apple Watch)
    */
   private async sendNotification(report: ComprehensiveTestReport): Promise<void> {
     return new Promise((resolve, reject) => {
       console.log('\n🔔 Sending notifications...');
+
+      const durationFormatted = this.formatDuration(report.duration);
 
       const detailedMessage = [
         'Comprehensive tests completed!',
@@ -1153,12 +1165,12 @@ export class TestOrchestrator {
         `E2E:      ${report.results.e2e.passed}/${report.results.e2e.failed}/${report.results.e2e.skipped} (pass/fail/skip)`,
         '',
         `Total: ${report.summary.totalPassed}/${report.summary.totalFailed}/${report.summary.totalSkipped} (pass/fail/skip)`,
-        `Duration: ${(report.duration / 1000).toFixed(1)}s`,
+        `Duration: ${durationFormatted}`,
         `Status: ${report.summary.overallSuccess ? 'SUCCESS' : 'FAILED'}`
       ].join('\\n');
 
       // Concise message for Pushover (iPhone/Apple Watch)
-      const pushoverMessage = `Tests ${report.summary.overallSuccess ? '✅' : '❌'} | ${report.summary.totalPassed}/${report.summary.totalFailed}/${report.summary.totalSkipped} (P/F/S) | ${(report.duration / 1000).toFixed(0)}s`;
+      const pushoverMessage = `Tests ${report.summary.overallSuccess ? '✅' : '❌'} | ${report.summary.totalPassed}/${report.summary.totalFailed}/${report.summary.totalSkipped} (P/F/S) | ${durationFormatted}`;
 
       // Check if Pushover script exists
       const pushoverScript = `${process.env.HOME}/bin/notify_claude.sh`;
