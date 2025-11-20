@@ -41,6 +41,21 @@ function parseArgs(): Partial<OrchestratorConfig> {
     };
   }
 
+  // Check --e2e-only BEFORE --skip-builds since --e2e-only can combine with --skip-builds
+  if (args.includes('--e2e-only')) {
+    const skipBuilds = args.includes('--skip-builds');
+    console.log(`🔍 Debug Mode: E2E ONLY${skipBuilds ? ' (skip builds)' : ''}`);
+    return {
+      runPreflight: !skipBuilds,
+      runBuilds: !skipBuilds,
+      runTests: true,
+      runBackendTests: false,
+      runFrontendTests: false,
+      runE2ETests: true,
+      sendNotification: true
+    };
+  }
+
   if (args.includes('--skip-builds')) {
     console.log('🔍 Debug Mode: SKIP BUILDS (tests with existing builds)');
     return {
@@ -58,20 +73,6 @@ function parseArgs(): Partial<OrchestratorConfig> {
       runDatabasePrep: false,
       runBuilds: true,
       runTests: true,
-      sendNotification: true
-    };
-  }
-
-  if (args.includes('--e2e-only')) {
-    const skipBuilds = args.includes('--skip-builds');
-    console.log(`🔍 Debug Mode: E2E ONLY${skipBuilds ? ' (skip builds)' : ''}`);
-    return {
-      runPreflight: !skipBuilds,
-      runBuilds: !skipBuilds,
-      runTests: true,
-      runBackendTests: false,
-      runFrontendTests: false,
-      runE2ETests: true,
       sendNotification: true
     };
   }
