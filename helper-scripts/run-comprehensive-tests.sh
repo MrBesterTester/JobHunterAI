@@ -1117,17 +1117,14 @@ main() {
     local total_seconds=$((total_time % 60))
 
     generate_report
+    local report_exit_code=$?
 
     echo ""
     echo "End time: $(date '+%Y-%m-%d %H:%M:%S %Z')"
     echo "Total runtime: ${total_minutes}m ${total_seconds}s"
 
-    # Exit with appropriate code
-    if [ $total_failed -eq 0 ]; then
-        exit 0
-    else
-        exit 1
-    fi
+    # Exit with appropriate code from generate_report
+    exit $report_exit_code
 }
 
 # Run main
