@@ -5,7 +5,7 @@
  * Format: JSON Lines (one JSON object per line)
  */
 
-import { TestResult, CargoTestEvent } from '../types';
+import { TestResult, CargoTestEvent, TestFailure } from '../types';
 
 export class CargoParser {
   /**
@@ -85,6 +85,76 @@ export class CargoParser {
     const failed = parseInt(failedStr, 10);
     const ignored = parseInt(ignoredStr, 10);
 
+    // Extract failure details if tests failed
+    const failures: TestFailure[] = [];
+    if (failed > 0) {
+      // Extract failure section (between "failures:" and "test result:")
+      const failuresSectionRegex = /failures:\n([\s\S]+?)\n\ntest result:/;
+      const failuresMatch = output.match(failuresSectionRegex);
+
+      if (failuresMatch) {
+        const failuresSection = failuresMatch[1];
+
+        // Split into individual test failure blocks
+        // Each block starts with "---- test_name stdout ----" or just the test name in the failures list
+        const testFailureBlocks = failuresSection.split(/\n---- /);
+
+        for (const block of testFailureBlocks) {
+          if (!block.trim()) continue;
+
+          // Extract test name (first line of block or from the failures list)
+          const testNameMatch = block.match(/^(\S+)/);
+          if (!testNameMatch) continue;
+
+          const testName = testNameMatch[1];
+
+          // Extract panic/error message
+          // Look for "panicked at" or "thread 'test_name' panicked"
+          // Use [\s\S] instead of . with /s flag for ES2017 compatibility
+          const panicMatch = block.match(/panicked at ['"](.+?)['"],?\s+([\w\/\.\-]+):(\d+):(\d+)/);
+
+          let errorMessage = '';
+          let testFile = 'backend/src/main.rs';
+
+          if (panicMatch) {
+            errorMessage = panicMatch[1];
+            testFile = panicMatch[2];
+          } else {
+            // Fallback: use first non-empty line after test name
+            const lines = block.split('\n').slice(1);
+            const firstNonEmpty = lines.find(line => line.trim());
+            errorMessage = firstNonEmpty?.trim() || 'Test failed';
+          }
+
+          failures.push({
+            testName,
+            testFile,
+            errorMessage,
+            stackTrace: block.includes('stack backtrace:') ? block : undefined
+          });
+        }
+      }
+
+      // If we couldn't extract detailed failures, try the simple list
+      if (failures.length === 0) {
+        const failuresListMatch = output.match(/failures:\n((?:\s+\S+\n)+)/);
+        if (failuresListMatch) {
+          const failuresList = failuresListMatch[1];
+          const testNames = failuresList.trim().split(/\s+/);
+
+          for (const testName of testNames) {
+            if (testName) {
+              failures.push({
+                testName,
+                testFile: 'backend/src/main.rs',
+                errorMessage: 'Test failed (details not available)'
+              });
+            }
+          }
+        }
+      }
+    }
+
     const endTime = new Date();
     const duration = endTime.getTime() - startTime.getTime();
 
@@ -96,7 +166,8 @@ export class CargoParser {
       duration,
       startTime,
       endTime,
-      success: result === 'ok' || result === 'PASSED'
+      success: result === 'ok' || result === 'PASSED',
+      failures: failures.length > 0 ? failures : undefined
     };
   }
 }

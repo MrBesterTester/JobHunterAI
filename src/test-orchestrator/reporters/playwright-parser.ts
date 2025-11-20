@@ -4,23 +4,29 @@
  * Parses Playwright's JSON reporter output into our unified TestResult structure
  */
 
-import { TestResult } from '../types';
+import { TestResult, TestFailure } from '../types';
 import { readFileSync } from 'fs';
 
 interface PlaywrightSpec {
   title: string;
   ok: boolean;
+  file: string;
   tests: Array<{
     status: string;
     results: Array<{
       status: 'passed' | 'failed' | 'skipped' | 'timedOut';
       duration: number;
+      error?: {
+        message?: string;
+        stack?: string;
+      };
     }>;
   }>;
 }
 
 interface PlaywrightSuite {
   title: string;
+  file?: string;
   specs: PlaywrightSpec[];
   suites?: PlaywrightSuite[];
 }
@@ -54,8 +60,8 @@ export class PlaywrightParser {
     try {
       const report: PlaywrightReport = JSON.parse(jsonOutput);
 
-      // Count test results recursively
-      const counts = this.countTests(report.suites);
+      // Count test results and extract failures recursively
+      const { counts, failures } = this.countTests(report.suites);
 
       const endTime = new Date();
       const startTime = report.stats?.startTime
@@ -71,7 +77,8 @@ export class PlaywrightParser {
         duration,
         startTime,
         endTime,
-        success: counts.failed === 0
+        success: counts.failed === 0,
+        failures: failures.length > 0 ? failures : undefined
       };
     } catch (err) {
       throw new Error(`Failed to parse Playwright JSON output: ${err}`);
@@ -79,16 +86,20 @@ export class PlaywrightParser {
   }
 
   /**
-   * Recursively count tests in Playwright suites
+   * Recursively count tests and extract failures in Playwright suites
    */
   private static countTests(suites: PlaywrightSuite[]): {
-    passed: number;
-    failed: number;
-    skipped: number;
+    counts: {
+      passed: number;
+      failed: number;
+      skipped: number;
+    };
+    failures: TestFailure[];
   } {
     let passed = 0;
     let failed = 0;
     let skipped = 0;
+    const failures: TestFailure[] = [];
 
     for (const suite of suites) {
       // Count specs in this suite
@@ -101,6 +112,15 @@ export class PlaywrightParser {
               passed++;
             } else if (result.status === 'failed' || result.status === 'timedOut') {
               failed++;
+
+              // Extract failure details
+              failures.push({
+                testName: `${suite.title} › ${spec.title}`,
+                testFile: spec.file || suite.file || 'unknown',
+                errorMessage: result.error?.message || `Test ${result.status}`,
+                stackTrace: result.error?.stack,
+                duration: result.duration
+              });
             } else if (result.status === 'skipped') {
               skipped++;
             }
@@ -110,13 +130,17 @@ export class PlaywrightParser {
 
       // Recursively count nested suites
       if (suite.suites) {
-        const nestedCounts = this.countTests(suite.suites);
-        passed += nestedCounts.passed;
-        failed += nestedCounts.failed;
-        skipped += nestedCounts.skipped;
+        const nestedResults = this.countTests(suite.suites);
+        passed += nestedResults.counts.passed;
+        failed += nestedResults.counts.failed;
+        skipped += nestedResults.counts.skipped;
+        failures.push(...nestedResults.failures);
       }
     }
 
-    return { passed, failed, skipped };
+    return {
+      counts: { passed, failed, skipped },
+      failures
+    };
   }
 }

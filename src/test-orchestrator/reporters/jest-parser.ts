@@ -4,7 +4,7 @@
  * Parses Jest's --json output format into our unified TestResult structure
  */
 
-import { TestResult, JestTestResult } from '../types';
+import { TestResult, JestTestResult, TestFailure } from '../types';
 
 export class JestParser {
   /**
@@ -18,6 +18,25 @@ export class JestParser {
       const startTime = new Date(result.startTime);
       const duration = endTime.getTime() - startTime.getTime();
 
+      // Extract failure details
+      const failures: TestFailure[] = [];
+
+      for (const testResult of result.testResults || []) {
+        for (const assertion of testResult.assertionResults || []) {
+          if (assertion.status === 'failed') {
+            // Extract error message from failureMessages array
+            const errorMessage = assertion.failureMessages?.join('\n') || 'Test failed';
+
+            failures.push({
+              testName: assertion.fullName || assertion.title,
+              testFile: testResult.name || 'unknown',
+              errorMessage,
+              duration: assertion.duration ?? undefined
+            });
+          }
+        }
+      }
+
       return {
         suite: 'frontend',
         passed: result.numPassedTests,
@@ -26,7 +45,8 @@ export class JestParser {
         duration,
         startTime,
         endTime,
-        success: result.success
+        success: result.success,
+        failures: failures.length > 0 ? failures : undefined
       };
     } catch (err) {
       throw new Error(`Failed to parse Jest JSON output: ${err}`);
