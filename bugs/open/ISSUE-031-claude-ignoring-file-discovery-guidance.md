@@ -43,6 +43,7 @@ upstream_issues: [anthropics/claude-code#7777, anthropics/claude-code#10056]](#i
     - [Why Not Close Immediately?](#why-not-close-immediately)
   - [Related Issues](#related-issues)
   - [Status History](#status-history)
+  - [Experiment: Explicit Path Documentation (2025-11-20)](#experiment-explicit-path-documentation-2025-11-20)
   - [Notes](#notes)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -404,6 +405,50 @@ Closing too early risks declaring victory prematurely while the underlying probl
 - **2025-11-11**: **ROOT CAUSE CONFIRMED**: This is a known, unresolved product bug in Claude Code itself
 - **2025-11-11**: Updated issue to reflect upstream product bug status
 - **2025-11-11**: Issue remains **OPEN** - awaiting Anthropic fix to upstream issues
+- **2025-11-20**: Experiment: Added explicit absolute paths for test result files to CLAUDE.md
+- **2025-11-20**: Research into `<env>` context block and path documentation patterns
+- **2025-11-20**: User identified redundancy problem - testing if "nailed down" paths help with file discovery
+
+## Experiment: Explicit Path Documentation (2025-11-20)
+
+**Context**: Investigation into whether documenting explicit absolute paths helps with file discovery reliability.
+
+**What we discovered about `<env>`**:
+- `<env>` is a system context block automatically provided by Claude Code at session start
+- Contains: Working directory, git status, platform, OS version, current date
+- Working directory value: `/Users/sam/Projects/JobHunterAI-Claude`
+- No special interpolation syntax exists - just reference the literal value
+
+**Research findings from Anthropic docs**:
+- Standard pattern: Document literal absolute path + note "(available in `<env>`)"
+- Example: `**Working directory**: /Users/sam/Projects/JobHunterAI-Claude (available in <env>)`
+- Claude Code doesn't support syntax like `${WORKING_DIR}` or similar interpolation
+- The pattern is: explicit documentation + runtime context reference
+
+**The redundancy problem**:
+User correctly identified: If path is completely spelled out, what's the point of referencing `<env>`?
+
+Two possible approaches:
+1. **Explicit paths**: Document full absolute paths (e.g., `/Users/sam/Projects/JobHunterAI-Claude/test-results/...`)
+   - Pro: Unambiguous, matches existing "Working directory" pattern
+   - Con: Redundant if `<env>` already provides this
+
+2. **Dynamic construction**: Show path structure relative to `<env>` Working directory
+   - Pro: Actually uses the `<env>` value dynamically
+   - Con: Requires Claude to construct paths correctly (which is the problem we're trying to solve!)
+
+**Current experimental approach** (as of 2025-11-20):
+- Added explicit absolute paths for test result files to CLAUDE.md
+- Following existing "Working directory" documentation pattern
+- Will observe if this improves file discovery reliability
+
+**Key question**: Does explicit path documentation (the "nailed down" approach) help Claude find files more reliably, or is it redundant with `<env>` Working directory?
+
+**Status**: Experimental - observing if this approach helps with ISSUE-031 file discovery problems
+
+**Related commits**:
+- `d42d566` - "fix: Use absolute paths for test result files following <env> best practices"
+- `e5e5595` - "docs: Add phased approach for analyzing comprehensive test results"
 
 ## Notes
 
