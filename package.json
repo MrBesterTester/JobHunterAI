@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "orchestrator:prototype": "ts-node src/test-orchestrator/prototype.ts"
+    "orchestrator:prototype": "ts-node src/test-orchestrator/prototype.ts",
+    "test:comprehensive": "ts-node src/test-orchestrator/main.ts"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
