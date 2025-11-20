@@ -20,6 +20,7 @@
       - [Step 1: Archive Oldest Run (If Needed)](#step-1-archive-oldest-run-if-needed)
       - [Step 2: Add New Run to TESTING_STATUS.md](#step-2-add-new-run-to-testing_statusmd)
       - [Step 3: Commit Changes](#step-3-commit-changes)
+      - [Step 4: Managing Historical Investigation Content](#step-4-managing-historical-investigation-content)
   - [Development Commands](#development-commands)
     - [Database Setup](#database-setup)
     - [Backend (Rust)](#backend-rust)
@@ -355,11 +356,14 @@ date "+%Y-%m-%d %H:%M:%S %Z"  # Full timestamp with timezone
 2. **Latest Test Run Results** - Quick summary of most recent run
 3. **Next Steps / Priorities** ⭐ **MUST be here** - Immediate visibility of testing priorities
 4. **Detailed Test Results** - Full breakdown of latest run
-5. **Recent Testing Work** - Context from previous 1-2 runs
-6. **Related Files** - Links to test files and docs
-7. **Quick Commands** - Common testing commands
+5. **Previous Test Run Results** - Summary of previous run
+6. **Historical Context - Past Investigation Work** - Archived investigations with clear timeline warnings (see Step 4)
+7. **Related Files** - Links to test files and docs
+8. **Quick Commands** - Common testing commands
 
 **Why**: Users should see testing priorities immediately without scrolling through detailed test results.
+
+**Important**: Historical investigation content MUST include clear timeline warnings to prevent confusion (see "Step 4: Managing Historical Investigation Content" below).
 
 ### Testing Status Update Requirements
 
@@ -430,11 +434,71 @@ git add docs/TESTING_STATUS.md testing-history/
 git commit -m "docs: Add test results ($TIMESTAMP), archive oldest run to testing-history"
 ```
 
+#### Step 4: Managing Historical Investigation Content
+
+**⚠️ CRITICAL**: To prevent timeline confusion, historical investigation content (tests that failed during investigation but were fixed) MUST be clearly distinguished from current test status.
+
+**When to Apply This**:
+- When TESTING_STATUS.md contains detailed investigation of test failures
+- When test failures occurred during investigation but were fixed before current runs
+- When historical context could be confused with current test status
+
+**Required Actions**:
+
+1. **Add Clear Timeline Warnings**:
+   - Add prominent warning box at top of historical section
+   - Emphasize that failures occurred DURING INVESTIGATION (with specific date)
+   - Clarify that tests were FIXED (with specific date)
+   - State this is historical documentation, not current status
+
+   Example:
+   ```markdown
+   > **⚠️ IMPORTANT TIMELINE NOTE**
+   > The investigation below describes tests that **FAILED on [DATE] during investigation**.
+   > **All tests were FIXED the same day ([DATE])** and have been passing in all subsequent runs.
+   > This section is **historical documentation** only - all tests are currently working.
+   ```
+
+2. **Move Detailed Investigations to Archive**:
+   - Create investigation archive file in `testing-history/`
+   - Naming convention: `ISSUE-NNN_INVESTIGATION_YYYY-MM-DD.md` or similar descriptive name
+   - Include complete investigation timeline, evidence, fixes, and final status
+   - Include same timeline warning in archive file
+
+3. **Update Section Structure**:
+   - Rename section to clearly indicate historical context
+   - Example: "Historical Context - Past Investigation Work" instead of "Recent Testing Work"
+   - Replace detailed content with brief summary + link to archive
+   - Summary should include: investigation date, status (✅ COMPLETED), affected tests, key finding, link to detailed archive
+   - Update `testing-history/README.md` index with new investigation archive
+
+**Example Summary Structure**:
+```markdown
+## Historical Context - Past Investigation Work
+
+### ISSUE-055 Investigation (November 18, 2025) - ✅ COMPLETED
+
+> **⚠️ IMPORTANT TIMELINE NOTE**
+> [Timeline clarification here]
+
+**Investigation Date**: 2025-11-18 (completed same day)
+**Status**: ✅ All 4 tests fixed and verified
+**Affected Tests**: #504, #511, #441, #547
+**Key Fix**: Replaced UI state waits with API response waits
+**Detailed Investigation**: See [testing-history/ISSUE-055_INVESTIGATION_2025-11-18.md](...)
+```
+
+**Why This Matters**:
+- Prevents confusion where current runs show "all passed" while investigation section describes failures
+- Makes timeline crystal clear: failures were during investigation, not in current runs
+- Maintains valuable investigation documentation without cluttering current status
+- Enables future reference to investigation process without timeline ambiguity
+
 **Important Notes**:
 - TESTING_STATUS.md = workspace for **current + previous run only** (2 runs max)
-- testing-history/ = permanent archive of **all older runs** (one file per run)
+- testing-history/ = permanent archive of **all older runs** (one file per run) + **investigation archives**
 - Completed work summaries (like ISSUE-053) can stay in TESTING_STATUS.md for 1-2 weeks, then archive
-- Use `testing-history/README.md` as index to find specific runs
+- Use `testing-history/README.md` as index to find specific runs and investigations
 
 **See also**: `testing-history/README.md` for full archive index
 
@@ -442,6 +506,7 @@ git commit -m "docs: Add test results ($TIMESTAMP), archive oldest run to testin
 - User can see exact test results at any point in time
 - Historical tracking of test performance over time
 - Prevents confusion between estimates and actual results
+- Prevents confusion between historical investigations and current test status
 - Enables debugging of test regressions with precise timestamps
 
 ---
