@@ -50,8 +50,8 @@ echo -e "${BLUE}║       COMPREHENSIVE TEST ORCHESTRATOR (TypeScript)          
 echo -e "${BLUE}╚═══════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
-# Check if ts-node is available
-if ! command -v ts-node &> /dev/null; then
+# Check if ts-node is available (check locally in node_modules)
+if [ ! -f "$PROJECT_ROOT/frontend/node_modules/.bin/ts-node" ]; then
     echo -e "${RED}❌ ERROR: ts-node not found${NC}"
     echo ""
     echo "Install with:"
