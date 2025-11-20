@@ -1,12 +1,13 @@
 ---
 id: ISSUE-056
 title: Playwright COMPREHENSIVE_TESTS env var not reaching worker processes
-status: open
+status: fixed
 priority: medium
 severity: medium
 component: infrastructure
 created: 2025-11-19
 updated: 2025-11-19
+fixed: 2025-11-19
 affects:
   - E2E test suite (comprehensive test runs)
   - Load-aware timeout logic
@@ -14,6 +15,7 @@ affects:
 related:
   - ISSUE-055
   - ISSUE-046
+  - ISSUE-057
 ---
 
 # ISSUE-056: Playwright COMPREHENSIVE_TESTS env var not reaching worker processes
