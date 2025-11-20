@@ -18,17 +18,17 @@ last_updated: 2025-11-19 16:34:51 PST (Added comprehensive test run results - al
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Testing Status](#testing-status)
-  - [Latest Test Run Results (Quick Summary) 🎯](#latest-test-run-results-quick-summary-)
-  - [Latest Comprehensive Test Run - Detailed Results 📊](#latest-comprehensive-test-run---detailed-results-)
+  - [Latest Test Run Results (Quick Summary)](#latest-test-run-results-quick-summary)
+  - [Latest Comprehensive Test Run - Detailed Results](#latest-comprehensive-test-run---detailed-results)
     - [Test Status Summary](#test-status-summary)
     - [Backend Test Details](#backend-test-details)
     - [Frontend Unit Test Details](#frontend-unit-test-details)
     - [E2E Test Details](#e2e-test-details)
     - [Key Observations](#key-observations)
     - [Comparison to Previous Run (2025-11-19 01:36 PST)](#comparison-to-previous-run-2025-11-19-0136-pst)
-  - [Previous Test Run Results 📊](#previous-test-run-results-)
-  - [Next Steps (Testing Priorities) ⭐](#next-steps-testing-priorities-)
-  - [Recent Testing Work - ISSUE-055 (2025-11-18) 🔬](#recent-testing-work---issue-055-2025-11-18-)
+  - [Previous Test Run Results](#previous-test-run-results)
+  - [Next Steps (Testing Priorities)](#next-steps-testing-priorities)
+  - [Recent Testing Work - ISSUE-055 (2025-11-18)](#recent-testing-work---issue-055-2025-11-18)
     - [Individual Test Results (Isolation - No Parallel Workers)](#individual-test-results-isolation---no-parallel-workers)
     - [Full File Test Results (4 Parallel Workers + COMPREHENSIVE_TESTS=true)](#full-file-test-results-4-parallel-workers--comprehensive_teststrue)
     - [Test #511 Deep Dive - Functional Issue Discovered](#test-511-deep-dive---functional-issue-discovered)
@@ -41,7 +41,7 @@ last_updated: 2025-11-19 16:34:51 PST (Added comprehensive test run results - al
 
 # Testing Status
 
-## Latest Test Run Results (Quick Summary) 🎯
+## Latest Test Run Results (Quick Summary)
 
 **Run Date**: 2025-11-19 16:15:24 PST
 **Runtime**: 18.3 minutes (full comprehensive suite)
@@ -65,7 +65,7 @@ last_updated: 2025-11-19 16:34:51 PST (Added comprehensive test run results - al
 
 ---
 
-## Latest Comprehensive Test Run - Detailed Results 📊
+## Latest Comprehensive Test Run - Detailed Results
 
 **Run Date**: 2025-11-19 16:15:24 PST
 **Total Runtime**: 18.3 minutes (full comprehensive suite with preflight checks)
@@ -178,7 +178,7 @@ last_updated: 2025-11-19 16:34:51 PST (Added comprehensive test run results - al
 
 ---
 
-## Previous Test Run Results 📊
+## Previous Test Run Results
 
 **Run Date**: 2025-11-19 01:36:18 PST
 **Runtime**: 13.2 minutes (E2E tests only)
@@ -194,7 +194,7 @@ last_updated: 2025-11-19 16:34:51 PST (Added comprehensive test run results - al
 
 ---
 
-## Next Steps (Testing Priorities) ⭐
+## Next Steps (Testing Priorities)
 
 **Priority 1: Fix COMPREHENSIVE_TESTS Environment Variable** ✅ **VERIFIED (2025-11-19 16:15 PST)**
 - **Issue**: [ISSUE-056](../bugs/open/ISSUE-056-playwright-comprehensivetests-env-var-not-reaching-worker-processes.md) - Environment variable not reaching Playwright workers
@@ -230,7 +230,7 @@ last_updated: 2025-11-19 16:34:51 PST (Added comprehensive test run results - al
 
 ---
 
-## Recent Testing Work - ISSUE-055 (2025-11-18) 🔬
+## Recent Testing Work - ISSUE-055 (2025-11-18)
 
 **Test Date**: 2025-11-18 20:15:00 PST - 20:48:50 PST
 **Objective**: Verify ISSUE-055 Priority 1 fixes for 4 problematic tests
