@@ -81,7 +81,7 @@ related: [ISSUE-048, ISSUE-059]
   - [Benefits Summary](#benefits-summary)
   - [Implementation Status](#implementation-status)
   - [Testing & Verification (2025-11-20)](#testing--verification-2025-11-20)
-  - [Phase 7: Enhanced Failure Reporting (In Progress - 2025-11-20)](#phase-7-enhanced-failure-reporting-in-progress---2025-11-20)
+  - [Phase 7: Enhanced Failure Reporting (Completed - 2025-11-20)](#phase-7-enhanced-failure-reporting-completed---2025-11-20)
     - [Implementation Plan](#implementation-plan-1)
     - [Implementation Order](#implementation-order)
     - [Testing Strategy](#testing-strategy)
@@ -1407,22 +1407,22 @@ All debug modes now:
 
 ---
 
-### Phase 7: Enhanced Failure Reporting (In Progress - 2025-11-20)
+### Phase 7: Enhanced Failure Reporting (Completed - 2025-11-20)
 
-**Status**: 🚧 IN PROGRESS (Phase 7.1 ✅ COMPLETE, Phase 7.2 ✅ COMPLETE)
+**Status**: ✅ COMPLETE (Core implementation finished - Phase 7.1-7.4, Phase 7.5 optional)
 
-**Problem**: Current orchestrator captures high-level statistics (passed/failed/skipped counts) but lacks detailed failure information:
-- ❌ No list of which tests failed
-- ❌ No error messages or stack traces
-- ❌ Minimal JSON report (just counts)
-- ❌ Hard to debug failures without digging through logs
+**Problem** (solved): Orchestrator captured high-level statistics but lacked detailed failure information:
+- ✅ Now lists which tests failed (test names)
+- ✅ Now includes error messages and stack traces
+- ✅ Enhanced JSON report with full failure details
+- ✅ Easy to debug failures from console output
 
-**Goal**: Each test suite should report:
-- List of failed test names
-- Error messages for each failure
-- Stack traces (where available)
-- Test file locations
-- Failure categories (if applicable)
+**Goal** (achieved): Each test suite now reports:
+- ✅ List of failed test names
+- ✅ Error messages for each failure
+- ✅ Stack traces (where available)
+- ✅ Test file locations
+- ✅ Test duration for each failure
 
 #### Implementation Plan
 
@@ -1489,11 +1489,13 @@ C. **PlaywrightParser** (`src/test-orchestrator/reporters/playwright-parser.ts`)
 
 **Verification**: TypeScript compiles cleanly with zero errors/warnings
 
-**Phase 7.3: Update JSON Report Format** (~15 min)
+**Phase 7.3: Update JSON Report Format** ✅ COMPLETE (~0 min)
 
-File: `src/test-orchestrator/orchestrator.ts`
+**Completed**: 2025-11-20 (No code changes needed)
 
-Enhanced report structure:
+The orchestrator already writes full `TestResult` objects to JSON, which now include the `failures[]` array populated by Phase 7.2 parsers. Next test run will automatically include detailed failures in `test-results/comprehensive-report.json`.
+
+Enhanced report structure (automatically generated):
 ```json
 {
   "results": {
@@ -1515,9 +1517,20 @@ Enhanced report structure:
 }
 ```
 
-**Phase 7.4: Console Output Enhancement** (~20 min)
+**Phase 7.4: Console Output Enhancement** ✅ COMPLETE (~20 min)
 
-Add failure summary section:
+**Completed**: 2025-11-20 (Commit: `07abaf4`)
+
+Added detailed failure reporting to console output when tests fail:
+
+**New features**:
+- `displayFailures()` method shows structured failure information
+- Displays test name, file path, and error message (first line)
+- Shows duration for each failed test
+- Organized by test suite (Backend, Frontend, E2E)
+- Only displays when failures are detected
+
+**Output format**:
 ```
 📊 Comprehensive Test Summary
 =============================
@@ -1526,17 +1539,18 @@ Add failure summary section:
 ❌ FAILURES DETECTED
 ====================
 
-Backend (1 failure):
-  • test_oauth_token_refresh
-    backend/src/main.rs
-    Error: assertion failed: expected Ok, got Err(...)
-
-E2E (2 failures):
-  • Job status updates › should transition from new to approved
-    e2e/tests/03-job-status-updates.spec.ts:45
-    Error: Timeout 30000ms exceeded waiting for element
+E2E (5 failures):
+  • Tab Navigation › should display only "new" jobs in Inbox tab
+    e2e/tests/02-tab-navigation.ts
+    Error: Test timeout of 30000ms exceeded
+    Duration: 45123ms
   ...
 ```
+
+**Files modified**:
+- `src/test-orchestrator/orchestrator.ts` (+64 lines)
+
+**Verification**: TypeScript compiles cleanly with zero errors/warnings
 
 **Phase 7.5: Separate Detailed Failure Report** (Optional, ~20 min)
 
