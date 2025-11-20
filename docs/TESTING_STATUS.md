@@ -220,7 +220,10 @@ last_updated: 2025-11-19 16:34:51 PST (Added comprehensive test run results - al
 - **Test**: `e2e/tests/16-gmail-sync-integration.spec.ts:229` - "should allow approving jobs synced from Gmail"
 - **Status**: Flaky - fails occasionally but passes on retry
 - **Latest Run**: Failed initially (11.1s timeout), passed on retry
-- **Action**: Continue monitoring in future comprehensive runs
+- **Issue Tracked**: [ISSUE-057](../bugs/open/ISSUE-057-test-441-flaky---switchtotab-helper-has-fixed-timeouts-that-dont-adapt-to-load.md) - switchToTab helper has fixed timeouts that don't adapt to load
+- **Root Cause**: Helper function has two fixed 5s timeouts (lines 44, 52) that don't use COMPREHENSIVE_TESTS env var
+- **Recommended Fix**: Make helper timeouts load-aware (5 minutes of work, low risk)
+- **Action**: User decision - implement fix now or continue monitoring
 - **Not Blocking**: Test consistently passes on retry
 
 **Overall Test Suite Health**: ✅ **100% pass rate (1072/1072 active tests)** - Excellent state, all priorities fixed and verified
