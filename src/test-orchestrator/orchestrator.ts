@@ -937,6 +937,7 @@ export class TestOrchestrator {
     // Display detailed failure information if any tests failed
     if (report.summary.totalFailed > 0) {
       this.displayFailures(report);
+      this.writeDetailedFailureReport(report);
     }
 
     // Write report to file
@@ -1005,6 +1006,135 @@ export class TestOrchestrator {
         }
         console.log('');
       }
+    }
+  }
+
+  /**
+   * Write detailed failure report to file with full stack traces
+   */
+  private writeDetailedFailureReport(report: ComprehensiveTestReport): void {
+    try {
+      const reportPath = path.join(__dirname, '../../test-results/failures-detailed.txt');
+      const lines: string[] = [];
+
+      // Header
+      lines.push('═══════════════════════════════════════════════════════════════════');
+      lines.push('                    DETAILED FAILURE REPORT');
+      lines.push('═══════════════════════════════════════════════════════════════════');
+      lines.push('');
+      lines.push(`Test Run: ${report.startTime.toISOString()}`);
+      lines.push(`Duration: ${(report.duration / 1000).toFixed(1)}s`);
+      lines.push(`Total Failures: ${report.summary.totalFailed}`);
+      lines.push('');
+      lines.push('═══════════════════════════════════════════════════════════════════');
+      lines.push('');
+
+      let failureNumber = 1;
+
+      // Backend failures
+      if (report.results.backend.failures && report.results.backend.failures.length > 0) {
+        lines.push('');
+        lines.push('┌─────────────────────────────────────────────────────────────────┐');
+        lines.push('│ BACKEND FAILURES                                                │');
+        lines.push('└─────────────────────────────────────────────────────────────────┘');
+        lines.push('');
+
+        for (const failure of report.results.backend.failures) {
+          lines.push(`[${failureNumber}] ${failure.testName}`);
+          lines.push('─'.repeat(70));
+          lines.push(`File: ${failure.testFile}`);
+          if (failure.duration) {
+            lines.push(`Duration: ${failure.duration}ms`);
+          }
+          lines.push('');
+          lines.push('Error Message:');
+          lines.push(failure.errorMessage);
+          lines.push('');
+
+          if (failure.stackTrace) {
+            lines.push('Stack Trace:');
+            lines.push(failure.stackTrace);
+            lines.push('');
+          }
+
+          lines.push('');
+          failureNumber++;
+        }
+      }
+
+      // Frontend failures
+      if (report.results.frontend.failures && report.results.frontend.failures.length > 0) {
+        lines.push('');
+        lines.push('┌─────────────────────────────────────────────────────────────────┐');
+        lines.push('│ FRONTEND FAILURES                                               │');
+        lines.push('└─────────────────────────────────────────────────────────────────┘');
+        lines.push('');
+
+        for (const failure of report.results.frontend.failures) {
+          lines.push(`[${failureNumber}] ${failure.testName}`);
+          lines.push('─'.repeat(70));
+          lines.push(`File: ${failure.testFile}`);
+          if (failure.duration) {
+            lines.push(`Duration: ${failure.duration}ms`);
+          }
+          lines.push('');
+          lines.push('Error Message:');
+          lines.push(failure.errorMessage);
+          lines.push('');
+
+          if (failure.stackTrace) {
+            lines.push('Stack Trace:');
+            lines.push(failure.stackTrace);
+            lines.push('');
+          }
+
+          lines.push('');
+          failureNumber++;
+        }
+      }
+
+      // E2E failures
+      if (report.results.e2e.failures && report.results.e2e.failures.length > 0) {
+        lines.push('');
+        lines.push('┌─────────────────────────────────────────────────────────────────┐');
+        lines.push('│ E2E FAILURES                                                    │');
+        lines.push('└─────────────────────────────────────────────────────────────────┘');
+        lines.push('');
+
+        for (const failure of report.results.e2e.failures) {
+          lines.push(`[${failureNumber}] ${failure.testName}`);
+          lines.push('─'.repeat(70));
+          lines.push(`File: ${failure.testFile}`);
+          if (failure.duration) {
+            lines.push(`Duration: ${failure.duration}ms`);
+          }
+          lines.push('');
+          lines.push('Error Message:');
+          lines.push(failure.errorMessage);
+          lines.push('');
+
+          if (failure.stackTrace) {
+            lines.push('Stack Trace:');
+            lines.push(failure.stackTrace);
+            lines.push('');
+          }
+
+          lines.push('');
+          failureNumber++;
+        }
+      }
+
+      // Footer
+      lines.push('');
+      lines.push('═══════════════════════════════════════════════════════════════════');
+      lines.push(`End of Failure Report - ${new Date().toISOString()}`);
+      lines.push('═══════════════════════════════════════════════════════════════════');
+
+      // Write to file
+      writeFileSync(reportPath, lines.join('\n'));
+      console.log(`📄 Detailed failures saved to: ${reportPath}`);
+    } catch (err) {
+      console.warn('⚠️  Failed to write detailed failure report:', err);
     }
   }
 
