@@ -6,11 +6,11 @@
   - [Priority Breakdown](#priority-breakdown)
   - [Component Breakdown](#component-breakdown)
   - [Open Bugs](#open-bugs)
-    - [Open (5)](#open-5)
+    - [Open (4)](#open-4)
   - [Mitigated Bugs](#mitigated-bugs)
     - [Mitigated (4)](#mitigated-4)
   - [Fixed Bugs](#fixed-bugs)
-    - [Fixed (59)](#fixed-59)
+    - [Fixed (60)](#fixed-60)
   - [Duplicate Bugs](#duplicate-bugs)
     - [Duplicate (1)](#duplicate-1)
   - [How to Use This System](#how-to-use-this-system)
@@ -27,18 +27,18 @@ This directory contains the project's bug tracking system with individual files 
 ## Summary
 
 **Total Bugs**: 69
-- **Open**: 5
+- **Open**: 4
 - **Mitigated**: 4
-- **Fixed**: 59
+- **Fixed**: 60
 - **Duplicate**: 1
 
-**Last Updated**: 2025-11-19 20:13:39
+**Last Updated**: 2025-11-19 21:35:16
 
 ## Priority Breakdown
 
 - **Critical**: 1
-- **High**: 15
-- **Medium**: 35
+- **High**: 16
+- **Medium**: 34
 - **Low**: 16
 - **Unknown**: 2
 
@@ -50,11 +50,12 @@ This directory contains the project's bug tracking system with individual files 
 - **development-tooling**: 1
 - **docs**: 8
 - **e2e-tests**: 2
-- **frontend**: 32
+- **frontend**: 31
 - **frontend, backend**: 1
 - **frontend/testing**: 3
 - **infrastructure**: 9
 - **process**: 1
+- **testing-infrastructure**: 1
 - **unknown**: 2
 - **workflow**: 1
 
@@ -62,15 +63,14 @@ This directory contains the project's bug tracking system with individual files 
 
 ## Open Bugs
 
-### Open (5)
+### Open (4)
 
 | ID | Title | Priority | Component | Created | Updated |
 |----|-------|----------|-----------|---------|---------|
 | ISSUE-031 | [Claude Not Following Existing File Discovery Guidance in CLAUDE.md](open/ISSUE-031-claude-ignoring-file-discovery-guidance.md) | high | workflow | 2025-11-04 | 2025-11-11 |
 | ISSUE-042 | [TOC generators fail to include certain nested headers](open/ISSUE-042-toc-generators-fail-to-include-certain-nested-headers.md) | low | docs | 2025-11-14 | 2025-11-14 |
 | ISSUE-046 | [E2E Test Suite: Context-Dependent Flakiness Due to Insufficient Test Isolation](open/ISSUE-046-e2e-test-suite-context-dependent-flakiness-due-to-insufficient-test-isolation.md) | medium | frontend | 2025-11-15 | 2025-11-15 |
-| ISSUE-048 | [Background bash notifications don't work - osascript fails without GUI access](open/ISSUE-048-background-bash-notifications-dont-work---osascript-fails-without-gui-access.md) | low | development-tooling | 2025-11-17 | 2025-11-17 |
-| ISSUE-060 | [Replace ad-hoc comprehensive test flow with proper test orchestration tooling](open/ISSUE-060-replace-ad-hoc-comprehensive-test-flow-with-proper-test-orchestration-tooling.md) | medium | frontend | 2025-11-19 | 2025-11-19 |
+| ISSUE-060 | [Replace ad-hoc comprehensive test flow with proper test orchestration tooling](open/ISSUE-060-replace-ad-hoc-comprehensive-test-flow-with-proper-test-orchestration-tooling.md) | high | testing-infrastructure | 2025-11-19 | 2025-11-19 |
 
 ## Mitigated Bugs
 
@@ -85,7 +85,7 @@ This directory contains the project's bug tracking system with individual files 
 
 ## Fixed Bugs
 
-### Fixed (59)
+### Fixed (60)
 
 | ID | Title | Priority | Component | Created | Updated |
 |----|-------|----------|-----------|---------|---------|
@@ -138,6 +138,7 @@ This directory contains the project's bug tracking system with individual files 
 | ISSUE-043 | [Gmail approval test - UI stats not refreshing after approval action](fixed/ISSUE-043-gmail-approval-test---ui-stats-not-refreshing-after-approval-action.md) | medium | frontend | 2025-11-14 | 2025-11-14 |
 | ISSUE-044 | [Tab Navigation Empty State test timeout - test file level strategy fixed it](fixed/ISSUE-044-tab-navigation-empty-state-test-timeout---test-file-level-strategy-fixed-it.md) | medium | frontend | 2025-11-15 | 2025-11-15 |
 | ISSUE-045 | [OAuth tokens expire during test runs - need automatic refresh token logic](fixed/ISSUE-045-oauth-tokens-expire-during-test-runs---need-automatic-refresh-token-logic.md) | high | backend, infrastructure | 2025-11-15 | 2025-11-15 |
+| ISSUE-048 | [Background bash notifications don't work - osascript fails without GUI access](fixed/ISSUE-048-background-bash-notifications-dont-work---osascript-fails-without-gui-access.md) | low | development-tooling | 2025-11-17 | 2025-11-19 |
 | ISSUE-049 | [E2E test fails under load - Microsoft email archiving sync test times out](fixed/ISSUE-049-e2e-test-fails-under-load-microsoft-email-archiving-sync-test-times-out.md) | low | e2e-tests | 2025-11-17 | 2025-11-18 |
 | ISSUE-050 | [E2E test fails under load - Refresh button LLM operation times out](fixed/ISSUE-050-e2e-test-fails-under-load-refresh-button-llm-operation-times-out.md) | low | e2e-tests | 2025-11-17 | 2025-11-17 |
 | ISSUE-051 | [E2E tests contain 12 waitForTimeout anti-patterns violating PLAYWRIGHT_BEST_PRACTICES.md](fixed/ISSUE-051-e2e-tests-contain-12-waitfortimeout-anti-patterns-violating-playwrightbestpracticesmd.md) | medium | frontend | 2025-11-17 | 2025-11-17 |
@@ -188,4 +189,4 @@ python3 scripts/generate-bug-index.py
 ---
 
 **Auto-generated by**: `scripts/generate-bug-index.py`
-**Generated on**: 2025-11-19 20:13:39
+**Generated on**: 2025-11-19 21:35:16

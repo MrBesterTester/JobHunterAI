@@ -1,14 +1,15 @@
 ---
 id: ISSUE-048
 title: Background bash notifications don't work - osascript fails without GUI access
-status: open
+status: fixed
 priority: low
 severity: low
 component: development-tooling
 created: 2025-11-17
-updated: 2025-11-17
+updated: 2025-11-19
+fixed: 2025-11-19
 affects: []
-related: []
+related: [ISSUE-060, ISSUE-059]
 ---
 
 # ISSUE-048: Background bash notifications don't work - osascript fails without GUI access
@@ -379,9 +380,36 @@ osascript -e "display dialog \"Test notification\" \
 
 **Not a blocker**: Current manual monitoring pattern works well and is appropriate for the use case frequency.
 
+## Resolution (2025-11-19)
+
+**Status**: ✅ Fixed - Superseded by ISSUE-060
+
+This issue was a symptom of the ad-hoc Bash-based test orchestration. The root problem wasn't just notifications failing, but the entire architecture of polling/monitoring background processes.
+
+**Solved by ISSUE-060**: Node.js Test Orchestrator
+- **Problem this issue highlighted**: Token burn from repeatedly reading log files to check test status
+- **Architectural solution**: TypeScript test orchestrator with:
+  - Structured JSON parsing (zero token burn)
+  - Proper event-driven callbacks (no polling needed)
+  - Native notification library integration
+  - Desktop notifications working reliably (sound + dialog)
+
+**How it works now**:
+1. Run `npm run test:comprehensive`
+2. Orchestrator spawns all 3 test suites concurrently
+3. Parses JSON output streams in real-time (no log files)
+4. Sends desktop notification immediately on completion
+5. Zero token burn - no polling, no log reading
+
+**References**:
+- ISSUE-060: Replace ad-hoc comprehensive test flow with proper test orchestration tooling
+- ISSUE-059: Related notification issue also fixed by ISSUE-060
+
 ## Related Files
 
-- `helper-scripts/run-comprehensive-tests.sh:162-169` - Built-in notification logic that fails in background mode
+- `helper-scripts/run-comprehensive-tests.sh:162-169` - Old Bash notification logic (deprecated)
+- `src/test-orchestrator/main.ts` - New TypeScript orchestrator entry point
+- `src/test-orchestrator/orchestrator.ts` - Desktop notification implementation
 - `README_iPhone-notify-setup.md` - iPhone notification setup (separate use case)
 - `docs/TESTING_STATUS.md` - Documents comprehensive test results
 - `CLAUDE.md` - Developer preferences including notification requirements

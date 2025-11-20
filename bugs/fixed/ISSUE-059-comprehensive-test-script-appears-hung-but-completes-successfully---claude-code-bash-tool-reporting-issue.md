@@ -13,6 +13,8 @@ affects:
   - Developer experience
   - Test result reporting
 related:
+  - ISSUE-060
+  - ISSUE-048
   - helper-scripts/run-comprehensive-tests.sh
 tags: [testing, infrastructure, claude-code, bash-tool, reporting]
 ---
@@ -40,6 +42,7 @@ tags: [testing, infrastructure, claude-code, bash-tool, reporting]
 - [Implementation](#implementation)
 - [Status History](#status-history)
 - [Notes](#notes)
+- [Resolution (2025-11-19)](#resolution-2025-11-19)
 - [Related Files](#related-files)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -526,15 +529,46 @@ This pattern can be applied to other long-running operations:
 - Data processing scripts
 - Any operation >5 minutes where checking status would burn tokens
 
+## Resolution (2025-11-19)
+
+**Status**: ✅ Fixed - Superseded by ISSUE-060
+
+This issue was a symptom of the ad-hoc Bash-based test orchestration. While a completion marker file was implemented as a temporary fix, the root problem required architectural change.
+
+**Solved by ISSUE-060**: Node.js Test Orchestrator
+- **Problem this issue highlighted**: Notifications not working (14 min delay reported by user)
+- **Architectural solution**: TypeScript test orchestrator with:
+  - Event-driven architecture (no polling needed)
+  - Native desktop notification library
+  - Immediate notification on completion
+  - No background process monitoring needed
+
+**How it works now**:
+1. Run `npm run test:comprehensive`
+2. Orchestrator spawns all 3 test suites concurrently
+3. Monitors via event callbacks (not polling)
+4. Sends desktop notification immediately on completion (sound + dialog)
+5. No completion marker files needed - proper async/await flow
+
+**Comparison**:
+- **Old (Bash)**: Background process → completion marker file → polling → notification (14 min delay)
+- **New (TypeScript)**: Async orchestrator → event callback → immediate notification (0 delay)
+
+**References**:
+- ISSUE-060: Replace ad-hoc comprehensive test flow with proper test orchestration tooling
+- ISSUE-048: Related token burn issue also fixed by ISSUE-060
+
 ## Related Files
 
-**To Create:**
-- `helper-scripts/check-test-completion.sh` - **NEW** helper script for efficient status checking
+**Old Implementation (Deprecated):**
+- `helper-scripts/check-test-completion.sh` - Completion marker check script (deprecated)
+- `helper-scripts/run-comprehensive-tests.sh:1036` - Marker cleanup (deprecated)
+- `helper-scripts/run-comprehensive-tests.sh:1135` - Marker file write (deprecated)
 
-**To Modify:**
-- `helper-scripts/run-comprehensive-tests.sh:1036` - Add marker cleanup at start of main()
-- `helper-scripts/run-comprehensive-tests.sh:1135` - Add marker file write before exit
-- `docs/CLAUDE_WORKFLOWS.md` - Add efficient monitoring documentation
+**New Implementation:**
+- `src/test-orchestrator/main.ts` - TypeScript orchestrator entry point
+- `src/test-orchestrator/orchestrator.ts` - Desktop notification implementation
+- `package.json` - `npm run test:comprehensive` script
 
 **For Reference (work correctly):**
 - `helper-scripts/run-comprehensive-tests.sh:1143` - Script exit point
