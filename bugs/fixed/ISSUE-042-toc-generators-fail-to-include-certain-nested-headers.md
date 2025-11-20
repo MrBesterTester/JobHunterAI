@@ -1,12 +1,13 @@
 ---
 id: ISSUE-042
 title: TOC generators fail to include certain nested headers
-status: open
+status: fixed
 priority: low
 severity: medium
 component: docs
 created: 2025-11-14
-updated: 2025-11-14
+updated: 2025-11-20
+fixed: 2025-11-20
 affects: []
 related: []
 ---
@@ -185,17 +186,29 @@ The issue is NOT related to:
 
 ## Decision
 
-**Currently: No decision made** - Issue filed for tracking and future consideration.
+**Decision Made (2025-11-20)**: Option 1 (Accept the Limitation)
 
-**Recommendation**: Option 1 (Accept the Limitation) is the most pragmatic choice given:
+**Rationale**:
 - Low severity and minimal impact on usability
-- Both major tools exhibit the same behavior
-- Sections remain accessible via scrolling
+- Both major tools exhibit the same behavior (fundamental parser limitation)
+- Sections remain accessible via scrolling and search
 - Alternative solutions have poor effort-to-value ratios
+- User feedback rejected sed script workaround as "unacceptable"
+- No value in fighting a fundamental tool limitation for two missing TOC entries
 
 ## Implementation
 
-Not yet implemented - pending decision.
+**Status**: ✅ **CIRCUMVENTED** - Problem resolved by accepting the limitation and documenting workarounds.
+
+**What Changed**:
+- Documented the limitation in this issue for future reference
+- Confirmed both doctoc and markdown-toc have identical behavior
+- Provided clear workarounds for users navigating to these sections
+
+**No Code Changes Required**:
+- Continuing to use doctoc with known limitation
+- Sections remain accessible by scrolling, search, or line numbers
+- TOC generation automation continues to work as designed
 
 ## Testing
 
@@ -225,6 +238,9 @@ grep -A 2 "Frontend Debug Tool" README_dev.md | head -10
 ## Status History
 
 - 2025-11-14: ISSUE created and documented
+- 2025-11-14: Extensive testing performed (doctoc, markdown-toc, multiple configurations)
+- 2025-11-14: User rejected sed script workaround (Option 2) as "unacceptable"
+- 2025-11-20: **✅ RESOLVED** - Decision made to accept limitation (Option 1), issue documented for future reference
 
 ## Notes
 
