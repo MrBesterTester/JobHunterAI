@@ -3,6 +3,7 @@
 
 - [Testing History - Archived Test Runs](#testing-history---archived-test-runs)
   - [Index of Archived Test Runs](#index-of-archived-test-runs)
+    - [Historical Investigation Archives](#historical-investigation-archives)
     - [Legacy Comprehensive Archive](#legacy-comprehensive-archive)
     - [November 2025](#november-2025)
     - [October 2025](#october-2025)
@@ -21,13 +22,24 @@
 
 **Naming Convention**: `TEST_STATUS_YYYY-MM-DD_HHMM.md` (24-hour time format)
 
-**Last Updated**: 2025-11-19 16:02:47 PST (Moved TESTING_HISTORY.md to legacy archive)
+**Last Updated**: 2025-11-19 20:06:53 PST (Added ISSUE-055 investigation archive)
 
 ---
 
 ## Index of Archived Test Runs
 
 **Total Archived Runs**: 2 individual runs + 1 legacy comprehensive archive
+
+**Investigation Archives**: 1 detailed investigation
+
+### Historical Investigation Archives
+
+- **[ISSUE-055_INVESTIGATION_2025-11-18.md](ISSUE-055_INVESTIGATION_2025-11-18.md)** - E2E Test Fixes (November 18, 2025)
+  - **Investigation Period**: 2025-11-18 20:15:00 - 21:10:00 PST
+  - **Status**: ✅ Completed - All 4 tests fixed same day
+  - **Affected Tests**: #504, #511, #441, #547
+  - **Key Finding**: UI state waits fail under load → replaced with API response waits
+  - **Note**: Tests failed DURING investigation but were fixed the same day (Nov 18). All subsequent runs (Nov 19+) pass successfully.
 
 ### Legacy Comprehensive Archive
 
