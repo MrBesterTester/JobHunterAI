@@ -8,6 +8,7 @@
     - [Database Configuration](#database-configuration)
     - [Notifications](#notifications)
     - [TypeScript Preference](#typescript-preference)
+    - [Language Choice by Domain](#language-choice-by-domain)
     - [File Path Conventions](#file-path-conventions)
     - [File Discovery Tools](#file-discovery-tools)
     - [Work Session Tagging](#work-session-tagging)
@@ -182,6 +183,37 @@ afplay /System/Library/Sounds/Glass.aiff && osascript -e "display dialog \"[mess
 - Configuration files that must be `.js` (e.g., some legacy tool configs)
 
 **See also:** ISSUE-060 Phase 1 - Test orchestrator initially had both `.js` and `.ts`, cleaned up to TypeScript-only
+
+### Language Choice by Domain
+
+**Backend: Rust** 🦀
+- **Always okay and absolutely great** for backend work
+- Performance, memory safety, and concurrency without compromises
+- Current backend: Rust (Actix-web framework)
+- Use Rust for:
+  - API endpoints and web server logic
+  - Database operations and data processing
+  - Background jobs and schedulers
+  - System utilities and performance-critical code
+
+**Frontend: TypeScript** 📘
+- **More practically suitable** for frontend work
+- Rich ecosystem for UI development (React, bundlers, UI libraries)
+- Current frontend: TypeScript/React with RSBuild
+- Use TypeScript for:
+  - React components and UI logic
+  - Frontend state management
+  - Client-side utilities and helpers
+  - Test orchestration and build tooling
+
+**Why This Matters:**
+- Each language excels in its domain
+- Rust for backend: speed, safety, low-level control
+- TypeScript for frontend: rapid development, UI ecosystem, type safety
+- This is the project's proven architecture - don't second-guess it
+
+**Exception:**
+- Bash scripts (`.sh`) remain acceptable for shell operations and helper scripts
 
 ### File Path Conventions
 
