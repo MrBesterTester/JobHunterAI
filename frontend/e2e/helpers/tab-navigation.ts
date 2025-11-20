@@ -37,11 +37,17 @@ export async function switchToTab(
 ): Promise<void> {
   const tabButtonSelector = `[data-testid="${tab}-tab-button"]`;
 
+  // Calculate load-aware timeouts for ALL waits (ISSUE-057 fix)
+  // Under comprehensive test load (4 parallel workers), UI operations take longer
+  const baseTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 15000 : 5000;
+  const jobCardsTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 45000 : 10000;
+
   // Click the tab button
   await page.click(tabButtonSelector);
 
   // Wait for tab to become active (React state update complete)
-  await page.waitForSelector(`${tabButtonSelector}[aria-selected="true"]`, { timeout: 5000 });
+  // FIXED: Now uses load-aware timeout instead of fixed 5s
+  await page.waitForSelector(`${tabButtonSelector}[aria-selected="true"]`, { timeout: baseTimeout });
 
   // For tabs with custom components (intake, calendar, follow-ups, ranked, ignored, failed, duplicates)
   // we don't need to wait for tab content container
@@ -49,15 +55,15 @@ export async function switchToTab(
 
   if (!customComponentTabs.includes(tab)) {
     // Wait for tab content container to appear
-    await page.waitForSelector(`[data-testid="${tab}-tab-content"]`, { timeout: 5000 });
+    // FIXED: Now uses load-aware timeout instead of fixed 5s (this was where Test #441 timed out)
+    await page.waitForSelector(`[data-testid="${tab}-tab-content"]`, { timeout: baseTimeout });
 
     // Optionally wait for job cards with load-aware timeout
     // Increased from 30s to 45s based on ISSUE-055 audit - tab switch + API + render can take longer under comprehensive test load
     if (expectJobCards) {
-      const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 45000 : 10000;
       await page.waitForFunction(
         () => document.querySelectorAll('[data-testid="job-card"]').length > 0,
-        { timeout: pollTimeout }
+        { timeout: jobCardsTimeout }
       );
     }
   }
