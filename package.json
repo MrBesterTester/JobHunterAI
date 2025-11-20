@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "orchestrator:prototype": "ts-node src/test-orchestrator/prototype.ts"
+  },
   "devDependencies": {
     "@types/node": "^24.10.1",
     "doctoc": "^2.2.1",
