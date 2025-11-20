@@ -685,6 +685,7 @@ export class TestOrchestrator {
 
       let stdout = '';
       let stderr = '';
+      let testCount = 0;
 
       child.stdout?.on('data', (data) => {
         stdout += data.toString();
@@ -698,7 +699,12 @@ export class TestOrchestrator {
           if (line.includes('test ') && line.includes('...')) {
             const match = line.match(/test ([\w:]+)/);
             if (match) {
-              this.updateProgress('backend', { currentTest: match[1] });
+              testCount++;
+              this.updateProgress('backend', { currentTest: match[1], testsRun: testCount });
+              // Print status every 5 tests
+              if (testCount % 5 === 0) {
+                process.stdout.write(`  Backend: ${testCount} tests running...\r`);
+              }
             }
           }
         }
@@ -709,6 +715,9 @@ export class TestOrchestrator {
         const duration = endTime.getTime() - startTime.getTime();
 
         try {
+          // Clear the progress line
+          process.stdout.write('\r\x1b[K');
+
           // Cargo test outputs summary to stdout, test output to stderr
           const combinedOutput = stdout + stderr;
 
@@ -751,6 +760,7 @@ export class TestOrchestrator {
 
       let stdout = '';
       let stderr = '';
+      let testCount = 0;
 
       child.stdout?.on('data', (data) => {
         stdout += data.toString();
@@ -764,7 +774,12 @@ export class TestOrchestrator {
           if (line.includes('PASS') || line.includes('FAIL')) {
             const match = line.match(/(?:PASS|FAIL) (.+)/);
             if (match) {
-              this.updateProgress('frontend', { currentTest: match[1] });
+              testCount++;
+              this.updateProgress('frontend', { currentTest: match[1], testsRun: testCount });
+              // Print status every 10 tests
+              if (testCount % 10 === 0) {
+                process.stdout.write(`  Frontend: ${testCount} tests running...\r`);
+              }
             }
           }
         }
@@ -775,6 +790,9 @@ export class TestOrchestrator {
         const duration = endTime.getTime() - startTime.getTime();
 
         try {
+          // Clear the progress line
+          process.stdout.write('\r\x1b[K');
+
           // Extract and parse Jest JSON output
           const jsonLine = JestParser.extractJSON(stdout);
           const result = JestParser.parse(jsonLine);
@@ -827,6 +845,7 @@ export class TestOrchestrator {
 
       let stdout = '';
       let stderr = '';
+      let testCount = 0;
 
       child.stdout?.on('data', (data) => {
         stdout += data.toString();
@@ -838,7 +857,12 @@ export class TestOrchestrator {
         const lines = data.toString().split('\n');
         for (const line of lines) {
           if (line.includes('[chromium]') || line.includes('›')) {
-            this.updateProgress('e2e', { currentTest: line.trim() });
+            testCount++;
+            this.updateProgress('e2e', { currentTest: line.trim(), testsRun: testCount });
+            // Print status every 10 tests
+            if (testCount % 10 === 0) {
+              process.stdout.write(`  E2E: ${testCount} tests running...\r`);
+            }
           }
         }
       });
@@ -848,6 +872,9 @@ export class TestOrchestrator {
         const duration = endTime.getTime() - startTime.getTime();
 
         try {
+          // Clear the progress line
+          process.stdout.write('\r\x1b[K');
+
           // Parse JSON file created by playwright.config.ts reporter
           const result = PlaywrightParser.parseFile(jsonOutputPath);
           result.duration = duration; // Use actual duration
