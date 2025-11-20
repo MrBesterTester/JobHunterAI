@@ -280,6 +280,9 @@ afplay /System/Library/Sounds/Glass.aiff && osascript -e "display dialog \"[mess
 
 **What is the "Comprehensive Test Suite"?**
 - **The script**: `./helper-scripts/run-comprehensive-tests.sh` (TypeScript orchestrator, ISSUE-060)
+  - **Symlink available**: `./run-comprehensive-tests.sh` (in project root)
+  - **IMPORTANT**: Run from project root, NOT from frontend directory
+  - **Location**: Script lives in `helper-scripts/` directory with symlink in root for convenience
 - **Legacy alternative**: `./helper-scripts/run-comprehensive-tests-bash-legacy.sh` (original bash implementation)
 - Runs ALL tests: Backend + Frontend + Full E2E suite
 - **Includes**:

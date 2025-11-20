@@ -1,0 +1,1 @@
+helper-scripts/run-comprehensive-tests.sh
