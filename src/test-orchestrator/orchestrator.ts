@@ -1139,13 +1139,13 @@ export class TestOrchestrator {
   }
 
   /**
-   * Send desktop notification (macOS)
+   * Send desktop notification (macOS) + Pushover notification (iPhone/Apple Watch)
    */
   private async sendNotification(report: ComprehensiveTestReport): Promise<void> {
     return new Promise((resolve, reject) => {
-      console.log('\n🔔 Sending desktop notification...');
+      console.log('\n🔔 Sending notifications...');
 
-      const message = [
+      const detailedMessage = [
         'Comprehensive tests completed!',
         '',
         `Backend:  ${report.results.backend.passed}/${report.results.backend.failed}/${report.results.backend.skipped} (pass/fail/skip)`,
@@ -1157,24 +1157,58 @@ export class TestOrchestrator {
         `Status: ${report.summary.overallSuccess ? 'SUCCESS' : 'FAILED'}`
       ].join('\\n');
 
-      // Play sound first
-      const soundChild = spawn('afplay', ['/System/Library/Sounds/Glass.aiff']);
+      // Concise message for Pushover (iPhone/Apple Watch)
+      const pushoverMessage = `Tests ${report.summary.overallSuccess ? '✅' : '❌'} | ${report.summary.totalPassed}/${report.summary.totalFailed}/${report.summary.totalSkipped} (P/F/S) | ${(report.duration / 1000).toFixed(0)}s`;
 
-      soundChild.on('close', () => {
-        // Then show dialog
-        const dialogChild = spawn('osascript', [
-          '-e',
-          `display dialog "${message}" with title "Test Orchestrator" buttons {"OK"} default button "OK" with icon note`
-        ]);
+      // Check if Pushover script exists
+      const pushoverScript = `${process.env.HOME}/bin/notify_claude.sh`;
+      const fs = require('fs');
+      const usePushover = fs.existsSync(pushoverScript);
 
-        dialogChild.on('close', () => {
-          console.log('✅ Notification sent!\n');
-          resolve();
+      // Send Pushover notification first (iPhone/Apple Watch)
+      if (usePushover) {
+        console.log('  📱 Sending to iPhone/Apple Watch via Pushover...');
+        const pushoverChild = spawn(pushoverScript, [pushoverMessage, 'Glass']);
+
+        pushoverChild.on('close', () => {
+          console.log('  ✅ Pushover notification sent');
+          // Then continue with Mac notifications
+          this.sendMacNotification(detailedMessage, resolve, reject);
         });
-        dialogChild.on('error', reject);
-      });
 
-      soundChild.on('error', reject);
+        pushoverChild.on('error', (err) => {
+          console.log(`  ⚠️  Pushover failed: ${err.message}`);
+          // Continue with Mac notifications anyway
+          this.sendMacNotification(detailedMessage, resolve, reject);
+        });
+      } else {
+        console.log('  ⚠️  Pushover script not found, Mac notification only');
+        this.sendMacNotification(detailedMessage, resolve, reject);
+      }
     });
+  }
+
+  /**
+   * Send Mac-only notification (sound + dialog)
+   */
+  private sendMacNotification(message: string, resolve: () => void, reject: (err: Error) => void): void {
+    // Play sound first
+    const soundChild = spawn('afplay', ['/System/Library/Sounds/Glass.aiff']);
+
+    soundChild.on('close', () => {
+      // Then show dialog
+      const dialogChild = spawn('osascript', [
+        '-e',
+        `display dialog "${message}" with title "Test Orchestrator" buttons {"OK"} default button "OK" with icon note`
+      ]);
+
+      dialogChild.on('close', () => {
+        console.log('✅ All notifications sent!\n');
+        resolve();
+      });
+      dialogChild.on('error', reject);
+    });
+
+    soundChild.on('error', reject);
   }
 }
