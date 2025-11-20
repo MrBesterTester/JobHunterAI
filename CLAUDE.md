@@ -345,6 +345,38 @@ cd backend && cargo test && cd ../frontend && npm test
 - **Orchestrator README**: `src/test-orchestrator/README.md`
 - **E2E best practices**: `docs/PLAYWRIGHT_BEST_PRACTICES.md` ← **Required reading for E2E test work**
 
+**Analyzing Test Results - Phased Approach** ⭐:
+
+When creating summary reports after comprehensive test runs, use this **phased approach for maximum token efficiency**:
+
+**Phase 1: JSON Report Only** (PREFERRED)
+- **File**: `test-results/comprehensive-report.json`
+- **When**: Default approach for all test result summaries
+- **Why**:
+  - ✅ Most token-efficient (~77 lines structured data)
+  - ✅ Complete information: test counts, durations, failure details (testName, testFile, errorMessage, stackTrace)
+  - ✅ Easy to parse programmatically
+  - ✅ All data needed for summary reports
+
+**Phase 2: Detailed Text File** (ONLY IF NEEDED)
+- **File**: `test-results/failures-detailed.txt`
+- **When**: Only consult in these specific cases:
+  - JSON file missing or corrupted
+  - User explicitly asks to see human-readable formatted output
+  - Need to verify text formatting itself
+  - Debugging the report generation process
+- **Why**: Designed for human consumption in terminal, not LLM analysis
+
+**Standard Workflow**:
+1. Read `test-results/comprehensive-report.json`
+2. Generate summary with:
+   - Overall stats (passed/failed/skipped, duration)
+   - Per-suite breakdown
+   - Failure list with test name, file, error summary (first line)
+3. Only read `failures-detailed.txt` if user requests full details for specific failure
+
+**Key Principle**: JSON for efficiency, detailed text only when specifically needed.
+
 ---
 
 ## Workflow Standards (Summary)
