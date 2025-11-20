@@ -140,16 +140,18 @@ export class CargoParser {
         const failuresListMatch = output.match(/failures:\n((?:\s+\S+\n)+)/);
         if (failuresListMatch) {
           const failuresList = failuresListMatch[1];
-          const testNames = failuresList.trim().split(/\s+/);
+          // Split by newlines and filter out empty lines
+          const testNames = failuresList
+            .split('\n')
+            .map(line => line.trim())
+            .filter(line => line && !line.startsWith('failures:'));
 
           for (const testName of testNames) {
-            if (testName) {
-              failures.push({
-                testName,
-                testFile: 'backend/src/main.rs',
-                errorMessage: 'Test failed (details not available)'
-              });
-            }
+            failures.push({
+              testName,
+              testFile: 'backend/src/main.rs',
+              errorMessage: 'Test failed (details not available)'
+            });
           }
         }
       }
