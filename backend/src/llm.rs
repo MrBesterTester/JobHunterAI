@@ -668,6 +668,9 @@ mod tests {
     /// Run manually with: ANTHROPIC_API_KEY=<key> cargo test test_real_api_generate
     #[tokio::test]
     async fn test_real_api_generate() {
+        // Load .env file for test (main.rs does this at startup, but tests need it explicitly)
+        dotenv::dotenv().ok();
+
         let client = AnthropicClient::from_env().expect("ANTHROPIC_API_KEY must be set");
 
         let prompt = "Write a single sentence about why testing is important in software development.";
