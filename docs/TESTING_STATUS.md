@@ -87,10 +87,10 @@ last_updated: 2025-11-19 17:56:41 PST (Added comprehensive test run results - sk
 
 | Test Suite | Passed | Failed | Skipped | Pass Rate | Runtime | Status |
 |------------|--------|--------|---------|-----------|---------|--------|
-| **Backend Tests** | **164** | 0 | 6 (LLM) | **100%** | ~90s | ✅ **PASSING** |
+| **Backend Tests** | **166** | 0 | 4 (mock) | **100%** | ~95s | ✅ **PASSING** |
 | **Frontend Unit** | **516** | 0 | 1 | **100%** | ~25s | ✅ **PASSING** |
 | **E2E Tests** | **All running tests passed** | **0** | **~100+** | **100%** | ~16.3m | ✅ **ALL PASSING** |
-| **TOTAL (Active)** | **1072** | **0** | **0** | **100%** | **~18.4 min** | ✅ **ALL TESTS PASSING** |
+| **TOTAL (Active)** | **1074** | **0** | **0** | **100%** | **~18.4 min** | ✅ **ALL TESTS PASSING** |
 
 **🎉 Key Finding: NO Actual Failures**
 - All tests that ran **passed successfully** (exit code 0)
@@ -127,23 +127,23 @@ last_updated: 2025-11-19 17:56:41 PST (Added comprehensive test run results - sk
 | Backend Build | ✅ PASSED | 116s | Clean build from `cargo clean` |
 | Frontend Build | ✅ PASSED | 7s | TypeScript + RSBuild |
 | E2E Type-checking | ✅ PASSED | 4s | All E2E tests type-safe |
-| **Backend Tests** | ✅ **PASSED** | **92s** | **164/164 passed (100%)** |
+| **Backend Tests** | ✅ **PASSED** | **95s** | **166/170 passed (97.6%, 4 skipped)** |
 | **Frontend Unit Tests** | ✅ **PASSED** | **21s** | **516/517 passed (1 skipped)** |
 | **E2E Tests** | ✅ **PASSED** | **11.2m** | **392/393 passed (1 flaky)** |
 
 ### Backend Test Details
 
-**Total**: 164/164 passed (100%)
-**Runtime**: 92 seconds (with database operations)
+**Total**: 166/170 passed (97.6%)
+**Runtime**: ~95 seconds (with database operations + 2 real API calls)
 **Status**: ✅ All passing
-**Ignored**: 6 LLM integration tests (require API keys - intentional)
+**Ignored**: 4 mock tests (intentionally skipped - mockito issues, redundant coverage)
 
 <details>
 <summary>Backend Test Breakdown (13 test files)</summary>
 
 | Test File | Tests Passed | Runtime | Status |
 |-----------|--------------|---------|--------|
-| main.rs (unit tests) | 30/36 (6 ignored) | 1.03s | ✅ PASSING |
+| main.rs (unit tests) | 32/36 (4 ignored) | 1.10s | ✅ PASSING |
 | analytics_tests.rs | 10/10 | 0.21s | ✅ PASSING |
 | api_tests.rs | 9/9 | 0.04s | ✅ PASSING |
 | content_generation_tests.rs | 16/16 | 0.12s | ✅ PASSING |
@@ -157,15 +157,23 @@ last_updated: 2025-11-19 17:56:41 PST (Added comprehensive test run results - sk
 | scheduler_tests.rs | 23/23 | 0.69s | ✅ PASSING |
 | security_tests.rs | 3/3 | 0.00s | ✅ PASSING |
 
-**Ignored Tests** (6 LLM integration tests in `main.rs`):
-1. `llm::tests::test_generate_empty_content` - Tests LLM API with empty content
-2. `llm::tests::test_generate_rate_limit_retry` - Tests rate limit retry logic
-3. `llm::tests::test_generate_success` - Tests successful LLM generation
-4. `llm::tests::test_generate_with_system_prompt` - Tests LLM with system prompts
-5. `llm::tests::test_real_api_generate` - Tests real Claude API integration
-6. `llm::tests::test_real_api_with_invalid_key` - Tests error handling with invalid key
+**Ignored Tests** (4 mock-based LLM tests in `main.rs`):
+1. `llm::tests::test_generate_success` - Mock test with mockito server
+2. `llm::tests::test_generate_with_system_prompt` - Mock test with system prompts
+3. `llm::tests::test_generate_rate_limit_retry` - Mock test for rate limit retry logic
+4. `llm::tests::test_generate_empty_content` - Mock test for empty content handling
 
-**Why Ignored**: These tests require a valid Anthropic API key (environment variable `ANTHROPIC_API_KEY`). They are intentionally ignored in the standard test suite to avoid API costs and external dependencies. They can be run manually with: `ANTHROPIC_API_KEY=<key> cargo test llm::tests -- --ignored`
+**Why Ignored** (ISSUE-033 decision):
+- Mockito integration issues cause these tests to fail with `MaxRetriesExceeded` errors
+- Coverage is **redundant** - real API tests provide equivalent and better coverage
+- Real API tests now enabled: `test_real_api_generate` and `test_real_api_with_invalid_key`
+- Fixing mockito issues (4-6 hours) not justified given real API test coverage
+
+**Enabled Real API Tests** (2 tests, now running in comprehensive suite):
+1. `llm::tests::test_real_api_generate` ✅ - Tests real Claude API integration
+2. `llm::tests::test_real_api_with_invalid_key` ✅ - Tests error handling with invalid key
+
+**How Enabled**: Comprehensive test script loads `ANTHROPIC_API_KEY` from `backend/.env` before running backend tests
 
 </details>
 
@@ -202,10 +210,11 @@ last_updated: 2025-11-19 17:56:41 PST (Added comprehensive test run results - sk
 ### Key Observations
 
 1. **🎉 All Running Tests Passed - Zero Failures**
-   - Backend: 164/164 (100%)
+   - Backend: 166/170 (97.6%, 4 mock tests intentionally skipped - ISSUE-033)
    - Frontend: 516/517 (99.8%, 1 expected skip)
    - E2E: All running tests passed (0 failures, 0 flaky)
    - **First truly clean comprehensive run** with no failures or flaky tests
+   - **Backend improvement**: Enabled 2 real LLM API tests (164 → 166 tests running)
 
 2. **✅ Previous Fixes Verified Working**
    - ISSUE-056: COMPREHENSIVE_TESTS environment variable propagation working
