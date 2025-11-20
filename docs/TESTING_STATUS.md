@@ -136,27 +136,36 @@ last_updated: 2025-11-19 17:56:41 PST (Added comprehensive test run results - sk
 **Total**: 164/164 passed (100%)
 **Runtime**: 92 seconds (with database operations)
 **Status**: ✅ All passing
+**Ignored**: 6 LLM integration tests (require API keys - intentional)
 
 <details>
 <summary>Backend Test Breakdown (13 test files)</summary>
 
 | Test File | Tests Passed | Runtime | Status |
 |-----------|--------------|---------|--------|
-| main.rs (unit tests) | 30/30 | 1.03s | ✅ PASSING |
-| analytics_tests.rs | 10/10 | 0.24s | ✅ PASSING |
+| main.rs (unit tests) | 30/36 (6 ignored) | 1.03s | ✅ PASSING |
+| analytics_tests.rs | 10/10 | 0.21s | ✅ PASSING |
 | api_tests.rs | 9/9 | 0.04s | ✅ PASSING |
-| content_generation_tests.rs | 16/16 | 0.13s | ✅ PASSING |
-| deduplication_tests.rs | 10/10 | 0.15s | ✅ PASSING |
+| content_generation_tests.rs | 16/16 | 0.12s | ✅ PASSING |
+| deduplication_tests.rs | 10/10 | 0.14s | ✅ PASSING |
 | gmail_cleanup_tests.rs | 4/4 | 0.00s | ✅ PASSING |
-| gmail_label_tests.rs | 4/4 | 0.14s | ✅ PASSING |
-| job_filtering_tests.rs | 7/7 | 0.03s | ✅ PASSING |
+| gmail_label_tests.rs | 4/4 | 0.15s | ✅ PASSING |
+| job_filtering_tests.rs | 7/7 | 0.02s | ✅ PASSING |
 | job_intake_tests.rs | 30/30 | 0.64s | ✅ PASSING |
 | microsoft_email_tests.rs | 6/6 | 22.24s | ✅ PASSING |
 | oauth_refresh_tests.rs | 12/12 | 0.20s | ✅ PASSING |
 | scheduler_tests.rs | 23/23 | 0.69s | ✅ PASSING |
 | security_tests.rs | 3/3 | 0.00s | ✅ PASSING |
 
-**Ignored Tests**: 6 (LLM integration tests requiring API keys)
+**Ignored Tests** (6 LLM integration tests in `main.rs`):
+1. `llm::tests::test_generate_empty_content` - Tests LLM API with empty content
+2. `llm::tests::test_generate_rate_limit_retry` - Tests rate limit retry logic
+3. `llm::tests::test_generate_success` - Tests successful LLM generation
+4. `llm::tests::test_generate_with_system_prompt` - Tests LLM with system prompts
+5. `llm::tests::test_real_api_generate` - Tests real Claude API integration
+6. `llm::tests::test_real_api_with_invalid_key` - Tests error handling with invalid key
+
+**Why Ignored**: These tests require a valid Anthropic API key (environment variable `ANTHROPIC_API_KEY`). They are intentionally ignored in the standard test suite to avoid API costs and external dependencies. They can be run manually with: `ANTHROPIC_API_KEY=<key> cargo test llm::tests -- --ignored`
 
 </details>
 
