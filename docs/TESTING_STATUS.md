@@ -18,6 +18,7 @@ last_updated: 2025-11-19 16:34:51 PST (Added comprehensive test run results - al
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Testing Status](#testing-status)
+  - [Next Steps (Testing Priorities)](#next-steps-testing-priorities)
   - [Latest Test Run Results (Quick Summary)](#latest-test-run-results-quick-summary)
   - [Latest Comprehensive Test Run - Detailed Results](#latest-comprehensive-test-run---detailed-results)
     - [Test Status Summary](#test-status-summary)
@@ -27,7 +28,6 @@ last_updated: 2025-11-19 16:34:51 PST (Added comprehensive test run results - al
     - [Key Observations](#key-observations)
     - [Comparison to Previous Run (2025-11-19 01:36 PST)](#comparison-to-previous-run-2025-11-19-0136-pst)
   - [Previous Test Run Results](#previous-test-run-results)
-  - [Next Steps (Testing Priorities)](#next-steps-testing-priorities)
   - [Recent Testing Work - ISSUE-055 (2025-11-18)](#recent-testing-work---issue-055-2025-11-18)
     - [Individual Test Results (Isolation - No Parallel Workers)](#individual-test-results-isolation---no-parallel-workers)
     - [Full File Test Results (4 Parallel Workers + COMPREHENSIVE_TESTS=true)](#full-file-test-results-4-parallel-workers--comprehensive_teststrue)
@@ -40,6 +40,42 @@ last_updated: 2025-11-19 16:34:51 PST (Added comprehensive test run results - al
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # Testing Status
+
+## Next Steps (Testing Priorities)
+
+**Priority 1: Fix COMPREHENSIVE_TESTS Environment Variable** ✅ **VERIFIED (2025-11-19 16:15 PST)**
+- **Issue**: [ISSUE-056](../bugs/open/ISSUE-056-playwright-comprehensivetests-env-var-not-reaching-worker-processes.md) - Environment variable not reaching Playwright workers
+- **Root Cause**: Playwright workers spawn as separate OS processes with independent environments; command-line env vars don't reliably propagate
+- **Solution Implemented**: Use globalSetup to detect and re-set environment variable
+  - Modified: `frontend/e2e/global-setup.ts:92-100`
+  - Pattern documented in: `docs/PLAYWRIGHT_BEST_PRACTICES.md` (Section 6)
+- **Verification**: ✅ **PASSED** in comprehensive test run - No unexpected timeouts, extended timeouts applied correctly
+- **Status**: ✅ **FIXED AND VERIFIED** (2025-11-19)
+
+**Priority 2: Investigate Test #504 Functional Issue** ✅ **VERIFIED (2025-11-19 16:15 PST)**
+- **Problem**: Test waits 120s for UI "Loading..." state but it never appears under comprehensive test load
+- **Root Cause**: LLM queue backlog under load prevents UI "Loading..." state from appearing (same pattern as Test #511)
+- **Solution Applied**: Replace UI state wait with API response wait pattern
+  - Set up `page.waitForResponse()` promise BEFORE clicking (avoids race condition)
+  - Wait for `/condense-description` API response (200 status)
+  - Then verify UI updated
+- **Files Modified**: `frontend/e2e/tests/22-refresh-buttons.spec.ts:80-102`
+- **Verification**: ✅ **PASSED** in comprehensive test run - No timeouts, test completed successfully
+- **Status**: ✅ **FIXED AND VERIFIED** (2025-11-19)
+
+**Priority 3: Monitor Test #441 Flaky Behavior** ⚠️ **ONGOING**
+- **Test**: `e2e/tests/16-gmail-sync-integration.spec.ts:229` - "should allow approving jobs synced from Gmail"
+- **Status**: Flaky - fails occasionally but passes on retry
+- **Latest Run**: Failed initially (11.1s timeout), passed on retry
+- **Issue Tracked**: [ISSUE-057](../bugs/open/ISSUE-057-test-441-flaky---switchtotab-helper-has-fixed-timeouts-that-dont-adapt-to-load.md) - switchToTab helper has fixed timeouts that don't adapt to load
+- **Root Cause**: Helper function has two fixed 5s timeouts (lines 44, 52) that don't use COMPREHENSIVE_TESTS env var
+- **Recommended Fix**: Make helper timeouts load-aware (5 minutes of work, low risk)
+- **Action**: User decision - implement fix now or continue monitoring
+- **Not Blocking**: Test consistently passes on retry
+
+**Overall Test Suite Health**: ✅ **100% pass rate (1072/1072 active tests)** - Excellent state, all priorities fixed and verified
+
+---
 
 ## Latest Test Run Results (Quick Summary)
 
@@ -191,42 +227,6 @@ last_updated: 2025-11-19 16:34:51 PST (Added comprehensive test run results - al
 | **Frontend Unit** | **516** | 0 | **100%** | ~25s | ✅ **PASSING** |
 | **E2E Tests** | **386** | **1** | **99.7%** | 13.2m | ⚠️ **1 FAILURE, 1 FLAKY** |
 | **TOTAL (Active)** | **1066** | **1** | **99.9%** | **~13.2 min** | ⚠️ **1 FAILURE** |
-
----
-
-## Next Steps (Testing Priorities)
-
-**Priority 1: Fix COMPREHENSIVE_TESTS Environment Variable** ✅ **VERIFIED (2025-11-19 16:15 PST)**
-- **Issue**: [ISSUE-056](../bugs/open/ISSUE-056-playwright-comprehensivetests-env-var-not-reaching-worker-processes.md) - Environment variable not reaching Playwright workers
-- **Root Cause**: Playwright workers spawn as separate OS processes with independent environments; command-line env vars don't reliably propagate
-- **Solution Implemented**: Use globalSetup to detect and re-set environment variable
-  - Modified: `frontend/e2e/global-setup.ts:92-100`
-  - Pattern documented in: `docs/PLAYWRIGHT_BEST_PRACTICES.md` (Section 6)
-- **Verification**: ✅ **PASSED** in comprehensive test run - No unexpected timeouts, extended timeouts applied correctly
-- **Status**: ✅ **FIXED AND VERIFIED** (2025-11-19)
-
-**Priority 2: Investigate Test #504 Functional Issue** ✅ **VERIFIED (2025-11-19 16:15 PST)**
-- **Problem**: Test waits 120s for UI "Loading..." state but it never appears under comprehensive test load
-- **Root Cause**: LLM queue backlog under load prevents UI "Loading..." state from appearing (same pattern as Test #511)
-- **Solution Applied**: Replace UI state wait with API response wait pattern
-  - Set up `page.waitForResponse()` promise BEFORE clicking (avoids race condition)
-  - Wait for `/condense-description` API response (200 status)
-  - Then verify UI updated
-- **Files Modified**: `frontend/e2e/tests/22-refresh-buttons.spec.ts:80-102`
-- **Verification**: ✅ **PASSED** in comprehensive test run - No timeouts, test completed successfully
-- **Status**: ✅ **FIXED AND VERIFIED** (2025-11-19)
-
-**Priority 3: Monitor Test #441 Flaky Behavior** ⚠️ **ONGOING**
-- **Test**: `e2e/tests/16-gmail-sync-integration.spec.ts:229` - "should allow approving jobs synced from Gmail"
-- **Status**: Flaky - fails occasionally but passes on retry
-- **Latest Run**: Failed initially (11.1s timeout), passed on retry
-- **Issue Tracked**: [ISSUE-057](../bugs/open/ISSUE-057-test-441-flaky---switchtotab-helper-has-fixed-timeouts-that-dont-adapt-to-load.md) - switchToTab helper has fixed timeouts that don't adapt to load
-- **Root Cause**: Helper function has two fixed 5s timeouts (lines 44, 52) that don't use COMPREHENSIVE_TESTS env var
-- **Recommended Fix**: Make helper timeouts load-aware (5 minutes of work, low risk)
-- **Action**: User decision - implement fix now or continue monitoring
-- **Not Blocking**: Test consistently passes on retry
-
-**Overall Test Suite Health**: ✅ **100% pass rate (1072/1072 active tests)** - Excellent state, all priorities fixed and verified
 
 ---
 
