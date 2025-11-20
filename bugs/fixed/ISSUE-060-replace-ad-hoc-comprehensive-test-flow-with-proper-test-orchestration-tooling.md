@@ -86,6 +86,10 @@ related: [ISSUE-048, ISSUE-059]
     - [Implementation Order](#implementation-order)
     - [Testing Strategy](#testing-strategy)
     - [Benefits](#benefits)
+  - [Phase 8: Real-Time Progress Updates (Completed - 2025-11-20)](#phase-8-real-time-progress-updates-completed---2025-11-20)
+    - [Implementation](#implementation-1)
+    - [Benefits](#benefits-1)
+    - [Related Bug Fixes (Same Session)](#related-bug-fixes-same-session)
 - [Related Files](#related-files)
 - [References](#references)
   - [Documentation](#documentation)
@@ -1700,6 +1704,150 @@ The structured JSON output provides **massive efficiency gains** for test result
 **Analogy**: Like checking a scoreboard (JSON) vs reading a play-by-play transcript (logs) to find out who won the game. The detailed text file is still there for deep diving, but the JSON gives you the complete scoreboard instantly.
 
 **Standard Practice**: Now documented in CLAUDE.md - always read JSON report first, only consult detailed text file if user explicitly requests it or JSON is unavailable.
+
+---
+
+### Phase 8: Real-Time Progress Updates (Completed - 2025-11-20)
+
+**Status**: ✅ COMPLETE
+
+**Completed**: 2025-11-20 (Commits: `3f72679`, `98a5b95`, `c1af1ac`, `a9dbe51`, `0dfe8e7`, `a2ba532`)
+
+**Problem** (solved): Long-running test phases lacked visibility into progress, making it unclear if tests were running or hung.
+
+**Goal** (achieved): Provide real-time status updates throughout all test phases so users can see:
+- ✅ Which phase is currently running
+- ✅ Test count progress during execution
+- ✅ Build progress (crate compilation counts)
+- ✅ Clear indication of active work vs waiting
+
+#### Implementation
+
+**Phase 8.1: Test Execution Progress** ✅ COMPLETE (Commit: `0dfe8e7`)
+
+Added periodic status updates while tests are running:
+
+**Backend tests**: Shows count every 5 tests
+```
+🦀 Running backend tests (Cargo)...
+  Backend: 30 tests running...
+✅ Backend tests: 31 passed, 1 failed (85.6s)
+```
+
+**Frontend tests**: Shows count every 10 tests
+```
+📘 Running frontend tests (Jest)...
+  Frontend: 510 tests running...
+✅ Frontend tests: 516 passed, 0 failed (69.8s)
+```
+
+**E2E tests**: Shows count every 10 tests
+```
+🎭 Running E2E tests (Playwright)...
+  E2E: 400 tests running...
+✅ E2E tests: 405 passed, 7 failed (699.8s)
+```
+
+**Technical Details**:
+- Uses carriage return (`\r`) to update same line (no scrolling spam)
+- Clears progress line with `\r\x1b[K` when phase completes
+- Tracks test count via data event parsing
+- Shows periodic updates to indicate active progress
+
+**Files modified**:
+- `src/test-orchestrator/orchestrator.ts` - Added progress counters and periodic output for all three test suites
+
+**Phase 8.2: Build Phase Progress** ✅ COMPLETE (Commit: `a2ba532`)
+
+Added status updates for preflight checks and build phases:
+
+**Backend build**:
+```
+🦀 Building backend (Cargo)...
+  Running cargo clean...
+  Running cargo build (this may take 1-2 minutes)...
+  Compiling: 50 crates processed...
+  Compiling: 100 crates processed...
+  Compiling: 150 crates processed...
+✅ Backend build PASSED (88.7s)
+```
+
+**Frontend build**:
+```
+📘 Building frontend (React/TypeScript/RSBuild)...
+  Running npm run build (typecheck + rsbuild)...
+  [npm output shows here]
+✅ Frontend build PASSED (3.2s)
+```
+
+**E2E typecheck**:
+```
+🎭 Type-checking E2E tests (TypeScript)...
+  Running tsc --noEmit on E2E test files...
+  [tsc output shows here]
+✅ E2E type-checking PASSED (2.5s)
+```
+
+**Preflight checks** (already had output via `stdio: inherit`):
+- Process cleanup shows stop script output
+- Git status shows validation
+- Database state shows backup/clear/seed progress
+- OAuth check shows token refresh status
+
+**Technical Details**:
+- Backend build: Counts "Compiling" lines in stderr, shows progress every 10 crates
+- Frontend/E2E: Added descriptive status messages before spawning processes
+- Clears crate counter line when backend build completes
+- All build output still shown (stdio passthrough), plus periodic status updates
+
+**Files modified**:
+- `src/test-orchestrator/orchestrator.ts` - Added crate counter for backend build, status messages for all build phases
+
+#### Benefits
+
+**User Experience**:
+- ✅ **Always know what's happening** - No more wondering if tests are hung or still running
+- ✅ **Visible progress** - Can see tests advancing through the suite
+- ✅ **Build phase clarity** - Know which build step is running and how far along
+- ✅ **Reduced anxiety** - Clear indication that work is progressing during long builds/tests
+
+**Technical Benefits**:
+- ✅ **Non-intrusive** - Uses carriage return to update same line (no scrolling spam)
+- ✅ **Minimal overhead** - Only prints every N tests/crates, not every single event
+- ✅ **Clean output** - Progress lines cleared before final results display
+- ✅ **Backward compatible** - All existing output still shown, progress updates are additive
+
+**Real-World Impact**:
+- **15-20 minute comprehensive test runs** now have continuous progress visibility
+- **~90 second backend builds** show crate compilation progress instead of silent waiting
+- **Multi-phase workflow** is clear: preflight → build → test → report
+- **User confidence** that tests are actually running, not frozen
+
+#### Related Bug Fixes (Same Session)
+
+While implementing Phase 8, discovered and fixed several issues:
+
+**Fix 1: Notification Duration Format** ✅ (Commit: `3f72679`)
+- **Issue**: Duration shown as seconds (e.g., "802.2s")
+- **Fix**: Added `formatDuration()` method to convert to mm:ss format (e.g., "13:22")
+- **Impact**: Notification messages now show more readable duration format
+
+**Fix 2: Cargo Parser Bug** ✅ (Commit: `98a5b95`)
+- **Issue**: Parser incorrectly including "failures:" header text as a test name
+- **Fix**: Split by newlines instead of whitespace, filter out header text
+- **Impact**: Eliminated bogus "failures:" entry from test failure reports
+
+**Fix 3: LLM Test Environment** ✅ (Commit: `c1af1ac`)
+- **Issue**: `test_real_api_generate` failing with "ANTHROPIC_API_KEY not set"
+- **Root cause**: `cargo test` doesn't automatically load `.env` files
+- **Fix**: Added `dotenv::dotenv().ok()` at start of test to load backend/.env
+- **Impact**: Test now passes successfully (~1.77s with real API call)
+
+**Fix 4: E2E Timeout Environment Variable** ✅ (Commit: `a9dbe51`)
+- **Issue**: E2E tests timing out at 10s instead of 45s during comprehensive runs
+- **Root cause**: `COMPREHENSIVE_TESTS` env var not passed to Playwright spawn()
+- **Fix**: Added `env: { ...process.env, COMPREHENSIVE_TESTS: 'true' }` to E2E spawn call
+- **Impact**: E2E tests now use extended timeouts (45s) during comprehensive runs
 
 ---
 

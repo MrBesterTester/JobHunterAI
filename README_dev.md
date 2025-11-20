@@ -3807,11 +3807,54 @@ This orchestrator runs:
 
 Features:
 - ✅ Structured JSON output (no log parsing)
-- ✅ Real-time progress tracking
+- ✅ Real-time progress tracking with visible status updates
 - ✅ Desktop notifications (sound + dialog)
 - ✅ Concurrent test execution
 - ✅ Zero-warning/error quality gates
 - ✅ Comprehensive JSON report (`test-results/comprehensive-report.json`)
+
+**Real-Time Progress Updates** (Phase 8):
+
+The orchestrator provides continuous visibility during long-running operations:
+
+**Build Phase Status:**
+```
+🦀 Building backend (Cargo)...
+  Running cargo clean...
+  Running cargo build (this may take 1-2 minutes)...
+  Compiling: 50 crates processed...
+  Compiling: 100 crates processed...
+✅ Backend build PASSED (88.7s)
+
+📘 Building frontend (React/TypeScript/RSBuild)...
+  Running npm run build (typecheck + rsbuild)...
+✅ Frontend build PASSED (3.2s)
+
+🎭 Type-checking E2E tests (TypeScript)...
+  Running tsc --noEmit on E2E test files...
+✅ E2E type-checking PASSED (2.5s)
+```
+
+**Test Execution Progress:**
+```
+🦀 Running backend tests (Cargo)...
+  Backend: 30 tests running...
+✅ Backend tests: 31 passed, 1 failed (85.6s)
+
+📘 Running frontend tests (Jest)...
+  Frontend: 510 tests running...
+✅ Frontend tests: 516 passed, 0 failed (69.8s)
+
+🎭 Running E2E tests (Playwright)...
+  E2E: 400 tests running...
+✅ E2E tests: 405 passed, 7 failed (699.8s)
+```
+
+Benefits:
+- **Always know what's happening** - Clear indication of current phase and progress
+- **No silent waits** - Build and test progress visible in real-time
+- **Non-intrusive updates** - Uses carriage return to update same line (no scrolling spam)
+- **Clean output** - Progress lines cleared before final results display
 
 **Runtime**: ~20 minutes (with preflight + builds)
 
