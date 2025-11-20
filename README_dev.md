@@ -3791,28 +3791,41 @@ Full documentation: `src/test-orchestrator/README.md`
 
 **Test Execution:**
 
-**Option 1: Run Complete Test Suite (Recommended)**
+**Option 1: Run Comprehensive Test Suite (Recommended)**
 
-Use the automated test runner script to execute all tests with a single command:
+Use the TypeScript test orchestrator to execute all tests with structured output:
 
 ```bash
-./run-all-tests.sh
+./helper-scripts/run-comprehensive-tests.sh
 ```
 
-This script runs all four test suites in sequence:
-1. **Backend Tests** (Rust/Cargo) - 93 tests
-2. **Frontend Unit Tests** (TAP/Jest) - Coverage reporting
-3. **E2E Tests** (Playwright) - 256 browser tests
-4. **Database Tests** (pgTAP) - Schema validation
+This orchestrator runs:
+1. **Preflight Checks** - Git status, database state, OAuth validation
+2. **Build Phase** - Backend (Cargo), Frontend (React/RSBuild), E2E typecheck
+3. **Test Phase** - Backend, Frontend, E2E tests (concurrent execution)
+4. **Notification** - Desktop notification with per-group stats
 
 Features:
-- ✅ Color-coded output (green=pass, red=fail, blue=running, yellow=warning)
-- ✅ Progress tracking with test counters (Passed: X/4, Failed: Y/4)
-- ✅ Gracefully handles missing dependencies (pgTAP optional)
-- ✅ Exit code 0 on success, 1 on failure (CI/CD compatible)
-- ✅ Comprehensive summary report
+- ✅ Structured JSON output (no log parsing)
+- ✅ Real-time progress tracking
+- ✅ Desktop notifications (sound + dialog)
+- ✅ Concurrent test execution
+- ✅ Zero-warning/error quality gates
+- ✅ Comprehensive JSON report (`test-results/comprehensive-report.json`)
 
-**Note:** E2E tests require the application to be running (`./start.sh` first).
+**Runtime**: ~20 minutes (with preflight + builds)
+
+**Debug Modes** (see ISSUE-060):
+```bash
+# Quick unit test validation (~2m)
+./helper-scripts/run-tests-debug.sh --unit-only
+
+# Test with existing builds (~12m)
+./helper-scripts/run-tests-debug.sh --skip-builds
+
+# E2E only (~10m)
+./helper-scripts/run-tests-debug.sh --e2e-only --skip-builds
+```
 
 **Option 2: Run Individual Test Suites**
 
