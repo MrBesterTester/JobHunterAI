@@ -81,6 +81,11 @@ related: [ISSUE-048, ISSUE-059]
   - [Benefits Summary](#benefits-summary)
   - [Implementation Status](#implementation-status)
   - [Testing & Verification (2025-11-20)](#testing--verification-2025-11-20)
+  - [Phase 7: Enhanced Failure Reporting (Planned - 2025-11-20)](#phase-7-enhanced-failure-reporting-planned---2025-11-20)
+    - [Implementation Plan](#implementation-plan-1)
+    - [Implementation Order](#implementation-order)
+    - [Testing Strategy](#testing-strategy)
+    - [Benefits](#benefits)
 - [Related Files](#related-files)
 - [References](#references)
   - [Documentation](#documentation)
@@ -1399,6 +1404,143 @@ All debug modes now:
 - `3477e19` - fix: Fix argument parsing order for --e2e-only --skip-builds
 
 **Final Status**: All debug and testing modes fully implemented, tested, debugged, and verified! 🎉
+
+---
+
+### Phase 7: Enhanced Failure Reporting (Planned - 2025-11-20)
+
+**Status**: 📋 PLANNED
+
+**Problem**: Current orchestrator captures high-level statistics (passed/failed/skipped counts) but lacks detailed failure information:
+- ❌ No list of which tests failed
+- ❌ No error messages or stack traces
+- ❌ Minimal JSON report (just counts)
+- ❌ Hard to debug failures without digging through logs
+
+**Goal**: Each test suite should report:
+- List of failed test names
+- Error messages for each failure
+- Stack traces (where available)
+- Test file locations
+- Failure categories (if applicable)
+
+#### Implementation Plan
+
+**Phase 7.1: Update TypeScript Types** (~15 min)
+
+File: `src/test-orchestrator/types.ts`
+
+```typescript
+interface TestFailure {
+  testName: string;
+  testFile: string;
+  errorMessage: string;
+  stackTrace?: string;
+  duration?: number;
+}
+
+interface TestResult {
+  // ... existing fields ...
+  failures?: TestFailure[];  // Add this
+}
+```
+
+**Phase 7.2: Enhance Parser Classes**
+
+A. **CargoParser** (`src/test-orchestrator/reporters/cargo-parser.ts`) (~30 min)
+   - Parse `test ... FAILED` lines to extract test names
+   - Capture failure output sections (between `failures:` and test summary)
+   - Extract error messages and panic info
+
+B. **JestParser** (`src/test-orchestrator/reporters/jest-parser.ts`) (~20 min)
+   - Parse Jest JSON output `testResults[].assertionResults[]`
+   - Extract `failureMessages` array for each failed test
+   - Include test file path and test title
+
+C. **PlaywrightParser** (`src/test-orchestrator/reporters/playwright-parser.ts`) (~30 min)
+   - Parse Playwright JSON reporter output
+   - Extract from `suites[].specs[].tests[]` where `status === 'failed'`
+   - Include error details from `results[].error`
+
+**Phase 7.3: Update JSON Report Format** (~15 min)
+
+File: `src/test-orchestrator/orchestrator.ts`
+
+Enhanced report structure:
+```json
+{
+  "results": {
+    "backend": {
+      "passed": 31,
+      "failed": 1,
+      "failures": [
+        {
+          "testName": "test_oauth_token_refresh",
+          "testFile": "backend/src/main.rs",
+          "errorMessage": "assertion failed: expected Ok, got Err(...)",
+          "stackTrace": "..."
+        }
+      ]
+    },
+    "frontend": { ... },
+    "e2e": { ... }
+  }
+}
+```
+
+**Phase 7.4: Console Output Enhancement** (~20 min)
+
+Add failure summary section:
+```
+📊 Comprehensive Test Summary
+=============================
+...
+
+❌ FAILURES DETECTED
+====================
+
+Backend (1 failure):
+  • test_oauth_token_refresh
+    backend/src/main.rs
+    Error: assertion failed: expected Ok, got Err(...)
+
+E2E (2 failures):
+  • Job status updates › should transition from new to approved
+    e2e/tests/03-job-status-updates.spec.ts:45
+    Error: Timeout 30000ms exceeded waiting for element
+  ...
+```
+
+**Phase 7.5: Separate Detailed Failure Report** (Optional, ~20 min)
+
+Create `test-results/failures-detailed.txt` with full stack traces and context for deep debugging.
+
+#### Implementation Order
+
+1. Phase 7.1 (Types): Quick foundation (~15 min)
+2. Phase 7.2A (CargoParser): Parse backend failures (~30 min)
+3. Phase 7.3 (JSON Report): Store failures (~15 min)
+4. Phase 7.4 (Console): Display failures (~20 min)
+5. Phase 7.2B (JestParser): Parse frontend failures (~20 min)
+6. Phase 7.2C (PlaywrightParser): Parse E2E failures (~30 min)
+7. Phase 7.5 (Optional): Detailed report file (~20 min)
+
+**Total estimated effort**: ~2.5 hours
+
+#### Testing Strategy
+
+1. Introduce a failing backend test → verify capture
+2. Introduce a failing frontend test → verify capture
+3. Introduce a failing E2E test → verify capture
+4. Run comprehensive suite → verify all failures reported correctly
+
+#### Benefits
+
+- ✅ **Immediate visibility** of what failed without digging through logs
+- ✅ **Actionable information** for debugging (test name + error + location)
+- ✅ **Historical tracking** via JSON reports (can compare failure patterns)
+- ✅ **Better notifications** (could include failure count per category)
+- ✅ **Faster debugging** - See exactly what failed and why
 
 ---
 
