@@ -1,12 +1,13 @@
 ---
 id: ISSUE-060
 title: Replace ad-hoc comprehensive test flow with proper test orchestration tooling
-status: open
+status: fixed
 priority: high
 severity: medium
 component: testing-infrastructure
 created: 2025-11-19
-updated: 2025-11-19
+updated: 2025-11-20
+fixed: 2025-11-20
 affects: [ISSUE-048, ISSUE-059]
 related: [ISSUE-048, ISSUE-059]
 ---

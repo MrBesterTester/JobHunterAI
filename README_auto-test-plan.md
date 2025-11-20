@@ -9,7 +9,7 @@ related_docs:
   - TESTING_HISTORY.md (historical test results archive)
   - TESTING_GUIDE.md (testing principles and investigation guide)
   - PROJECT_STATUS.md (overall project status)
-last_updated: 2025-11-14 22:03:57 PST (OAuth expiry check with auto-open HTML files - preflight enhancement)
+last_updated: 2025-11-20 (TypeScript test orchestrator implementation - ISSUE-060)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -31,6 +31,12 @@ last_updated: 2025-11-14 22:03:57 PST (OAuth expiry check with auto-open HTML fi
       - [Backend Tests Only](#backend-tests-only)
       - [Frontend Tests Only](#frontend-tests-only)
       - [E2E Tests Only](#e2e-tests-only)
+    - [TypeScript Test Orchestrator (ISSUE-060)](#typescript-test-orchestrator-issue-060)
+      - [Architecture](#architecture)
+      - [Key Features](#key-features)
+      - [Test Execution Flow](#test-execution-flow)
+      - [Debug Modes (Time Savings)](#debug-modes-time-savings)
+      - [Implementation Status](#implementation-status)
     - [HTML-Based OAuth Validation](#html-based-oauth-validation)
       - [Purpose](#purpose)
       - [When It Runs](#when-it-runs)
@@ -66,7 +72,7 @@ last_updated: 2025-11-14 22:03:57 PST (OAuth expiry check with auto-open HTML fi
     - [Preflight Requirements Status](#preflight-requirements-status)
     - [Critical Safety Enhancement (Database Backup)](#critical-safety-enhancement-database-backup)
     - [Infrastructure Components Status](#infrastructure-components-status)
-    - [Test Execution Flow](#test-execution-flow)
+    - [Test Execution Flow](#test-execution-flow-1)
     - [Helper Scripts Inventory](#helper-scripts-inventory)
     - [Documentation Update Requirements](#documentation-update-requirements)
     - [Historical Context](#historical-context)
@@ -193,46 +199,69 @@ This document outlines the comprehensive testing strategy for the JobHunter auto
 
 **Script**: `./helper-scripts/run-comprehensive-tests.sh`
 
+**Architecture**: ✅ **TypeScript Orchestrator** (implemented ISSUE-060, 2025-11-19/20)
+
 **Purpose**: Local, on-demand comprehensive validation (informal CI/CD)
 
+**Implementation**:
+- **Primary**: TypeScript test orchestrator (`src/test-orchestrator/`) with structured JSON parsing
+- **Wrapper**: Bash script validates orchestrator code compiles cleanly, then runs orchestrator
+- **Legacy**: Original bash implementation preserved as `run-comprehensive-tests-bash-legacy.sh`
+
+**Key Features** (ISSUE-060):
+- ✅ **Zero token burn** - Structured JSON output parsing (no log file reading)
+- ✅ **Real-time progress** - JSON stream parsing from test runners
+- ✅ **Reliable notifications** - Desktop dialog boxes with sound alerts
+- ✅ **Quality gates** - Preflight checks, zero-warning builds, E2E typecheck
+- ✅ **Comprehensive reporting** - JSON report with per-group statistics
+- ✅ **Debug modes** - Configurable test execution for rapid iteration
+
 **What it does**:
-1. **Preflight checks** (git, database, process cleanup)
+1. **Preflight checks** (git, database, process cleanup, OAuth validation)
 2. **Build phase** (backend, frontend, E2E typecheck - zero warnings required)
-3. **Unit test phase** (backend tests, frontend tests - no servers needed)
-4. **E2E phase** (start backend → HTML-based OAuth validation → start frontend → E2E tests)
-5. **Report comprehensive results** with iPhone notification
+3. **Test phase** (backend, frontend, E2E tests - concurrent execution)
+4. **Report & notify** (comprehensive JSON report, desktop notification)
 
 **Usage**:
 ```bash
-# Run all tests, report at end (default) - ~27 min
+# Run all tests, report at end (default) - ~20 min
 ./helper-scripts/run-comprehensive-tests.sh
 
-# Suppress subordinate notifications (only OAuth and final results notify)
-./helper-scripts/run-comprehensive-tests.sh --no-notify
+# Legacy bash implementation (if needed)
+./helper-scripts/run-comprehensive-tests-bash-legacy.sh
+```
 
-# Two-phase testing (fast tests only) - ~4 min
-./helper-scripts/run-comprehensive-tests.sh --skip-e2e
-# Runs: Preflight, Backend build/tests, Frontend build/unit tests
-# Skips: E2E tests (can run separately later)
+**Debug Modes** (ISSUE-060, implemented 2025-11-20):
+```bash
+# Smoke test (preflight only) - ~30s
+./helper-scripts/run-tests-debug.sh --smoke
 
-# Stop at first failure (fail-fast mode)
-./helper-scripts/run-comprehensive-tests.sh --fail-fast
+# Unit tests only (skip E2E) - ~2 min
+./helper-scripts/run-tests-debug.sh --unit-only
 
-# Skip preflight checks (not recommended)
-./helper-scripts/run-comprehensive-tests.sh --skip-preflight
+# Skip builds (reuse existing) - ~12 min
+./helper-scripts/run-tests-debug.sh --skip-builds
 
-# Combine flags as needed
-./helper-scripts/run-comprehensive-tests.sh --no-notify --skip-e2e
+# E2E only (with or without builds)
+./helper-scripts/run-tests-debug.sh --e2e-only
+./helper-scripts/run-tests-debug.sh --e2e-only --skip-builds
+
+# Skip database prep - ~18 min
+./helper-scripts/run-tests-debug.sh --skip-db
+
+# Skip preflight (DANGEROUS) - ~15 min
+./helper-scripts/run-tests-debug.sh --skip-preflight
 ```
 
 **Runtime Estimates** (with 15% margin):
 - **Preflight**: ~2.5 min (OAuth refresh, database seed, email setup)
-- **Backend Build**: ~20 sec (zero-warning requirement)
-- **Backend Tests**: ~60 sec (estimate - needs actual measurement)
-- **Frontend Build**: ~10 sec
-- **Frontend Unit**: ~25 sec (517 tests)
-- **E2E Tests**: ~23 min (594 tests - 85% of total time)
-- **TOTAL**: ~27 min (full suite) | ~4 min (with --skip-e2e)
+- **Backend Build**: ~3-4 min (cargo clean + cargo build)
+- **Frontend Build**: ~2-3 min (npm run build)
+- **E2E Typecheck**: ~30 sec (tsc --noEmit)
+- **Backend Tests**: ~90 sec (cargo test)
+- **Frontend Unit**: ~25 sec (npm test - 516 tests)
+- **E2E Tests**: ~10-12 min (playwright test - concurrent execution)
+- **TOTAL**: ~20 min (full suite) | ~2 min (unit tests only)
 
 **Latest actual runtimes**: See [TESTING_STATUS.md - Comprehensive Test Suite Runtime](docs/TESTING_STATUS.md#comprehensive-test-suite-runtime) for measured values from recent test runs.
 
@@ -436,6 +465,232 @@ For faster iteration and targeted testing, individual test suites can be run sep
 **Use when**: Validating end-to-end workflows after backend/frontend tests pass
 
 **Note**: When run as part of comprehensive tests with `--no-notify` flag, E2E test completion notifications are suppressed (only OAuth and final results notify).
+
+---
+
+### TypeScript Test Orchestrator (ISSUE-060)
+
+**Status**: ✅ **FULLY IMPLEMENTED** (2025-11-19/20)
+
+**Problem Solved**: The previous bash-based comprehensive test flow had significant inefficiencies:
+- **Token burn** - Repeated log file reading to monitor test progress (ISSUE-048)
+- **Unreliable notifications** - Completion marker existed but notifications missed (ISSUE-059)
+- **Manual result aggregation** - Parsing unstructured log output instead of structured JSON
+- **Ad-hoc orchestration** - Bash scripts instead of proper test infrastructure
+
+**Solution**: Proper test orchestration using native TypeScript, Cargo, and Playwright JSON output formats.
+
+#### Architecture
+
+**File Structure**:
+```
+src/test-orchestrator/
+├── main.ts                    # Entry point (comprehensive mode)
+├── debug-main.ts              # Entry point (debug modes with CLI parsing)
+├── orchestrator.ts            # Main coordinator class with config support
+├── reporters/
+│   ├── jest-parser.ts         # Jest --json output parser
+│   ├── playwright-parser.ts   # Playwright JSON reporter parser
+│   └── cargo-parser.ts        # Cargo test output parser
+├── types.ts                   # TypeScript interfaces + OrchestratorConfig
+└── README.md                  # Complete usage documentation
+```
+
+**Wrapper Scripts**:
+- `./helper-scripts/run-comprehensive-tests.sh` - Primary wrapper (validates orchestrator compiles, then runs)
+- `./helper-scripts/run-tests-debug.sh` - Debug mode wrapper (CLI shortcuts for common workflows)
+
+#### Key Features
+
+**1. Zero Token Burn**:
+- Structured JSON output from all test suites (Jest, Playwright, Cargo)
+- Real-time JSON stream parsing (no log file reading)
+- In-memory progress tracking (no intermediate files)
+
+**2. Reliable Notifications**:
+- Desktop dialog boxes with sound alerts (macOS)
+- Immediate notification on completion (no polling)
+- Per-group statistics in notification (backend/frontend/E2E counts)
+
+**3. Quality Gates** (HARD Requirements):
+- ✅ **Orchestrator TypeScript compilation** - Automatically verified by wrapper script
+- ✅ **Preflight checks** - Git, database, OAuth, process cleanup
+- ✅ **Build phase** - Zero-warning backend/frontend builds, E2E typecheck
+- ✅ **Test phase** - All tests must pass (or respect --fail-fast flag)
+
+**4. Comprehensive Reporting**:
+- JSON report: `test-results/comprehensive-report.json`
+- Console summary with full statistics
+- Per-suite breakdown (passed/failed/skipped counts)
+- Performance metrics (duration per phase)
+
+**5. Debug & Testing Modes**:
+- **Configurable execution** - Skip specific phases for faster iteration
+- **Preset modes** - Common workflows optimized for development
+- **CLI flags** - Combine modes for custom test scenarios
+- **Time savings** - 30s smoke test vs 20min comprehensive run
+
+#### Test Execution Flow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ WRAPPER SCRIPT (run-comprehensive-tests.sh)                     │
+├─────────────────────────────────────────────────────────────────┤
+│ 1. Verify orchestrator TypeScript compiles cleanly              │
+│    npx tsc --noEmit src/test-orchestrator/**/*.ts               │
+│    ❌ ABORT if compilation errors/warnings                      │
+│ 2. Check dependencies (ts-node, npm packages)                   │
+│ 3. Execute orchestrator via ts-node                             │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ PHASE 1: PREFLIGHT CHECKS (Sequential, HARD requirements)      │
+├─────────────────────────────────────────────────────────────────┤
+│ 1. checkProcessCleanup() - Stop servers, free ports            │
+│ 2. checkGitStatus() - No uncommitted changes                   │
+│ 3. checkDatabaseSelection() - Validate jobhunter_personal      │
+│ 4. checkDatabaseState() - Backup → Clear → Seed                │
+│ 5. checkOAuthExpiry() - Validate/refresh OAuth tokens          │
+│ ❌ ANY failure → ABORT (no build, no tests)                    │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ PHASE 2: BUILD PHASE (Sequential, Quality Gates)               │
+├─────────────────────────────────────────────────────────────────┤
+│ 1. buildBackend() - cargo clean && cargo build                 │
+│    Check: output.includes('warning')                            │
+│    ❌ ABORT if ANY warnings found                              │
+│ 2. buildFrontend() - npm run build                             │
+│    Check: output.includes('warning')                            │
+│    ❌ ABORT if ANY warnings found                              │
+│ 3. typecheckE2E() - npm run typecheck:e2e                      │
+│    Check: exit code                                             │
+│    ❌ ABORT if ANY TypeScript errors                           │
+│ ✅ All builds PASSED → Proceed to tests                        │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ PHASE 3: TEST PHASE (Concurrent execution)                     │
+├─────────────────────────────────────────────────────────────────┤
+│ Promise.all([                                                   │
+│   runBackendTests(),   → cargo test (JSON parsing)             │
+│   runFrontendTests(),  → npm test --json (Jest JSON)           │
+│   runE2ETests()        → playwright test (JSON reporter)       │
+│ ])                                                              │
+│                                                                 │
+│ → Parse structured JSON output (zero token burn)               │
+│ → Track pass/fail/skip per test group                          │
+│ → Generate comprehensive report                                │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ PHASE 4: REPORT & NOTIFY                                       │
+├─────────────────────────────────────────────────────────────────┤
+│ 1. generateReport() - Save to test-results/                    │
+│ 2. displaySummary() - Console output with stats                │
+│ 3. sendNotification() - Desktop dialog with per-group stats    │
+│ ✅ Comprehensive testing complete!                             │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### Debug Modes (Time Savings)
+
+| Mode | Runtime | Time Saved | Use Case |
+|------|---------|------------|----------|
+| `--smoke` | ~30s | 97.5% | Verify orchestrator code works, test preflight logic |
+| `--unit-only` | ~2m | 90% | Quick validation after code changes (no OAuth needed) |
+| `--skip-builds` | ~12m | 40% | Test iteration without waiting for rebuilds |
+| `--e2e-only` | ~10m | 50% | E2E test development (skip unit tests) |
+| `--e2e-only --skip-builds` | ~10m | 50% | Fastest E2E iteration (reuse builds) |
+| `--skip-db` | ~18m | 10% | Test with specific database state |
+| `--skip-preflight` | ~15m | 25% | Trusted environment (DANGEROUS) |
+
+**Example Workflows**:
+
+```bash
+# Orchestrator development (rapid iteration)
+# 1. Make changes to orchestrator code
+# 2. Smoke test (verify code compiles + preflight works)
+./helper-scripts/run-tests-debug.sh --smoke  # 30s
+# 3. If smoke test passes, run unit tests
+./helper-scripts/run-tests-debug.sh --unit-only  # 2m
+# 4. If unit tests pass, run full suite with existing builds
+./helper-scripts/run-tests-debug.sh --skip-builds  # 12m
+# Total: 14.5m (vs 20m comprehensive) - 27.5% time savings
+
+# E2E test development
+# 1. Make changes to E2E test
+# 2. Run E2E only (skip unit tests, reuse builds)
+./helper-scripts/run-tests-debug.sh --e2e-only --skip-builds  # 10m
+# 3. If tests pass, run full suite with existing builds
+./helper-scripts/run-tests-debug.sh --skip-builds  # 12m
+# Total: 22m (vs 40m for 2 comprehensive runs) - 45% time savings
+
+# Backend code changes
+# 1. Make changes to backend code
+# 2. Run backend tests only
+cd backend && cargo test  # 90s
+# 3. If backend tests pass, run unit tests (both suites)
+./helper-scripts/run-tests-debug.sh --unit-only  # 2m
+# 4. If unit tests pass, run E2E with existing builds
+./helper-scripts/run-tests-debug.sh --e2e-only --skip-builds  # 10m
+# Total: 13.5m (vs 20m comprehensive) - 32.5% time savings
+```
+
+#### Implementation Status
+
+**All Phases Complete** ✅ (2025-11-19/20):
+
+1. **Phase 1**: Research and Prototype ✅
+   - Created `src/test-orchestrator/` directory structure
+   - Verified Jest JSON format, Playwright JSON reporter, Cargo test output
+   - Desktop notifications working on macOS (sound + dialog)
+
+2. **Phase 2**: Core Orchestrator ✅
+   - Implemented `TestOrchestrator` class with concurrent test execution
+   - JSON parsers for all three test suites (TypeScript-only)
+   - Real-time progress tracking (in-memory, no files)
+
+3. **Phase 3**: Notification and Reporting ✅
+   - Result aggregation across all suites
+   - Comprehensive JSON report generation
+   - Desktop notifications (macOS sound + dialog)
+
+4. **Phase 4**: Integration and Testing ✅
+   - Tested with real test suites, debugged parser issues
+   - Verified all three test suite parsers work correctly
+   - Verified desktop notifications work
+
+5. **Phase 5**: Build Phase Quality Gates ✅
+   - Added backend build (cargo clean + cargo build) with zero-warning check
+   - Added frontend build (npm run build) with zero-warning check
+   - Added E2E typecheck (npm run typecheck:e2e) with zero-error check
+
+6. **Phase 6**: Preflight Checks ✅
+   - Process cleanup, git status, database selection
+   - Database backup → clear → seed with test data
+   - OAuth token validation with auto-refresh
+
+7. **Phase 7**: Debug and Testing Modes ✅
+   - Added `OrchestratorConfig` interface for configurable execution
+   - Implemented `debug-main.ts` with CLI argument parsing
+   - Created 6 preset modes (smoke, unit-only, skip-builds, etc.)
+   - Wrapper script (`run-tests-debug.sh`) for easy access
+
+**Feature Parity with Bash Script**: ✅ ACHIEVED (2025-11-20)
+
+**Commits**:
+- `227c859` - Phase 1-4: Core orchestrator with parsers and notifications
+- `da612f4` - Phase 7: Debug and testing modes
+- `9b3d2c3` - Fix: Database name regex bug
+- `3477e19` - Fix: Argument parsing order for --e2e-only --skip-builds
+- `cf1f3ec` - docs: Update ISSUE-060 with testing results and bug fixes
+- `9f1679e` - refactor: Deprecate 6 test scripts superseded by orchestrator
+
+**Documentation**:
+- `src/test-orchestrator/README.md` - Complete orchestrator usage guide
+- `ISSUE-060` (bugs/fixed/) - Full implementation history and design decisions
+- `README_dev.md` - Quick reference for helper scripts and debug modes
 
 ---
 
@@ -1176,9 +1431,19 @@ All critical requirements from the testing plan have been fully implemented and 
 | **OAuth Refresh** | `refresh-oauth-tokens.sh` | ✅ Exists | Auto-refresh expired tokens |
 | **Gmail State** | `clear-gmail-state.sh` | ✅ Exists | Gmail API integration (143 lines) |
 | **MS Mail State** | `setup-msmail-state.sh` | ✅ Exists | MS Graph API integration |
-| **E2E TypeScript Config** | `e2e/tsconfig.json` | ✅ **IMPLEMENTED** | ✅ TypeScript config for E2E tests (2025-11-12) |
-| **E2E Typecheck Script** | `package.json:typecheck:e2e` | ✅ **IMPLEMENTED** | ✅ Build-phase validation (2025-11-12) |
-| **Test Runner** | `run-comprehensive-tests.sh` | ✅ Complete | Full preflight + build (inc. E2E typecheck) + test |
+| **E2E TypeScript Config** | `e2e/tsconfig.json` | ✅ Exists | TypeScript config for E2E tests (2025-11-12) |
+| **E2E Typecheck Script** | `package.json:typecheck:e2e` | ✅ Exists | Build-phase validation (2025-11-12) |
+| **Test Orchestrator** | `src/test-orchestrator/` | ✅ **IMPLEMENTED** | ✅ TypeScript orchestrator with JSON parsers (ISSUE-060, 2025-11-19/20) |
+| **Orchestrator Entry** | `src/test-orchestrator/main.ts` | ✅ **IMPLEMENTED** | ✅ Comprehensive mode entry point |
+| **Debug Entry** | `src/test-orchestrator/debug-main.ts` | ✅ **IMPLEMENTED** | ✅ Debug modes with CLI parsing |
+| **Orchestrator Core** | `src/test-orchestrator/orchestrator.ts` | ✅ **IMPLEMENTED** | ✅ Main coordinator with config support |
+| **Jest Parser** | `src/test-orchestrator/reporters/jest-parser.ts` | ✅ **IMPLEMENTED** | ✅ Jest --json output parser |
+| **Playwright Parser** | `src/test-orchestrator/reporters/playwright-parser.ts` | ✅ **IMPLEMENTED** | ✅ Playwright JSON reporter parser |
+| **Cargo Parser** | `src/test-orchestrator/reporters/cargo-parser.ts` | ✅ **IMPLEMENTED** | ✅ Cargo test output parser |
+| **Orchestrator Types** | `src/test-orchestrator/types.ts` | ✅ **IMPLEMENTED** | ✅ TypeScript interfaces + OrchestratorConfig |
+| **Test Runner Wrapper** | `run-comprehensive-tests.sh` | ✅ **UPDATED** | ✅ Validates orchestrator compiles, then runs orchestrator (2025-11-20) |
+| **Debug Wrapper** | `run-tests-debug.sh` | ✅ **IMPLEMENTED** | ✅ Debug mode wrapper with CLI shortcuts (ISSUE-060, 2025-11-20) |
+| **Legacy Bash Runner** | `run-comprehensive-tests-bash-legacy.sh` | ✅ Preserved | Original bash implementation (1157 lines, reference only) |
 
 ### Test Execution Flow
 
