@@ -1,12 +1,13 @@
 ---
 id: ISSUE-057
 title: Test #441 flaky - switchToTab helper has fixed timeouts that don't adapt to load
-status: open
+status: mitigated
 priority: medium
 severity: medium
 component: frontend
 created: 2025-11-19
 updated: 2025-11-19
+mitigated: 2025-11-19
 affects: []
 related: []
 ---
@@ -268,7 +269,7 @@ console.log(`Tab navigation completed in ${navEnd - navStart}ms`);
 
 ## Decision
 
-**Recommended**: Implement **Option 1 (Priority 1)** immediately to eliminate flakiness.
+**Implemented**: **Option 1 (Priority 1)** + **Option 2 (Priority 2)** on 2025-11-19
 
 **Rationale**:
 - Low risk (only increases timeouts, no logic changes)
@@ -276,11 +277,32 @@ console.log(`Tab navigation completed in ${navEnd - navStart}ms`);
 - 5 minutes of work for permanent fix
 - Aligns with established best practices
 
-**Optional**: Consider Options 2 and 3 as enhancements if desired.
-
 ## Implementation
 
-[To be updated when fix is applied]
+**Implemented**: 2025-11-19 (commit: ba6ff1b)
+
+**Priority 1: Make switchToTab Helper Load-Aware** ✅ **COMPLETED**
+
+Changes to `frontend/e2e/helpers/tab-navigation.ts`:
+- Added load-aware timeout calculation at top of function (lines 40-43):
+  ```typescript
+  const baseTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 15000 : 5000;
+  const jobCardsTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 45000 : 10000;
+  ```
+- Updated line 50: aria-selected wait now uses `baseTimeout` instead of fixed 5000
+- Updated line 59: tab content wait now uses `baseTimeout` instead of fixed 5000
+- Line 66: job cards wait already used load-aware timeout (no change needed)
+
+**Priority 2: Align Test #441 Timeout** ✅ **COMPLETED**
+
+Changes to `frontend/e2e/tests/16-gmail-sync-integration.spec.ts`:
+- Line 276: Increased timeout from 20000 to 45000 for COMPREHENSIVE_TESTS/CI
+- Added comment referencing ISSUE-057
+
+**Impact**:
+- Test #441 should now pass on first attempt under comprehensive test load
+- All tests using `switchToTab` benefit from load-aware timeouts
+- No performance regression for normal test runs (still uses 5s/10s defaults)
 
 ## Testing
 
@@ -311,7 +333,9 @@ COMPREHENSIVE_TESTS=true npx playwright test e2e/tests/16-gmail-sync-integration
 ## Status History
 
 - 2025-11-19: ISSUE created and documented
-- 2025-11-19: Comprehensive audit completed (TEST_441_AUDIT.md)
+- 2025-11-19: Comprehensive audit completed
+- 2025-11-19: Fix implemented (commit ba6ff1b) - Priority 1 & 2 completed
+- 2025-11-19: Ready for verification in next comprehensive test run
 
 ## Notes
 

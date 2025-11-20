@@ -63,15 +63,18 @@ last_updated: 2025-11-19 16:34:51 PST (Added comprehensive test run results - al
 - **Verification**: ✅ **PASSED** in comprehensive test run - No timeouts, test completed successfully
 - **Status**: ✅ **FIXED AND VERIFIED** (2025-11-19)
 
-**Priority 3: Monitor Test #441 Flaky Behavior** ⚠️ **ONGOING**
+**Priority 3: Fix Test #441 Flaky Behavior** ✅ **IMPLEMENTED (2025-11-19) - Awaiting Verification**
 - **Test**: `e2e/tests/16-gmail-sync-integration.spec.ts:229` - "should allow approving jobs synced from Gmail"
-- **Status**: Flaky - fails occasionally but passes on retry
-- **Latest Run**: Failed initially (11.1s timeout), passed on retry
-- **Issue Tracked**: [ISSUE-057](../bugs/open/ISSUE-057-test-441-flaky---switchtotab-helper-has-fixed-timeouts-that-dont-adapt-to-load.md) - switchToTab helper has fixed timeouts that don't adapt to load
-- **Root Cause**: Helper function has two fixed 5s timeouts (lines 44, 52) that don't use COMPREHENSIVE_TESTS env var
-- **Recommended Fix**: Make helper timeouts load-aware (5 minutes of work, low risk)
-- **Action**: User decision - implement fix now or continue monitoring
-- **Not Blocking**: Test consistently passes on retry
+- **Issue**: [ISSUE-057](../bugs/mitigated/ISSUE-057-test-441-flaky---switchtotab-helper-has-fixed-timeouts-that-dont-adapt-to-load.md) - switchToTab helper has fixed timeouts that don't adapt to load
+- **Root Cause**: Helper function had two fixed 5s timeouts (lines 44, 52) that didn't use COMPREHENSIVE_TESTS env var
+- **Fix Implemented** (commit: ba6ff1b):
+  - Priority 1: Made switchToTab helper timeouts load-aware (5s → 15s under COMPREHENSIVE_TESTS)
+  - Priority 2: Aligned test timeout with helper (20s → 45s under COMPREHENSIVE_TESTS)
+- **Files Modified**:
+  - `frontend/e2e/helpers/tab-navigation.ts:40-70` - Added load-aware timeout calculation
+  - `frontend/e2e/tests/16-gmail-sync-integration.spec.ts:276` - Increased approval wait timeout
+- **Status**: ✅ **Fix implemented, awaiting verification in next comprehensive test run**
+- **Expected Outcome**: Test #441 should pass on first attempt (no retry) under load
 
 **Overall Test Suite Health**: ✅ **100% pass rate (1072/1072 active tests)** - Excellent state, all priorities fixed and verified
 
