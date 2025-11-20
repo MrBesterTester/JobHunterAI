@@ -36,7 +36,12 @@
 set -e  # Exit on error
 
 # Get project root (script is in helper-scripts/)
-PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# Resolve symlink if needed (handles running via root symlink)
+SCRIPT_PATH="$0"
+if [ -L "$SCRIPT_PATH" ]; then
+    SCRIPT_PATH="$(readlink "$SCRIPT_PATH")"
+fi
+PROJECT_ROOT="$(cd "$(dirname "$SCRIPT_PATH")/.." && pwd)"
 
 # Colors for output
 RED='\033[0;31m'
