@@ -1,11 +1,12 @@
 #!/bin/bash
 
-# move-bug.sh - Move bug between states (open/mitigated/fixed)
+# move-bug.sh - Move bug between states (open/mitigated/fixed/duplicate)
 # Usage: ./move-bug.sh [bug-id] [new-status]
 # Examples:
 #   ./move-bug.sh BUG-001 fixed
 #   ./move-bug.sh ISSUE-019 fixed
 #   ./move-bug.sh BUG-002 mitigated
+#   ./move-bug.sh ISSUE-058 duplicate
 
 set -e
 
@@ -27,11 +28,12 @@ if [ $# -lt 2 ]; then
     echo ""
     echo "Arguments:"
     echo "  bug-id      Bug identifier (e.g., BUG-001, ISSUE-019)"
-    echo "  new-status  Target status: open | mitigated | fixed"
+    echo "  new-status  Target status: open | mitigated | fixed | duplicate"
     echo ""
     echo "Examples:"
     echo "  ./move-bug.sh BUG-001 fixed"
     echo "  ./move-bug.sh ISSUE-019 mitigated"
+    echo "  ./move-bug.sh ISSUE-058 duplicate"
     exit 1
 fi
 
@@ -39,9 +41,9 @@ BUG_ID="$1"
 NEW_STATUS="$2"
 
 # Validate new status
-if [[ ! "$NEW_STATUS" =~ ^(open|mitigated|fixed)$ ]]; then
+if [[ ! "$NEW_STATUS" =~ ^(open|mitigated|fixed|duplicate)$ ]]; then
     echo -e "${RED}❌ Error: Invalid status '$NEW_STATUS'${NC}"
-    echo "Status must be: open | mitigated | fixed"
+    echo "Status must be: open | mitigated | fixed | duplicate"
     exit 1
 fi
 
@@ -51,7 +53,7 @@ DATE=$(date +%Y-%m-%d)
 # Find the bug file (search all status directories)
 BUG_FILE=""
 CURRENT_STATUS=""
-for status in open mitigated fixed; do
+for status in open mitigated fixed duplicate; do
     if ls bugs/${status}/${BUG_ID}-*.md 1> /dev/null 2>&1; then
         BUG_FILE=$(ls bugs/${status}/${BUG_ID}-*.md)
         CURRENT_STATUS="$status"
@@ -67,9 +69,10 @@ if [ -z "$BUG_FILE" ]; then
     echo "  - bugs/open/"
     echo "  - bugs/mitigated/"
     echo "  - bugs/fixed/"
+    echo "  - bugs/duplicate/"
     echo ""
     echo "Available bugs:"
-    ls bugs/open/ bugs/mitigated/ bugs/fixed/ 2>/dev/null | grep -E "(BUG|ISSUE)-[0-9]+" || echo "  (none found)"
+    ls bugs/open/ bugs/mitigated/ bugs/fixed/ bugs/duplicate/ 2>/dev/null | grep -E "(BUG|ISSUE)-[0-9]+" || echo "  (none found)"
     exit 1
 fi
 

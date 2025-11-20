@@ -2,7 +2,7 @@
 """
 Bug Tracking System Index Generator
 
-Scans bugs/{open,mitigated,fixed}/*.md files, parses YAML frontmatter,
+Scans bugs/{open,mitigated,fixed,duplicate}/*.md files, parses YAML frontmatter,
 and generates bugs/README.md with organized tables by status.
 
 Usage:
@@ -68,15 +68,16 @@ def scan_bug_files(bugs_dir: Path) -> Dict[str, List[Dict]]:
     """
     Scan bugs directory and organize bugs by status.
 
-    Returns: {'open': [...], 'mitigated': [...], 'fixed': [...]}
+    Returns: {'open': [...], 'mitigated': [...], 'fixed': [...], 'duplicate': [...]}
     """
     bugs_by_status = {
         'open': [],
         'mitigated': [],
-        'fixed': []
+        'fixed': [],
+        'duplicate': []
     }
 
-    for status in ['open', 'mitigated', 'fixed']:
+    for status in ['open', 'mitigated', 'fixed', 'duplicate']:
         status_dir = bugs_dir / status
         if not status_dir.exists():
             continue
@@ -115,6 +116,7 @@ def generate_summary_stats(bugs_by_status: Dict[str, List[Dict]]) -> str:
     open_count = len(bugs_by_status['open'])
     mitigated_count = len(bugs_by_status['mitigated'])
     fixed_count = len(bugs_by_status['fixed'])
+    duplicate_count = len(bugs_by_status['duplicate'])
 
     return f"""## Summary
 
@@ -122,6 +124,7 @@ def generate_summary_stats(bugs_by_status: Dict[str, List[Dict]]) -> str:
 - **Open**: {open_count}
 - **Mitigated**: {mitigated_count}
 - **Fixed**: {fixed_count}
+- **Duplicate**: {duplicate_count}
 
 **Last Updated**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 """
@@ -223,6 +226,9 @@ This directory contains the project's bug tracking system with individual files 
     readme += "\n## Fixed Bugs\n\n"
     readme += generate_table(bugs_by_status['fixed'], 'fixed')
 
+    readme += "\n## Duplicate Bugs\n\n"
+    readme += generate_table(bugs_by_status['duplicate'], 'duplicate')
+
     # Footer
     readme += """
 ---
@@ -283,6 +289,7 @@ def main():
     print(f"  - Open: {len(bugs_by_status['open'])}")
     print(f"  - Mitigated: {len(bugs_by_status['mitigated'])}")
     print(f"  - Fixed: {len(bugs_by_status['fixed'])}")
+    print(f"  - Duplicate: {len(bugs_by_status['duplicate'])}")
 
     # Generate README
     readme_content = generate_readme(bugs_by_status)

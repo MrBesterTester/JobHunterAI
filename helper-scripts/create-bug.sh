@@ -107,7 +107,7 @@ echo -e "${YELLOW}🔍 Finding next available ${TYPE_UPPER} ID...${NC}"
 # Find highest ID for this type
 if [ "$TYPE" = "bug" ]; then
     # BUG uses 4-digit format: BUG-0001, BUG-0002, etc.
-    HIGHEST=$(ls bugs/open/ bugs/mitigated/ bugs/fixed/ 2>/dev/null | \
+    HIGHEST=$(ls bugs/open/ bugs/mitigated/ bugs/fixed/ bugs/duplicate/ 2>/dev/null | \
               grep -E "^BUG-[0-9]+" | \
               sed 's/BUG-\([0-9]*\)-.*/\1/' | \
               sort -n | \
@@ -123,7 +123,7 @@ if [ "$TYPE" = "bug" ]; then
     NEXT_ID=$(printf "BUG-%04d" $NEXT_NUM)
 else
     # ISSUE uses 3-digit format: ISSUE-001, ISSUE-002, etc.
-    HIGHEST=$(ls bugs/open/ bugs/mitigated/ bugs/fixed/ 2>/dev/null | \
+    HIGHEST=$(ls bugs/open/ bugs/mitigated/ bugs/fixed/ bugs/duplicate/ 2>/dev/null | \
               grep -E "^ISSUE-[0-9]+" | \
               sed 's/ISSUE-\([0-9]*\)-.*/\1/' | \
               sort -n | \
