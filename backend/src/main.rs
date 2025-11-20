@@ -9131,14 +9131,6 @@ async fn main() -> std::io::Result<()> {
 mod tests {
     use super::*;
 
-    // TEMPORARY: Phase 7 failure reporting verification test
-    // TODO: DELETE after verification is complete
-    #[test]
-    fn test_phase7_backend_failure_verification() {
-        // Intentional failure to verify CargoParser captures failure details
-        assert_eq!(1 + 1, 3, "Expected 2 to equal 3 (intentional failure for Phase 7 testing)");
-    }
-
     #[test]
     fn test_gmail_message_deserialization() {
         // Test that Gmail API JSON response with camelCase fields deserializes correctly
