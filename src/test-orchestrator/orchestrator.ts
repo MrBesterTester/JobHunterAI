@@ -1215,7 +1215,7 @@ export class TestOrchestrator {
         `E2E:      ${report.results.e2e.passed}/${report.results.e2e.failed}/${report.results.e2e.skipped} (pass/fail/skip)`,
         '',
         `Total: ${report.summary.totalPassed}/${report.summary.totalFailed}/${report.summary.totalSkipped} (pass/fail/skip)`,
-        `Duration: ${durationFormatted}`,
+        `Duration: ${durationFormatted} (mm:ss)`,
         `Status: ${report.summary.overallSuccess ? 'SUCCESS' : 'FAILED'}`
       ].join('\\n');
 
