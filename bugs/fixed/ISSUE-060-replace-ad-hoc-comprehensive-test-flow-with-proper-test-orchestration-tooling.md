@@ -1671,6 +1671,36 @@ All three parsers tested and verified working:
 - ✅ **Better notifications** (could include failure count per category)
 - ✅ **Faster debugging** - See exactly what failed and why
 
+**Analysis Efficiency - The Practical Value** ⭐
+
+The structured JSON output provides **massive efficiency gains** for test result analysis:
+
+**Old Approach (Log Files)**:
+- 📄 Read 500-1000+ lines of verbose test output logs
+- Mixed signal/noise (build output, test execution, timing, progress indicators)
+- Requires parsing through stderr/stdout streams
+- Failures buried in walls of text
+- High token cost, slow analysis
+- Must search for failures manually
+
+**New Approach (JSON Report)**:
+- 📊 Read ~77 lines of structured JSON data
+- Only essential information (counts, failures, timing)
+- Native JSON parsing - instant data access
+- Failures clearly structured with all fields (testName, testFile, errorMessage, stackTrace)
+- **~90% token savings** - massive efficiency gain
+- All failure information readily accessible
+
+**Real-World Impact**:
+- **Token efficiency**: 800+ lines → 77 lines (~90% reduction)
+- **Analysis speed**: Minutes of log parsing → seconds of JSON reading
+- **Data completeness**: All failure details in structured format
+- **Phased approach**: JSON first (complete), detailed text only if needed (for human reading)
+
+**Analogy**: Like checking a scoreboard (JSON) vs reading a play-by-play transcript (logs) to find out who won the game. The detailed text file is still there for deep diving, but the JSON gives you the complete scoreboard instantly.
+
+**Standard Practice**: Now documented in CLAUDE.md - always read JSON report first, only consult detailed text file if user explicitly requests it or JSON is unavailable.
+
 ---
 
 ## Related Files
