@@ -838,6 +838,18 @@ run_backend_tests() {
     log_section "RUNNING BACKEND TESTS (Cargo Test)"
 
     cd "$PROJECT_ROOT/backend"
+
+    # Load environment variables from backend/.env for API key tests
+    # This enables real API integration tests (test_real_api_generate, test_real_api_with_invalid_key)
+    if [ -f .env ]; then
+        log_info "Loading ANTHROPIC_API_KEY from backend/.env for real API tests..."
+        set -a  # Mark all variables for export
+        source .env
+        set +a  # Stop exporting
+    else
+        log_warning "backend/.env not found - real API tests may fail"
+    fi
+
     local start_time=$(date +%s)
 
     log_info "Running cargo test..."
