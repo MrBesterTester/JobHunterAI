@@ -304,7 +304,7 @@ export class TestOrchestrator {
 
       try {
         const envContent = readFileSync(envPath, 'utf-8');
-        const dbUrlMatch = envContent.match(/^DATABASE_URL=.*\/([^?]+)/m);
+        const dbUrlMatch = envContent.match(/^DATABASE_URL=.*\/([^?\s]+)/m);
 
         if (!dbUrlMatch) {
           console.error('❌ Database selection check FAILED');
@@ -313,7 +313,7 @@ export class TestOrchestrator {
           return;
         }
 
-        const dbName = dbUrlMatch[1];
+        const dbName = dbUrlMatch[1].trim();
         if (dbName !== 'jobhunter_personal') {
           console.error('❌ Database selection check FAILED');
           console.error(`   Expected: jobhunter_personal`);
