@@ -429,6 +429,7 @@ export class TestOrchestrator {
       const startTime = new Date();
 
       // Step 1: cargo clean
+      console.log('  Running cargo clean...');
       const cleanChild = spawn('cargo', ['clean'], {
         cwd: path.join(__dirname, '../../backend'),
         stdio: 'inherit'
@@ -441,6 +442,7 @@ export class TestOrchestrator {
         }
 
         // Step 2: cargo build
+        console.log('  Running cargo build (this may take 1-2 minutes)...');
         const buildChild = spawn('cargo', ['build'], {
           cwd: path.join(__dirname, '../../backend'),
           stdio: ['inherit', 'pipe', 'pipe']
@@ -448,6 +450,7 @@ export class TestOrchestrator {
 
         let stdout = '';
         let stderr = '';
+        let crateCount = 0;
 
         buildChild.stdout?.on('data', (data) => {
           stdout += data.toString();
@@ -456,12 +459,26 @@ export class TestOrchestrator {
 
         buildChild.stderr?.on('data', (data) => {
           stderr += data.toString();
+          // Count crates being compiled and show progress
+          const lines = data.toString().split('\n');
+          for (const line of lines) {
+            if (line.includes('Compiling')) {
+              crateCount++;
+              // Show progress every 10 crates
+              if (crateCount % 10 === 0) {
+                process.stdout.write(`  Compiling: ${crateCount} crates processed...\r`);
+              }
+            }
+          }
           process.stderr.write(data); // Show progress
         });
 
         buildChild.on('close', (code) => {
           const endTime = new Date();
           const duration = ((endTime.getTime() - startTime.getTime()) / 1000).toFixed(1);
+
+          // Clear the crate counter progress line
+          process.stdout.write('\r\x1b[K');
 
           const combinedOutput = stdout + stderr;
 
@@ -496,6 +513,7 @@ export class TestOrchestrator {
   private async buildFrontend(): Promise<void> {
     return new Promise((resolve, reject) => {
       console.log('📘 Building frontend (React/TypeScript/RSBuild)...');
+      console.log('  Running npm run build (typecheck + rsbuild)...');
       const startTime = new Date();
 
       const buildChild = spawn('npm', ['run', 'build'], {
@@ -550,6 +568,7 @@ export class TestOrchestrator {
   private async typecheckE2E(): Promise<void> {
     return new Promise((resolve, reject) => {
       console.log('🎭 Type-checking E2E tests (TypeScript)...');
+      console.log('  Running tsc --noEmit on E2E test files...');
       const startTime = new Date();
 
       const typecheckChild = spawn('npm', ['run', 'typecheck:e2e'], {
