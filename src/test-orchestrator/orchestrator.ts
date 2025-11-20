@@ -934,6 +934,11 @@ export class TestOrchestrator {
     console.log(`\nTotal:    ${report.summary.totalPassed} passed, ${report.summary.totalFailed} failed, ${report.summary.totalSkipped} skipped`);
     console.log(`Status:   ${report.summary.overallSuccess ? '✅ SUCCESS' : '❌ FAILED'}\n`);
 
+    // Display detailed failure information if any tests failed
+    if (report.summary.totalFailed > 0) {
+      this.displayFailures(report);
+    }
+
     // Write report to file
     try {
       const reportPath = path.join(__dirname, '../../test-results/comprehensive-report.json');
@@ -941,6 +946,65 @@ export class TestOrchestrator {
       console.log(`📄 Report saved to: ${reportPath}`);
     } catch (err) {
       console.warn('⚠️  Failed to write report file:', err);
+    }
+  }
+
+  /**
+   * Display detailed failure information
+   */
+  private displayFailures(report: ComprehensiveTestReport): void {
+    console.log('❌ FAILURES DETECTED');
+    console.log('====================\n');
+
+    // Backend failures
+    if (report.results.backend.failures && report.results.backend.failures.length > 0) {
+      const count = report.results.backend.failures.length;
+      console.log(`Backend (${count} failure${count > 1 ? 's' : ''}):`);
+      for (const failure of report.results.backend.failures) {
+        console.log(`  • ${failure.testName}`);
+        console.log(`    ${failure.testFile}`);
+        // Truncate long error messages to first line
+        const errorFirstLine = failure.errorMessage.split('\n')[0];
+        console.log(`    Error: ${errorFirstLine}`);
+        if (failure.duration) {
+          console.log(`    Duration: ${failure.duration}ms`);
+        }
+        console.log('');
+      }
+    }
+
+    // Frontend failures
+    if (report.results.frontend.failures && report.results.frontend.failures.length > 0) {
+      const count = report.results.frontend.failures.length;
+      console.log(`Frontend (${count} failure${count > 1 ? 's' : ''}):`);
+      for (const failure of report.results.frontend.failures) {
+        console.log(`  • ${failure.testName}`);
+        console.log(`    ${failure.testFile}`);
+        // Truncate long error messages to first line
+        const errorFirstLine = failure.errorMessage.split('\n')[0];
+        console.log(`    Error: ${errorFirstLine}`);
+        if (failure.duration) {
+          console.log(`    Duration: ${failure.duration}ms`);
+        }
+        console.log('');
+      }
+    }
+
+    // E2E failures
+    if (report.results.e2e.failures && report.results.e2e.failures.length > 0) {
+      const count = report.results.e2e.failures.length;
+      console.log(`E2E (${count} failure${count > 1 ? 's' : ''}):`);
+      for (const failure of report.results.e2e.failures) {
+        console.log(`  • ${failure.testName}`);
+        console.log(`    ${failure.testFile}`);
+        // Truncate long error messages to first line
+        const errorFirstLine = failure.errorMessage.split('\n')[0];
+        console.log(`    Error: ${errorFirstLine}`);
+        if (failure.duration) {
+          console.log(`    Duration: ${failure.duration}ms`);
+        }
+        console.log('');
+      }
     }
   }
 
