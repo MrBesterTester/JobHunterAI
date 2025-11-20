@@ -817,7 +817,11 @@ export class TestOrchestrator {
         ['playwright', 'test'],
         {
           cwd: path.join(__dirname, '../../frontend'),
-          stdio: ['inherit', 'pipe', 'pipe']
+          stdio: ['inherit', 'pipe', 'pipe'],
+          env: {
+            ...process.env,
+            COMPREHENSIVE_TESTS: 'true'
+          }
         }
       );
 
