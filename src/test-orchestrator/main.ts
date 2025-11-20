@@ -14,6 +14,11 @@
 import { TestOrchestrator } from './orchestrator';
 
 async function main() {
+  // Signal comprehensive testing (enables load-aware timeouts)
+  // This env var is checked by global-setup.ts and propagated to Playwright workers
+  // (ISSUE-056: Playwright workers don't inherit command-line env vars reliably)
+  process.env.COMPREHENSIVE_TESTS = 'true';
+
   const orchestrator = new TestOrchestrator();
 
   try {
