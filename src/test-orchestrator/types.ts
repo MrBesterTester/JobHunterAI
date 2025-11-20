@@ -2,6 +2,14 @@
  * Type definitions for test orchestrator
  */
 
+export interface TestFailure {
+  testName: string;
+  testFile: string;
+  errorMessage: string;
+  stackTrace?: string;
+  duration?: number;
+}
+
 export interface TestResult {
   suite: 'backend' | 'frontend' | 'e2e';
   passed: number;
@@ -11,6 +19,7 @@ export interface TestResult {
   startTime: Date;
   endTime: Date;
   success: boolean;
+  failures?: TestFailure[];  // Detailed failure information
 }
 
 export interface TestProgress {
@@ -59,6 +68,7 @@ export interface JestTestResult {
       status: 'passed' | 'failed' | 'pending';
       title: string;
       duration: number | null;
+      failureMessages?: string[];
     }>;
   }>;
 }
@@ -68,10 +78,21 @@ export interface PlaywrightTestResult {
   config: object;
   suites: Array<{
     title: string;
-    tests: Array<{
+    file: string;
+    specs: Array<{
       title: string;
-      status: 'passed' | 'failed' | 'skipped';
-      duration: number;
+      tests: Array<{
+        status: 'passed' | 'failed' | 'skipped' | 'timedOut';
+        duration: number;
+        results: Array<{
+          status: 'passed' | 'failed' | 'skipped' | 'timedOut';
+          duration: number;
+          error?: {
+            message: string;
+            stack?: string;
+          };
+        }>;
+      }>;
     }>;
   }>;
 }
