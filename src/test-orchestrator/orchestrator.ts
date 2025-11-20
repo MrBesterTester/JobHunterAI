@@ -8,7 +8,7 @@
 import { spawn, ChildProcess } from 'child_process';
 import { writeFileSync } from 'fs';
 import * as path from 'path';
-import { TestResult, TestProgress, ComprehensiveTestReport } from './types';
+import { TestResult, TestProgress, ComprehensiveTestReport, OrchestratorConfig } from './types';
 import { JestParser } from './reporters/jest-parser';
 import { PlaywrightParser } from './reporters/playwright-parser';
 import { CargoParser } from './reporters/cargo-parser';
@@ -17,13 +17,43 @@ export class TestOrchestrator {
   private progress: Map<string, TestProgress> = new Map();
   private results: Map<string, TestResult> = new Map();
   private startTime: Date = new Date();
+  private config: OrchestratorConfig;
+
+  constructor(config?: Partial<OrchestratorConfig>) {
+    // Defaults (comprehensive mode - all checks enabled)
+    this.config = {
+      runPreflight: true,
+      runProcessCleanup: true,
+      runGitCheck: true,
+      runDatabaseCheck: true,
+      runDatabasePrep: true,
+      runOAuthCheck: true,
+      runBuilds: true,
+      runBackendBuild: true,
+      runFrontendBuild: true,
+      runE2ETypecheck: true,
+      runTests: true,
+      runBackendTests: true,
+      runFrontendTests: true,
+      runE2ETests: true,
+      sendNotification: true,
+      verbose: false,
+      ...config
+    };
+  }
 
   /**
-   * Run all test suites concurrently
+   * Run all test suites concurrently (with preflight + build phases first)
    */
   async runComprehensive(): Promise<ComprehensiveTestReport> {
     console.log('🚀 Comprehensive Test Orchestrator');
     console.log('==================================\n');
+
+    if (this.config.verbose) {
+      console.log('📋 Configuration:');
+      console.log(JSON.stringify(this.config, null, 2));
+      console.log('');
+    }
 
     this.startTime = new Date();
 
@@ -31,17 +61,81 @@ export class TestOrchestrator {
     this.initializeProgress();
 
     try {
-      // Run all test suites concurrently
-      const [backendResult, frontendResult, e2eResult] = await Promise.all([
-        this.runBackendTests(),
-        this.runFrontendTests(),
-        this.runE2ETests()
-      ]);
+      // PREFLIGHT CHECKS (HARD requirements - abort if any fail)
+      if (this.config.runPreflight) {
+        console.log('\n✅ PREFLIGHT CHECKS');
+        console.log('===================\n');
 
-      // Store results
-      this.results.set('backend', backendResult);
-      this.results.set('frontend', frontendResult);
-      this.results.set('e2e', e2eResult);
+        await this.runPreflightChecks();
+
+        console.log('\n✅ All preflight checks passed!\n');
+      } else if (this.config.verbose) {
+        console.log('⏭️  SKIPPING: Preflight checks\n');
+      }
+
+      // BUILD PHASE (Quality Gate - must pass before tests)
+      if (this.config.runBuilds) {
+        console.log('\n🏗️  BUILD PHASE (Quality Gate)');
+        console.log('==============================\n');
+
+        if (this.config.runBackendBuild) {
+          await this.buildBackend();
+        } else if (this.config.verbose) {
+          console.log('⏭️  SKIPPING: Backend build\n');
+        }
+
+        if (this.config.runFrontendBuild) {
+          await this.buildFrontend();
+        } else if (this.config.verbose) {
+          console.log('⏭️  SKIPPING: Frontend build\n');
+        }
+
+        if (this.config.runE2ETypecheck) {
+          await this.typecheckE2E();
+        } else if (this.config.verbose) {
+          console.log('⏭️  SKIPPING: E2E typecheck\n');
+        }
+
+        console.log('\n✅ All builds passed! Starting tests...\n');
+      } else if (this.config.verbose) {
+        console.log('⏭️  SKIPPING: Build phase\n');
+      }
+
+      // TEST PHASE - Run test suites (only those enabled in config)
+      if (this.config.runTests) {
+        const testPromises: Promise<TestResult | null>[] = [
+          this.config.runBackendTests ? this.runBackendTests() : Promise.resolve(null),
+          this.config.runFrontendTests ? this.runFrontendTests() : Promise.resolve(null),
+          this.config.runE2ETests ? this.runE2ETests() : Promise.resolve(null)
+        ];
+
+        const [backendResult, frontendResult, e2eResult] = await Promise.all(testPromises);
+
+        // Store results (with defaults for skipped suites)
+        if (backendResult) {
+          this.results.set('backend', backendResult);
+        } else {
+          this.results.set('backend', this.createSkippedResult('backend'));
+        }
+
+        if (frontendResult) {
+          this.results.set('frontend', frontendResult);
+        } else {
+          this.results.set('frontend', this.createSkippedResult('frontend'));
+        }
+
+        if (e2eResult) {
+          this.results.set('e2e', e2eResult);
+        } else {
+          this.results.set('e2e', this.createSkippedResult('e2e'));
+        }
+      } else if (this.config.verbose) {
+        console.log('⏭️  SKIPPING: All tests\n');
+        // Create skipped results for all suites
+        this.results.set('backend', this.createSkippedResult('backend'));
+        this.results.set('frontend', this.createSkippedResult('frontend'));
+        this.results.set('e2e', this.createSkippedResult('e2e'));
+      }
 
       // Generate comprehensive report
       const report = this.generateReport();
@@ -50,13 +144,34 @@ export class TestOrchestrator {
       this.displaySummary(report);
 
       // Send notification
-      await this.sendNotification(report);
+      if (this.config.sendNotification) {
+        await this.sendNotification(report);
+      } else if (this.config.verbose) {
+        console.log('⏭️  SKIPPING: Desktop notification\n');
+      }
 
       return report;
     } catch (error) {
       console.error('❌ Test orchestrator failed:', error);
       throw error;
     }
+  }
+
+  /**
+   * Create a skipped test result for a suite that was not run
+   */
+  private createSkippedResult(suite: 'backend' | 'frontend' | 'e2e'): TestResult {
+    const now = new Date();
+    return {
+      suite,
+      passed: 0,
+      failed: 0,
+      skipped: 0,
+      duration: 0,
+      startTime: now,
+      endTime: now,
+      success: true
+    };
   }
 
   /**
@@ -82,6 +197,393 @@ export class TestOrchestrator {
       status: 'pending',
       testsRun: 0,
       testsTotal: 0
+    });
+  }
+
+  /**
+   * Run all preflight checks (HARD requirements - abort if any fail)
+   */
+  private async runPreflightChecks(): Promise<void> {
+    console.log('Running preflight checks...\n');
+
+    // Run enabled preflight checks (all must pass)
+    if (this.config.runProcessCleanup) {
+      await this.checkProcessCleanup();
+    } else if (this.config.verbose) {
+      console.log('⏭️  SKIPPING: Process cleanup\n');
+    }
+
+    if (this.config.runGitCheck) {
+      await this.checkGitStatus();
+    } else if (this.config.verbose) {
+      console.log('⏭️  SKIPPING: Git status check\n');
+    }
+
+    if (this.config.runDatabaseCheck) {
+      await this.checkDatabaseSelection();
+    } else if (this.config.verbose) {
+      console.log('⏭️  SKIPPING: Database selection check\n');
+    }
+
+    if (this.config.runDatabasePrep) {
+      await this.checkDatabaseState();
+    } else if (this.config.verbose) {
+      console.log('⏭️  SKIPPING: Database state preparation\n');
+    }
+
+    if (this.config.runOAuthCheck) {
+      await this.checkOAuthExpiry();
+    } else if (this.config.verbose) {
+      console.log('⏭️  SKIPPING: OAuth token check\n');
+    }
+  }
+
+  /**
+   * Check process cleanup (stop servers, verify ports available)
+   */
+  private async checkProcessCleanup(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      console.log('🧹 Checking process cleanup...');
+
+      const stopScript = spawn('./helper-scripts/stop.sh', [], {
+        cwd: path.join(__dirname, '../..'),
+        stdio: 'inherit'
+      });
+
+      stopScript.on('close', (code) => {
+        if (code !== 0) {
+          console.error('❌ Process cleanup FAILED');
+          reject(new Error('Process cleanup failed - servers still running or ports occupied'));
+          return;
+        }
+        console.log('✅ Process cleanup passed\n');
+        resolve();
+      });
+
+      stopScript.on('error', reject);
+    });
+  }
+
+  /**
+   * Check git status (no uncommitted changes)
+   */
+  private async checkGitStatus(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      console.log('📋 Checking git status...');
+
+      const gitCheck = spawn('git', ['diff-index', '--quiet', 'HEAD', '--'], {
+        cwd: path.join(__dirname, '../..'),
+        stdio: 'pipe'
+      });
+
+      gitCheck.on('close', (code) => {
+        if (code !== 0) {
+          console.error('❌ Git status check FAILED');
+          console.error('   Uncommitted changes detected');
+          console.error('   Please commit or stash changes before running comprehensive tests');
+          reject(new Error('Uncommitted git changes detected'));
+          return;
+        }
+        console.log('✅ Git status clean\n');
+        resolve();
+      });
+
+      gitCheck.on('error', reject);
+    });
+  }
+
+  /**
+   * Check database selection (must be jobhunter_personal)
+   */
+  private async checkDatabaseSelection(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      console.log('🗄️  Checking database selection...');
+
+      const { readFileSync } = require('fs');
+      const envPath = path.join(__dirname, '../../backend/.env');
+
+      try {
+        const envContent = readFileSync(envPath, 'utf-8');
+        const dbUrlMatch = envContent.match(/^DATABASE_URL=.*\/([^?]+)/m);
+
+        if (!dbUrlMatch) {
+          console.error('❌ Database selection check FAILED');
+          console.error('   Could not parse DATABASE_URL from backend/.env');
+          reject(new Error('Could not parse DATABASE_URL'));
+          return;
+        }
+
+        const dbName = dbUrlMatch[1];
+        if (dbName !== 'jobhunter_personal') {
+          console.error('❌ Database selection check FAILED');
+          console.error(`   Expected: jobhunter_personal`);
+          console.error(`   Found: ${dbName}`);
+          console.error('   Run: ./helper-scripts/switch-to-personal.sh');
+          reject(new Error(`Wrong database: ${dbName}`));
+          return;
+        }
+
+        console.log('✅ Database: jobhunter_personal\n');
+        resolve();
+      } catch (err) {
+        reject(new Error(`Failed to check database selection: ${err}`));
+      }
+    });
+  }
+
+  /**
+   * Check database state (backup + clear + seed)
+   */
+  private async checkDatabaseState(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      console.log('💾 Preparing database state (backup + clear + seed)...');
+
+      // Run the comprehensive test script's database state check
+      // This includes: backup, clear, seed with test fixtures and OAuth tokens
+      const dbStateScript = spawn('bash', ['-c', `
+        set -e
+        # Backup
+        BACKUP_DIR="/tmp/jobhunter_backups"
+        TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+        BACKUP_FILE="$BACKUP_DIR/jobhunter_personal_\${TIMESTAMP}.sql"
+        mkdir -p "$BACKUP_DIR"
+
+        echo "  Creating backup: $BACKUP_FILE"
+        pg_dump -U jobhunter_user -d jobhunter_personal > "$BACKUP_FILE" 2>&1
+        echo "$BACKUP_FILE" > /tmp/jobhunter_last_backup.txt
+
+        # Clean up old backups (keep last 5)
+        ls -t "$BACKUP_DIR"/*.sql 2>/dev/null | tail -n +6 | xargs rm -f 2>/dev/null || true
+
+        # Clear database
+        echo "  Clearing database..."
+        ./helper-scripts/clear-database.sh
+
+        # Seed database
+        echo "  Seeding database..."
+        ./helper-scripts/seed-database.sh
+      `], {
+        cwd: path.join(__dirname, '../..'),
+        stdio: 'inherit'
+      });
+
+      dbStateScript.on('close', (code) => {
+        if (code !== 0) {
+          console.error('❌ Database state preparation FAILED');
+          reject(new Error('Database backup/clear/seed failed'));
+          return;
+        }
+        console.log('✅ Database state prepared\n');
+        resolve();
+      });
+
+      dbStateScript.on('error', reject);
+    });
+  }
+
+  /**
+   * Check OAuth token expiry (with auto-refresh if expired)
+   */
+  private async checkOAuthExpiry(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      console.log('🔐 Checking OAuth token expiry...');
+
+      const oauthScript = spawn('./helper-scripts/refresh-oauth-tokens.sh', [], {
+        cwd: path.join(__dirname, '../..'),
+        stdio: 'inherit'
+      });
+
+      oauthScript.on('close', (code) => {
+        if (code !== 0) {
+          console.error('❌ OAuth token validation FAILED');
+          console.error('   Tokens are expired or invalid');
+          console.error('   Run: ./helper-scripts/setup-test-oauth.sh');
+          reject(new Error('OAuth tokens expired or invalid'));
+          return;
+        }
+        console.log('✅ OAuth tokens valid\n');
+        resolve();
+      });
+
+      oauthScript.on('error', reject);
+    });
+  }
+
+  /**
+   * Build backend (cargo clean + cargo build)
+   * Quality Gate: Zero warnings required
+   */
+  private async buildBackend(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      console.log('🦀 Building backend (Cargo)...');
+      const startTime = new Date();
+
+      // Step 1: cargo clean
+      const cleanChild = spawn('cargo', ['clean'], {
+        cwd: path.join(__dirname, '../../backend'),
+        stdio: 'inherit'
+      });
+
+      cleanChild.on('close', (cleanCode) => {
+        if (cleanCode !== 0) {
+          reject(new Error('cargo clean failed'));
+          return;
+        }
+
+        // Step 2: cargo build
+        const buildChild = spawn('cargo', ['build'], {
+          cwd: path.join(__dirname, '../../backend'),
+          stdio: ['inherit', 'pipe', 'pipe']
+        });
+
+        let stdout = '';
+        let stderr = '';
+
+        buildChild.stdout?.on('data', (data) => {
+          stdout += data.toString();
+          process.stdout.write(data); // Show progress
+        });
+
+        buildChild.stderr?.on('data', (data) => {
+          stderr += data.toString();
+          process.stderr.write(data); // Show progress
+        });
+
+        buildChild.on('close', (code) => {
+          const endTime = new Date();
+          const duration = ((endTime.getTime() - startTime.getTime()) / 1000).toFixed(1);
+
+          const combinedOutput = stdout + stderr;
+
+          // Check for warnings (quality gate)
+          if (combinedOutput.toLowerCase().includes('warning')) {
+            console.error(`\n❌ Backend build FAILED: Contains warnings (zero-warning requirement)`);
+            reject(new Error('Backend build has warnings (quality gate)'));
+            return;
+          }
+
+          if (code !== 0) {
+            console.error(`\n❌ Backend build FAILED with exit code ${code}`);
+            reject(new Error(`Backend build failed with exit code ${code}`));
+            return;
+          }
+
+          console.log(`✅ Backend build PASSED (${duration}s)\n`);
+          resolve();
+        });
+
+        buildChild.on('error', reject);
+      });
+
+      cleanChild.on('error', reject);
+    });
+  }
+
+  /**
+   * Build frontend (npm run build)
+   * Quality Gate: Zero warnings required
+   */
+  private async buildFrontend(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      console.log('📘 Building frontend (React/TypeScript/RSBuild)...');
+      const startTime = new Date();
+
+      const buildChild = spawn('npm', ['run', 'build'], {
+        cwd: path.join(__dirname, '../../frontend'),
+        stdio: ['inherit', 'pipe', 'pipe']
+      });
+
+      let stdout = '';
+      let stderr = '';
+
+      buildChild.stdout?.on('data', (data) => {
+        stdout += data.toString();
+        process.stdout.write(data); // Show progress
+      });
+
+      buildChild.stderr?.on('data', (data) => {
+        stderr += data.toString();
+        process.stderr.write(data); // Show progress
+      });
+
+      buildChild.on('close', (code) => {
+        const endTime = new Date();
+        const duration = ((endTime.getTime() - startTime.getTime()) / 1000).toFixed(1);
+
+        const combinedOutput = stdout + stderr;
+
+        // Check for warnings (quality gate)
+        if (combinedOutput.toLowerCase().includes('warning')) {
+          console.error(`\n❌ Frontend build FAILED: Contains warnings (zero-warning requirement)`);
+          reject(new Error('Frontend build has warnings (quality gate)'));
+          return;
+        }
+
+        if (code !== 0) {
+          console.error(`\n❌ Frontend build FAILED with exit code ${code}`);
+          reject(new Error(`Frontend build failed with exit code ${code}`));
+          return;
+        }
+
+        console.log(`✅ Frontend build PASSED (${duration}s)\n`);
+        resolve();
+      });
+
+      buildChild.on('error', reject);
+    });
+  }
+
+  /**
+   * Typecheck E2E tests (npm run typecheck:e2e)
+   * Quality Gate: Zero TypeScript errors required
+   */
+  private async typecheckE2E(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      console.log('🎭 Type-checking E2E tests (TypeScript)...');
+      const startTime = new Date();
+
+      const typecheckChild = spawn('npm', ['run', 'typecheck:e2e'], {
+        cwd: path.join(__dirname, '../../frontend'),
+        stdio: ['inherit', 'pipe', 'pipe']
+      });
+
+      let stdout = '';
+      let stderr = '';
+
+      typecheckChild.stdout?.on('data', (data) => {
+        stdout += data.toString();
+        process.stdout.write(data); // Show progress
+      });
+
+      typecheckChild.stderr?.on('data', (data) => {
+        stderr += data.toString();
+        process.stderr.write(data); // Show progress
+      });
+
+      typecheckChild.on('close', (code) => {
+        const endTime = new Date();
+        const duration = ((endTime.getTime() - startTime.getTime()) / 1000).toFixed(1);
+
+        if (code !== 0) {
+          const combinedOutput = stdout + stderr;
+          // Extract TypeScript errors (first 20 lines)
+          const tsErrors = combinedOutput.match(/error TS\d+:.*/g);
+          if (tsErrors) {
+            console.error(`\n❌ E2E type-checking FAILED: TypeScript errors found`);
+            console.error('First 20 errors:');
+            tsErrors.slice(0, 20).forEach(err => console.error(`  ${err}`));
+          } else {
+            console.error(`\n❌ E2E type-checking FAILED with exit code ${code}`);
+          }
+          reject(new Error('E2E type-checking failed (quality gate)'));
+          return;
+        }
+
+        console.log(`✅ E2E type-checking PASSED (${duration}s)\n`);
+        resolve();
+      });
+
+      typecheckChild.on('error', reject);
     });
   }
 
@@ -370,10 +872,11 @@ export class TestOrchestrator {
       const message = [
         'Comprehensive tests completed!',
         '',
-        `✅ Passed: ${report.summary.totalPassed}`,
-        `❌ Failed: ${report.summary.totalFailed}`,
-        `⏭️  Skipped: ${report.summary.totalSkipped}`,
+        `Backend:  ${report.results.backend.passed}/${report.results.backend.failed}/${report.results.backend.skipped} (pass/fail/skip)`,
+        `Frontend: ${report.results.frontend.passed}/${report.results.frontend.failed}/${report.results.frontend.skipped} (pass/fail/skip)`,
+        `E2E:      ${report.results.e2e.passed}/${report.results.e2e.failed}/${report.results.e2e.skipped} (pass/fail/skip)`,
         '',
+        `Total: ${report.summary.totalPassed}/${report.summary.totalFailed}/${report.summary.totalSkipped} (pass/fail/skip)`,
         `Duration: ${(report.duration / 1000).toFixed(1)}s`,
         `Status: ${report.summary.overallSuccess ? 'SUCCESS' : 'FAILED'}`
       ].join('\\n');

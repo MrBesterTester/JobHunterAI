@@ -279,15 +279,32 @@ afplay /System/Library/Sounds/Glass.aiff && osascript -e "display dialog \"[mess
 - ❌ **Running the comprehensive test suite requires explicit user permission**
 
 **What is the "Comprehensive Test Suite"?**
-- The script: `./helper-scripts/run-comprehensive-tests.sh`
+- **The script**: `./helper-scripts/run-comprehensive-tests.sh` (TypeScript orchestrator, ISSUE-060)
+- **Legacy alternative**: `./helper-scripts/run-comprehensive-tests-bash-legacy.sh` (original bash implementation)
 - Runs ALL tests: Backend + Frontend + Full E2E suite
+- **Includes**:
+  - Preflight checks (process cleanup, git, database, OAuth)
+  - Build phase (cargo clean + build, npm build, E2E typecheck)
+  - Zero-warning/error requirement (quality gate)
+  - Test execution (all 3 test suites concurrently)
+  - Desktop notification with per-group stats
 - **Runtime**: ~15-20 minutes
-- **Requires**: Manual OAuth flows (Gmail + Microsoft)
+- **Requires**: Clean git status, valid OAuth tokens, jobhunter_personal database
 - **Cost**: Significant token usage + developer time
 
 **❌ NEVER run `./helper-scripts/run-comprehensive-tests.sh` UNLESS**:
 - User explicitly requests it ("run comprehensive tests", "run all tests", "run the full test suite")
 - OR: Major refactoring, pre-release verification, critical multi-system fixes
+
+**⚠️ CRITICAL REQUIREMENT - Test Orchestrator Must Be Clean**:
+- **BEFORE running comprehensive tests**: Verify the test orchestrator TypeScript code compiles error-free and warning-free
+- **WHEN to check**: After ANY changes to files in `src/test-orchestrator/` directory
+- **How to verify**:
+  ```bash
+  npx tsc --noEmit src/test-orchestrator/**/*.ts --module commonjs --target es2017 --esModuleInterop
+  ```
+- **Why**: The test orchestrator itself is code that must meet zero-warning/error standards
+- **If compilation fails**: Fix all TypeScript errors/warnings BEFORE running comprehensive tests
 
 **✅ ALWAYS OKAY to run targeted tests freely**:
 ```bash
@@ -321,6 +338,8 @@ cd backend && cargo test && cd ../frontend && npm test
 - Current test status: `docs/TESTING_STATUS.md`
 - Test plan: `README_auto-test-plan.md`
 - Test history: `docs/TESTING_HISTORY.md`
+- **TypeScript orchestrator details**: `bugs/open/ISSUE-060-replace-ad-hoc-comprehensive-test-flow-with-proper-test-orchestration-tooling.md`
+- **Orchestrator README**: `src/test-orchestrator/README.md`
 - **E2E best practices**: `docs/PLAYWRIGHT_BEST_PRACTICES.md` ← **Required reading for E2E test work**
 
 ---

@@ -3761,6 +3761,27 @@ When a test is flaky (passes alone, fails in comprehensive):
 3. Analyze position in file, cumulative load, timeout issues
 4. Fix and verify at test file level before comprehensive run
 
+**Debug and Testing Modes** (see ISSUE-060):
+For faster iteration during development, the test orchestrator supports debug modes:
+
+| Mode | Runtime | Use Case | Command |
+|------|---------|----------|---------|
+| **Smoke Test** | ~30s | Verify orchestrator code works | `./helper-scripts/run-tests-debug.sh --smoke` |
+| **Unit Tests Only** | ~2m | Quick validation after code changes | `./helper-scripts/run-tests-debug.sh --unit-only` |
+| **Skip Builds** | ~12m | Test with existing builds (most common) | `./helper-scripts/run-tests-debug.sh --skip-builds` |
+| **Skip Database** | ~18m | Test with current database state | `./helper-scripts/run-tests-debug.sh --skip-db` |
+| **E2E Only** | ~10m | E2E test development | `./helper-scripts/run-tests-debug.sh --e2e-only` |
+
+**When to Use Debug Modes:**
+- Orchestrator code development: Use `--smoke` for rapid iteration (~30s vs 20m)
+- E2E test development: Use `--e2e-only --skip-builds` (~10m vs 20m)
+- Backend/frontend changes: Use `--unit-only` → `--e2e-only --skip-builds` workflow
+- Avoid full rebuilds: Use `--skip-builds` when binaries haven't changed
+
+**Important:** Debug modes skip safety checks. Always run full comprehensive tests before commits/PRs.
+
+Full documentation: `src/test-orchestrator/README.md`
+
 ### Key Testing Achievements
 - ✅ Increased frontend coverage from 68.8% to 92.1% (+23.3 points)
 - ✅ Fixed 44 frontend tests through systematic debugging

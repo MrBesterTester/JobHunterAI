@@ -83,3 +83,30 @@ export interface CargoTestEvent {
   name?: string;
   exec_time?: number;
 }
+
+// Orchestrator configuration for debug/testing modes
+export interface OrchestratorConfig {
+  // Preflight options
+  runPreflight: boolean;           // Run all preflight checks
+  runProcessCleanup: boolean;      // Stop servers
+  runGitCheck: boolean;            // Check git status
+  runDatabaseCheck: boolean;       // Check database selection
+  runDatabasePrep: boolean;        // Backup/clear/seed
+  runOAuthCheck: boolean;          // Validate OAuth tokens
+
+  // Build options
+  runBuilds: boolean;              // Run all builds
+  runBackendBuild: boolean;        // cargo clean + build
+  runFrontendBuild: boolean;       // npm build
+  runE2ETypecheck: boolean;        // typecheck E2E tests
+
+  // Test options
+  runTests: boolean;               // Run all tests
+  runBackendTests: boolean;        // cargo test
+  runFrontendTests: boolean;       // npm test
+  runE2ETests: boolean;            // playwright test
+
+  // Output options
+  sendNotification: boolean;       // Desktop notification
+  verbose: boolean;                // Extra logging
+}
