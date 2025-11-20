@@ -1,12 +1,13 @@
 ---
 id: ISSUE-059
 title: Comprehensive test script appears hung but completes successfully - Claude Code Bash tool reporting issue
-status: open
+status: fixed
 priority: medium
 severity: low
 component: infrastructure
 created: 2025-11-19
 updated: 2025-11-19
+fixed: 2025-11-19
 affects:
   - Comprehensive test suite execution
   - Developer experience
@@ -485,6 +486,11 @@ cat /tmp/test-run-complete.json
 - 2025-11-19: Root cause identified as Claude Code Bash tool reporting issue
 - 2025-11-19: **Solutions revised** to eliminate token burn from log reading
 - 2025-11-19: **Option 1 selected**: Completion marker file + helper script (zero token burn)
+- 2025-11-19: **✅ IMPLEMENTED** - All phases complete and tested
+  - Created `helper-scripts/check-test-completion.sh` (O(1) status check)
+  - Modified `run-comprehensive-tests.sh` to write completion marker
+  - Updated `CLAUDE_WORKFLOWS.md` with usage documentation
+  - Testing: ✅ Running status (exit 1), ✅ Completed status with JSON (exit 0)
 
 ## Notes
 
