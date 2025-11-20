@@ -79,7 +79,7 @@ export interface PlaywrightTestResult {
 // Cargo JSON format (unstable - JSON Lines)
 export interface CargoTestEvent {
   type: 'suite' | 'test';
-  event: 'started' | 'ok' | 'failed';
+  event: 'started' | 'ok' | 'failed' | 'ignored';
   name?: string;
   exec_time?: number;
 }

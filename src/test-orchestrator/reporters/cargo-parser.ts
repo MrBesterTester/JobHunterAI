@@ -72,6 +72,7 @@ export class CargoParser {
     const startTime = new Date();
 
     // Look for the summary line
+    // Example: "test result: FAILED. 31 passed; 1 failed; 4 ignored; 0 measured; 0 filtered out; finished in 1.03s"
     const summaryRegex = /test result: (\w+)\. (\d+) passed; (\d+) failed; (\d+) ignored;/;
     const match = output.match(summaryRegex);
 

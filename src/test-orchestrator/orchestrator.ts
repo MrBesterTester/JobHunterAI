@@ -125,8 +125,11 @@ export class TestOrchestrator {
         const duration = endTime.getTime() - startTime.getTime();
 
         try {
-          // Parse cargo test output
-          const result = CargoParser.parseRegularOutput(stderr);
+          // Cargo test outputs summary to stdout, test output to stderr
+          const combinedOutput = stdout + stderr;
+
+          // Parse cargo test output (use combined output since summary is on stdout)
+          const result = CargoParser.parseRegularOutput(combinedOutput);
           result.duration = duration; // Use actual duration
           result.startTime = startTime;
           result.endTime = endTime;
@@ -221,15 +224,16 @@ export class TestOrchestrator {
       this.updateProgress('e2e', { status: 'running' });
 
       const startTime = new Date();
-      const jsonOutputPath = path.join(__dirname, '../../frontend/test-results/playwright-results.json');
+      // Use the path from playwright.config.ts: test-results/results.json
+      const jsonOutputPath = path.join(__dirname, '../../frontend/test-results/results.json');
 
+      // Run Playwright without --reporter flags to use config file reporters
       const child = spawn(
         'npx',
-        ['playwright', 'test', `--reporter=json,list`, `--output=${jsonOutputPath}`],
+        ['playwright', 'test'],
         {
           cwd: path.join(__dirname, '../../frontend'),
-          stdio: ['inherit', 'pipe', 'pipe'],
-          env: { ...process.env, PLAYWRIGHT_JSON_OUTPUT_NAME: 'playwright-results.json' }
+          stdio: ['inherit', 'pipe', 'pipe']
         }
       );
 
@@ -238,7 +242,11 @@ export class TestOrchestrator {
 
       child.stdout?.on('data', (data) => {
         stdout += data.toString();
-        // Show test progress
+      });
+
+      child.stderr?.on('data', (data) => {
+        stderr += data.toString();
+        // Show test progress (list reporter outputs to stderr)
         const lines = data.toString().split('\n');
         for (const line of lines) {
           if (line.includes('[chromium]') || line.includes('›')) {
@@ -247,16 +255,12 @@ export class TestOrchestrator {
         }
       });
 
-      child.stderr?.on('data', (data) => {
-        stderr += data.toString();
-      });
-
       child.on('close', (code) => {
         const endTime = new Date();
         const duration = endTime.getTime() - startTime.getTime();
 
         try {
-          // Try to parse JSON output file
+          // Parse JSON file created by playwright.config.ts reporter
           const result = PlaywrightParser.parseFile(jsonOutputPath);
           result.duration = duration; // Use actual duration
           result.startTime = startTime;
