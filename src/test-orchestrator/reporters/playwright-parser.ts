@@ -7,13 +7,21 @@
 import { TestResult } from '../types';
 import { readFileSync } from 'fs';
 
+interface PlaywrightSpec {
+  title: string;
+  ok: boolean;
+  tests: Array<{
+    status: string;
+    results: Array<{
+      status: 'passed' | 'failed' | 'skipped' | 'timedOut';
+      duration: number;
+    }>;
+  }>;
+}
+
 interface PlaywrightSuite {
   title: string;
-  tests: Array<{
-    title: string;
-    status: 'passed' | 'failed' | 'skipped' | 'timedOut';
-    duration: number;
-  }>;
+  specs: PlaywrightSpec[];
   suites?: PlaywrightSuite[];
 }
 
@@ -83,14 +91,20 @@ export class PlaywrightParser {
     let skipped = 0;
 
     for (const suite of suites) {
-      // Count tests in this suite
-      for (const test of suite.tests || []) {
-        if (test.status === 'passed') {
-          passed++;
-        } else if (test.status === 'failed' || test.status === 'timedOut') {
-          failed++;
-        } else if (test.status === 'skipped') {
-          skipped++;
+      // Count specs in this suite
+      for (const spec of suite.specs || []) {
+        // Each spec contains multiple test runs (one per browser/retry)
+        for (const test of spec.tests || []) {
+          // Each test has results (retries)
+          for (const result of test.results || []) {
+            if (result.status === 'passed') {
+              passed++;
+            } else if (result.status === 'failed' || result.status === 'timedOut') {
+              failed++;
+            } else if (result.status === 'skipped') {
+              skipped++;
+            }
+          }
         }
       }
 
