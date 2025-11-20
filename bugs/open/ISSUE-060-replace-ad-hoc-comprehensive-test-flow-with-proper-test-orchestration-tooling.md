@@ -53,6 +53,7 @@ related: [ISSUE-048, ISSUE-059]
 - [References](#references)
   - [Documentation](#documentation)
   - [NPM Packages](#npm-packages)
+- [Original Request (Generative Basis)](#original-request-generative-basis)
 - [Status History](#status-history)
 - [Notes](#notes)
 
@@ -504,6 +505,29 @@ npm run test:comprehensive
 - `node-notifier`: https://www.npmjs.com/package/node-notifier
 - `playwright-ctrf-json-reporter`: https://www.npmjs.com/package/playwright-ctrf-json-reporter
 - `cargo-nextest`: https://crates.io/crates/cargo-nextest
+
+## Original Request (Generative Basis)
+
+**User Request (2025-11-19):**
+
+> The entire comprehensive test process flow is rather shaggy and rough:
+> - Starting the tests *and* announcing the estimated completion
+> - Monitoring the test process to know when it's going to end (Issue 48); a lot of token burn there
+> - Detecting and confirming the end of testing (Issue 59); I still don't get the notification when it's done. The test was done 14 minutes ago when I asked how the test was running!
+> - Generating the test result - you do manage to pull together a good report but with a token burn; should be done right after the tests are done.
+>
+> However, I think that each of these step should be neatly codified into a deterministic code possibly with help from the TypeScript, Cargo or Playwright support libraries and tools not just as ad hoc Bash scripts. Please open up an issue on this doing web research as needed on those support libraries and tools. I really think we're missing something.
+
+**Analysis:**
+
+The user correctly identified that the comprehensive test orchestration was ad-hoc and inefficient. Each problem they highlighted:
+
+1. **"Starting tests and announcing completion"** - No proper progress tracking
+2. **"Monitoring test process (ISSUE-048)"** - Token burn from log file reading
+3. **"Detecting end of testing (ISSUE-059)"** - Notifications not working (14 min delay)
+4. **"Generating test result with token burn"** - Manual aggregation from unstructured logs
+
+The user's insight about using native tooling (TypeScript, Cargo, Playwright) was spot-on. Research confirmed all three ecosystems provide structured JSON output formats that eliminate the need for log parsing and enable proper test orchestration.
 
 ## Status History
 
