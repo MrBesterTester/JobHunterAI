@@ -85,6 +85,8 @@
       - [`helper-scripts/create-bug.sh`](#helper-scriptscreate-bugsh)
       - [`helper-scripts/move-bug.sh`](#helper-scriptsmove-bugsh)
       - [`helper-scripts/regenerate-bug-index.sh`](#helper-scriptsregenerate-bug-indexsh)
+      - [`helper-scripts/count-test-runs.sh`](#helper-scriptscount-test-runssh)
+      - [`helper-scripts/archive-oldest-test-run.sh`](#helper-scriptsarchive-oldest-test-runsh)
       - [`scripts/update-project-status.sh`](#scriptsupdate-project-statussh)
       - [`helper-scripts/system-health-check.sh`](#helper-scriptssystem-health-checksh)
     - [Security Notes](#security-notes)
@@ -2711,6 +2713,119 @@ cd backend
 # Also works from project root
 ./helper-scripts/regenerate-bug-index.sh   # ✅ Success
 ```
+
+#### [`helper-scripts/count-test-runs.sh`](helper-scripts/count-test-runs.sh)
+Counts comprehensive test runs in TESTING_STATUS.md to determine if archival is needed.
+
+**Usage:**
+```bash
+./helper-scripts/count-test-runs.sh
+```
+
+**Output example:**
+```
+📊 Test runs in TESTING_STATUS.md: 2
+⚠️  Archive oldest run before adding new run
+   Run: ./helper-scripts/archive-oldest-test-run.sh
+```
+
+**Exit Codes:**
+- `0` - Less than 2 runs (no archival needed)
+- `1` - 2 or more runs (archival needed before adding new run)
+
+**When to use:**
+- Before adding a new comprehensive test run to TESTING_STATUS.md
+- To check current test run count
+- As a pre-check before running comprehensive tests
+
+**Policy:** TESTING_STATUS.md keeps only the **2 most recent comprehensive test runs**. This script helps enforce that policy by detecting when archival is needed.
+
+**See also:** [Testing Status Update Requirements](CLAUDE.md#testing-status-update-requirements) in CLAUDE.md for complete workflow
+
+#### [`helper-scripts/archive-oldest-test-run.sh`](helper-scripts/archive-oldest-test-run.sh)
+Archives the oldest test run from TESTING_STATUS.md to testing-history/ directory when the 2-run limit is reached.
+
+**Usage:**
+```bash
+# Normal mode - actually perform archival
+./helper-scripts/archive-oldest-test-run.sh
+
+# Dry run mode - see what would be done without making changes
+./helper-scripts/archive-oldest-test-run.sh --dry-run
+```
+
+**What this script does:**
+1. Checks if TESTING_STATUS.md has 2+ test runs
+2. Extracts the oldest run section (from heading to next major section)
+3. Creates archive file: `testing-history/TEST_STATUS_YYYY-MM-DD_HHMM.md`
+4. Updates `testing-history/README.md` index
+5. Removes oldest run section from TESTING_STATUS.md
+6. Updates archived run count in index
+7. Stages all modified files for commit (user reviews and commits)
+
+**Features:**
+- Automatic section extraction with line number detection
+- Creates frontmatter with archive metadata
+- Updates monthly index sections automatically
+- Color-coded output with clear status messages
+- Dry run mode for previewing changes
+- Stages changes for review (doesn't auto-commit)
+
+**Output example:**
+```
+📊 Current state:
+   Test runs in TESTING_STATUS.md: 2
+⚠️  Archival required (2+ runs found)
+
+📅 Finding run dates...
+   Line 101: **Run Date**: 2025-11-19 01:36:18 PST
+   Line 450: **Run Date**: 2025-11-18 20:15:00 PST
+
+🗄️  Oldest run to archive:
+   Date: 2025-11-18 20:15:00
+   Line: 450
+
+📝 Archive file:
+   testing-history/TEST_STATUS_2025-11-18_2015.md
+
+✅ Created archive file: testing-history/TEST_STATUS_2025-11-18_2015.md
+   Lines: 156
+
+📇 Updating testing-history/README.md index...
+   Month section found: November 2025
+✅ Updated index with new entry
+
+🗑️  Removing oldest run from TESTING_STATUS.md...
+✅ Removed lines 450-605 from TESTING_STATUS.md
+
+📊 Updating archived run count in index...
+✅ Updated archived run count to: 1
+
+📋 Staging files for commit...
+✅ Files staged successfully
+
+📋 Summary:
+   ✅ Created: testing-history/TEST_STATUS_2025-11-18_2015.md
+   ✅ Updated: testing-history/README.md
+   ✅ Updated: docs/TESTING_STATUS.md
+
+✅ Archival complete!
+
+Next steps:
+   1. Review changes: git diff --staged
+   2. Commit: git commit -m "docs: Archive test run (2025-11-18 20:15:00 PST) to testing-history"
+```
+
+**When to use:**
+- After running `count-test-runs.sh` and seeing "archival needed" message
+- Before adding a 3rd comprehensive test run to TESTING_STATUS.md
+- As part of the testing status update workflow
+
+**Policy:** TESTING_STATUS.md is a **workspace** for the 2 most recent runs. testing-history/ is the **permanent archive** of all older runs.
+
+**See also:**
+- [Testing Status Update Requirements](CLAUDE.md#testing-status-update-requirements) in CLAUDE.md
+- `testing-history/README.md` for archive index
 
 #### [`scripts/update-project-status.sh`](scripts/update-project-status.sh)
 Updates the central project status document with current metrics from various sources.

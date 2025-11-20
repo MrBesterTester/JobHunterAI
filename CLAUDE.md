@@ -369,17 +369,34 @@ date "+%Y-%m-%d %H:%M:%S %Z"  # Full timestamp with timezone
 
 **Policy**: TESTING_STATUS.md keeps only **2 most recent comprehensive test runs**
 
-**When adding a 3rd run**:
+**Helper Scripts Available** ✅:
+```bash
+# Check if archival is needed
+./helper-scripts/count-test-runs.sh
+
+# Archive oldest run (if needed)
+./helper-scripts/archive-oldest-test-run.sh
+
+# Preview what would be archived (dry run)
+./helper-scripts/archive-oldest-test-run.sh --dry-run
+```
+
+**What the archival script does automatically**:
+1. Checks if TESTING_STATUS.md has 2+ test runs
+2. Extracts the oldest run section
+3. Creates archive file: `testing-history/TEST_STATUS_YYYY-MM-DD_HHMM.md` (24-hour format)
+4. Updates `testing-history/README.md` index with new entry
+5. Removes oldest run from TESTING_STATUS.md
+6. Updates archived run count in index
+7. Stages all files for commit (user reviews and commits)
+
+**Manual archival** (if scripts not available):
 1. Copy oldest run section to `testing-history/TEST_STATUS_YYYY-MM-DD_HHMM.md`
 2. Use 24-hour time format (e.g., `TEST_STATUS_2025-11-19_0136.md` for 01:36 PST run)
 3. Update `testing-history/README.md` index with new entry
 4. Remove archived run from TESTING_STATUS.md
 
-**Archive format** (use run's timestamp in filename):
-```bash
-# Extract timestamp from run header (e.g., "2025-11-19 01:36:18 PST")
-# Convert to filename: TEST_STATUS_2025-11-19_0136.md
-```
+**See also**: [README_dev.md - Helper Scripts](README_dev.md#helper-scripts) for full script documentation
 
 #### Step 2: Add New Run to TESTING_STATUS.md
 
