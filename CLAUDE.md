@@ -7,6 +7,7 @@
   - [Developer Preferences](#developer-preferences)
     - [Database Configuration](#database-configuration)
     - [Notifications](#notifications)
+    - [TypeScript Preference](#typescript-preference)
     - [File Path Conventions](#file-path-conventions)
     - [File Discovery Tools](#file-discovery-tools)
     - [Work Session Tagging](#work-session-tagging)
@@ -150,6 +151,37 @@ afplay /System/Library/Sounds/Glass.aiff && osascript -e "display dialog \"[mess
 - Not affected by Focus mode or notification settings
 
 **Note**: Use **double quotes** on the outside with **escaped quotes** (`\"`) inside. Single quotes don't work with the curly braces in AppleScript.
+
+### TypeScript Preference
+
+**⚠️ CRITICAL PROJECT STANDARD**: Always use TypeScript (.ts) instead of JavaScript (.js) for all code.
+
+**Applies to:**
+- Application code (frontend/backend utilities)
+- Testing utilities and helpers
+- Build scripts and tooling
+- Test orchestration and automation
+
+**Why TypeScript:**
+- Type safety catches errors at compile time
+- Better IDE support and refactoring
+- Self-documenting code with interfaces
+- Consistent with project architecture (frontend is TypeScript/React)
+
+**Examples:**
+- ✅ `src/test-orchestrator/prototype.ts` - Correct
+- ❌ `src/test-orchestrator/prototype.js` - Wrong (don't mix .js and .ts)
+
+**Execution:**
+- Use `ts-node` for standalone scripts: `ts-node src/script.ts`
+- Add npm scripts in `package.json` for common tasks
+- Configure `tsconfig.json` for proper TypeScript compilation
+
+**Exception:**
+- Bash scripts (`.sh`) for shell operations are acceptable
+- Configuration files that must be `.js` (e.g., some legacy tool configs)
+
+**See also:** ISSUE-060 Phase 1 - Test orchestrator initially had both `.js` and `.ts`, cleaned up to TypeScript-only
 
 ### File Path Conventions
 
