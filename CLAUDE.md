@@ -350,7 +350,7 @@ cd backend && cargo test && cd ../frontend && npm test
 When creating summary reports after comprehensive test runs, use this **phased approach for maximum token efficiency**:
 
 **Phase 1: JSON Report Only** (PREFERRED)
-- **File**: `test-results/comprehensive-report.json`
+- **File**: `/Users/sam/Projects/JobHunterAI-Claude/test-results/comprehensive-report.json` (working directory available in `<env>`)
 - **When**: Default approach for all test result summaries
 - **Why**:
   - ✅ Most token-efficient (~77 lines structured data)
@@ -359,7 +359,7 @@ When creating summary reports after comprehensive test runs, use this **phased a
   - ✅ All data needed for summary reports
 
 **Phase 2: Detailed Text File** (ONLY IF NEEDED)
-- **File**: `test-results/failures-detailed.txt`
+- **File**: `/Users/sam/Projects/JobHunterAI-Claude/test-results/failures-detailed.txt` (working directory available in `<env>`)
 - **When**: Only consult in these specific cases:
   - JSON file missing or corrupted
   - User explicitly asks to see human-readable formatted output
@@ -368,7 +368,7 @@ When creating summary reports after comprehensive test runs, use this **phased a
 - **Why**: Designed for human consumption in terminal, not LLM analysis
 
 **Standard Workflow**:
-1. Read `test-results/comprehensive-report.json`
+1. Read `/Users/sam/Projects/JobHunterAI-Claude/test-results/comprehensive-report.json`
 2. Generate summary with:
    - Overall stats (passed/failed/skipped, duration)
    - Per-suite breakdown
@@ -376,6 +376,11 @@ When creating summary reports after comprehensive test runs, use this **phased a
 3. Only read `failures-detailed.txt` if user requests full details for specific failure
 
 **Key Principle**: JSON for efficiency, detailed text only when specifically needed.
+
+**Standard Test Result File Paths** (always use these exact absolute paths):
+- **JSON Report**: `/Users/sam/Projects/JobHunterAI-Claude/test-results/comprehensive-report.json`
+- **Detailed Failures**: `/Users/sam/Projects/JobHunterAI-Claude/test-results/failures-detailed.txt`
+- **Pushover Notification Script**: `~/bin/notify_claude.sh`
 
 ---
 
