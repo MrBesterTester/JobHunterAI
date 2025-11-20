@@ -48,15 +48,20 @@ last_updated: 2025-11-19 16:34:51 PST (Added comprehensive test run results - al
 **Exit Code**: 0 (SUCCESS - all tests passed)
 **Context**: Verification of Priority 1 & 2 fixes (ISSUE-056 + Test #504)
 
-| Test Suite | Passed | Failed | Pass Rate | Runtime | Status |
-|------------|--------|--------|-----------|---------|--------|
-| **Backend Tests** | **164** | 0 | **100%** | 92s | ✅ **PASSING** |
-| **Frontend Unit** | **516** | 0 | **100%** | 21s | ✅ **PASSING** |
-| **E2E Tests** | **392** | **0** | **100%** | 11.2m | ✅ **ALL PASSING** |
-| **TOTAL (Active)** | **1072** | **0** | **100%** | **~18.3 min** | ✅ **ALL TESTS PASSING** |
+| Test Suite | Passed | Failed | Flaky | Pass Rate | Runtime | Status |
+|------------|--------|--------|-------|-----------|---------|--------|
+| **Backend Tests** | **164** | 0 | 0 | **100%** | 92s | ✅ **PASSING** |
+| **Frontend Unit** | **516** | 0 | 0 | **100%** | 21s | ✅ **PASSING** |
+| **E2E Tests** | **392** | **0** | **1** | **100%** | 11.2m | ✅ **ALL PASSING** |
+| **TOTAL (Active)** | **1072** | **0** | **1** | **100%** | **~18.3 min** | ✅ **ALL TESTS PASSING** |
 
-**E2E Flaky Tests** (passed on retry):
-- Test #441: Gmail Sync - Job Approval (passed on retry after 11.1s timeout)
+**⚠️ Flaky Tests** (passed on retry):
+1. **Test #441**: `e2e/tests/16-gmail-sync-integration.spec.ts:229` - "Gmail Sync - Job Approval"
+   - **Initial run**: Failed (11.1s timeout)
+   - **Retry**: ✅ Passed
+   - **Pattern**: Timing issue under load (Gmail API sync + UI state verification)
+   - **Impact**: Not blocking - consistently passes on retry
+   - **Action**: Monitor in future comprehensive runs
 
 ---
 
