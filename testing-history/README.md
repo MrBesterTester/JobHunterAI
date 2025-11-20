@@ -3,6 +3,7 @@
 
 - [Testing History - Archived Test Runs](#testing-history---archived-test-runs)
   - [Index of Archived Test Runs](#index-of-archived-test-runs)
+    - [Legacy Comprehensive Archive](#legacy-comprehensive-archive)
     - [November 2025](#november-2025)
     - [October 2025](#october-2025)
   - [Usage](#usage)
@@ -20,21 +21,29 @@
 
 **Naming Convention**: `TEST_STATUS_YYYY-MM-DD_HHMM.md` (24-hour time format)
 
-**Last Updated**: 2025-11-19 15:55:00 PST
+**Last Updated**: 2025-11-19 16:02:47 PST (Moved TESTING_HISTORY.md to legacy archive)
 
 ---
 
 ## Index of Archived Test Runs
 
-**Total Archived Runs**: 0
+**Total Archived Runs**: 0 individual runs + 1 legacy comprehensive archive
+
+### Legacy Comprehensive Archive
+
+- **[LEGACY_COMPREHENSIVE_HISTORY_2025-10-23_to_2025-11-19.md](LEGACY_COMPREHENSIVE_HISTORY_2025-10-23_to_2025-11-19.md)** (3221 lines)
+  - **Date Range**: October 23, 2025 - November 19, 2025
+  - **Type**: Comprehensive testing history archive (multiple runs, ISSUE implementations, completed work)
+  - **Content**: Full testing journey including ISSUE-018, ISSUE-023, ISSUE-024, ISSUE-025, ISSUE-026, Phase 2.4-2.7 work, ISSUE-053, ISSUE-055 implementations
+  - **Note**: This is the monolithic history file that predates the folder structure. Future test runs will be archived as individual files using `TEST_STATUS_YYYY-MM-DD_HHMM.md` convention.
 
 ### November 2025
 
-*(No archived runs yet - TESTING_STATUS.md currently contains 2 runs: 2025-11-19 01:36 PST, 2025-11-19 00:43 PST)*
+*(No individual archived runs yet - TESTING_STATUS.md currently contains 2 runs: 2025-11-19 01:36 PST, 2025-11-19 00:43 PST)*
 
 ### October 2025
 
-*(Comprehensive testing history from October 2025 available in legacy `docs/TESTING_HISTORY.md` - 3221 lines)*
+*(See Legacy Comprehensive Archive above for all October 2025 testing work)*
 
 ---
 
@@ -54,9 +63,9 @@ cat testing-history/TEST_STATUS_2025-11-19_0136.md
 cat docs/TESTING_STATUS.md
 ```
 
-**All comprehensive testing work** (legacy archive through Nov 19, 2025):
+**All comprehensive testing work** (legacy archive Oct 23 - Nov 19, 2025):
 ```bash
-cat docs/TESTING_HISTORY.md  # Will be deprecated once migrated to folder structure
+cat testing-history/LEGACY_COMPREHENSIVE_HISTORY_2025-10-23_to_2025-11-19.md
 ```
 
 ---
