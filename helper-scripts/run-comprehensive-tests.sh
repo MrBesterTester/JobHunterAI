@@ -1035,6 +1035,9 @@ generate_report() {
 main() {
     local start_time=$(date +%s)
 
+    # Clean up any stale completion marker from previous run
+    rm -f /tmp/test-run-complete.json
+
     log_section "COMPREHENSIVE TEST SUITE"
     echo "Start time: $(date '+%Y-%m-%d %H:%M:%S %Z')"
     echo "Fail-fast mode: $FAIL_FAST"
@@ -1130,6 +1133,17 @@ main() {
 
     generate_report
     local report_exit_code=$?
+
+    # Write completion marker for efficient status checking (ISSUE-059)
+    cat > /tmp/test-run-complete.json << EOF
+{
+  "completed_at": "$(date '+%Y-%m-%d %H:%M:%S %Z')",
+  "exit_code": $report_exit_code,
+  "duration_seconds": $total_time,
+  "duration_formatted": "${total_minutes}m ${total_seconds}s",
+  "tests_passed": $([ $report_exit_code -eq 0 ] && echo "true" || echo "false")
+}
+EOF
 
     echo ""
     echo "End time: $(date '+%Y-%m-%d %H:%M:%S %Z')"

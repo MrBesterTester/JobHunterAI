@@ -18,6 +18,10 @@
     - [When to Mark Tests as Complete](#when-to-mark-tests-as-complete)
     - [User Accountability](#user-accountability)
   - [System Health Monitoring & Resource Management](#system-health-monitoring--resource-management)
+  - [Monitoring Long-Running Test Scripts (Efficient Method)](#monitoring-long-running-test-scripts-efficient-method)
+    - [Usage](#usage)
+    - [Why This is Better](#why-this-is-better)
+    - [Implementation Details](#implementation-details)
   - [Backend Development & Restart Workflow](#backend-development--restart-workflow)
     - [When to Restart Backend](#when-to-restart-backend)
     - [Required Restart Commands](#required-restart-commands)
@@ -424,6 +428,106 @@ cd backend && cargo test
 **Jest resource limits**: `maxWorkers: 4` in `jest.config.js` (ISSUE-022) prevents system overload during parallel test execution.
 
 **Full documentation**: [README_dev.md - system-health-check.sh](README_dev.md#system-health-checksh) - includes usage examples, thresholds, and troubleshooting.
+
+---
+
+## Monitoring Long-Running Test Scripts (Efficient Method)
+
+**✅ IMPLEMENTED**: Completion marker file + helper script for zero-token status checking (ISSUE-059)
+
+**Problem**: Comprehensive test suite takes 15-20 minutes. Reading full logs to check completion burns thousands of tokens unnecessarily.
+
+**Old Approach** (❌ Token Burn):
+- Use BashOutput to read logs and search for "End time:" marker
+- Reads hundreds/thousands of lines of output
+- Burns tokens on every status check
+
+**New Approach** (✅ Zero Token Burn):
+- Script writes completion marker file: `/tmp/test-run-complete.json`
+- Helper script checks file existence: O(1) operation, zero log reading
+- Returns clear status with metadata (exit code, duration, pass/fail)
+
+### Usage
+
+**Start tests in background:**
+```bash
+./helper-scripts/run-comprehensive-tests.sh &
+```
+
+**Check completion efficiently (no log reading!):**
+```bash
+./helper-scripts/check-test-completion.sh
+```
+
+**Output examples:**
+
+If running:
+```
+⏳ Comprehensive test suite still running (or not started)
+
+Marker file not found: /tmp/test-run-complete.json
+
+If tests have been running for >25 minutes, check for issues:
+  - Run: ./helper-scripts/system-health-check.sh
+  - Check processes: ps aux | grep -E 'playwright|cargo|npm'
+```
+
+If completed:
+```
+✅ Comprehensive test suite COMPLETED!
+
+{
+  "completed_at": "2025-11-19 17:37:02 PST",
+  "exit_code": 0,
+  "duration_seconds": 1058,
+  "duration_formatted": "17m 38s",
+  "tests_passed": true
+}
+```
+
+### Why This is Better
+
+- ✅ **Zero token burn** - No log reading, just file existence check
+- ✅ **O(1) instant check** - File check vs O(n) log parsing
+- ✅ **Complete metadata** - Exit code, timestamp, duration included
+- ✅ **Clear status** - Unambiguous "running" vs "completed"
+- ✅ **Reusable pattern** - Can apply to any long-running operation
+
+### Implementation Details
+
+**How it works:**
+
+1. **Script startup** (line 1039): Cleans up stale marker from previous run
+   ```bash
+   rm -f /tmp/test-run-complete.json
+   ```
+
+2. **Script completion** (line 1137): Writes marker with metadata
+   ```bash
+   cat > /tmp/test-run-complete.json << EOF
+   {
+     "completed_at": "$(date '+%Y-%m-%d %H:%M:%S %Z')",
+     "exit_code": $report_exit_code,
+     "duration_seconds": $total_time,
+     "duration_formatted": "${total_minutes}m ${total_seconds}s",
+     "tests_passed": $([ $report_exit_code -eq 0 ] && echo "true" || echo "false")
+   }
+   EOF
+   ```
+
+3. **Helper script**: Checks file existence without reading logs
+   ```bash
+   if [ -f /tmp/test-run-complete.json ]; then
+       echo "✅ Tests completed!"
+       cat /tmp/test-run-complete.json | python3 -m json.tool
+   else
+       echo "⏳ Tests still running"
+   fi
+   ```
+
+**Key Insight**: Script DOES complete in 15-20 minutes (verified: 17m 38s). The problem was inefficient status checking, not script performance.
+
+**Related**: [ISSUE-059](bugs/open/ISSUE-059-comprehensive-test-script-appears-hung-but-completes-successfully---claude-code-bash-tool-reporting-issue.md) - Full investigation and solution details
 
 ---
 
