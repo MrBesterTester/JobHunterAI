@@ -1,5 +1,8 @@
 {
   "devDependencies": {
-    "doctoc": "^2.2.1"
+    "@types/node": "^24.10.1",
+    "doctoc": "^2.2.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   }
 }
