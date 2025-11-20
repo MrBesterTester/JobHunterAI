@@ -96,13 +96,23 @@ export class TestOrchestrator {
           console.log('⏭️  SKIPPING: E2E typecheck\n');
         }
 
-        console.log('\n✅ All builds passed! Starting tests...\n');
+        console.log('\n✅ All builds passed!\n');
       } else if (this.config.verbose) {
         console.log('⏭️  SKIPPING: Build phase\n');
       }
 
+      // START BACKEND SERVER (for E2E tests)
+      if (this.config.runTests && this.config.runE2ETests) {
+        console.log('\n🚀 STARTING BACKEND SERVER');
+        console.log('===========================\n');
+        await this.startBackend();
+        console.log('\n✅ Backend server ready!\n');
+      }
+
       // TEST PHASE - Run test suites (only those enabled in config)
       if (this.config.runTests) {
+        console.log('\n🧪 TEST PHASE');
+        console.log('=============\n');
         const testPromises: Promise<TestResult | null>[] = [
           this.config.runBackendTests ? this.runBackendTests() : Promise.resolve(null),
           this.config.runFrontendTests ? this.runFrontendTests() : Promise.resolve(null),
@@ -584,6 +594,78 @@ export class TestOrchestrator {
       });
 
       typecheckChild.on('error', reject);
+    });
+  }
+
+  /**
+   * Start backend server (after build phase, before E2E tests)
+   */
+  private async startBackend(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      console.log('🦀 Starting backend server (cargo run)...');
+
+      const backendChild = spawn('cargo', ['run'], {
+        cwd: path.join(__dirname, '../../backend'),
+        env: {
+          ...process.env,
+          TMPDIR: process.env.TMPDIR || `${process.env.HOME}/tmp`
+        },
+        stdio: ['ignore', 'pipe', 'pipe'],
+        detached: true  // Run in background
+      });
+
+      let stdout = '';
+      let stderr = '';
+
+      backendChild.stdout?.on('data', (data) => {
+        stdout += data.toString();
+        // Show startup messages
+        const lines = data.toString().split('\n');
+        for (const line of lines) {
+          if (line.includes('Starting') || line.includes('Listening')) {
+            console.log(`  ${line.trim()}`);
+          }
+        }
+      });
+
+      backendChild.stderr?.on('data', (data) => {
+        stderr += data.toString();
+        // Show startup messages from stderr too (actix logs to stderr)
+        const lines = data.toString().split('\n');
+        for (const line of lines) {
+          if (line.includes('Starting') || line.includes('Listening') || line.includes('Application')) {
+            console.log(`  ${line.trim()}`);
+          }
+        }
+      });
+
+      // Don't wait for process to exit - it runs in background
+      backendChild.unref();  // Allow Node to exit without waiting for this process
+
+      // Wait for backend to be ready (health check)
+      console.log('⏳ Waiting for backend to be ready...');
+
+      const checkHealth = async (attempt = 0): Promise<void> => {
+        if (attempt >= 30) {
+          reject(new Error('Backend failed to start within 30 seconds'));
+          return;
+        }
+
+        try {
+          const response = await fetch('http://localhost:8080/api/jobs');
+          if (response.ok) {
+            console.log('✅ Backend health check passed');
+            resolve();
+            return;
+          }
+        } catch (error) {
+          // Backend not ready yet
+        }
+
+        setTimeout(() => checkHealth(attempt + 1), 1000);
+      };
+
+      checkHealth();
     });
   }
 
