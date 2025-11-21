@@ -3,6 +3,7 @@ import { shouldRunTest } from '../test-config';
 import { DashboardPage } from '../pages/DashboardPage';
 import { getJobCard } from '../pages/JobCardComponent';
 import { ContentGenerationModal } from '../pages/ModalComponent';
+import { getTestTimeout } from '../helpers/timeout-utils';
 
 // Conditionally skip entire file if disabled in test-config.ts
 // This will NOT show skip messages in test output
@@ -138,7 +139,7 @@ test.describe('Performance Validation', () => {
     });
 
     test('should verify content generation completes under 2 seconds', async ({ page }) => {
-      test.setTimeout(90000); // LLM content generation takes ~55s + overhead
+      test.setTimeout(getTestTimeout(90000)); // 90s → 135s under comprehensive load
       const contentModal = new ContentGenerationModal(page);
 
       await dashboardPage.goto();

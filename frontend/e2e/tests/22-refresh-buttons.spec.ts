@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { shouldRunTest } from '../test-config';
 import { switchToTab } from '../helpers/tab-navigation';
+import { getTestTimeout } from '../helpers/timeout-utils';
 
 // Conditionally skip entire file if disabled in test-config.ts
 // This will NOT show skip messages in test output
@@ -61,7 +62,7 @@ test.describe('Refresh Buttons', () => {
   test('should refresh single job description when per-job button clicked', async ({ page }) => {
     // Increased from 30s default to 180s - test has multiple sequential LLM operations (initial load + refresh)
     // Under comprehensive load with 4 parallel workers, each operation can take up to 120s
-    test.setTimeout(180000);
+    test.setTimeout(getTestTimeout(180000)); // 180s → 270s under comprehensive load
 
     // Navigate to All tab
     await switchToTab(page, 'all');

@@ -1,5 +1,6 @@
 import { test, expect, Page } from '@playwright/test';
 import { shouldRunTest } from '../test-config';
+import { getTestTimeout } from '../helpers/timeout-utils';
 
 // Conditionally skip entire file if disabled in test-config.ts
 // This will NOT show skip messages in test output
@@ -65,7 +66,7 @@ test.describe('RapidAPI JSearch Sync Integration', () => {
   });
 
   test('should sync RapidAPI and display jobs in Inbox tab', async () => {
-    test.setTimeout(90000); // Increase timeout to 90s for long-running sync
+    test.setTimeout(getTestTimeout(90000)); // 90s → 135s under comprehensive load
     // Step 1: Get initial stats
     await page.waitForTimeout(1000);
     const initialNewJobsText = await page.getByTestId('stat-new').textContent();
@@ -207,7 +208,7 @@ test.describe('RapidAPI JSearch Sync Integration', () => {
   });
 
   test('should verify RapidAPI respects 10-job limit per sync', async () => {
-    test.setTimeout(90000); // Increase timeout to 90s for long-running sync
+    test.setTimeout(getTestTimeout(90000)); // 90s → 135s under comprehensive load
     // Navigate to Intake tab
     const intakeTab = page.getByRole('button', { name: /^intake$/i });
     await intakeTab.click();
@@ -302,7 +303,7 @@ test.describe('RapidAPI JSearch Sync Integration', () => {
   });
 
   test('should disable sync button while syncing', async () => {
-    test.setTimeout(90000); // Increase timeout to 90s for long-running sync
+    test.setTimeout(getTestTimeout(90000)); // 90s → 135s under comprehensive load
     // Navigate to Intake tab
     const intakeTab = page.getByRole('button', { name: /^intake$/i });
     await intakeTab.click();
@@ -366,7 +367,7 @@ test.describe('RapidAPI JSearch Sync Integration', () => {
   });
 
   test('should auto-increment page after successful sync', async () => {
-    test.setTimeout(120000); // Increase timeout to 120s
+    test.setTimeout(getTestTimeout(120000)); // 120s → 180s under comprehensive load
 
     // Navigate to Intake tab
     const intakeTab = page.getByRole('button', { name: /^intake$/i });
@@ -439,7 +440,7 @@ test.describe('RapidAPI JSearch Sync Integration', () => {
   });
 
   test('should reset pagination to page 1 when reset button clicked', async () => {
-    test.setTimeout(120000); // Increase timeout to 120s
+    test.setTimeout(getTestTimeout(120000)); // 120s → 180s under comprehensive load
 
     // Navigate to Intake tab
     const intakeTab = page.getByRole('button', { name: /^intake$/i });

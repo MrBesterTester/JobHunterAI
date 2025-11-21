@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { DashboardPage } from '../pages/DashboardPage';
 import { getAllJobCards } from '../pages/JobCardComponent';
+import { getTestTimeout } from '../helpers/timeout-utils';
 
 /**
  * Test Suite 2: Tab Navigation & Filtering
@@ -127,7 +128,7 @@ test.describe('Tab Navigation & Filtering', () => {
 
     test('should have job count badges matching displayed jobs', async ({ page }) => {
       // Increase timeout since we're checking 4 tabs sequentially
-      test.setTimeout(60000);
+      test.setTimeout(getTestTimeout(60000)); // 60s → 90s under comprehensive load
 
       // Check each tab
       const tabs: Array<'inbox' | 'approved' | 'applied' | 'filtered'> = [
@@ -323,7 +324,7 @@ test.describe('Tab Navigation & Filtering', () => {
     test('should handle tabs with no jobs gracefully', async ({ page }) => {
       // This test loops through 4 tabs, each taking ~8-10s (click + wait + checks)
       // Total time: ~32-40s, so we need a longer timeout than the default 30s
-      test.setTimeout(60000); // 60 seconds
+      test.setTimeout(getTestTimeout(60000)); // 60s → 90s under comprehensive load
 
       // Try each tab and verify empty state handling
       const tabs: Array<'inbox' | 'approved' | 'applied' | 'filtered'> = [

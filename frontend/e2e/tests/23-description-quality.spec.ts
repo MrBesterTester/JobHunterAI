@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { shouldRunTest } from '../test-config';
 import { switchToTab } from '../helpers/tab-navigation';
+import { getTestTimeout } from '../helpers/timeout-utils';
 
 // Conditionally skip entire file if disabled in test-config.ts
 // This will NOT show skip messages in test output
@@ -175,7 +176,7 @@ test.describe('Condensed Description Quality', () => {
   test('refresh should regenerate description (check for different content after prompt change)', async ({ page }) => {
     // Increase timeout to allow for slow LLM API calls under system load (can take 30-60+ seconds)
     // Increased from 90s to 180s based on ISSUE-055 - multiple LLM operations under load (3x 120s waits possible)
-    test.setTimeout(180000);
+    test.setTimeout(getTestTimeout(180000)); // 180s → 270s under comprehensive load
 
     // Use New Jobs tab which has jobs with long source descriptions
     await switchToTab(page, 'new');

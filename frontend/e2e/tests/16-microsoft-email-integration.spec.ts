@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { DashboardPage } from '../pages/DashboardPage';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { getTestTimeout } from '../helpers/timeout-utils';
 
 const execAsync = promisify(exec);
 
@@ -292,7 +293,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
 
   test.describe('Microsoft Email Sync Integration', () => {
     test('should sync Microsoft emails and display jobs', async ({ page }) => {
-      test.setTimeout(60000); // Extend timeout for LLM processing
+      test.setTimeout(getTestTimeout(60000)); // 60s → 90s under comprehensive load
       // Wait for dashboard to fully load
       await expect(page.getByRole('heading', { name: /^JobHunter$/i })).toBeVisible({ timeout: 10000 });
       await page.waitForTimeout(2000); // Extra time for tabs to render
@@ -400,7 +401,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
     });
 
     test('should verify stats update after Microsoft sync', async ({ page }) => {
-      test.setTimeout(60000); // Extend timeout for LLM processing
+      test.setTimeout(getTestTimeout(60000)); // 60s → 90s under comprehensive load
       // Wait for dashboard to fully load
       await expect(page.getByRole('heading', { name: /^JobHunter$/i })).toBeVisible({ timeout: 10000 });
       await page.waitForTimeout(2000); // Extra time for tabs to render
@@ -505,7 +506,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       // This test verifies that the system handles archive folder creation
       // without breaking the sync workflow
       // ISSUE-049: Increased timeout based on diagnostics (Microsoft sync takes 60-100s)
-      test.setTimeout(180000); // 3 minutes
+      test.setTimeout(getTestTimeout(180000)); // 180s → 270s under comprehensive load
 
       // Check if Microsoft OAuth credentials exist
       const hasCredentials = await hasMicrosoftOAuthCredentials();
@@ -557,7 +558,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       // This test ensures that adding archiving doesn't break the existing sync workflow
       // ISSUE-049 Option 2: Set reasonable timeout based on diagnostics
       // Diagnostics showed: First run 60-100s, retry 30-35s, so 3 minutes is safe
-      test.setTimeout(180000); // 3 minutes
+      test.setTimeout(getTestTimeout(180000)); // 180s → 270s under comprehensive load
 
       // Check if Microsoft OAuth credentials exist
       const hasCredentials = await hasMicrosoftOAuthCredentials();
@@ -718,7 +719,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
     test('should show archive metrics after sync', async ({ page }) => {
       // This test validates that archive functionality is working without manual Outlook checks
 
-      test.setTimeout(120000); // Extended timeout for sync operations
+      test.setTimeout(getTestTimeout(120000)); // 120s → 180s under comprehensive load
 
       // Check if Microsoft OAuth credentials exist
       const hasCredentials = await hasMicrosoftOAuthCredentials();
@@ -789,7 +790,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       // Only high-confidence emails (>0.3) create job records in database
       // Archival happens when user clicks "Reject" button (tested separately)
 
-      test.setTimeout(120000); // Extended timeout for LLM processing and sync operations
+      test.setTimeout(getTestTimeout(120000)); // 120s → 180s under comprehensive load
 
       // Check if Microsoft OAuth credentials exist
       const hasCredentials = await hasMicrosoftOAuthCredentials();

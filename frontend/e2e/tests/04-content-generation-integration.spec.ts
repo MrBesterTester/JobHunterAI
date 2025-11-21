@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { DashboardPage } from '../pages/DashboardPage';
 import { getJobCard } from '../pages/JobCardComponent';
 import { ContentGenerationModal } from '../pages/ModalComponent';
+import { getTestTimeout } from '../helpers/timeout-utils';
 
 /**
  * Integration Test Suite: Content Generation (Real LLM API)
@@ -99,7 +100,7 @@ test.describe('Content Generation - LLM Integration Tests', () => {
   });
 
   test('should generate unique content for different jobs with real LLM', async ({ page }) => {
-    test.setTimeout(120000); // 2 minutes for two generations
+    test.setTimeout(getTestTimeout(120000)); // 120s → 180s under comprehensive load
 
     await dashboardPage.clickTab('approved');
     await dashboardPage.waitForJobsUpdate();

@@ -31,6 +31,7 @@ This document consolidates hard-earned lessons from fixing flaky E2E tests in th
   - [The Problem: Environment Variables Not Reaching Workers](#the-problem-environment-variables-not-reaching-workers)
   - [The Solution: Propagate Configuration via globalSetup](#the-solution-propagate-configuration-via-globalsetup)
   - [Battle-Tested Pattern: Load-Aware Timeouts](#battle-tested-pattern-load-aware-timeouts)
+  - [Load-Aware Test Timeout Helper (ISSUE-062)](#load-aware-test-timeout-helper-issue-062)
   - [Alternative Approaches (For Reference)](#alternative-approaches-for-reference)
 - [7. Common Anti-Patterns and How to Fix Them](#7-common-anti-patterns-and-how-to-fix-them)
   - [❌ Anti-Pattern 1: Position-Based Selectors](#-anti-pattern-1-position-based-selectors)
@@ -645,6 +646,67 @@ const pollTimeout = process.env.COMPREHENSIVE_TESTS ? 45000 : 10000;
 - ✅ Single source of truth for configuration
 
 **Key Insight:** Don't rely on command-line environment variables reaching workers. Always propagate configuration explicitly via globalSetup.
+
+### Load-Aware Test Timeout Helper (ISSUE-062)
+
+**Use Case:** Systematically apply load-aware timeouts to all test.setTimeout() calls and explicit timeout parameters.
+
+**Problem:** With 138+ timeout configurations throughout the test suite, only 5 (3.6%) were load-aware. Tests would pass individually but fail under comprehensive test load (4 parallel workers).
+
+**Solution:** Centralized timeout utility that automatically scales timeouts under load.
+
+```typescript
+// frontend/e2e/helpers/timeout-utils.ts
+export function getTestTimeout(baseTimeout: number): number {
+  const isComprehensiveTests = process.env.COMPREHENSIVE_TESTS === 'true';
+  const multiplier = isComprehensiveTests ? 1.5 : 1.0;
+  return Math.floor(baseTimeout * multiplier);
+}
+```
+
+**Usage in tests:**
+
+```typescript
+import { getTestTimeout } from '../helpers/timeout-utils';
+
+// Test-level timeout
+test('should complete LLM generation', async ({ page }) => {
+  test.setTimeout(getTestTimeout(60000)); // 60s → 90s under comprehensive load
+  // ... test logic
+});
+
+// Explicit timeout parameters
+await page.waitForSelector('[data-testid="job-card"]', {
+  timeout: getTestTimeout(5000) // 5s → 7.5s under comprehensive load
+});
+
+await page.waitForFunction(
+  () => document.querySelectorAll('.job').length > 0,
+  { timeout: getTestTimeout(10000) } // 10s → 15s under comprehensive load
+);
+```
+
+**Benefits:**
+- ✅ Centralized timeout logic (easy to adjust multiplier)
+- ✅ Consistent pattern across all tests
+- ✅ Tests adapt to load automatically
+- ✅ Eliminates false negatives under comprehensive test load
+- ✅ Fast feedback loop for individual test runs (no unnecessary delays)
+- ✅ Self-documenting (comment shows base → scaled timeout)
+
+**Multiplier Rationale:**
+- **1.5x multiplier** chosen based on empirical data from ISSUE-056 investigation
+- Comprehensive test runs with 4 parallel workers showed operations taking 1.3-1.8x longer
+- 1.5x provides safety margin without excessive conservatism
+- Adjust multiplier if test suite grows significantly (e.g., 400+ → 1000+ tests)
+
+**When to Use:**
+- ✅ All `test.setTimeout()` calls (20+ updated in ISSUE-062)
+- ✅ Explicit timeout parameters in `waitForSelector`, `waitForFunction`, etc.
+- ✅ Any timeout configuration that depends on system performance
+- ❌ **Don't use** for timeouts that are business logic constraints (e.g., "LLM must respond within 30s")
+
+**Important:** Still prefer state polling (`waitForFunction`) over fixed timeouts whenever possible. `getTestTimeout()` is for cases where explicit timeouts are necessary (test timeouts, API call timeouts, etc.).
 
 ### Alternative Approaches (For Reference)
 

@@ -664,9 +664,13 @@ export class TestOrchestrator {
       // Wait for backend to be ready (health check)
       console.log('⏳ Waiting for backend to be ready...');
 
+      // Load-aware timeout: 30s → 45s under comprehensive test load (ISSUE-062)
+      const maxAttempts = process.env.COMPREHENSIVE_TESTS ? 45 : 30;
+      const timeoutSeconds = maxAttempts;
+
       const checkHealth = async (attempt = 0): Promise<void> => {
-        if (attempt >= 30) {
-          reject(new Error('Backend failed to start within 30 seconds'));
+        if (attempt >= maxAttempts) {
+          reject(new Error(`Backend failed to start within ${timeoutSeconds} seconds`));
           return;
         }
 

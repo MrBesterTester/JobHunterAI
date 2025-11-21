@@ -4,6 +4,7 @@ import { getJobCard } from '../pages/JobCardComponent';
 import { ContentGenerationModal } from '../pages/ModalComponent';
 import mockLLMResponse from '../fixtures/llm-response.json';
 import mockLLMResponseVariant from '../fixtures/llm-response-variant.json';
+import { getTestTimeout } from '../helpers/timeout-utils';
 
 /**
  * Test Suite 4: Content Generation
@@ -95,7 +96,7 @@ test.describe('Content Generation', () => {
     });
 
     test('should complete LLM content generation within 45 seconds', async ({ page }) => {
-      test.setTimeout(60000); // 60 second timeout for this LLM test
+      test.setTimeout(getTestTimeout(60000)); // 60s → 90s under comprehensive load
       await dashboardPage.clickTab('approved');
       await dashboardPage.waitForJobsUpdate();
 
@@ -1019,7 +1020,7 @@ test.describe('Content Generation', () => {
     });
 
     test('should disable Regenerate button while generating', async ({ page }) => {
-      test.setTimeout(120000); // 2 minutes for this test (initial gen + regen)
+      test.setTimeout(getTestTimeout(120000)); // 120s → 180s under comprehensive load
 
       await dashboardPage.clickTab('approved');
       await dashboardPage.waitForJobsUpdate();
@@ -1052,7 +1053,7 @@ test.describe('Content Generation', () => {
     });
 
     test('should update metadata after regeneration', async ({ page }) => {
-      test.setTimeout(120000); // 2 minutes for this test (initial gen + regen)
+      test.setTimeout(getTestTimeout(120000)); // 120s → 180s under comprehensive load
 
       await dashboardPage.clickTab('approved');
       await dashboardPage.waitForJobsUpdate();
