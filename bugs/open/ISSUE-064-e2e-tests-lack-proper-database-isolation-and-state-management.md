@@ -20,7 +20,7 @@ related: [PLAYWRIGHT_BEST_PRACTICES.md]
   - [Phase 1: Foundation (COMPLETED ✅)](#phase-1-foundation-completed-)
   - [Phase 2: Backend Connection Strategy (COMPLETED ✅)](#phase-2-backend-connection-strategy-completed-)
   - [Phase 3: Playwright Worker Fixture (COMPLETED ✅)](#phase-3-playwright-worker-fixture-completed-)
-  - [Phase 4: Full Rollout (PENDING)](#phase-4-full-rollout-pending)
+  - [Phase 4: Full Rollout (COMPLETED ✅)](#phase-4-full-rollout-completed-)
   - [Phase 5: Cleanup (PENDING)](#phase-5-cleanup-pending)
   - [Key Questions to Track](#key-questions-to-track)
 - [Remaining Challenge: Inter-Test Isolation](#remaining-challenge-inter-test-isolation)
@@ -182,14 +182,90 @@ export const testWithPage = test.extend<{ page: Page }>({
 
 **Commit**: fe7d650
 
-### Phase 4: Full Rollout (PENDING)
+### Phase 4: Full Rollout (COMPLETED ✅)
+
+**Status**: All 44 test files updated to use per-worker database isolation
 
 **Tasks**:
-- [ ] Update `playwright.config.ts` to use new fixture
-- [ ] Remove global-setup database seeding (replaced by per-worker)
-- [ ] Test with full E2E suite (567 tests, 4 workers)
+- [x] Enhanced worker-database fixture with MS Mail seeding and score calculation
+- [x] Updated all 44 test files to import from `../fixtures/worker-database`
+- [x] Removed global-setup database seeding (now handled by worker fixtures)
+- [x] Tested enhanced fixture (13/13 tests passed in 22.0s)
+- [ ] Test with full E2E suite (567 tests, 4 workers) - **READY TO RUN**
 - [ ] Verify all tests pass with isolation
 - [ ] Monitor test execution time (should stay <15 min)
+
+**Implementation Details**:
+
+1. **Enhanced Worker Fixture** (`frontend/e2e/fixtures/worker-database.ts`):
+   ```typescript
+   async function initializeWorkerDatabase(workerIndex: number): Promise<void> {
+     // Step 1: Create database and seed SQL data
+     await createWorkerDatabase(workerIndex);
+
+     // Step 2: Seed MS Mail test data via API (with X-Worker-Index header)
+     await seedMSMailData(workerIndex);
+
+     // Step 3: Calculate job scores via API (with X-Worker-Index header)
+     await calculateAllJobScores(workerIndex);
+   }
+
+   export const test = base.extend<{ page: Page }, WorkerFixtures>({
+     workerDatabase: [async ({ }, use, workerInfo) => {
+       await initializeWorkerDatabase(workerInfo.workerIndex);
+       await use(`jobhunter_test_worker_${workerInfo.workerIndex}`);
+       await dropWorkerDatabase(workerInfo.workerIndex);
+     }, { scope: 'worker' }],
+
+     // Automatic X-Worker-Index header on all page requests
+     page: async ({ page }, use, workerInfo) => {
+       await page.setExtraHTTPHeaders({
+         'X-Worker-Index': workerInfo.workerIndex.toString()
+       });
+       await use(page);
+     },
+   });
+   ```
+
+2. **Bulk Test File Update**:
+   - Changed all 44 test files from `import { test, expect } from '@playwright/test'`
+   - To: `import { test, expect } from '../fixtures/worker-database'`
+   - Bulk update via sed: `sed -i '' "s/from '@playwright\/test'/from '..\/fixtures\/worker-database'/g"`
+   - Fixture exports `{ test, expect, type Page }` for full compatibility
+
+3. **Global Setup Simplification** (`frontend/e2e/global-setup.ts`):
+   - Removed: `seedTestData()`, `seedMSMailData()`, `calculateAllJobScores()`
+   - Kept: Backend health check and startup logic
+   - Added documentation: "Database seeding now handled by per-worker fixtures"
+
+**Test Results** ✅:
+- **Validation Test**: 13 passed in 22.0 seconds
+- **Workers Used**: 2 and 3 (automatic Playwright assignment)
+- **Console Output**:
+  - `[Worker 2] ✅ Worker database fully initialized`
+  - `[Worker 3] ✅ Seeded 3 MS Mail test email(s)`
+  - `[Worker 3] ✅ Calculated scores for 45 jobs`
+  - `[Worker 2] ✅ Database dropped: jobhunter_test_worker_2`
+
+**Architecture**:
+```
+Worker 0 (process) → jobhunter_test_worker_0
+  ├─ Creates isolated database at startup
+  ├─ Seeds: schema + SQL data + MS Mail + job scores
+  ├─ Runs ~142 tests sequentially (tests share this database)
+  └─ Drops database at teardown
+
+Worker 1-3 → same pattern (jobhunter_test_worker_1, _2, _3)
+```
+
+**Key Architectural Note**:
+- ✅ **Solves**: Inter-worker conflicts (workers can't interfere with each other)
+- ⚠️ **Does NOT solve**: Inter-test conflicts within a worker (tests on same worker share database state sequentially)
+- See "Remaining Challenge: Inter-Test Isolation" section for Options 5A-5D to address intra-worker test dependencies
+
+**Commits**:
+- c3de7b9: Rollout to all 44 test files + global-setup updates
+- fe7d650: Original worker fixture implementation (Phase 3)
 
 ### Phase 5: Cleanup (PENDING)
 
