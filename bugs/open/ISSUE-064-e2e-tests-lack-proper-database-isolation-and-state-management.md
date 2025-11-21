@@ -403,21 +403,32 @@ SELECT * FROM jobs WHERE worker_id = ${workerIndex};
 
 ## Decision
 
-**Status**: 🔄 Investigation phase - decision pending
+**Status**: 🚨 **LE PROBLEMA DU JOUR** - CRITICAL PRIORITY
 
-**Recommendation**: Option 1 (Per-Worker Database Isolation) or Option 4 (Test Data Pools)
+**Decision Made**: Option 1 (Per-Worker Database Isolation)
 
 **Rationale**:
-- Option 1 provides perfect isolation and aligns with Playwright best practices
-- Option 4 is a good middle ground if resource constraints are a concern
-- Option 2 is too slow for our test suite size
-- Option 3 requires too much backend refactoring
+- Aligns perfectly with Playwright best practices (official recommendation)
+- Solves entry/exit condition problem completely
+- Maintains full parallelism (4 workers)
+- Resource overhead is reasonable (~200MB for 4 databases)
+- Clean, maintainable architecture
+- Industry standard pattern
+
+**Rejected Options**:
+- Option 2: Too slow (~4.7 min overhead, forces serial execution)
+- Option 3: Doesn't work with our architecture (backend in separate process)
+- Option 4: Architectural pollution (worker-awareness throughout stack)
 
 **Next Steps**:
-1. Prototype Option 1 to measure actual resource usage and startup time
-2. Prototype Option 4 to assess implementation complexity
-3. Measure current test execution time baseline
-4. Compare prototypes and make final decision
+1. 🔬 **[IN PROGRESS]** Prototype Option 1 to validate assumptions
+   - Measure database creation/seeding time
+   - Measure memory/CPU usage
+   - Test with subset of tests
+   - Validate backend connection strategy
+2. Implement worker fixture for database isolation
+3. Roll out to full test suite
+4. Remove all serial mode usage (anti-patterns)
 
 ## Implementation
 
