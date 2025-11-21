@@ -1,4 +1,34 @@
 import { defineConfig, devices } from '@playwright/test';
+import * as fs from 'fs';
+import * as path from 'path';
+
+/**
+ * Load .env.playwright for reliable environment variable propagation to workers
+ *
+ * ISSUE-056: Playwright workers don't reliably inherit env vars from spawn() on all platforms.
+ * The test orchestrator writes .env.playwright before running tests, and we load it here
+ * to ensure all environment variables (especially COMPREHENSIVE_TESTS) reach worker processes.
+ */
+const envFile = path.join(__dirname, '.env.playwright');
+if (fs.existsSync(envFile)) {
+  const envContent = fs.readFileSync(envFile, 'utf-8');
+  console.log('🎭 Playwright: Loading .env.playwright for worker process propagation');
+
+  envContent.split('\n').forEach(line => {
+    const trimmed = line.trim();
+    // Skip empty lines and comments
+    if (!trimmed || trimmed.startsWith('#')) return;
+
+    const [key, ...valueParts] = trimmed.split('=');
+    if (key && valueParts.length > 0) {
+      const value = valueParts.join('='); // Handle values with = in them
+      process.env[key] = value;
+      console.log(`  ✅ Set ${key}=${value}`);
+    }
+  });
+} else {
+  console.log('ℹ️  Playwright: No .env.playwright found (running in standalone mode)');
+}
 
 /**
  * Playwright Configuration for JobHunter Frontend Testing
