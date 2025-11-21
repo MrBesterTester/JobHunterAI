@@ -170,8 +170,8 @@ vim src/test-orchestrator/orchestrator.ts
 ./helper-scripts/run-tests-debug.sh --skip-builds
 # Runtime: 12m
 
-# Total iteration time: 14.5m (vs 20m for comprehensive)
-# Time saved: 5.5m (27.5%)
+# Total iteration time: 14.5m (vs 13.5m for comprehensive)
+# Time saved: -1m (slower than comprehensive, but faster feedback loop)
 ```
 
 #### E2E Test Development
@@ -183,8 +183,8 @@ vim frontend/e2e/tests/05-email-ingestion.spec.ts
 ./helper-scripts/run-tests-debug.sh --e2e-only --skip-builds
 # Runtime: 10m
 
-# Total iteration time: 10m (vs 20m for comprehensive)
-# Time saved: 10m (50%)
+# Total iteration time: 10m (vs 13.5m for comprehensive)
+# Time saved: 3.5m (26%)
 ```
 
 #### Backend Code Changes
@@ -204,8 +204,8 @@ cd backend && cargo test
 ./helper-scripts/run-tests-debug.sh --e2e-only --skip-builds
 # Runtime: 10m
 
-# Total iteration time: 13.5m (vs 20m for comprehensive)
-# Time saved: 6.5m (32.5%)
+# Total iteration time: 13.5m (vs 13.5m for comprehensive)
+# Time saved: 0m (same as comprehensive, but better feedback loop)
 ```
 
 ### Important Notes

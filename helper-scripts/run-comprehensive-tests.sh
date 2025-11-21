@@ -54,9 +54,10 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Estimated runtime configuration (in minutes)
-# TODO: Derive from historical test runs (see ISSUE-XXX)
-ESTIMATED_MIN_MINUTES=15
-ESTIMATED_MAX_MINUTES=20
+# Based on actual comprehensive test runs with isolated project optimization (ISSUE-064)
+# Latest run: 12.6 minutes (755s) - 2025-11-21
+ESTIMATED_MIN_MINUTES=12
+ESTIMATED_MAX_MINUTES=15
 
 echo -e "${BLUE}╔═══════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║       COMPREHENSIVE TEST ORCHESTRATOR (TypeScript)            ║${NC}"
