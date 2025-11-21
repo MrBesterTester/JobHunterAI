@@ -28,7 +28,7 @@
 
 ## Index of Archived Test Runs
 
-**Total Archived Runs**: 3 individual runs + 1 legacy comprehensive archive
+**Total Archived Runs**: 4 individual runs + 1 legacy comprehensive archive
 
 **Investigation Archives**: 1 detailed investigation
 
@@ -50,6 +50,7 @@
   - **Note**: This is the monolithic history file that predates the folder structure. Future test runs will be archived as individual files using `TEST_STATUS_YYYY-MM-DD_HHMM.md` convention.
 
 ### November 2025
+- **[TEST_STATUS_2025-11-20_2023.md](TEST_STATUS_2025-11-20_2023.md)** - 2025-11-20 20:23:53 PST
 - **[TEST_STATUS_2025-11-19_1719.md](TEST_STATUS_2025-11-19_1719.md)** - 2025-11-19 17:19:00 PST
 - **[TEST_STATUS_2025-11-19_1615.md](TEST_STATUS_2025-11-19_1615.md)** - 2025-11-19 16:15:24 PST
 - **[TEST_STATUS_2025-11-19_0136.md](TEST_STATUS_2025-11-19_0136.md)** - 2025-11-19 01:36:18 PST
