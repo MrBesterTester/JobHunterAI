@@ -19,7 +19,7 @@ related: [PLAYWRIGHT_BEST_PRACTICES.md]
 - [🚨 IMPLEMENTATION ROADMAP - LE PROBLEMA DU JOUR](#-implementation-roadmap---le-problema-du-jour)
   - [Phase 1: Foundation (COMPLETED ✅)](#phase-1-foundation-completed-)
   - [Phase 2: Backend Connection Strategy (COMPLETED ✅)](#phase-2-backend-connection-strategy-completed-)
-  - [Phase 3: Playwright Worker Fixture (NEXT 🔧)](#phase-3-playwright-worker-fixture-next-)
+  - [Phase 3: Playwright Worker Fixture (COMPLETED ✅)](#phase-3-playwright-worker-fixture-completed-)
   - [Phase 4: Full Rollout (PENDING)](#phase-4-full-rollout-pending)
   - [Phase 5: Cleanup (PENDING)](#phase-5-cleanup-pending)
   - [Key Questions to Track](#key-questions-to-track)
@@ -119,34 +119,58 @@ page.setExtraHTTPHeaders({
 - [x] Verify fallback to default database
 - [x] Commit implementation (382ca73)
 
-### Phase 3: Playwright Worker Fixture (NEXT 🔧)
+### Phase 3: Playwright Worker Fixture (COMPLETED ✅)
 
-**File**: `frontend/e2e/fixtures/worker-database.ts` (to be created)
+**File**: `frontend/e2e/fixtures/worker-database.ts` ✅ **CREATED**
 
 **Tasks**:
-- [ ] Create worker-scoped fixture
-- [ ] Implement database creation/seeding per worker
-- [ ] Implement database cleanup on worker teardown
-- [ ] Configure backend connection (header or port)
-- [ ] Test with 2-3 sample E2E tests
+- [x] Create worker-scoped fixture
+- [x] Implement database creation/seeding per worker
+- [x] Implement database cleanup on worker teardown
+- [x] Configure backend connection (X-Worker-Index header)
+- [x] Test with sample E2E tests (3 tests created)
 
-**Fixture Structure**:
+**Test Results** ✅:
+- **Test file**: `frontend/e2e/tests/99-worker-database-fixture-test.spec.ts`
+- **Tests**: 13 passed in 23.3 seconds
+- **Workers**: 2 and 3 (automatic assignment)
+- **Database lifecycle**: Successfully created and cleaned up per worker
+- **Console output verification**:
+  - `[Worker 2] Creating database: jobhunter_test_worker_2`
+  - `[Worker 3] Creating database: jobhunter_test_worker_3`
+  - `[Worker 2] ✅ Database dropped: jobhunter_test_worker_2`
+  - `[Worker 3] ✅ Database dropped: jobhunter_test_worker_3`
+
+**Implementation Details**:
 ```typescript
-export const test = base.extend<{}, WorkerFixture>({
+export const test = base.extend<{}, WorkerFixtures>({
   workerDatabase: [async ({ }, use, workerInfo) => {
-    const dbName = `jobhunter_test_worker_${workerInfo.workerIndex}`;
+    const workerIndex = workerInfo.workerIndex;
+    const dbName = `jobhunter_test_worker_${workerIndex}`;
 
-    // Setup: Create and seed database
-    await createWorkerDatabase(workerInfo.workerIndex);
+    // Setup: Create and seed worker database
+    await createWorkerDatabase(workerIndex);
 
-    // Use: Tests run with isolated database
+    // Provide database name to tests
     await use(dbName);
 
-    // Teardown: Cleanup database
-    await dropWorkerDatabase(workerInfo.workerIndex);
-  }, { scope: 'worker' }]
+    // Teardown: Drop worker database
+    await dropWorkerDatabase(workerIndex);
+  }, { scope: 'worker' }],
+});
+
+// Extended page fixture with automatic X-Worker-Index header
+export const testWithPage = test.extend<{ page: Page }>({
+  page: async ({ page, workerDatabase }, use, workerInfo) => {
+    await page.setExtraHTTPHeaders({
+      'X-Worker-Index': workerInfo.workerIndex.toString()
+    });
+    await use(page);
+  },
 });
 ```
+
+**Commit**: fe7d650
 
 ### Phase 4: Full Rollout (PENDING)
 
