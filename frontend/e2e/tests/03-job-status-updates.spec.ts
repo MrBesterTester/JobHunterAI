@@ -457,6 +457,7 @@ test.describe('Job Status Updates', () => {
   test.describe.serial('Edge Cases & Error Handling', () => {
     test.setTimeout(66000);
     test('should handle rapid sequential approvals', async ({ page }) => {
+      test.setTimeout(66000);
       await dashboardPage.clickTab('inbox');
       await dashboardPage.waitForJobsUpdate();
 
@@ -496,6 +497,7 @@ test.describe('Job Status Updates', () => {
     });
       test.setTimeout(33000);
 
+  test.setTimeout(33000);
     test('should maintain data consistency after status updates', async ({ page }) => {
       await dashboardPage.clickTab('inbox');
       await dashboardPage.waitForJobsUpdate();

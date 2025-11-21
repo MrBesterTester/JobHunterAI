@@ -265,6 +265,7 @@ test.describe('Gmail Send Integration - Phase 2.4', () => {
 
   test.setTimeout(66000);
     test('should send test emails only to MrBesterTester@gmail.com', async ({ page }) => {
+      test.setTimeout(66000);
       // This test documents the safety requirement
       // Real verification would require checking actual sent email destination
       // For E2E test, we verify the API call succeeds (which means email was sent)

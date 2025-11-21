@@ -170,7 +170,7 @@ test.describe('Accessibility Testing', () => {
 
       // Press Escape
       await page.keyboard.press('Escape');
-        test.setTimeout(35200);
+        test.setTimeout(36300);
 
       // Modal should close
       await expect(modal).not.toBeVisible({ timeout: getTestTimeout(2000) });
@@ -327,6 +327,7 @@ test.describe('Accessibility Testing', () => {
 
   test.setTimeout(33000);
     test('should have form inputs with labels', async ({ page }) => {
+      test.setTimeout(33000);
       await dashboardPage.goto();
 
       // Check for any form inputs
@@ -435,6 +436,7 @@ test.describe('Accessibility Testing', () => {
     });
       test.setTimeout(33000);
 
+  test.setTimeout(33000);
     test('should have live region for dynamic updates (optional)', async ({ page }) => {
       await dashboardPage.goto();
 

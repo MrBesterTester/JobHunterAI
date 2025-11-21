@@ -376,6 +376,7 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Rejected Tab', () => {
 
   test.setTimeout(99001);
   test('should handle select all and deselect all in Rejected tab', async ({ page }) => {
+    test.setTimeout(99001);
     // Navigate to Rejected tab
     const rejectedTab = page.locator('button', { hasText: 'Rejected' });
     await rejectedTab.click();

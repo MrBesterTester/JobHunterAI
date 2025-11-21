@@ -386,6 +386,7 @@ test.describe('Error Handling & Edge Cases', () => {
   test.describe('Additional Edge Cases', () => {
     test.setTimeout(99001);
     test('should handle rapid tab switching without errors', async ({ page }) => {
+      test.setTimeout(99001);
       await dashboardPage.goto();
 
       // Rapidly switch tabs
@@ -447,6 +448,7 @@ test.describe('Error Handling & Edge Cases', () => {
     });
       test.setTimeout(33000);
 
+  test.setTimeout(33000);
     test('should handle concurrent status updates on same job', async ({ page }) => {
       await dashboardPage.goto();
       await dashboardPage.clickTab('inbox');

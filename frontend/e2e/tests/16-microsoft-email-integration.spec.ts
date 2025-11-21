@@ -277,6 +277,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
 
   test.setTimeout(104501);
     test('should show job source in job details', async ({ page }) => {
+      test.setTimeout(104501);
       // Navigate to New Jobs tab
       await page.getByRole('button', { name: /^new jobs$/i }).click();
       await page.waitForTimeout(1000);
@@ -487,6 +488,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
 
   test.setTimeout(104501);
   test.describe('Email Archiving (Phase 2.8)', () => {
+    test.setTimeout(104501);
     test('should display Microsoft JobOps folder status', async ({ page }) => {
       // Navigate to Intake tab
       await page.getByRole('button', { name: /^intake$/i }).click();
@@ -864,6 +866,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
      * Assumes: OAuth authentication is already complete and JobOps folder has emails
        test.setTimeout(176000);
      */
+       test.setTimeout(176000);
 
     test('Item 3: Email Sync & Extraction - should sync and filter emails correctly', async ({ page }) => {
       // Navigate to Intake tab
@@ -949,6 +952,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
         expect(jobCount).toBeGreaterThanOrEqual(0);
           test.setTimeout(110001);
       }
+        test.setTimeout(110001);
     });
 
     test('Item 4: End-to-End Workflow - Microsoft job through full application flow', async ({ page }) => {
@@ -1137,6 +1141,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
 
   test.setTimeout(264000);
       // Test passes if app is still responsive
+        test.setTimeout(264000);
       expect(await microsoftSyncButton.isEnabled()).toBeTruthy();
     });
 

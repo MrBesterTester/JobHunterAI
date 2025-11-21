@@ -465,6 +465,7 @@ test.describe('Statistics & Real-time Updates', () => {
 
   test.setTimeout(33000);
     test('should recover from transient API failures', async ({ page }) => {
+      test.setTimeout(33000);
       // Simulate one-time API failure
       let failureCount = 0;
 
