@@ -41,7 +41,8 @@ export default defineConfig({
   testDir: './e2e/tests',
 
   // Maximum time one test can run
-  timeout: 30 * 1000, // 30 seconds per test
+  // ISSUE-056: Load-aware timeout - comprehensive tests need longer due to 4 parallel workers
+  timeout: process.env.COMPREHENSIVE_TESTS ? 90 * 1000 : 30 * 1000,
 
   // Global timeout for entire test suite (all tests must complete within this time)
   globalTimeout: 20 * 60 * 1000, // 20 minutes (safety buffer for CI/CD)
