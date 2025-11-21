@@ -1,7 +1,7 @@
 // Phase 2.10: Gmail Junk Cleanup - E2E Tests
 // Tests bulk delete functionality for Ignored tab and Rejected tab
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../fixtures/worker-database';
 import { getTestTimeout } from '../helpers/timeout-utils';
 
 const BASE_URL = 'http://localhost:3000';

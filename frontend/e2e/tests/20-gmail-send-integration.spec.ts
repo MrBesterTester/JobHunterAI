@@ -3,7 +3,7 @@
  * Tests for follow-up email sending via Gmail API with safety override
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../fixtures/worker-database';
 import { getTestTimeout } from '../helpers/timeout-utils';
 
 test.describe('Gmail Send Integration - Phase 2.4', () => {

@@ -1,4 +1,4 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page } from '../fixtures/worker-database';
 import { shouldRunTest } from '../test-config';
 import { getTestTimeout } from '../helpers/timeout-utils';
 

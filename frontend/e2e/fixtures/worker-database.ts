@@ -63,7 +63,73 @@ async function createWorkerDatabase(workerIndex: number): Promise<void> {
   const seedPath = path.join(__dirname, '../../../database/seed_test_data.sql');
   await execAsync(`psql -U jobhunter_user -d ${dbName} -f ${seedPath} -q`);
 
-  console.log(`[Worker ${workerIndex}] ✅ Database ready: ${dbName}`);
+  console.log(`[Worker ${workerIndex}] ✅ Database seeded: ${dbName}`);
+}
+
+/**
+ * Seed MS Mail test data for a worker database
+ */
+async function seedMSMailData(workerIndex: number): Promise<void> {
+  try {
+    const response = await fetch('http://localhost:8080/api/test/seed-msmail', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Worker-Index': workerIndex.toString()
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`MS Mail seeding failed with status ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log(`[Worker ${workerIndex}] ✅ Seeded ${result.created_count} MS Mail test email(s)`);
+  } catch (error) {
+    console.warn(`[Worker ${workerIndex}] ⚠️  Could not seed MS Mail data:`, error);
+    // Don't throw - some tests may not need MS Mail data
+  }
+}
+
+/**
+ * Calculate job scores for a worker database
+ */
+async function calculateAllJobScores(workerIndex: number): Promise<void> {
+  try {
+    const response = await fetch('http://localhost:8080/api/jobs/calculate-all-scores', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Worker-Index': workerIndex.toString()
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Score calculation failed with status ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log(`[Worker ${workerIndex}] ✅ Calculated scores for ${result.scored_count} jobs`);
+  } catch (error) {
+    console.warn(`[Worker ${workerIndex}] ⚠️  Could not calculate job scores:`, error);
+    // Don't throw - some tests may not need pre-calculated scores
+  }
+}
+
+/**
+ * Initialize worker database with all test data
+ */
+async function initializeWorkerDatabase(workerIndex: number): Promise<void> {
+  // Step 1: Create database and seed SQL data
+  await createWorkerDatabase(workerIndex);
+
+  // Step 2: Seed MS Mail test data via API
+  await seedMSMailData(workerIndex);
+
+  // Step 3: Calculate job scores via API
+  await calculateAllJobScores(workerIndex);
+
+  console.log(`[Worker ${workerIndex}] ✅ Worker database fully initialized`);
 }
 
 /**
@@ -83,28 +149,28 @@ async function dropWorkerDatabase(workerIndex: number): Promise<void> {
 }
 
 /**
- * Extend base test with worker database fixture
+ * Extend base test with worker database fixture and automatic X-Worker-Index header
  *
  * Usage in tests:
  * ```typescript
  * import { test, expect } from '../fixtures/worker-database';
  *
- * test('my test', async ({ page, workerDatabase }) => {
- *   // workerDatabase contains the database name
- *   // X-Worker-Index header is automatically set
+ * test('my test', async ({ page }) => {
+ *   // page automatically has X-Worker-Index header set
+ *   // Backend routes all requests to this worker's database
  *   await page.goto('http://localhost:3000');
  *   // ...
  * });
  * ```
  */
-export const test = base.extend<{}, WorkerFixtures>({
+export const test = base.extend<{ page: Page }, WorkerFixtures>({
   // Worker-scoped fixture: runs once per worker, not per test
   workerDatabase: [async ({ }, use, workerInfo) => {
     const workerIndex = workerInfo.workerIndex;
     const dbName = `jobhunter_test_worker_${workerIndex}`;
 
-    // Setup: Create and seed worker database
-    await createWorkerDatabase(workerIndex);
+    // Setup: Initialize worker database with all test data
+    await initializeWorkerDatabase(workerIndex);
 
     // Provide database name to tests (though they rarely need it directly)
     await use(dbName);
@@ -112,15 +178,9 @@ export const test = base.extend<{}, WorkerFixtures>({
     // Teardown: Drop worker database
     await dropWorkerDatabase(workerIndex);
   }, { scope: 'worker' }],
-});
 
-/**
- * Extended page fixture that automatically sets X-Worker-Index header
- *
- * This ensures all requests from this page go to the correct worker database.
- */
-export const testWithPage = test.extend<{ page: Page }>({
-  page: async ({ page, workerDatabase }, use, workerInfo) => {
+  // Override page fixture to automatically set X-Worker-Index header
+  page: async ({ page }, use, workerInfo) => {
     // Set X-Worker-Index header on all requests from this page
     await page.setExtraHTTPHeaders({
       'X-Worker-Index': workerInfo.workerIndex.toString()
@@ -130,5 +190,5 @@ export const testWithPage = test.extend<{ page: Page }>({
   },
 });
 
-// Re-export expect for convenience
-export { expect } from '@playwright/test';
+// Re-export expect and types for convenience
+export { expect, type Page } from '@playwright/test';

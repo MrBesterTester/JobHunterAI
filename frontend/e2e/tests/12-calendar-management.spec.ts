@@ -3,7 +3,7 @@
  * Tests for interview scheduling, calendar integration, and upcoming interviews widget
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../fixtures/worker-database';
 import { getTestTimeout } from '../helpers/timeout-utils';
 
 test.describe('Calendar Management - Phase 5.1', () => {

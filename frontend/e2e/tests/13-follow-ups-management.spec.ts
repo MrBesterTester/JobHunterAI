@@ -3,7 +3,7 @@
  * Tests for automated follow-up system, approval workflow, and email templates
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../fixtures/worker-database';
 import { getTestTimeout } from '../helpers/timeout-utils';
 
 test.describe('Follow-ups Management - Phase 5.1', () => {

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../fixtures/worker-database';
 import { DashboardPage } from '../pages/DashboardPage';
 import { getAllJobCards } from '../pages/JobCardComponent';
 import { getTestTimeout } from '../helpers/timeout-utils';
