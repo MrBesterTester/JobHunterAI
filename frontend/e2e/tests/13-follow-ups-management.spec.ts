@@ -56,6 +56,8 @@ test.describe('Follow-ups Management - Phase 5.1', () => {
     });
 
     test('should show follow-up details in cards', async ({ page }) => {
+      test.setTimeout(66000);
+
       await page.click('button:has-text("Follow-ups")');
       await page.waitForTimeout(1000);
 

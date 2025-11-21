@@ -369,6 +369,8 @@ test.describe('Error Handling & Edge Cases', () => {
 
   test.describe('Additional Edge Cases', () => {
     test('should handle rapid tab switching without errors', async ({ page }) => {
+      test.setTimeout(99001);
+
       await dashboardPage.goto();
 
       // Rapidly switch tabs

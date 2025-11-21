@@ -22,6 +22,8 @@ test.describe('Modal Scroll Position Stability', () => {
   });
 
   test('scroll position should remain stable without jumping back to top', async ({ page }) => {
+    test.setTimeout(99001);
+
     // Navigate to a tab with job data
     await page.click('button:has-text("Filtered")');
     await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });

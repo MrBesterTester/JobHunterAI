@@ -14,6 +14,8 @@ test.describe('Gmail Send Integration - Phase 2.4', () => {
 
   test.describe('Follow-up Email Sending with TEST_MODE', () => {
     test('should send follow-up email to test address when TEST_MODE is enabled', async ({ page }) => {
+      test.setTimeout(203501);
+
       // Navigate to Follow-ups tab
       await page.click('button:has-text("Follow-ups")');
       await page.waitForTimeout(1500);

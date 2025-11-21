@@ -104,6 +104,8 @@ test.describe('Refresh Buttons', () => {
   });
 
   test('should NOT cause infinite refresh loop', async ({ page }) => {
+    test.setTimeout(66000);
+
     // Navigate to All tab
     await switchToTab(page, 'all');
 

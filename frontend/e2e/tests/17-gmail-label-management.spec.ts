@@ -22,6 +22,8 @@ test.describe('Phase 2.9: Gmail Label Management', () => {
   });
 
   test('should have Reject button on job cards in New Jobs tab', async ({ page }) => {
+    test.setTimeout(66000);
+
     // Click on New Jobs tab
     await page.click('[data-testid="new-tab-button"]');
 

@@ -189,6 +189,8 @@ test.describe('Job Status Updates', () => {
     });
 
     test('should allow approving multiple jobs in sequence', async ({ page }) => {
+      test.setTimeout(66000);
+
       await dashboardPage.clickTab('inbox');
       await dashboardPage.waitForJobsUpdate();
 

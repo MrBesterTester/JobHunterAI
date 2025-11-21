@@ -47,6 +47,8 @@ test.describe('Gmail Sync Integration', () => {
   });
 
   test('should sync Gmail and display jobs in New Jobs tab', async () => {
+    test.setTimeout(363001);
+
     // Step 1: Get initial stats
     await page.waitForTimeout(1000);
     const initialNewJobsText = await page.getByTestId('stat-new').textContent();

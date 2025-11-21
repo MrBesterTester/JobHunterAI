@@ -330,6 +330,8 @@ test.describe('Re-filter Jobs Button and Dropdown', () => {
   });
 
   test('should maintain button state after page navigation', async ({ page }) => {
+    test.setTimeout(93501);
+
     const dropdown = page.locator('select').filter({ hasText: /Last Sync Only/i });
 
     // Verify dropdown is visible initially

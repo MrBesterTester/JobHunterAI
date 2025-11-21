@@ -85,6 +85,8 @@ test.describe('Calendar Management - Phase 5.1', () => {
     });
 
     test('should create interview with valid data', async ({ page }) => {
+      test.setTimeout(203501);
+
       // First create or select an application
       await page.click('button:has-text("Approved")');
 

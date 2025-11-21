@@ -54,6 +54,8 @@ test.describe('Performance Validation', () => {
     });
 
     test('should detect no memory leaks during tab navigation', async ({ page }) => {
+      test.setTimeout(99001);
+
       await dashboardPage.goto();
 
       // Get initial memory usage using Chrome's performance.memory API

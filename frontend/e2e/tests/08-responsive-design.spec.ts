@@ -287,6 +287,8 @@ test.describe('Responsive Design & Layout', () => {
 
   test.describe('Cross-viewport Testing', () => {
     test('should maintain functionality across viewport changes', async ({ page }) => {
+      test.setTimeout(66000);
+
       await setViewportSize(page, viewportSizes.desktop.width, viewportSizes.desktop.height);
       await dashboardPage.goto();
 

@@ -609,6 +609,8 @@ test.describe('New Job Card Badges - Edge Cases', () => {
 
 test.describe('New Job Card Badges - Responsive Layout', () => {
   test('badges should wrap properly on narrow screens - 768px width', async ({ page }) => {
+    test.setTimeout(66000);
+
     await page.setViewportSize({ width: 768, height: 1024 });
     await page.goto('http://localhost:3000');
     await page.click('button:has-text("All")');

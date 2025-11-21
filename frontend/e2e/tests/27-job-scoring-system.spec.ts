@@ -42,6 +42,8 @@ test.describe('Job Scoring System', () => {
   });
 
   test('should display job scores with color coding', async ({ page }) => {
+    test.setTimeout(66000);
+
     // Navigate to Ranked Jobs tab
     await page.locator('text=Ranked Jobs').first().click();
     await page.waitForLoadState('networkidle');

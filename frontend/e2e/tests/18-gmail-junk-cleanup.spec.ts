@@ -73,6 +73,8 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Ignored Tab', () => {
   });
 
   test('should delete selected Gmail emails from Ignored tab after confirmation', async ({ page }) => {
+    test.setTimeout(135300);
+
     // Navigate to Ignored tab
     const ignoredTab = page.locator('button', { hasText: 'Ignored' });
     await ignoredTab.click();

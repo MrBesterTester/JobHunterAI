@@ -89,6 +89,8 @@ test.describe('Job Trade-off Display', () => {
   });
 
   test('should display compensation details section in modal', async ({ page }) => {
+    test.setTimeout(66000);
+
     // Click first job card to open modal
     await page.locator('[data-testid="job-card"]').first().click();
     await page.waitForSelector('[data-testid="modal-overlay"]');

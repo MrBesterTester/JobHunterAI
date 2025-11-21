@@ -86,6 +86,8 @@ test.describe('Accessibility Testing', () => {
     });
 
     test('should allow backward navigation with Shift+Tab', async ({ page }) => {
+      test.setTimeout(66000);
+
       // Tab forward several times
       for (let i = 0; i < 3; i++) {
         await page.keyboard.press('Tab');

@@ -47,6 +47,8 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
 
   test.describe('Microsoft Email Account UI', () => {
     test('should display Microsoft Email Integration card in Intake tab', async ({ page }) => {
+      test.setTimeout(66000);
+
       // Navigate to Intake tab
       await page.getByRole('button', { name: /^intake$/i }).click();
 

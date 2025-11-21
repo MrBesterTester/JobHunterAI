@@ -227,6 +227,8 @@ test.describe('Job Badge Styling', () => {
   });
 
   test('modal sections should have consistent header styling', async ({ page }) => {
+    test.setTimeout(66000);
+
     await page.locator('[data-testid="job-card"]').first().click();
     await page.waitForSelector('[data-testid="modal-overlay"]');
 

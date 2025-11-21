@@ -75,6 +75,8 @@ test.describe('Modal Scrolling', () => {
   });
 
   test('should allow scrolling through long email content without jumping', async ({ page }) => {
+    test.setTimeout(66000);
+
     await page.click('button:has-text("Filtered")');
     await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 

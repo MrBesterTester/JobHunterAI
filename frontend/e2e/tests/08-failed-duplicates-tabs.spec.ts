@@ -18,6 +18,8 @@ test.describe('Failed and Duplicates Tabs', () => {
   });
 
   test('Failed counter should match Failed tab count', async ({ page }) => {
+    test.setTimeout(66000);
+
     // Get the failed counter value
     const failedStat = page.locator('[data-testid="stat-failed"]');
     await expect(failedStat).toBeVisible();

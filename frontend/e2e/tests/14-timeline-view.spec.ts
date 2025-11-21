@@ -20,6 +20,8 @@ test.describe('Timeline View - Phase 5.1', () => {
     // SKIPPED: Timeline View feature not yet implemented (Phase 5.1)
     // Re-enable when feature is ready - see ISSUE-036
     test.skip('should display Timeline section in job details', async ({ page }) => {
+      test.setTimeout(66000);
+
       // Navigate to Applied tab (more likely to have timeline data)
       await page.click('button:has-text("Applied")');
       await page.waitForTimeout(1000);

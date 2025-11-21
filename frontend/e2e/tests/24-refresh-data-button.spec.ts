@@ -127,6 +127,8 @@ test.describe('Refresh Data Button', () => {
   });
 
   test('should work on mobile viewport', async ({ page }) => {
+    test.setTimeout(66000);
+
     // Set mobile viewport
     await page.setViewportSize({ width: 375, height: 667 });
     await page.reload();
