@@ -229,7 +229,9 @@ test.describe('Gmail Sync Integration', () => {
 
   test('should allow approving jobs synced from Gmail', async () => {
     // Navigate to New Jobs tab (jobs awaiting approval)
-    await switchToTab(page, 'new');
+    // ISSUE-063 Option 5: Use 90s timeout for Gmail sync under comprehensive load (4 workers)
+    // This operation can take >61s when syncing new jobs with database + stats refresh
+    await switchToTab(page, 'new', true, 90000);
 
     // Check if there are any jobs
     const jobCards = page.getByTestId('job-card');

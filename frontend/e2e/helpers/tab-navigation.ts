@@ -29,18 +29,21 @@ export type TabType = 'ignored' | 'intake' | 'filtered' | 'failed' | 'duplicates
  * @param page - Playwright Page object
  * @param tab - Tab to switch to
  * @param expectJobCards - Whether to wait for job cards (default: true for tabs with job lists)
+ * @param customTimeout - Optional custom timeout for job cards wait (ISSUE-063 Option 5)
  */
 export async function switchToTab(
   page: Page,
   tab: TabType,
-  expectJobCards: boolean = shouldExpectJobCards(tab)
+  expectJobCards: boolean = shouldExpectJobCards(tab),
+  customTimeout?: number
 ): Promise<void> {
   const tabButtonSelector = `[data-testid="${tab}-tab-button"]`;
 
   // Calculate load-aware timeouts for ALL waits (ISSUE-057 fix)
   // Under comprehensive test load (4 parallel workers), UI operations take longer
   const baseTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 15000 : 5000;
-  const jobCardsTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 45000 : 10000;
+  // ISSUE-063 Option 5: Allow custom timeout override for specific tests (e.g., Gmail sync with heavy load)
+  const jobCardsTimeout = customTimeout ?? (process.env.CI || process.env.COMPREHENSIVE_TESTS ? 45000 : 10000);
 
   // Click the tab button
   await page.click(tabButtonSelector);
