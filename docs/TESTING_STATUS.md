@@ -10,8 +10,8 @@ related_docs:
   - testing-history/ (archived test runs - see testing-history/README.md for index)
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
-last_comprehensive_run: 2025-11-19 19:41:22 PST
-last_updated: 2025-11-19 20:06:53 PST (Clarified historical context - moved ISSUE-055 investigation to archive)
+last_comprehensive_run: 2025-11-20 20:36:35 PST
+last_updated: 2025-11-20 20:41:10 PST (Added comprehensive test results after ISSUE-063 timeout fixes)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -27,7 +27,6 @@ last_updated: 2025-11-19 20:06:53 PST (Clarified historical context - moved ISSU
     - [E2E Test Details](#e2e-test-details)
     - [Key Observations](#key-observations)
     - [Comparison to Previous Run (2025-11-19 17:19 PST)](#comparison-to-previous-run-2025-11-19-1719-pst)
-  - [Previous Test Run Results](#previous-test-run-results)
   - [Historical Context - Past Investigation Work](#historical-context---past-investigation-work)
     - [ISSUE-055 Investigation (November 18, 2025) - ✅ COMPLETED](#issue-055-investigation-november-18-2025----completed)
   - [Related Files](#related-files)
@@ -39,17 +38,19 @@ last_updated: 2025-11-19 20:06:53 PST (Clarified historical context - moved ISSU
 
 ## Next Steps (Testing Priorities)
 
-**No High-Priority Testing Work Needed** ✅
+**Priority 1: Fix Remaining E2E Timeout Failure** ⚠️ **ISSUE-063** (1/943 tests failing)
+- **Issue**: [ISSUE-063](../bugs/open/ISSUE-063-e2e-tests-timing-out-in-pagewaitforfunction-after-tab-switch-files-16--23.md) - E2E Tests Timing Out in page.waitForFunction()
+- **Status**: ⚠️ **PARTIALLY RESOLVED** (80% improvement: 5 → 1 failures)
+  - ✅ Test 23 (description-quality): **FULLY FIXED** (3 failures → 0)
+  - 🟡 Test 16 (gmail-sync-integration): **PARTIAL** (2 failures → 1)
+- **Remaining Work**:
+  - 1 timeout failure in Test 16 line 232 (switchToTab helper timing out at 61s, helper uses 45s timeout)
+  - **Recommended Fix**: Option 4 - Increase switchToTab helper's jobCardsTimeout from 45s to 90s (5-minute fix)
+  - **Alternative**: Option 5 - Add optional timeout parameter to switchToTab (15-minute fix)
+  - **Defer**: Option 6 - Accept 0.25% flake rate as acceptable (0 minutes)
+- **Current Pass Rate**: 99.89% (943/944 tests, excluding skipped)
 
-All active tests are passing and stable. Skipped tests (140 total) are **already documented** in `docs/EXCLUDED_TESTS.md`:
-- 132 E2E tests: Intentionally disabled (mostly cosmetic/styling tests)
-- 8 unit tests: Testing infrastructure limitations (functionality verified in production)
-- See `docs/EXCLUDED_TESTS.md` for complete breakdown and re-enabling instructions
-
-**~~Priority 1: E2E Test Best Practices Audit~~** ❌ **DUPLICATE - Already Documented**
-- **Issue**: [ISSUE-058](../bugs/duplicate/ISSUE-058-e2e-test-best-practices-audit.md) - ~~Audit of skipped E2E tests~~
-- **Resolution**: Closed as duplicate - all skipped tests already documented in `docs/EXCLUDED_TESTS.md` (2025-10-30)
-- **Status**: ❌ **NO ACTION NEEDED** - Documentation already exists
+**Overall Test Suite Health**: ⚠️ **99.89% pass rate** - Near-excellent state with 1 remaining timeout issue
 
 **Previous Priorities** (✅ All Fixed and Verified):
 
@@ -65,60 +66,63 @@ All active tests are passing and stable. Skipped tests (140 total) are **already
 - **Test**: `e2e/tests/16-gmail-sync-integration.spec.ts:229` - "should allow approving jobs synced from Gmail"
 - **Status**: ✅ **FIXED - Test #441 no longer flaky**
 
-**Overall Test Suite Health**: ✅ **100% pass rate (1072/1072 active tests)** - Excellent state, but need to address 100+ skipped tests
+**Priority 4: Fix E2E Timeout Failures (Tests 16 & 23)** ⚠️ **PARTIALLY RESOLVED (2025-11-20)**
+- **Status**: 80% improvement (5 → 1 failures), see Priority 1 above for remaining work
 
 ---
 
 ## Latest Test Run Results (Quick Summary)
 
-**Run Date**: 2025-11-19 19:26:45 PST (completed 19:41:22 PST)
-**Runtime**: 14 minutes 37 seconds (full comprehensive suite)
-**Exit Code**: 0 (SUCCESS - all tests passed)
-**Context**: Verification run after ISSUE-059 completion marker implementation
+**Run Date**: 2025-11-20 20:23:53 PST (completed 20:36:35 PST)
+**Runtime**: 12 minutes 42 seconds (full comprehensive suite)
+**Exit Code**: 1 (FAILED - 1 E2E test timeout)
+**Context**: Verification run after ISSUE-063 Option 1 timeout fixes (45s→90s for test-specific waits)
 
 | Test Suite | Passed | Failed | Skipped | Pass Rate | Runtime | Status |
 |------------|--------|--------|---------|-----------|---------|--------|
-| **Backend Tests** | **166** | 0 | 4 (mock) | **100%** | ~90s | ✅ **PASSING** |
-| **Frontend Unit** | **516** | 0 | 1 | **100%** | ~25s | ✅ **PASSING** |
-| **E2E Tests** | **All running tests passed** | **0** | **~100+** | **100%** | ~12.8m | ✅ **ALL PASSING** |
-| **TOTAL (Active)** | **1074** | **0** | **0** | **100%** | **~14.6 min** | ✅ **ALL TESTS PASSING** |
+| **Backend Tests** | **32** | 0 | 4 (mock) | **100%** | 125.7s | ✅ **PASSING** |
+| **Frontend Unit** | **516** | 0 | 1 | **100%** | 72.5s | ✅ **PASSING** |
+| **E2E Tests** | **395** | **1** | **202** | **99.75%** | 655.1s (~10.9m) | ⚠️ **1 TIMEOUT** |
+| **TOTAL (Active)** | **943** | **1** | **207** | **99.89%** | **~12.7 min** | ⚠️ **NEAR-PASSING** |
 
-**🎉 Key Finding: Clean Pass - All Tests Stable**
-- All tests that ran **passed successfully** (exit code 0)
-- Zero hard failures, zero flaky tests
-- **Runtime improved**: 14.6 min vs 18.4 min previous run (-20% faster)
-- Test #441 continues to pass reliably
+**⚠️ Key Finding: Significant Improvement - 80% Reduction in Failures**
+- **ISSUE-063 Progress**: **5 failures → 1 failure** (80% improvement)
+  - ✅ Test 23 (description-quality): **ALL 3 FAILURES FIXED**
+  - 🟡 Test 16 (gmail-sync-integration): **2 → 1 failure** (different location than fix)
+- **Pass rate**: 99.89% (943/944 tests)
+- **Runtime**: 12.7 min (faster than previous 14.6 min)
 
-**✅ Test Suite Continues to Be Stable**
-- No new issues discovered
-- All previous fixes (ISSUE-056, ISSUE-057) continue to work correctly
-- Skipped tests remain documented in `docs/EXCLUDED_TESTS.md`
+**🔍 Remaining Failure Analysis**
+- **Location**: Test 16 line 232 - `switchToTab(page, 'new')` call
+- **Root Cause**: Helper's `jobCardsTimeout` (45s) insufficient for Gmail sync scenario (takes 61s under load)
+- **Why Still Failing**: Our fix (Option 1) addressed test-specific waits (line 277), not the helper timeout
+- **Recommended Fix**: ISSUE-063 Option 4 - Increase helper timeout 45s→90s (one-line fix, 5 minutes)
 
 ---
 
 ## Latest Comprehensive Test Run - Detailed Results
 
-**Run Date**: 2025-11-19 19:26:45 PST (completed 19:41:22 PST)
-**Total Runtime**: 14 minutes 37 seconds (full comprehensive suite with preflight checks)
+**Run Date**: 2025-11-20 20:23:53 PST (completed 20:36:35 PST)
+**Total Runtime**: 12 minutes 42 seconds (761.7s) - full comprehensive suite with preflight checks
 
 ### Test Status Summary
 
-**✅ ALL TESTS PASSED - 100% PASS RATE**
+**⚠️ 99.89% PASS RATE - 1 TIMEOUT REMAINING (ISSUE-063)**
 
 | Phase | Status | Runtime | Notes |
 |-------|--------|---------|-------|
-| Preflight Checks | ✅ PASSED | - | OAuth tokens validated, database seeded |
-| Backend Build | ✅ PASSED | 116s | Clean build from `cargo clean` |
-| Frontend Build | ✅ PASSED | 7s | TypeScript + RSBuild |
-| E2E Type-checking | ✅ PASSED | 4s | All E2E tests type-safe |
-| **Backend Tests** | ✅ **PASSED** | **95s** | **166/170 passed (97.6%, 4 skipped)** |
-| **Frontend Unit Tests** | ✅ **PASSED** | **21s** | **516/517 passed (1 skipped)** |
-| **E2E Tests** | ✅ **PASSED** | **11.2m** | **392/393 passed (1 flaky)** |
+| Preflight Checks | ✅ PASSED | - | OAuth tokens refreshed, database seeded |
+| Backend Build | ✅ PASSED | 91.1s | Clean build from `cargo clean` |
+| Frontend Build | ✅ PASSED | 3.2s | TypeScript + RSBuild |
+| E2E Type-checking | ✅ PASSED | 2.6s | All E2E tests type-safe |
+| **Backend Tests** | ✅ **PASSED** | **125.7s** | **32/36 passed (4 skipped mock tests)** |
+| **Frontend Unit Tests** | ✅ **PASSED** | **72.5s** | **516/517 passed (1 skipped)** |
+| **E2E Tests** | ⚠️ **1 FAILED** | **655.1s (~10.9m)** | **395/396 passed, 1 timeout (202 skipped)** |
 
 ### Backend Test Details
 
-**Total**: 166/170 passed (97.6%)
-**Runtime**: ~95 seconds (with database operations + 2 real API calls)
+**Total**: 32/36 passed (88.9%)
+**Runtime**: 125.7 seconds (with database operations)
 **Status**: ✅ All passing
 **Ignored**: 4 mock tests (intentionally skipped - mockito issues, redundant coverage)
 
@@ -233,28 +237,6 @@ All active tests are passing and stable. Skipped tests (140 total) are **already
 | **Total Pass Rate** | 100% (clean) | 100% (clean) | No change |
 | **Runtime** | 18.4 min | **14.6 min** | ✅ **-20% faster** |
 | **Test Stability** | Excellent | Excellent | ✅ **Confirmed** |
-
----
-
-## Previous Test Run Results
-
-**Run Date**: 2025-11-19 17:19:00 PST (completed 17:37:23 PST)
-**Runtime**: 18 minutes 23 seconds (full comprehensive suite)
-**Exit Code**: 0 (SUCCESS - all running tests passed)
-**Context**: Post-stabilization verification run - discovered 100+ skipped tests needing documentation
-
-| Test Suite | Passed | Failed | Skipped | Pass Rate | Runtime | Status |
-|------------|--------|--------|---------|-----------|---------|--------|
-| **Backend Tests** | **166** | 0 | 4 (mock) | **100%** | ~95s | ✅ **PASSING** |
-| **Frontend Unit** | **516** | 0 | 1 | **100%** | ~25s | ✅ **PASSING** |
-| **E2E Tests** | **All running tests passed** | **0** | **~100+** | **100%** | ~16.3m | ✅ **ALL PASSING** |
-| **TOTAL (Active)** | **1074** | **0** | **0** | **100%** | **~18.4 min** | ✅ **ALL TESTS PASSING** |
-
-**Key Results**:
-- ✅ All tests that ran passed successfully (exit code 0)
-- ✅ Zero hard failures, zero flaky tests
-- ✅ Test #441 (previously flaky) passed on first attempt
-- ✅ Skipped tests documented in `docs/EXCLUDED_TESTS.md`
 
 ---
 
