@@ -423,20 +423,15 @@ test.describe('Accessibility Testing', () => {
         const roles = ['main', 'navigation', 'banner', 'contentinfo', 'complementary'];
         return roles.map((role) => ({
           role,
-            test.setTimeout(33000);
           count: document.querySelectorAll(`[role="${role}"], ${role}`).length,
         }));
       });
 
       // Should have at least some landmarks
-        test.setTimeout(33000);
       const totalLandmarks = landmarks.reduce((sum, l) => sum + l.count, 0);
-        test.setTimeout(33000);
       expect(totalLandmarks).toBeGreaterThan(0);
     });
-      test.setTimeout(33000);
 
-  test.setTimeout(33000);
     test('should have live region for dynamic updates (optional)', async ({ page }) => {
       test.setTimeout(33000);
       await dashboardPage.goto();
