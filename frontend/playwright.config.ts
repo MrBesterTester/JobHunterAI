@@ -73,7 +73,8 @@ export default defineConfig({
 
     // Maximum time for each action (click, fill, etc.)
     // ISSUE-056: Load-aware timeout - comprehensive tests need longer timeouts due to 4 parallel workers
-    actionTimeout: process.env.COMPREHENSIVE_TESTS ? 60 * 1000 : 10 * 1000,
+    // ISSUE-063: Increased from 60s to 120s to accommodate Gmail sync operations that take >60s under load
+    actionTimeout: process.env.COMPREHENSIVE_TESTS ? 120 * 1000 : 10 * 1000,
 
     // Navigation timeout
     // ISSUE-056: Load-aware timeout - comprehensive tests need longer timeouts due to 4 parallel workers
