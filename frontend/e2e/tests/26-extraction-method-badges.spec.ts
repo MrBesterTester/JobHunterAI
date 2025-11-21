@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { shouldRunTest } from '../test-config';
+import { getTestTimeout } from '../helpers/timeout-utils';
 
 // Conditionally skip entire file if disabled in test-config.ts
 // This will NOT show skip messages in test output
@@ -44,7 +45,7 @@ test.describe('Extraction Method Badges', () => {
 
   test('should display extraction method badge on job cards', async ({ page }) => {
     // Wait for job cards to load
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
     const jobCards = page.locator('[data-testid="job-card"]');
     const count = await jobCards.count();
@@ -68,7 +69,7 @@ test.describe('Extraction Method Badges', () => {
   });
 
   test('should style LLM badge with blue colors', async ({ page }) => {
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
     // Find a card with LLM badge
     const llmBadge = page.locator('[data-testid="job-card"] span').filter({
@@ -100,7 +101,7 @@ test.describe('Extraction Method Badges', () => {
   });
 
   test('should style REGEX badge with orange colors', async ({ page }) => {
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
     // Find a card with REGEX badge
     const regexBadge = page.locator('[data-testid="job-card"] span').filter({
@@ -132,7 +133,7 @@ test.describe('Extraction Method Badges', () => {
   });
 
   test('should position badge near Job ID in card header', async ({ page }) => {
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
     const firstCard = page.locator('[data-testid="job-card"]').first();
 
@@ -160,7 +161,7 @@ test.describe('Extraction Method Badges', () => {
   });
 
   test('should display badge on all visible job cards', async ({ page }) => {
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
     const jobCards = page.locator('[data-testid="job-card"]');
     const count = Math.min(await jobCards.count(), 5); // Check first 5 cards
@@ -203,7 +204,7 @@ test.describe('Extraction Method Badges', () => {
   });
 
   test('should maintain badge styling consistency across tabs', async ({ page }) => {
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
     // Get LLM badge styling from All tab
     const llmBadgeAll = page.locator('[data-testid="job-card"] span').filter({
@@ -250,7 +251,7 @@ test.describe('Extraction Method Badges', () => {
   });
 
   test('should display badge in job details modal', async ({ page }) => {
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
     // Click on first job card to open modal
     const firstCard = page.locator('[data-testid="job-card"]').first();
@@ -287,7 +288,7 @@ test.describe('Extraction Method Badges', () => {
   test('should show REGEX badge for jobs with HTML preprocessing issues', async ({ page }) => {
     // This test verifies that jobs that failed LLM extraction show REGEX badge
 
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
     // Look for any REGEX badges
     const regexBadges = page.locator('[data-testid="job-card"] span').filter({
@@ -358,7 +359,7 @@ test.describe('Extraction Method Badges', () => {
   });
 
   test('should have distinct colors for LLM vs REGEX badges', async ({ page }) => {
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
     const llmBadge = page.locator('[data-testid="job-card"] span').filter({
       hasText: /^LLM$/
@@ -384,7 +385,7 @@ test.describe('Extraction Method Badges', () => {
   });
 
   test('should be readable and accessible', async ({ page }) => {
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
     const extractionBadge = page.locator('[data-testid="job-card"] span').filter({
       hasText: /^(LLM|REGEX)$/

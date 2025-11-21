@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { shouldRunTest } from '../test-config';
+import { getTestTimeout } from '../helpers/timeout-utils';
 
 // Conditionally skip entire file if disabled in test-config.ts
 // This will NOT show skip messages in test output
@@ -28,7 +29,7 @@ test.describe('Modal Scrolling', () => {
   test('should open modal when clicking on a job card', async ({ page }) => {
     // Navigate to Filtered tab where we know there's a job with long content
     await page.click('button:has-text("Filtered")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
     // Click on first job card
     const jobCard = page.locator('[data-testid="job-card"]').first();
@@ -41,7 +42,7 @@ test.describe('Modal Scrolling', () => {
 
   test('should display full email body in modal', async ({ page }) => {
     await page.click('button:has-text("Filtered")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
     // Find the SET JAVA job specifically
     const jobCards = page.locator('[data-testid="job-card"]');
@@ -75,7 +76,7 @@ test.describe('Modal Scrolling', () => {
 
   test('should allow scrolling through long email content without jumping', async ({ page }) => {
     await page.click('button:has-text("Filtered")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
     // Find a job with long content
     const jobCards = page.locator('[data-testid="job-card"]');
@@ -121,7 +122,7 @@ test.describe('Modal Scrolling', () => {
 
   test('should have proper overflow styling on modal overlay and content', async ({ page }) => {
     await page.click('button:has-text("Filtered")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
     await jobCard.click();
@@ -148,7 +149,7 @@ test.describe('Modal Scrolling', () => {
 
   test('should scroll to bottom of long email content', async ({ page }) => {
     await page.click('button:has-text("Filtered")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
     await jobCard.click();
@@ -184,7 +185,7 @@ test.describe('Modal Scrolling', () => {
 
   test('should close modal when clicking X button after scrolling', async ({ page }) => {
     await page.click('button:has-text("Filtered")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
     await jobCard.click();
@@ -210,7 +211,7 @@ test.describe('Modal Scrolling', () => {
 
   test('should close modal when clicking overlay after scrolling', async ({ page }) => {
     await page.click('button:has-text("Filtered")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
     await jobCard.click();

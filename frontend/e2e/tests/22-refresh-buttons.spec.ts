@@ -73,7 +73,7 @@ test.describe('Refresh Buttons', () => {
     const descriptionText = jobCard.getByTestId('condensed-description-text');
 
     // Wait for initial description to load
-    await expect(descriptionText).not.toHaveText('Loading description...', { timeout: 15000 });
+    await expect(descriptionText).not.toHaveText('Loading description...', { timeout: getTestTimeout(15000) });
 
     // Get initial description text
     const initialDescription = await descriptionText.textContent();
@@ -84,7 +84,7 @@ test.describe('Refresh Buttons', () => {
     const refreshButton = jobCard.getByTestId('per-job-refresh-button');
     const responsePromise = page.waitForResponse(
       response => response.url().includes('/condense-description') && response.status() === 200,
-      { timeout: 120000 }
+      { timeout: getTestTimeout(120000) }
     );
 
     // Click refresh button
@@ -94,7 +94,7 @@ test.describe('Refresh Buttons', () => {
     await responsePromise;
 
     // Verify UI updated with new description (not "Loading..." state)
-    await expect(descriptionText).not.toHaveText('Loading description...', { timeout: 10000 });
+    await expect(descriptionText).not.toHaveText('Loading description...', { timeout: getTestTimeout(10000) });
 
     // Get new description
     const newDescription = await descriptionText.textContent();
@@ -116,7 +116,7 @@ test.describe('Refresh Buttons', () => {
 
     // Wait for initial description to load
     const descriptionContainer = descriptionSection.locator('div').nth(1);
-    await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
+    await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: getTestTimeout(15000) });
 
     // Set up network request monitoring
     const apiCalls: string[] = [];
@@ -154,7 +154,7 @@ test.describe('Refresh Buttons', () => {
         const text = container?.textContent || '';
         return text.length > 10 && !text.includes('Loading description...');
       },
-      { timeout: 15000 }
+      { timeout: getTestTimeout(15000) }
     );
 
     // Wait an additional 5 seconds to see if any more requests happen
@@ -163,7 +163,7 @@ test.describe('Refresh Buttons', () => {
     await page.waitForFunction(
       (start) => Date.now() - start >= 5000,
       startTime,
-      { timeout: 6000 }
+      { timeout: getTestTimeout(6000) }
     );
 
     // Should have made a reasonable number of API calls (not 10+ like in an infinite loop)
@@ -194,7 +194,7 @@ test.describe('Refresh Buttons', () => {
     const descriptionContainer = descriptionSection.locator('[data-testid="condensed-description-text"]');
 
     // Wait for initial load
-    await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
+    await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: getTestTimeout(15000) });
 
     // Click refresh
     const refreshButton = descriptionSection.getByTestId('per-job-refresh-button');
@@ -224,7 +224,7 @@ test.describe('Refresh Buttons', () => {
         return false;
       },
       jobIdText,
-      { timeout: 15000 }
+      { timeout: getTestTimeout(15000) }
     );
 
     // Verify we're still looking at the same job (using stable locator)
@@ -264,7 +264,7 @@ test.describe('Refresh Buttons', () => {
         return false;
       },
       { startTime: stabilityStartTime, expectedJobIdText: jobIdText, expectedDescription: initialDescription },
-      { timeout: 6000 }
+      { timeout: getTestTimeout(6000) }
     );
 
     // Final verification - description should still match initial
@@ -284,7 +284,7 @@ test.describe('Refresh Buttons', () => {
       const card = jobCards.nth(i);
       const descriptionSection = card.locator('div:has-text("Condensed Description")').first();
       const descriptionContainer = descriptionSection.locator('div').nth(1);
-      await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
+      await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: getTestTimeout(15000) });
     }
 
     // Click global refresh button
@@ -330,7 +330,7 @@ test.describe('Refresh Buttons', () => {
         return loadedCount >= expectedCount;
       },
       count,
-      { timeout: 20000 }
+      { timeout: getTestTimeout(20000) }
     );
 
     // Verify all have loaded descriptions
@@ -338,7 +338,7 @@ test.describe('Refresh Buttons', () => {
       const card = jobCards.nth(i);
       const descriptionSection = card.locator('div:has-text("Condensed Description")').first();
       const descriptionContainer = descriptionSection.locator('div').nth(1);
-      await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
+      await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: getTestTimeout(15000) });
     }
   });
 

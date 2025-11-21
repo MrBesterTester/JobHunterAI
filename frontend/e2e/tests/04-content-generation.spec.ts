@@ -56,7 +56,7 @@ test.describe('Content Generation', () => {
 
   test.describe('Section 7: Generate Resume & Cover Letter Test', () => {
     // Configure longer timeout for LLM tests (generation takes ~30s)
-    test.describe.configure({ timeout: 60000 });
+    test.describe.configure({ timeout: getTestTimeout(60000) });
 
     test('should show Generate button for approved jobs', async ({ page }) => {
       await dashboardPage.clickTab('approved');
@@ -289,7 +289,7 @@ test.describe('Content Generation', () => {
 
   test.describe('Section 8: Content Generation Modal Test', () => {
     // Configure longer timeout for LLM tests (generation takes ~30s)
-    test.describe.configure({ timeout: 60000 });
+    test.describe.configure({ timeout: getTestTimeout(60000) });
 
     test('should have close button in top-right corner', async ({ page }) => {
       await dashboardPage.clickTab('approved');
@@ -540,7 +540,7 @@ test.describe('Content Generation', () => {
 
   test.describe('Performance Validation', () => {
     // Configure longer timeout for LLM tests (generation takes ~30s)
-    test.describe.configure({ timeout: 60000 }); // 60 seconds
+    test.describe.configure({ timeout: getTestTimeout(60000) }); // 60 seconds
 
     test('should verify LLM content generation speed', async ({ page }) => {
       await dashboardPage.clickTab('approved');
@@ -595,7 +595,7 @@ test.describe('Content Generation', () => {
 
   test.describe('LLM Quality Validation', () => {
     // Configure longer timeout for LLM tests (generation takes ~30s)
-    test.describe.configure({ timeout: 60000 }); // 60 seconds
+    test.describe.configure({ timeout: getTestTimeout(60000) }); // 60 seconds
 
     test('should use bold formatting for emphasized keywords', async ({ page }) => {
       await dashboardPage.clickTab('approved');
@@ -734,7 +734,7 @@ test.describe('Content Generation', () => {
 
   test.describe('Phase 3.1.3: Token Counting & Cost Estimation', () => {
     // Configure longer timeout for LLM tests (generation takes ~30s)
-    test.describe.configure({ timeout: 60000 }); // 60 seconds
+    test.describe.configure({ timeout: getTestTimeout(60000) }); // 60 seconds
 
     test.skip('should return token usage and cost metadata from API', async ({ page }) => {
       // ISSUE-035 Phase 1: Token/cost tracking feature not yet implemented
@@ -749,7 +749,7 @@ test.describe('Content Generation', () => {
       // Set up response interceptor to capture API response
       let apiResponse: any = null;
       await page.route('**/api/jobs/*/generate-content', async (route) => {
-        const response = await route.fetch({ timeout: 60000 }); // 60s for LLM generation
+        const response = await route.fetch({ timeout: getTestTimeout(60000) }); // 60s for LLM generation
         apiResponse = await response.json();
         await route.fulfill({ response });
       });
@@ -794,7 +794,7 @@ test.describe('Content Generation', () => {
       // Set up response interceptor
       let apiResponse: any = null;
       await page.route('**/api/jobs/*/generate-content', async (route) => {
-        const response = await route.fetch({ timeout: 60000 }); // 60s for LLM generation
+        const response = await route.fetch({ timeout: getTestTimeout(60000) }); // 60s for LLM generation
         apiResponse = await response.json();
         await route.fulfill({ response });
       });
@@ -835,7 +835,7 @@ test.describe('Content Generation', () => {
       // Set up response interceptor
       let apiResponse: any = null;
       await page.route('**/api/jobs/*/generate-content', async (route) => {
-        const response = await route.fetch({ timeout: 60000 }); // 60s for LLM generation
+        const response = await route.fetch({ timeout: getTestTimeout(60000) }); // 60s for LLM generation
         apiResponse = await response.json();
         await route.fulfill({ response });
       });
@@ -866,7 +866,7 @@ test.describe('Content Generation', () => {
   });
 
   test.describe('Phase 3.1.4: Frontend Metadata Display & UI Improvements', () => {
-    test.describe.configure({ timeout: 60000 });
+    test.describe.configure({ timeout: getTestTimeout(60000) });
 
     test('should display LLM metadata in the modal', async ({ page }) => {
       await dashboardPage.clickTab('approved');

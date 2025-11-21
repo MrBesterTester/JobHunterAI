@@ -46,7 +46,7 @@ test.describe('Condensed Description Quality', () => {
 
     // Wait for description to load (increased timeout for system load)
     const descriptionContainer = jobCard.locator('div').filter({ hasText: 'Condensed Description' }).locator('div').last();
-    await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 20000 });
+    await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: getTestTimeout(20000) });
 
     const descriptionText = await descriptionContainer.textContent();
 
@@ -62,7 +62,7 @@ test.describe('Condensed Description Quality', () => {
     const jobCard = page.locator('[data-testid="job-card"]').first();
 
     const descriptionContainer = jobCard.locator('div').filter({ hasText: 'Condensed Description' }).locator('div').last();
-    await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
+    await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: getTestTimeout(15000) });
 
     const descriptionText = await descriptionContainer.textContent();
 
@@ -78,7 +78,7 @@ test.describe('Condensed Description Quality', () => {
     const jobCard = page.locator('[data-testid="job-card"]').first();
 
     const descriptionContainer = jobCard.locator('div').filter({ hasText: 'Condensed Description' }).locator('div').last();
-    await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
+    await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: getTestTimeout(15000) });
 
     const descriptionText = await descriptionContainer.textContent();
 
@@ -337,7 +337,7 @@ test.describe('Condensed Description Quality', () => {
       const card = jobCards.nth(i);
       const descriptionContainer = card.locator('div').filter({ hasText: 'Condensed Description' }).locator('div').last();
 
-      await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
+      await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: getTestTimeout(15000) });
 
       const descriptionText = await descriptionContainer.textContent();
 
@@ -358,7 +358,7 @@ test.describe('Condensed Description Quality', () => {
     const jobCard = page.locator('[data-testid="job-card"]').first();
 
     const descriptionContainer = jobCard.locator('div').filter({ hasText: 'Condensed Description' }).locator('div').last();
-    await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
+    await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: getTestTimeout(15000) });
 
     const descriptionText = await descriptionContainer.textContent();
 

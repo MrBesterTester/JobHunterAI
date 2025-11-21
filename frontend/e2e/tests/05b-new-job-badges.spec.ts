@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { shouldRunTest } from '../test-config';
+import { getTestTimeout } from '../helpers/timeout-utils';
 
 // Conditionally skip entire file if disabled in test-config.ts
 // This will NOT show skip messages in test output
@@ -37,11 +38,11 @@ test.describe('New Job Card Badges - Display Logic', () => {
     await page.waitForFunction(() => {
       const heading = document.querySelector('h2');
       return heading?.textContent !== 'Job Intake Sources';
-    }, { timeout: 10000 });
+    }, { timeout: getTestTimeout(10000) });
     // Wait for tab content to appear
-    await page.waitForSelector('[data-testid="all-tab-content"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="all-tab-content"]', { timeout: getTestTimeout(10000) });
     // Wait for job cards to load
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
   });
 
   test('employment type badge - should display full-time with green styling', async ({ page }) => {
@@ -356,8 +357,8 @@ test.describe('New Job Card Badges - Styling Consistency', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:3000');
     await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="all-tab-content"]', { timeout: 10000 });
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="all-tab-content"]', { timeout: getTestTimeout(10000) });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
   });
 
   test('all new badges should have consistent padding', async ({ page }) => {
@@ -485,8 +486,8 @@ test.describe('New Job Card Badges - Edge Cases', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:3000');
     await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="all-tab-content"]', { timeout: 10000 });
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="all-tab-content"]', { timeout: getTestTimeout(10000) });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
   });
 
   test('should not display badges when data is null', async ({ page }) => {
@@ -611,8 +612,8 @@ test.describe('New Job Card Badges - Responsive Layout', () => {
     await page.setViewportSize({ width: 768, height: 1024 });
     await page.goto('http://localhost:3000');
     await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="all-tab-content"]', { timeout: 10000 });
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="all-tab-content"]', { timeout: getTestTimeout(10000) });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
     const badgeContainer = jobCard.locator('[data-testid="badge-container"]');
@@ -630,8 +631,8 @@ test.describe('New Job Card Badges - Responsive Layout', () => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('http://localhost:3000');
     await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="all-tab-content"]', { timeout: 10000 });
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="all-tab-content"]', { timeout: getTestTimeout(10000) });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
     const badgeContainer = jobCard.locator('[data-testid="badge-container"]');
@@ -658,8 +659,8 @@ test.describe('New Job Card Badges - Responsive Layout', () => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('http://localhost:3000');
     await page.click('button:has-text("All")');
-    await page.waitForSelector('[data-testid="all-tab-content"]', { timeout: 10000 });
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="all-tab-content"]', { timeout: getTestTimeout(10000) });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
     const techStackBadge = page.locator('[data-testid="tech-stack-badge"]').first();
     const toolsBadge = page.locator('[data-testid="automation-tools-badge"]').first();

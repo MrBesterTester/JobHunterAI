@@ -56,7 +56,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
           const heading = document.querySelector('[data-testid="microsoft-email-heading"]');
           return heading?.textContent?.match(/microsoft email/i) !== null;
         },
-        { timeout: 5000 }
+        { timeout: getTestTimeout(5000) }
       );
 
       // Check for Microsoft Email Integration card
@@ -74,7 +74,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
           const heading = document.querySelector('[data-testid="microsoft-email-heading"]');
           return heading?.textContent?.match(/microsoft email/i) !== null;
         },
-        { timeout: 5000 }
+        { timeout: getTestTimeout(5000) }
       );
 
       // Find Microsoft Email heading to locate the card
@@ -104,7 +104,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
           const heading = document.querySelector('[data-testid="microsoft-email-heading"]');
           return heading?.textContent?.match(/microsoft email/i) !== null;
         },
-        { timeout: 5000 }
+        { timeout: getTestTimeout(5000) }
       );
 
       // Check for either authentication button OR sync button (both are valid states)
@@ -274,7 +274,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
 
         // Look for source information in the modal using data-testid
         const modalSource = page.locator('[data-testid="modal-source"]');
-        await expect(modalSource).toBeVisible({ timeout: 5000 });
+        await expect(modalSource).toBeVisible({ timeout: getTestTimeout(5000) });
 
         // Get the source value and verify it's not empty
         const sourceText = await modalSource.textContent();
@@ -295,7 +295,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
     test('should sync Microsoft emails and display jobs', async ({ page }) => {
       test.setTimeout(getTestTimeout(60000)); // 60s → 90s under comprehensive load
       // Wait for dashboard to fully load
-      await expect(page.getByRole('heading', { name: /^JobHunter$/i })).toBeVisible({ timeout: 10000 });
+      await expect(page.getByRole('heading', { name: /^JobHunter$/i })).toBeVisible({ timeout: getTestTimeout(10000) });
       await page.waitForTimeout(2000); // Extra time for tabs to render
 
       // Step 1: Navigate to Intake tab
@@ -403,7 +403,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
     test('should verify stats update after Microsoft sync', async ({ page }) => {
       test.setTimeout(getTestTimeout(60000)); // 60s → 90s under comprehensive load
       // Wait for dashboard to fully load
-      await expect(page.getByRole('heading', { name: /^JobHunter$/i })).toBeVisible({ timeout: 10000 });
+      await expect(page.getByRole('heading', { name: /^JobHunter$/i })).toBeVisible({ timeout: getTestTimeout(10000) });
       await page.waitForTimeout(2000); // Extra time for tabs to render
 
       // Navigate to Intake tab
@@ -495,7 +495,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
         return;
       }
 
-      await expect(jobOpsFolderStatus).toBeVisible({ timeout: 5000 });
+      await expect(jobOpsFolderStatus).toBeVisible({ timeout: getTestTimeout(5000) });
 
       // Verify folder shows ready or creating status
       const statusText = await jobOpsFolderStatus.textContent();
@@ -551,7 +551,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       // Verify sync completed without errors
       // Wait for Microsoft sync button to re-enable (indicates sync completion)
       // ISSUE-049: Increased timeout from 60s to 120s based on diagnostic findings
-      await expect(microsoftSyncButton).toBeEnabled({ timeout: 120000 });
+      await expect(microsoftSyncButton).toBeEnabled({ timeout: getTestTimeout(120000) });
     });
 
     test('should preserve sync functionality with archiving enabled', async ({ page }) => {
@@ -577,7 +577,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
           const heading = document.querySelector('[data-testid="microsoft-email-heading"]');
           return heading?.textContent?.match(/microsoft email/i) !== null;
         },
-        { timeout: 5000 }
+        { timeout: getTestTimeout(5000) }
       );
 
       // Get initial job count from stats summary (use .first() to avoid grabbing from Recent Intake Activity)
@@ -738,7 +738,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
           const heading = document.querySelector('[data-testid="microsoft-email-heading"]');
           return heading?.textContent?.match(/microsoft email/i) !== null;
         },
-        { timeout: 5000 }
+        { timeout: getTestTimeout(5000) }
       );
 
       // Trigger sync to generate metrics
@@ -767,7 +767,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       await page.waitForTimeout(20000); // Wait for sync to complete
 
       // Check for sync completion indicator (increased timeout for slower sync operations)
-      await expect(microsoftSyncButton).toBeEnabled({ timeout: 60000 });
+      await expect(microsoftSyncButton).toBeEnabled({ timeout: getTestTimeout(60000) });
 
       // Check stats were updated (indicates archiving happened)
       const statElement = page.locator('[data-testid="stat-filtered"]').or(
@@ -810,7 +810,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       await page.waitForTimeout(20000); // Wait for processing
 
       // Wait for sync to complete (increased timeout for LLM processing + email operations)
-      await expect(syncButton).toBeEnabled({ timeout: 60000 });
+      await expect(syncButton).toBeEnabled({ timeout: getTestTimeout(60000) });
 
       // Check sync metrics - should show emails were processed
       const syncMetrics = page.locator('text=/discovered:|processed:/i');
@@ -890,7 +890,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       await page.waitForTimeout(20000);
 
       // Verify sync completed - button should be enabled again
-      await expect(microsoftSyncButton).toBeEnabled({ timeout: 10000 });
+      await expect(microsoftSyncButton).toBeEnabled({ timeout: getTestTimeout(10000) });
 
       // Navigate to New Jobs tab to verify Microsoft-sourced jobs
       await page.getByRole('button', { name: /^new jobs$/i }).click();
@@ -989,10 +989,10 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       const approveButtonInModal = page.locator('[data-testid="modal-overlay"]').getByRole('button', { name: /approve|reject/i }).first();
 
       // Verify modal has the job title heading
-      await expect(jobTitleInModal).toBeVisible({ timeout: 5000 });
+      await expect(jobTitleInModal).toBeVisible({ timeout: getTestTimeout(5000) });
 
       // Verify modal has action buttons (Approve/Reject)
-      await expect(approveButtonInModal).toBeVisible({ timeout: 5000 });
+      await expect(approveButtonInModal).toBeVisible({ timeout: getTestTimeout(5000) });
     });
 
     test('Item 4: Content Generation - should allow generating resume/cover letter', async ({ page }) => {
@@ -1078,7 +1078,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       await page.waitForTimeout(5000);
 
       // Verify app didn't crash - button should be enabled again
-      await expect(microsoftSyncButton).toBeEnabled({ timeout: 15000 });
+      await expect(microsoftSyncButton).toBeEnabled({ timeout: getTestTimeout(15000) });
 
       // Check for error message or success message
       const pageContent = await page.content();

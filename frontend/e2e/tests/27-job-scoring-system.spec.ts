@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { shouldRunTest } from '../test-config';
+import { getTestTimeout } from '../helpers/timeout-utils';
 
 // Conditionally skip entire file if disabled in test-config.ts
 // This will NOT show skip messages in test output
@@ -34,7 +35,7 @@ test.describe('Job Scoring System', () => {
     await rankedJobsTab.click();
 
     // Wait for the ranked jobs content to load
-    await page.waitForSelector('text=Ranked Jobs', { timeout: 10000 });
+    await page.waitForSelector('text=Ranked Jobs', { timeout: getTestTimeout(10000) });
 
     // Verify we're on the Ranked Jobs tab
     await expect(page.locator('h2:has-text("Ranked Jobs")')).toBeVisible();
@@ -46,7 +47,7 @@ test.describe('Job Scoring System', () => {
     await page.waitForLoadState('networkidle');
 
     // Wait for the table to load
-    await page.waitForSelector('table', { timeout: 10000 });
+    await page.waitForSelector('table', { timeout: getTestTimeout(10000) });
 
     // Check if score cells exist
     const scoreCells = page.locator('td').filter({ hasText: /^\d+\.\d$/ });
@@ -68,7 +69,7 @@ test.describe('Job Scoring System', () => {
     await page.waitForLoadState('networkidle');
 
     // Wait for job cards to load
-    await page.waitForSelector('[style*="border-radius: 8px"]', { timeout: 10000 });
+    await page.waitForSelector('[style*="border-radius: 8px"]', { timeout: getTestTimeout(10000) });
 
     // Check for score badges (they should have ⭐ emoji)
     const scoreBadges = page.locator('span:has-text("⭐")');
@@ -167,7 +168,7 @@ test.describe('Job Scoring System', () => {
     await page.waitForLoadState('networkidle');
 
     // Wait for table to load
-    await page.waitForSelector('table', { timeout: 10000 });
+    await page.waitForSelector('table', { timeout: getTestTimeout(10000) });
 
     // Click on "Score" header to sort (the column is labeled "Score" not "Total Score")
     const scoreHeader = page.locator('th:has-text("Score")');
@@ -193,7 +194,7 @@ test.describe('Job Scoring System', () => {
     await page.waitForLoadState('networkidle');
 
     // Wait for table rows
-    await page.waitForSelector('tbody tr', { timeout: 10000 });
+    await page.waitForSelector('tbody tr', { timeout: getTestTimeout(10000) });
 
     // Get the first clickable row
     const firstRow = page.locator('tbody tr').first();
@@ -262,7 +263,7 @@ test.describe('Job Scoring System', () => {
     await page.waitForLoadState('networkidle');
 
     // Wait for table
-    await page.waitForSelector('table', { timeout: 10000 });
+    await page.waitForSelector('table', { timeout: getTestTimeout(10000) });
 
     // Look for "N/A" text in score cells (indicating null scores)
     const naCells = page.locator('td:has-text("N/A")');
@@ -283,7 +284,7 @@ test.describe('Job Scoring System', () => {
     await page.waitForLoadState('networkidle');
 
     // Wait for job cards
-    await page.waitForSelector('[style*="border-radius: 8px"]', { timeout: 10000 });
+    await page.waitForSelector('[style*="border-radius: 8px"]', { timeout: getTestTimeout(10000) });
 
     // Find a job card with badges
     const jobCard = page.locator('[style*="border-radius: 8px"]').first();
