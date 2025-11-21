@@ -42,8 +42,9 @@ export async function switchToTab(
   // Calculate load-aware timeouts for ALL waits (ISSUE-057 fix)
   // Under comprehensive test load (4 parallel workers), UI operations take longer
   const baseTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 15000 : 5000;
+  // ISSUE-063 Option 4: Increased from 45s to 90s for Gmail sync scenarios that take >60s under load
   // ISSUE-063 Option 5: Allow custom timeout override for specific tests (e.g., Gmail sync with heavy load)
-  const jobCardsTimeout = customTimeout ?? (process.env.CI || process.env.COMPREHENSIVE_TESTS ? 45000 : 10000);
+  const jobCardsTimeout = customTimeout ?? (process.env.CI || process.env.COMPREHENSIVE_TESTS ? 90000 : 10000);
 
   // Click the tab button
   await page.click(tabButtonSelector);
