@@ -14,7 +14,15 @@ import { getTestTimeout } from '../helpers/timeout-utils';
 test.describe('Dashboard Statistics', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:3000');
-    // Wait for the app to load
+
+    // Wait for stats API call to complete
+    // This ensures stats are loaded before tests run (prevents race condition where UI shows 0)
+    await page.waitForResponse(
+      response => response.url().includes('/api/jobs/stats') && response.status() === 200,
+      { timeout: getTestTimeout(10000) }
+    );
+
+    // Wait for the app to load and render stats
     await page.waitForSelector('[data-testid="stat-filtered"]', { timeout: getTestTimeout(10000) });
   });
 
