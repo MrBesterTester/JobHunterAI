@@ -1,12 +1,13 @@
 ---
 id: ISSUE-063
 title: E2E Tests Timing Out in page.waitForFunction() After Tab Switch (Files 16 & 23)
-status: open
+status: fixed
 priority: high
 severity: medium
 component: frontend
 created: 2025-11-20
 updated: 2025-11-21
+fixed: 2025-11-21
 affects:
   - e2e-tests
   - comprehensive-test-suite

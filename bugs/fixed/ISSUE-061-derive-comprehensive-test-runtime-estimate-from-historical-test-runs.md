@@ -1,12 +1,13 @@
 ---
 id: ISSUE-061
 title: Derive comprehensive test runtime estimate from historical test runs
-status: open
+status: fixed
 priority: medium
 severity: enhancement
 component: frontend
 created: 2025-11-20
-updated: 2025-11-20
+updated: 2025-11-21
+fixed: 2025-11-21
 affects:
   - helper-scripts/run-comprehensive-tests.sh
 related:
