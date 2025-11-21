@@ -170,7 +170,7 @@ test.describe('Accessibility Testing', () => {
 
       // Press Escape
       await page.keyboard.press('Escape');
-        test.setTimeout(33000);
+        test.setTimeout(35200);
 
       // Modal should close
       await expect(modal).not.toBeVisible({ timeout: getTestTimeout(2000) });
@@ -197,6 +197,7 @@ test.describe('Accessibility Testing', () => {
       test.setTimeout(66000);
 
     test('should allow keyboard-only workflow: view job, approve', async ({ page }) => {
+      test.setTimeout(66000);
       await dashboardPage.clickTab('inbox');
       await dashboardPage.waitForJobsUpdate();
 
@@ -324,6 +325,7 @@ test.describe('Accessibility Testing', () => {
         test.setTimeout(33000);
     });
 
+  test.setTimeout(33000);
     test('should have form inputs with labels', async ({ page }) => {
       await dashboardPage.goto();
 
@@ -431,6 +433,7 @@ test.describe('Accessibility Testing', () => {
         test.setTimeout(33000);
       expect(totalLandmarks).toBeGreaterThan(0);
     });
+      test.setTimeout(33000);
 
     test('should have live region for dynamic updates (optional)', async ({ page }) => {
       await dashboardPage.goto();

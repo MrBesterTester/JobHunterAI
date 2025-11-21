@@ -232,6 +232,7 @@ test.describe('Error Handling & Edge Cases', () => {
 
   test.setTimeout(33000);
     test('should make long job description scrollable in modal', async ({ page }) => {
+      test.setTimeout(33000);
       await dashboardPage.goto();
       await dashboardPage.clickTab('all');
       await dashboardPage.waitForJobsUpdate();
@@ -383,6 +384,7 @@ test.describe('Error Handling & Edge Cases', () => {
 
   test.setTimeout(99001);
   test.describe('Additional Edge Cases', () => {
+    test.setTimeout(99001);
     test('should handle rapid tab switching without errors', async ({ page }) => {
       await dashboardPage.goto();
 
@@ -443,6 +445,7 @@ test.describe('Error Handling & Edge Cases', () => {
       await expect(dashboardPage.pageTitle).toBeVisible();
         test.setTimeout(33000);
     });
+      test.setTimeout(33000);
 
     test('should handle concurrent status updates on same job', async ({ page }) => {
       await dashboardPage.goto();

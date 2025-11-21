@@ -275,6 +275,7 @@ test.describe('Statistics & Real-time Updates', () => {
 
   test.setTimeout(33000);
     test('should verify filtered jobs match criteria', async ({ page }) => {
+      test.setTimeout(33000);
       // Get criteria
       const response = await page.request.get('http://localhost:8080/api/criteria');
       const criteria = await response.json();
@@ -462,6 +463,7 @@ test.describe('Statistics & Real-time Updates', () => {
     });
       test.setTimeout(33000);
 
+  test.setTimeout(33000);
     test('should recover from transient API failures', async ({ page }) => {
       // Simulate one-time API failure
       let failureCount = 0;

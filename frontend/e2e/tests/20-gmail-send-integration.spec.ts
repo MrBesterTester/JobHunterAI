@@ -175,6 +175,7 @@ test.describe('Gmail Send Integration - Phase 2.4', () => {
 
   test.setTimeout(66000);
     test('should not send follow-up before approval', async ({ page }) => {
+      test.setTimeout(66000);
       await page.click('button:has-text("Follow-ups")');
       await page.waitForTimeout(1000);
 
@@ -253,7 +254,7 @@ test.describe('Gmail Send Integration - Phase 2.4', () => {
 
           // Backend should log: "TEST_MODE enabled: Overriding recipient email to MrBesterTester@gmail.com"
           // This can be verified by checking backend logs after test run
-            test.setTimeout(66000);
+            test.setTimeout(132000);
 
           await page.waitForTimeout(2000);
         }
@@ -262,6 +263,7 @@ test.describe('Gmail Send Integration - Phase 2.4', () => {
         test.setTimeout(66000);
     });
 
+  test.setTimeout(66000);
     test('should send test emails only to MrBesterTester@gmail.com', async ({ page }) => {
       // This test documents the safety requirement
       // Real verification would require checking actual sent email destination

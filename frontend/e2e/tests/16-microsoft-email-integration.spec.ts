@@ -173,6 +173,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
   test.describe('Microsoft vs Gmail Source Differentiation', () => {
     test.setTimeout(66000);
     test('should show source badge on jobs from Microsoft email', async ({ page }) => {
+      test.setTimeout(66000);
       // Navigate to New Jobs tab
       await page.getByRole('button', { name: /^new jobs$/i }).click();
       await page.waitForTimeout(1000);
@@ -274,6 +275,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
     });
       test.setTimeout(104501);
 
+  test.setTimeout(104501);
     test('should show job source in job details', async ({ page }) => {
       // Navigate to New Jobs tab
       await page.getByRole('button', { name: /^new jobs$/i }).click();
@@ -483,6 +485,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
   });
     test.setTimeout(104501);
 
+  test.setTimeout(104501);
   test.describe('Email Archiving (Phase 2.8)', () => {
     test('should display Microsoft JobOps folder status', async ({ page }) => {
       // Navigate to Intake tab
@@ -859,6 +862,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
      *
        test.setTimeout(176000);
      * Assumes: OAuth authentication is already complete and JobOps folder has emails
+       test.setTimeout(176000);
      */
 
     test('Item 3: Email Sync & Extraction - should sync and filter emails correctly', async ({ page }) => {
@@ -943,6 +947,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
         // Test passes if sync completed without errors
           test.setTimeout(110001);
         expect(jobCount).toBeGreaterThanOrEqual(0);
+          test.setTimeout(110001);
       }
     });
 
@@ -1130,6 +1135,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       }
         test.setTimeout(264000);
 
+  test.setTimeout(264000);
       // Test passes if app is still responsive
       expect(await microsoftSyncButton.isEnabled()).toBeTruthy();
     });

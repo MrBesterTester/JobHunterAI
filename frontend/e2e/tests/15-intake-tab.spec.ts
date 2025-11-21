@@ -322,6 +322,7 @@ test.describe('Intake Tab', () => {
 
   test.setTimeout(33000);
     test('should display integration cards stacked on mobile', async () => {
+      test.setTimeout(33000);
       // Set mobile viewport
       await page.setViewportSize({ width: 375, height: 667 });
 

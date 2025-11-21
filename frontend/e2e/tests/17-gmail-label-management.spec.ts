@@ -216,6 +216,7 @@ test.describe('Phase 2.9: Gmail Label Management', () => {
 
   test.setTimeout(264000);
   test('should handle multiple rapid rejections', async ({ page }) => {
+    test.setTimeout(264000);
     // This test verifies that rapidly rejecting multiple jobs doesn't cause race conditions
     // or data corruption
 

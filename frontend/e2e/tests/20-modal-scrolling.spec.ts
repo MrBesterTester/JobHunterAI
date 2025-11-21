@@ -195,6 +195,7 @@ test.describe('Modal Scrolling', () => {
 
   test.setTimeout(66000);
   test('should close modal when clicking X button after scrolling', async ({ page }) => {
+    test.setTimeout(66000);
     await page.click('button:has-text("Filtered")');
     await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
@@ -223,6 +224,7 @@ test.describe('Modal Scrolling', () => {
   });
     test.setTimeout(33000);
 
+  test.setTimeout(33000);
   test('should close modal when clicking overlay after scrolling', async ({ page }) => {
     await page.click('button:has-text("Filtered")');
     await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });

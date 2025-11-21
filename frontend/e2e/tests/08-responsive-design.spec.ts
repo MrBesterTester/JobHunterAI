@@ -317,6 +317,7 @@ test.describe('Responsive Design & Layout', () => {
 
   test.setTimeout(34147);
     test('should handle orientation changes gracefully', async ({ page }) => {
+      test.setTimeout(34147);
       // Portrait
       await setViewportSize(page, 375, 667);
       await dashboardPage.goto();

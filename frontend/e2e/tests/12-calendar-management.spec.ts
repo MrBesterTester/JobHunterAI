@@ -309,6 +309,7 @@ test.describe('Calendar Management - Phase 5.1', () => {
 
   test.setTimeout(132000);
     test('should create interview via API', async ({ page }) => {
+      test.setTimeout(132000);
       let interviewCreated = false;
 
       page.on('response', response => {

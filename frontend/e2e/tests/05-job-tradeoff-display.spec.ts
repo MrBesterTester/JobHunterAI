@@ -311,6 +311,7 @@ test.describe('Job Trade-off Display', () => {
 
   test.setTimeout(99001);
   test('should close modal by clicking overlay', async ({ page }) => {
+    test.setTimeout(99001);
     await page.locator('[data-testid="job-card"]').first().click();
     await page.waitForSelector('[data-testid="modal-overlay"]');
 

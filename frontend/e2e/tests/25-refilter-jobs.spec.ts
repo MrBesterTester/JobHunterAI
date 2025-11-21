@@ -394,6 +394,7 @@ test.describe('Re-filter Jobs Button and Dropdown', () => {
 
   test.setTimeout(33000);
   test('should be accessible via keyboard navigation', async ({ page }) => {
+    test.setTimeout(33000);
     // Tab to the dropdown
     await page.keyboard.press('Tab');
     await page.keyboard.press('Tab');

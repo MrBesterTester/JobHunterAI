@@ -173,6 +173,7 @@ test.describe('Job Scoring System', () => {
 
   test.setTimeout(132000);
   test('should be able to sort by different criteria', async ({ page }) => {
+    test.setTimeout(132000);
     // Navigate to Ranked Jobs tab
     await page.locator('text=Ranked Jobs').first().click();
     await page.waitForLoadState('networkidle');
@@ -229,6 +230,7 @@ test.describe('Job Scoring System', () => {
   });
     test.setTimeout(198001);
 
+  test.setTimeout(198001);
   test('weight adjustment should update and recalculate scores', async ({ page }) => {
     // Navigate to Ranked Jobs tab
     await page.locator('text=Ranked Jobs').first().click();
@@ -295,6 +297,7 @@ test.describe('Job Scoring System', () => {
     expect(rowCount).toBeGreaterThan(0);
       test.setTimeout(66000);
   });
+    test.setTimeout(66000);
 
   test('score badge should appear as first badge on job cards', async ({ page }) => {
     // Go to New tab to see job cards
