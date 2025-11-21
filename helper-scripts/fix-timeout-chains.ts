@@ -101,9 +101,26 @@ function applyFix(
     const lines = content.split('\n');
 
     const setTimeoutLine = findSetTimeoutLine(filePath, testLine);
+
     if (!setTimeoutLine) {
-      console.error(`  ⚠️  Warning: Could not find test.setTimeout() near line ${testLine}`);
-      return false;
+      // No existing setTimeout - ADD one right after the test declaration
+      const testLineIndex = testLine - 1; // Convert to 0-indexed
+      const testLineContent = lines[testLineIndex];
+
+      // Detect indentation from test line
+      const indentMatch = testLineContent.match(/^(\s*)/);
+      const indent = indentMatch ? indentMatch[1] + '  ' : '  '; // Add 2 spaces to test indent
+
+      // Create setTimeout line
+      const setTimeoutCode = isLoadAware
+        ? `${indent}test.setTimeout(getTestTimeout(${newTimeout}));`
+        : `${indent}test.setTimeout(${newTimeout});`;
+
+      // Insert after test declaration line
+      lines.splice(testLineIndex + 1, 0, setTimeoutCode);
+      fs.writeFileSync(filePath, lines.join('\n'), 'utf-8');
+
+      return true;
     }
 
     const line = lines[setTimeoutLine - 1]; // Convert to 0-indexed
