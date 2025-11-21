@@ -274,7 +274,8 @@ test.describe('Gmail Sync Integration', () => {
     // Wait for approved count to increase (with load-aware timeout)
     // Use longer timeout during comprehensive tests or CI to handle system load
     // Increased from 20s to 45s to align with switchToTab helper timeout (ISSUE-057)
-    const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 45000 : 10000;
+    // Increased from 45s to 90s based on ISSUE-063 - database + stats operations take ~61s under comprehensive load (4 workers)
+    const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 90000 : 10000;
     await page.waitForFunction(
       (expectedCount) => {
         const statElement = document.querySelector('[data-testid="stat-approved"]');

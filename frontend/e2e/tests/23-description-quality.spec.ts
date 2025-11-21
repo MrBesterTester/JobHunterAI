@@ -102,7 +102,8 @@ test.describe('Condensed Description Quality', () => {
     let foundSubstantialDescription = false;
 
     // Use load-aware timeout: 40s under load, 20s in isolation (LLM operations are slow)
-    const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 40000 : 20000;
+    // Increased from 40s to 90s based on ISSUE-063 - LLM operations take ~64s under comprehensive load (4 workers)
+    const pollTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 90000 : 20000;
 
     for (let i = 0; i < count; i++) {
       const card = jobCards.nth(i);
