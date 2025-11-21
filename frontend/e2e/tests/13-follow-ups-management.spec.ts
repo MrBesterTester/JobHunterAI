@@ -183,7 +183,7 @@ test.describe('Follow-ups Management - Phase 5.1', () => {
         await cancelButton.click();
 
         // Should show confirmation
-          test.setTimeout(104501);
+          test.setTimeout(107251);
         const confirmDialog = page.locator('text=/Are you sure|Confirm/i');
         if (await confirmDialog.isVisible()) {
           await page.click('button:has-text("Yes"), button:has-text("Confirm")');

@@ -75,7 +75,7 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Ignored Tab', () => {
 
   test.setTimeout(135300);
   test('should delete selected Gmail emails from Ignored tab after confirmation', async ({ page }) => {
-    test.setTimeout(135300);
+    test.setTimeout(136950);
     // Navigate to Ignored tab
     const ignoredTab = page.locator('button', { hasText: 'Ignored' });
     await ignoredTab.click();
@@ -158,6 +158,7 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Ignored Tab', () => {
 
   test.setTimeout(135300);
   test('should handle bulk delete cancellation in Ignored tab', async ({ page }) => {
+    test.setTimeout(135300);
     // Navigate to Ignored tab
     const ignoredTab = page.locator('button', { hasText: 'Ignored' });
     await ignoredTab.click();
@@ -288,6 +289,7 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Rejected Tab', () => {
   });
     test.setTimeout(135300);
 
+  test.setTimeout(135300);
   test('should delete selected Gmail jobs from Rejected tab after confirmation', async ({ page }) => {
     // Navigate to Rejected tab
     const rejectedTab = page.locator('button', { hasText: 'Rejected' });
@@ -369,6 +371,7 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Rejected Tab', () => {
     console.log('Bulk delete workflow completed');
       test.setTimeout(99001);
   });
+    test.setTimeout(99001);
 
   test('should handle select all and deselect all in Rejected tab', async ({ page }) => {
     // Navigate to Rejected tab

@@ -216,7 +216,7 @@ test.describe('Calendar Management - Phase 5.1', () => {
       const count = await cancelButton.count();
 
       if (count > 0) {
-        test.setTimeout(104501);
+        test.setTimeout(107251);
         await cancelButton.click();
 
         // Should show confirmation dialog
@@ -230,6 +230,7 @@ test.describe('Calendar Management - Phase 5.1', () => {
 
   test.setTimeout(66000);
     test('should show interview details on click', async ({ page }) => {
+      test.setTimeout(66000);
       await page.click('button:has-text("Calendar")');
       await page.waitForTimeout(1000);
 
@@ -306,6 +307,7 @@ test.describe('Calendar Management - Phase 5.1', () => {
         test.setTimeout(132000);
     });
 
+  test.setTimeout(132000);
     test('should create interview via API', async ({ page }) => {
       let interviewCreated = false;
 

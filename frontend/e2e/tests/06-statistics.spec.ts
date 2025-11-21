@@ -151,6 +151,7 @@ test.describe('Statistics & Real-time Updates', () => {
 
   test.setTimeout(33000);
     test('should update statistics without page refresh', async ({ page }) => {
+      test.setTimeout(33000);
       await dashboardPage.clickTab('inbox');
       await dashboardPage.waitForJobsUpdate();
 
@@ -272,6 +273,7 @@ test.describe('Statistics & Real-time Updates', () => {
     });
       test.setTimeout(33000);
 
+  test.setTimeout(33000);
     test('should verify filtered jobs match criteria', async ({ page }) => {
       // Get criteria
       const response = await page.request.get('http://localhost:8080/api/criteria');
@@ -458,6 +460,7 @@ test.describe('Statistics & Real-time Updates', () => {
       }
         test.setTimeout(33000);
     });
+      test.setTimeout(33000);
 
     test('should recover from transient API failures', async ({ page }) => {
       // Simulate one-time API failure

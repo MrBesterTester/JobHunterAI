@@ -339,6 +339,7 @@ test.describe('Re-filter Jobs Button and Dropdown', () => {
 
   test.setTimeout(93501);
   test('should maintain button state after page navigation', async ({ page }) => {
+    test.setTimeout(93501);
     const dropdown = page.locator('select').filter({ hasText: /Last Sync Only/i });
 
     // Verify dropdown is visible initially
@@ -391,6 +392,7 @@ test.describe('Re-filter Jobs Button and Dropdown', () => {
   });
     test.setTimeout(33000);
 
+  test.setTimeout(33000);
   test('should be accessible via keyboard navigation', async ({ page }) => {
     // Tab to the dropdown
     await page.keyboard.press('Tab');

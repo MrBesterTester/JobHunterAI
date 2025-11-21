@@ -117,6 +117,7 @@ test.describe('Accessibility Testing', () => {
 
   test.setTimeout(66000);
     test('should trap focus within modal when open', async ({ page }) => {
+      test.setTimeout(66000);
       await dashboardPage.clickTab('all');
       await dashboardPage.waitForJobsUpdate();
 
@@ -149,6 +150,7 @@ test.describe('Accessibility Testing', () => {
     });
       test.setTimeout(35200);
 
+  test.setTimeout(35200);
     test('should close modal with Escape key', async ({ page }) => {
       await dashboardPage.clickTab('all');
       await dashboardPage.waitForJobsUpdate();
@@ -192,6 +194,7 @@ test.describe('Accessibility Testing', () => {
       expect(focusedElement).toBeTruthy();
         test.setTimeout(66000);
     });
+      test.setTimeout(66000);
 
     test('should allow keyboard-only workflow: view job, approve', async ({ page }) => {
       await dashboardPage.clickTab('inbox');
@@ -318,6 +321,7 @@ test.describe('Accessibility Testing', () => {
       // Should use semantic HTML
         test.setTimeout(33000);
       expect(hasMain || hasHeadings).toBe(true);
+        test.setTimeout(33000);
     });
 
     test('should have form inputs with labels', async ({ page }) => {
@@ -424,6 +428,7 @@ test.describe('Accessibility Testing', () => {
       // Should have at least some landmarks
         test.setTimeout(33000);
       const totalLandmarks = landmarks.reduce((sum, l) => sum + l.count, 0);
+        test.setTimeout(33000);
       expect(totalLandmarks).toBeGreaterThan(0);
     });
 

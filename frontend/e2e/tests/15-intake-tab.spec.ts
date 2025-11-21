@@ -282,6 +282,7 @@ test.describe('Intake Tab', () => {
   test.describe('Loading States', () => {
     test.setTimeout(33000);
     test('should show loading indicator when Intake tab first loads', async () => {
+      test.setTimeout(33000);
       const intakeTab = page.getByRole('button', { name: /^intake$/i });
       await intakeTab.click();
 
@@ -319,6 +320,7 @@ test.describe('Intake Tab', () => {
     });
       test.setTimeout(33000);
 
+  test.setTimeout(33000);
     test('should display integration cards stacked on mobile', async () => {
       // Set mobile viewport
       await page.setViewportSize({ width: 375, height: 667 });

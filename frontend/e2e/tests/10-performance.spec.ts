@@ -314,6 +314,7 @@ test.describe('Performance Validation', () => {
   test.describe('Runtime Performance', () => {
     test.setTimeout(66000);
     test('should maintain FPS during animations', async ({ page }) => {
+      test.setTimeout(66000);
       await dashboardPage.goto();
 
       // Trigger animations (tab switching, modal opening)

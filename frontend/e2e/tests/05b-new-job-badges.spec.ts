@@ -661,6 +661,7 @@ test.describe('New Job Card Badges - Responsive Layout', () => {
 
   test.setTimeout(66000);
   test('long tech stack and tool names should truncate with ellipsis on narrow screens', async ({ page }) => {
+    test.setTimeout(66000);
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('http://localhost:3000');
     await page.click('button:has-text("All")');

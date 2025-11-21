@@ -194,6 +194,7 @@ test.describe('Job Status Updates', () => {
 
   test.setTimeout(66000);
     test('should allow approving multiple jobs in sequence', async ({ page }) => {
+      test.setTimeout(66000);
       await dashboardPage.clickTab('inbox');
       await dashboardPage.waitForJobsUpdate();
 
@@ -391,6 +392,7 @@ test.describe('Job Status Updates', () => {
     });
       test.setTimeout(33000);
 
+  test.setTimeout(33000);
     test('should handle API errors gracefully', async ({ page }) => {
       // Simulate API failure
       await page.route('**/api/jobs/*/status', (route) => {
@@ -450,6 +452,7 @@ test.describe('Job Status Updates', () => {
 
   test.setTimeout(66000);
   // Run serially to avoid race conditions with shared database state
+    test.setTimeout(66000);
   test.describe.serial('Edge Cases & Error Handling', () => {
     test('should handle rapid sequential approvals', async ({ page }) => {
       await dashboardPage.clickTab('inbox');
@@ -487,6 +490,7 @@ test.describe('Job Status Updates', () => {
       const finalCount = await dashboardPage.getVisibleJobCount();
         test.setTimeout(33000);
       expect(finalCount).toBe(initialCount - 3);
+        test.setTimeout(33000);
     });
 
     test('should maintain data consistency after status updates', async ({ page }) => {

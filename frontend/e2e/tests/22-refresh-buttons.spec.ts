@@ -278,6 +278,7 @@ test.describe('Refresh Buttons', () => {
 
   test.setTimeout(33000);
   test('global refresh button should clear all caches', async ({ page }) => {
+    test.setTimeout(33000);
     // Navigate to All tab
     await switchToTab(page, 'all');
 

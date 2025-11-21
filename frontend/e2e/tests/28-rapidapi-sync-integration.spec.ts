@@ -348,6 +348,7 @@ test.describe('RapidAPI JSearch Sync Integration', () => {
 
   test.setTimeout(33000);
   test('should display current page number in RapidAPI card', async () => {
+    test.setTimeout(33000);
     // Navigate to Intake tab
     const intakeTab = page.getByRole('button', { name: /^intake$/i });
     await intakeTab.click();

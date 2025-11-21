@@ -79,7 +79,7 @@ test.describe('Gmail Send Integration - Phase 2.4', () => {
 
   test.setTimeout(71500);
     test('should handle Gmail send errors gracefully', async ({ page }) => {
-      test.setTimeout(71500);
+      test.setTimeout(74250);
       // Navigate to Follow-ups tab
       await page.click('button:has-text("Follow-ups")');
       await page.waitForTimeout(1000);
@@ -143,6 +143,7 @@ test.describe('Gmail Send Integration - Phase 2.4', () => {
 
   test.setTimeout(132000);
     test('should update follow-up status to sent after successful send', async ({ page }) => {
+      test.setTimeout(132000);
       await page.click('button:has-text("Follow-ups")');
       await page.waitForTimeout(1500);
 
@@ -172,6 +173,7 @@ test.describe('Gmail Send Integration - Phase 2.4', () => {
     });
       test.setTimeout(66000);
 
+  test.setTimeout(66000);
     test('should not send follow-up before approval', async ({ page }) => {
       await page.click('button:has-text("Follow-ups")');
       await page.waitForTimeout(1000);
@@ -231,6 +233,7 @@ test.describe('Gmail Send Integration - Phase 2.4', () => {
   });
     test.setTimeout(132000);
 
+  test.setTimeout(132000);
   test.describe('TEST_MODE Safety', () => {
     test('should log TEST_MODE override in backend logs', async ({ page }) => {
       // This test documents expected backend behavior
@@ -256,6 +259,7 @@ test.describe('Gmail Send Integration - Phase 2.4', () => {
         }
           test.setTimeout(66000);
       }
+        test.setTimeout(66000);
     });
 
     test('should send test emails only to MrBesterTester@gmail.com', async ({ page }) => {

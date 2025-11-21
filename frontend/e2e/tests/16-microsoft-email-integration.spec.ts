@@ -100,6 +100,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
 
   test.setTimeout(66000);
     test('should display Authenticate button when not authenticated', async ({ page }) => {
+      test.setTimeout(66000);
       // Navigate to Intake tab
       await page.getByRole('button', { name: /^intake$/i }).click();
 
@@ -170,6 +171,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
 
   test.setTimeout(66000);
   test.describe('Microsoft vs Gmail Source Differentiation', () => {
+    test.setTimeout(66000);
     test('should show source badge on jobs from Microsoft email', async ({ page }) => {
       // Navigate to New Jobs tab
       await page.getByRole('button', { name: /^new jobs$/i }).click();
@@ -270,6 +272,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       }
         test.setTimeout(104501);
     });
+      test.setTimeout(104501);
 
     test('should show job source in job details', async ({ page }) => {
       // Navigate to New Jobs tab
@@ -478,6 +481,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
     });
       test.setTimeout(104501);
   });
+    test.setTimeout(104501);
 
   test.describe('Email Archiving (Phase 2.8)', () => {
     test('should display Microsoft JobOps folder status', async ({ page }) => {
@@ -853,6 +857,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
      * - Item 5: Error Handling
        test.setTimeout(176000);
      *
+       test.setTimeout(176000);
      * Assumes: OAuth authentication is already complete and JobOps folder has emails
      */
 
@@ -936,6 +941,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
 
   test.setTimeout(110001);
         // Test passes if sync completed without errors
+          test.setTimeout(110001);
         expect(jobCount).toBeGreaterThanOrEqual(0);
       }
     });
@@ -1122,6 +1128,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
         console.log('No errors - sync completed (possibly with 0 new jobs)');
           test.setTimeout(264000);
       }
+        test.setTimeout(264000);
 
       // Test passes if app is still responsive
       expect(await microsoftSyncButton.isEnabled()).toBeTruthy();

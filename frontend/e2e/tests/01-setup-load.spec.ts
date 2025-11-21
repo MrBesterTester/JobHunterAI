@@ -173,6 +173,7 @@ test.describe('Setup & Initial Load', () => {
 
   test.setTimeout(33000);
     test('should have API response times under 100ms', async ({ page }) => {
+      test.setTimeout(33000);
       const measurements: number[] = [];
       const requestTimes = new Map<string, number>();
 

@@ -145,6 +145,7 @@ test.describe('Failed and Duplicates Tabs', () => {
 
   test.setTimeout(66000);
   test('Non-Job Emails counter should match Ignored tab count', async ({ page }) => {
+    test.setTimeout(66000);
     // Get the ignored counter value
     const ignoredStat = page.locator('[data-testid="stat-ignored"]');
     await expect(ignoredStat).toBeVisible();

@@ -219,6 +219,7 @@ test.describe('Responsive Design & Layout', () => {
 
   test.setTimeout(33000);
     test('should have modals occupy full screen or near-full', async ({ page }) => {
+      test.setTimeout(33000);
       await dashboardPage.goto();
       await dashboardPage.clickTab('all');
       await dashboardPage.waitForJobsUpdate();
@@ -314,6 +315,7 @@ test.describe('Responsive Design & Layout', () => {
     });
       test.setTimeout(34147);
 
+  test.setTimeout(34147);
     test('should handle orientation changes gracefully', async ({ page }) => {
       // Portrait
       await setViewportSize(page, 375, 667);

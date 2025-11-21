@@ -524,6 +524,7 @@ test.describe('Timeline View - Phase 5.1', () => {
       test.setTimeout(66000);
 
     test('should show days since last contact', async ({ page }) => {
+      test.setTimeout(66000);
       await page.click('button:has-text("Applied")');
       await page.waitForTimeout(1000);
 
