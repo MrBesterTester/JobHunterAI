@@ -15,7 +15,10 @@
 #   4. REPORT & NOTIFY (JSON report + desktop notification)
 #
 # Usage:
-#   ./helper-scripts/run-comprehensive-tests.sh
+#   ./helper-scripts/run-comprehensive-tests.sh           # Run all tests
+#   ./helper-scripts/run-comprehensive-tests.sh --e2e-only      # Run only E2E tests
+#   ./helper-scripts/run-comprehensive-tests.sh --backend-only  # Run only backend tests
+#   ./helper-scripts/run-comprehensive-tests.sh --frontend-only # Run only frontend tests
 #
 # Legacy Bash Version:
 #   The original bash implementation is preserved as:
@@ -126,8 +129,9 @@ cd "$PROJECT_ROOT/frontend"
 echo -e "${GREEN}🚀 Starting comprehensive test orchestrator...${NC}"
 echo ""
 
+# Pass all arguments through to the orchestrator
 # Run via npm script (which calls ts-node)
-npm run test:comprehensive
+npm run test:comprehensive -- "$@"
 
 # Exit with orchestrator's exit code
 exit $?
