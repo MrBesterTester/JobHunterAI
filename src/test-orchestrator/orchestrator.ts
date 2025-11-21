@@ -860,12 +860,7 @@ export class TestOrchestrator {
 
       try {
         writeFileSync(envFilePath, envContent);
-        // Verify file was written successfully (filesystem sync)
-        if (!require('fs').existsSync(envFilePath)) {
-          throw new Error('File write succeeded but file not visible (filesystem cache issue?)');
-        }
         console.log('  ✅ Created .env.playwright for worker process propagation');
-        console.log(`  🔍 Verified file exists at: ${envFilePath}`);
       } catch (err) {
         console.warn(`  ⚠️  Failed to write .env.playwright: ${err}`);
         // Continue anyway - spawn env vars may still work
@@ -891,11 +886,6 @@ export class TestOrchestrator {
 
       child.stdout?.on('data', (data) => {
         stdout += data.toString();
-        // Display config-level debug output for ISSUE-056 debugging
-        const str = data.toString();
-        if (str.includes('🔍') || str.includes('🎭') || str.includes('dotenv')) {
-          process.stdout.write(str);
-        }
       });
 
       child.stderr?.on('data', (data) => {
@@ -903,10 +893,6 @@ export class TestOrchestrator {
         // Show test progress (list reporter outputs to stderr)
         const lines = data.toString().split('\n');
         for (const line of lines) {
-          // Also show worker-level debug output for ISSUE-056 debugging
-          if (line.includes('[WORKER DEBUG]')) {
-            console.log(`  ${line.trim()}`);
-          }
           if (line.includes('[chromium]') || line.includes('›')) {
             testCount++;
             this.updateProgress('e2e', { currentTest: line.trim(), testsRun: testCount });

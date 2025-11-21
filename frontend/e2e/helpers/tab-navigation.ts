@@ -39,24 +39,8 @@ export async function switchToTab(
 
   // Calculate load-aware timeouts for ALL waits (ISSUE-057 fix)
   // Under comprehensive test load (4 parallel workers), UI operations take longer
-
-  // DEBUG: FORCE visibility of env var by throwing if not set during comprehensive tests
-  // This will make the test fail with a descriptive error showing what the worker sees
-  const comprehensiveTestsValue = process.env.COMPREHENSIVE_TESTS;
-  const ciValue = process.env.CI;
-
-  // If this times out at 10s, force an explicit error with diagnostic info
-  const baseTimeout = ciValue || comprehensiveTestsValue ? 15000 : 5000;
-  const jobCardsTimeout = ciValue || comprehensiveTestsValue ? 45000 : 10000;
-
-  // DIAGNOSTIC: If jobCardsTimeout is 10000, this means env var is NOT set
-  if (jobCardsTimeout === 10000 && tab === 'new') {
-    // Force diagnostic output before the timeout happens
-    throw new Error(`[ISSUE-056 DIAGNOSTIC] switchToTab('${tab}') using 10s timeout (NOT 45s)! ` +
-      `CI=${ciValue}, COMPREHENSIVE_TESTS=${comprehensiveTestsValue}, ` +
-      `baseTimeout=${baseTimeout}, jobCardsTimeout=${jobCardsTimeout}. ` +
-      `This means the env var did NOT propagate to this worker!`);
-  }
+  const baseTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 15000 : 5000;
+  const jobCardsTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 45000 : 10000;
 
   // Click the tab button
   await page.click(tabButtonSelector);

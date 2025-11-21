@@ -13,29 +13,14 @@ import * as dotenv from 'dotenv';
  * that Node.js child processes (Playwright workers) inherit them reliably.
  */
 const envFile = path.join(__dirname, '.env.playwright');
-
-// Log before attempting to load
-console.log(`🔍 Playwright config: Looking for ${envFile}`);
-console.log(`🔍 File exists: ${require('fs').existsSync(envFile)}`);
-
 const result = dotenv.config({ path: envFile, override: true });
 
-if (result.error) {
-  // File doesn't exist (running in standalone mode)
-  console.log('ℹ️  Playwright: No .env.playwright found (running in standalone mode)');
-  console.log(`   Error: ${result.error.message}`);
-} else {
+if (!result.error && result.parsed) {
   console.log('🎭 Playwright: Loaded .env.playwright for worker process propagation');
-  // Log loaded env vars
-  if (result.parsed) {
-    Object.entries(result.parsed).forEach(([key, value]) => {
-      console.log(`  ✅ Set ${key}=${value}`);
-    });
-  }
+  Object.entries(result.parsed).forEach(([key, value]) => {
+    console.log(`  ✅ Set ${key}=${value}`);
+  });
 }
-
-// CRITICAL: Log the actual process.env value
-console.log(`🔍 process.env.COMPREHENSIVE_TESTS = ${process.env.COMPREHENSIVE_TESTS}`);
 
 
 /**
@@ -86,10 +71,12 @@ export default defineConfig({
     video: 'retain-on-failure',
 
     // Maximum time for each action (click, fill, etc.)
-    actionTimeout: 10 * 1000,
+    // ISSUE-056: Load-aware timeout - comprehensive tests need longer timeouts due to 4 parallel workers
+    actionTimeout: process.env.COMPREHENSIVE_TESTS ? 60 * 1000 : 10 * 1000,
 
     // Navigation timeout
-    navigationTimeout: 30 * 1000,
+    // ISSUE-056: Load-aware timeout - comprehensive tests need longer timeouts due to 4 parallel workers
+    navigationTimeout: process.env.COMPREHENSIVE_TESTS ? 60 * 1000 : 30 * 1000,
   },
 
   // Test projects for different browsers
