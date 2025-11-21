@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestTimeout } from '../helpers/timeout-utils';
 import { shouldRunTest } from '../test-config';
 
 // Conditionally skip entire file if disabled in test-config.ts
@@ -63,7 +64,7 @@ test.describe('Job Card Summary Section', () => {
     await page.waitForTimeout(500); // Give React time to update state
     // Try to wait for either job cards or empty state message
     try {
-      await page.waitForSelector('[data-testid="job-card"]', { timeout: 5000 });
+      await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(5000) });
     } catch (e) {
       // No job cards - that's okay, tab might be empty
     }
@@ -160,7 +161,7 @@ test.describe('Job Card Summary Section', () => {
     const testJobCard = page.locator('[data-testid="job-card"]').filter({ hasText: 'E2E Test Company' });
 
     // This will automatically retry until the element is visible or timeout
-    await expect(testJobCard).toBeVisible({ timeout: 10000 });
+    await expect(testJobCard).toBeVisible({ timeout: getTestTimeout(10000) });
 
     // Check if Summary section exists
     const summarySection = testJobCard.locator('[data-testid="job-summary"]');

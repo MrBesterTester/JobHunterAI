@@ -4,6 +4,7 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { getTestTimeout } from '../helpers/timeout-utils';
 
 test.describe('Follow-ups Management - Phase 5.1', () => {
   test.beforeEach(async ({ page }) => {
@@ -134,7 +135,7 @@ test.describe('Follow-ups Management - Phase 5.1', () => {
         await approveButton.click();
 
         // Should show confirmation or success message - use .first() to avoid matching tab button
-        await expect(page.locator('text=/Approved|Success/i').first()).toBeVisible({ timeout: 5000 });
+        await expect(page.locator('text=/Approved|Success/i').first()).toBeVisible({ timeout: getTestTimeout(5000) });
       }
     });
 
@@ -155,7 +156,7 @@ test.describe('Follow-ups Management - Phase 5.1', () => {
 
         if (sendCount > 0) {
           await sendButton.click();
-          await expect(page.locator('text=/Sent|Email sent/i')).toBeVisible({ timeout: 5000 });
+          await expect(page.locator('text=/Sent|Email sent/i')).toBeVisible({ timeout: getTestTimeout(5000) });
         }
       }
     });
@@ -174,7 +175,7 @@ test.describe('Follow-ups Management - Phase 5.1', () => {
         const confirmDialog = page.locator('text=/Are you sure|Confirm/i');
         if (await confirmDialog.isVisible()) {
           await page.click('button:has-text("Yes"), button:has-text("Confirm")');
-          await expect(page.locator('text=/Cancelled|Skipped/i')).toBeVisible({ timeout: 5000 });
+          await expect(page.locator('text=/Cancelled|Skipped/i')).toBeVisible({ timeout: getTestTimeout(5000) });
         }
       }
     });

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestTimeout } from '../helpers/timeout-utils';
 import { shouldRunTest } from '../test-config';
 
 // Conditionally skip entire file if disabled in test-config.ts
@@ -179,7 +180,7 @@ test.describe('Re-filter Jobs Button and Dropdown', () => {
 
     // Should briefly show "Re-filtering..." (might be too fast to catch)
     try {
-      await expect(page.getByRole('button', { name: /Re-filtering/i })).toBeVisible({ timeout: 1000 });
+      await expect(page.getByRole('button', { name: /Re-filtering/i })).toBeVisible({ timeout: getTestTimeout(1000) });
     } catch (e) {
       // OK if operation completes too quickly
     }
@@ -350,11 +351,11 @@ test.describe('Re-filter Jobs Button and Dropdown', () => {
 
     // Wait for a known Intake tab element to be visible (not the dropdown)
     const syncButton = page.getByRole('button', { name: /Sync All Sources/i });
-    await expect(syncButton).toBeVisible({ timeout: 15000 });
+    await expect(syncButton).toBeVisible({ timeout: getTestTimeout(15000) });
 
     // Get the dropdown again after navigation (create fresh locator)
     const dropdownAfterNav = page.locator('select').filter({ hasText: /Last Sync Only/i });
-    await expect(dropdownAfterNav).toBeVisible({ timeout: 10000 });
+    await expect(dropdownAfterNav).toBeVisible({ timeout: getTestTimeout(10000) });
 
     // Dropdown should reset to default ("Last Sync Only") since it's component state
     const dropdownValue = await dropdownAfterNav.inputValue();

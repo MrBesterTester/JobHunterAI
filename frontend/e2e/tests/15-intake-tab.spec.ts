@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
+import { getTestTimeout } from '../helpers/timeout-utils';
 
 /**
  * Test Suite 15: Intake Tab Tests
@@ -23,7 +24,7 @@ test.describe('Intake Tab', () => {
     await page.goto('/');
 
     // Wait for dashboard to load
-    await expect(page.getByRole('heading', { name: /^JobHunter$/i })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: /^JobHunter$/i })).toBeVisible({ timeout: getTestTimeout(10000) });
   });
 
   test.afterEach(async () => {

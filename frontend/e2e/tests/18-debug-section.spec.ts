@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestTimeout } from '../helpers/timeout-utils';
 import { shouldRunTest } from '../test-config';
 import { switchToTab } from '../helpers/tab-navigation';
 
@@ -87,7 +88,7 @@ test.describe('Job Card Debug Section', () => {
     await page.click('button:has-text("Filtered")');
 
     try {
-      await page.waitForSelector('[data-testid="job-card"]', { timeout: 5000 });
+      await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(5000) });
 
       // Check multiple job cards to find one with LLM extraction
       const jobCards = page.locator('[data-testid="job-card"]');
@@ -177,13 +178,13 @@ test.describe('Job Card Debug Section', () => {
       await page.click(`button:has-text("${tab}")`);
 
       try {
-        await page.waitForSelector('[data-testid="job-card"]', { timeout: 3000 });
+        await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(3000) });
 
         const jobCard = page.locator('[data-testid="job-card"]').first();
         const debugSection = jobCard.locator('[data-testid="debug-section"]');
 
         // Debug section should be visible on all tabs
-        await expect(debugSection).toBeVisible({ timeout: 2000 });
+        await expect(debugSection).toBeVisible({ timeout: getTestTimeout(2000) });
       } catch (e) {
         // No jobs in this tab, skip
         console.log(`No jobs in ${tab} tab`);

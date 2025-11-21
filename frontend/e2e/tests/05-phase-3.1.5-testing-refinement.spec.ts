@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestTimeout } from '../helpers/timeout-utils';
 import { shouldRunTest } from '../test-config';
 import { DashboardPage } from '../pages/DashboardPage';
 import { getJobCard } from '../pages/JobCardComponent';
@@ -32,7 +33,7 @@ test.describe('Phase 3.1.5: Testing & Refinement', () => {
   });
 
   test.describe('Quality Assessment: Relevance Scoring', () => {
-    test.describe.configure({ timeout: 90000 }); // 90 seconds for LLM generation
+    test.describe.configure({ timeout: getTestTimeout(90000) }); // 90 seconds for LLM generation
 
     test('should generate content relevant to job title and domain', async ({ page }) => {
       await dashboardPage.clickTab('approved');
@@ -161,7 +162,7 @@ test.describe('Phase 3.1.5: Testing & Refinement', () => {
   });
 
   test.describe('Quality Assessment: Personalization Scoring', () => {
-    test.describe.configure({ timeout: 90000 });
+    test.describe.configure({ timeout: getTestTimeout(90000) });
 
     test('should personalize content with company name and job details', async ({ page }) => {
       await dashboardPage.clickTab('approved');
@@ -243,7 +244,7 @@ test.describe('Phase 3.1.5: Testing & Refinement', () => {
   });
 
   test.describe('Quality Assessment: Accuracy Scoring', () => {
-    test.describe.configure({ timeout: 90000 });
+    test.describe.configure({ timeout: getTestTimeout(90000) });
 
     test('should not fabricate experience or claims', async ({ page }) => {
       await dashboardPage.clickTab('approved');
@@ -348,7 +349,7 @@ test.describe('Phase 3.1.5: Testing & Refinement', () => {
   });
 
   test.describe('Quality Assessment: Tone Scoring', () => {
-    test.describe.configure({ timeout: 90000 });
+    test.describe.configure({ timeout: getTestTimeout(90000) });
 
     test('should maintain professional yet personable tone', async ({ page }) => {
       await dashboardPage.clickTab('approved');
@@ -468,7 +469,7 @@ test.describe('Phase 3.1.5: Testing & Refinement', () => {
   });
 
   test.describe('Error Handling & Resilience', () => {
-    test.describe.configure({ timeout: 90000 });
+    test.describe.configure({ timeout: getTestTimeout(90000) });
 
     test('should handle API timeout gracefully', async ({ page }) => {
       // Mock API with timeout
@@ -568,7 +569,7 @@ test.describe('Phase 3.1.5: Testing & Refinement', () => {
   });
 
   test.describe('Cost Tracking & Monitoring', () => {
-    test.describe.configure({ timeout: 300000 }); // 5 minutes for multiple generations
+    test.describe.configure({ timeout: getTestTimeout(300000) }); // 5 minutes for multiple generations
 
     test('should track cumulative cost across multiple generations', async ({ page }) => {
       await dashboardPage.clickTab('approved');
@@ -688,7 +689,7 @@ test.describe('Phase 3.1.5: Testing & Refinement', () => {
   });
 
   test.describe('Performance Benchmarks', () => {
-    test.describe.configure({ timeout: 180000 }); // 3 minutes
+    test.describe.configure({ timeout: getTestTimeout(180000) }); // 3 minutes
 
     test('should complete 5 consecutive generations under 45s each', async ({ page }) => {
       await dashboardPage.clickTab('approved');

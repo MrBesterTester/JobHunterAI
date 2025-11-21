@@ -29,7 +29,7 @@ test.describe('Content Generation - LLM Integration Tests', () => {
   let contentModal: ContentGenerationModal;
 
   // Configure longer timeout for real LLM tests
-  test.describe.configure({ timeout: 60000 });
+  test.describe.configure({ timeout: getTestTimeout(60000) });
 
   test.beforeEach(async ({ page }) => {
     dashboardPage = new DashboardPage(page);
@@ -55,7 +55,7 @@ test.describe('Content Generation - LLM Integration Tests', () => {
     // Set up response interceptor to capture real API response
     let apiResponse: any = null;
     await page.route('**/api/jobs/*/generate-content', async (route) => {
-      const response = await route.fetch({ timeout: 60000 });
+      const response = await route.fetch({ timeout: getTestTimeout(60000) });
       apiResponse = await response.json();
       await route.fulfill({ response });
     });

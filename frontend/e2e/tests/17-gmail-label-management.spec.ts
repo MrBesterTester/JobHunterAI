@@ -1,11 +1,12 @@
 import { test, expect } from '@playwright/test';
+import { getTestTimeout } from '../helpers/timeout-utils';
 
 test.describe('Phase 2.9: Gmail Label Management', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to the application
     await page.goto('http://localhost:3000');
     // Wait for the app to load
-    await page.waitForSelector('[data-testid="new-tab-button"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="new-tab-button"]', { timeout: getTestTimeout(10000) });
   });
 
   test('should show Rejected tab with count', async ({ page }) => {

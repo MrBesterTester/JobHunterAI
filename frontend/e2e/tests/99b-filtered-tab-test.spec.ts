@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestTimeout } from '../helpers/timeout-utils';
 import { shouldRunTest } from '../test-config';
 
 // Conditionally skip entire file if disabled in test-config.ts
@@ -22,7 +23,7 @@ test.describe('Filtered Tab - Verification', () => {
     console.log('Clicked Filtered tab');
 
     // Wait for job cards to load
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
     // Count jobs in Filtered tab
     const jobCards = page.locator('[data-testid="job-card"]');

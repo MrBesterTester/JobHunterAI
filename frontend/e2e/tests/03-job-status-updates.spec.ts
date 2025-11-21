@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestTimeout } from '../helpers/timeout-utils';
 import { DashboardPage } from '../pages/DashboardPage';
 import { getJobCard, getAllJobCards } from '../pages/JobCardComponent';
 import { waitForApiCall, verifyApiRequest } from '../fixtures/test-helpers';
@@ -140,7 +141,7 @@ test.describe('Job Status Updates', () => {
           return currentNew === expectedNew && currentApproved === expectedApproved;
         },
         { expectedNew: initialNewCount - 1, expectedApproved: initialApprovedCount + 1 },
-        { timeout: 10000 }
+        { timeout: getTestTimeout(10000) }
       );
 
       // Verify statistics updated
@@ -178,7 +179,7 @@ test.describe('Job Status Updates', () => {
           return currentNew === expectedNew;
         },
         initialNewCount - 1,
-        { timeout: 10000 }
+        { timeout: getTestTimeout(10000) }
       );
 
       // Verify statistics updated
@@ -510,7 +511,7 @@ test.describe('Job Status Updates', () => {
           return currentNew === expectedNew && currentApproved === expectedApproved;
         },
         { expectedNew: initialNew - 1, expectedApproved: initialApproved + 1 },
-        { timeout: 10000 }
+        { timeout: getTestTimeout(10000) }
       );
 
       // Get new total

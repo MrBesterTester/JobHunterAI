@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestTimeout } from '../helpers/timeout-utils';
 import { DashboardPage } from '../pages/DashboardPage';
 import { getJobCard } from '../pages/JobCardComponent';
 import { waitForApiCall } from '../fixtures/test-helpers';
@@ -373,7 +374,7 @@ test.describe('Statistics & Real-time Updates', () => {
             return currentCount === expectedNew;
           },
           initialNew - (i + 1),
-          { timeout: 5000 }
+          { timeout: getTestTimeout(5000) }
         );
       }
 
@@ -407,7 +408,7 @@ test.describe('Statistics & Real-time Updates', () => {
             return currentCount === expectedApproved;
           },
           initialApproved + 1,
-          { timeout: 5000 }
+          { timeout: getTestTimeout(5000) }
         );
       }
 

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestTimeout } from '../helpers/timeout-utils';
 
 /**
  * E2E Tests for Failed and Duplicates Tabs
@@ -13,7 +14,7 @@ test.describe('Failed and Duplicates Tabs', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:3000');
     // Wait for the app to load
-    await page.waitForSelector('[data-testid="stat-failed"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="stat-failed"]', { timeout: getTestTimeout(10000) });
   });
 
   test('Failed counter should match Failed tab count', async ({ page }) => {

@@ -28,7 +28,7 @@ test.describe('RapidAPI JSearch Sync Integration', () => {
     await page.goto('/');
 
     // Wait for dashboard to load
-    await expect(page.getByRole('heading', { name: /^JobHunter$/i })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: /^JobHunter$/i })).toBeVisible({ timeout: getTestTimeout(10000) });
   });
 
   test.afterEach(async () => {

@@ -4,6 +4,7 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { getTestTimeout } from '../helpers/timeout-utils';
 
 test.describe('Gmail Send Integration - Phase 2.4', () => {
   test.beforeEach(async ({ page }) => {
@@ -36,7 +37,7 @@ test.describe('Gmail Send Integration - Phase 2.4', () => {
             response => response.url().includes('/api/follow-ups') &&
                        response.url().includes('/send') &&
                        response.status() === 200,
-            { timeout: 10000 }
+            { timeout: getTestTimeout(10000) }
           );
 
           await sendButton.click();
@@ -52,7 +53,7 @@ test.describe('Gmail Send Integration - Phase 2.4', () => {
           expect(data.gmail_message_id).toBeTruthy();
 
           // Verify success message appears in UI
-          await expect(page.locator('text=/Sent|Email sent|Success/i').first()).toBeVisible({ timeout: 5000 });
+          await expect(page.locator('text=/Sent|Email sent|Success/i').first()).toBeVisible({ timeout: getTestTimeout(5000) });
         }
       } else {
         // If no pending follow-ups, create one first
@@ -96,7 +97,7 @@ test.describe('Gmail Send Integration - Phase 2.4', () => {
         await sendButton.click();
 
         // Should show error message
-        await expect(page.locator('text=/Error|Failed|Could not send/i').first()).toBeVisible({ timeout: 5000 });
+        await expect(page.locator('text=/Error|Failed|Could not send/i').first()).toBeVisible({ timeout: getTestTimeout(5000) });
       }
     });
 
@@ -115,7 +116,7 @@ test.describe('Gmail Send Integration - Phase 2.4', () => {
         if (await sendButton.isVisible()) {
           const responsePromise = page.waitForResponse(
             response => response.url().includes('/send') && response.status() === 200,
-            { timeout: 10000 }
+            { timeout: getTestTimeout(10000) }
           );
 
           await sendButton.click();
@@ -214,7 +215,7 @@ test.describe('Gmail Send Integration - Phase 2.4', () => {
         await sendButton.click();
 
         // Should show OAuth error message
-        await expect(page.locator('text=/OAuth|Authorization|Token expired/i').first()).toBeVisible({ timeout: 5000 });
+        await expect(page.locator('text=/OAuth|Authorization|Token expired/i').first()).toBeVisible({ timeout: getTestTimeout(5000) });
       }
     });
   });
@@ -259,7 +260,7 @@ test.describe('Gmail Send Integration - Phase 2.4', () => {
       if (count > 0) {
         const responsePromise = page.waitForResponse(
           response => response.url().includes('/send'),
-          { timeout: 10000 }
+          { timeout: getTestTimeout(10000) }
         ).catch(() => null);
 
         await sendButton.click();

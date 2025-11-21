@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestTimeout } from '../helpers/timeout-utils';
 
 /**
  * E2E Tests for Dashboard Statistics
@@ -14,7 +15,7 @@ test.describe('Dashboard Statistics', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:3000');
     // Wait for the app to load
-    await page.waitForSelector('[data-testid="stat-filtered"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="stat-filtered"]', { timeout: getTestTimeout(10000) });
   });
 
   test('should display filtered counter from intake logs', async ({ page }) => {

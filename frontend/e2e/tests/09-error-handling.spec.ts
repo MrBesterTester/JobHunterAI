@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestTimeout } from '../helpers/timeout-utils';
 import { DashboardPage } from '../pages/DashboardPage';
 import { getJobCard } from '../pages/JobCardComponent';
 import { simulateApiFailure, interceptApiResponse } from '../fixtures/test-helpers';
@@ -98,7 +99,7 @@ test.describe('Error Handling & Edge Cases', () => {
         await route.continue();
       });
 
-      await page.goto('http://localhost:3000', { timeout: 15000 });
+      await page.goto('http://localhost:3000', { timeout: getTestTimeout(15000) });
 
       // Should eventually load or show timeout message
       await page.waitForTimeout(2000);

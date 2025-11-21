@@ -155,8 +155,8 @@ test.describe('Performance Validation', () => {
 
       // Wait for button to be enabled (not in "Generating..." state)
       const generateButton = await firstJob.getGenerateButton();
-      await expect(generateButton).toBeEnabled({ timeout: 10000 });
-      await expect(generateButton).toContainText('Generate Resume', { timeout: 10000 });
+      await expect(generateButton).toBeEnabled({ timeout: getTestTimeout(10000) });
+      await expect(generateButton).toContainText('Generate Resume', { timeout: getTestTimeout(10000) });
 
       const startTime = Date.now();
 

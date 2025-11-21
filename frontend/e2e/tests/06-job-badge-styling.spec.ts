@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestTimeout } from '../helpers/timeout-utils';
 import { shouldRunTest } from '../test-config';
 
 // Conditionally skip entire file if disabled in test-config.ts
@@ -28,7 +29,7 @@ test.describe('Job Badge Styling', () => {
     // Click on "All" tab to display job cards
     await page.click('button:has-text("All")');
     // Wait for job cards to load
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
   });
 
   test('tax structure badge - 1099/Schedule C should be green', async ({ page }) => {

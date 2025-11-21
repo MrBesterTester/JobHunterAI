@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
+import { getTestTimeout } from '../helpers/timeout-utils';
 import { switchToTab } from '../helpers/tab-navigation';
 
 /**
@@ -27,7 +28,7 @@ test.describe('Gmail Sync Integration', () => {
     await page.goto('/');
 
     // Wait for dashboard to load
-    await expect(page.getByRole('heading', { name: /^JobHunter$/i })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: /^JobHunter$/i })).toBeVisible({ timeout: getTestTimeout(10000) });
 
     // Force fresh stats fetch by clicking Refresh Data button
     // This ensures we get latest data from database after test seeding
@@ -215,7 +216,7 @@ test.describe('Gmail Sync Integration', () => {
     await gmailSyncButton.click();
 
     // Wait for sync button to re-enable (indicates sync complete)
-    await expect(gmailSyncButton).toBeEnabled({ timeout: 30000 });
+    await expect(gmailSyncButton).toBeEnabled({ timeout: getTestTimeout(30000) });
 
     // Check stats updated
     const newTotal = await page.getByText(/Total/i).last().textContent();

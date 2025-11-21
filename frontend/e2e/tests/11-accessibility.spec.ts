@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestTimeout } from '../helpers/timeout-utils';
 import { DashboardPage } from '../pages/DashboardPage';
 import { getJobCard } from '../pages/JobCardComponent';
 import { navigateByKeyboard, isFocused, verifyAccessibility } from '../fixtures/test-helpers';
@@ -160,7 +161,7 @@ test.describe('Accessibility Testing', () => {
       await page.keyboard.press('Escape');
 
       // Modal should close
-      await expect(modal).not.toBeVisible({ timeout: 2000 });
+      await expect(modal).not.toBeVisible({ timeout: getTestTimeout(2000) });
     });
 
     test('should navigate tabs with keyboard', async ({ page }) => {

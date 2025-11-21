@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestTimeout } from '../helpers/timeout-utils';
 import { shouldRunTest } from '../test-config';
 import { DashboardPage } from '../pages/DashboardPage';
 import { getJobCard } from '../pages/JobCardComponent';
@@ -391,7 +392,7 @@ test.describe('Email Composer (Phase 5.2)', () => {
 
       // Should show error message
       const errorMessage = page.getByTestId('error-message');
-      await expect(errorMessage).toBeVisible({ timeout: 5000 });
+      await expect(errorMessage).toBeVisible({ timeout: getTestTimeout(5000) });
     });
 
     test('should show validation error for invalid email', async ({ page }) => {
@@ -462,7 +463,7 @@ test.describe('Email Composer (Phase 5.2)', () => {
 
       // Wait for success
       const successMessage = page.getByTestId('success-message');
-      await expect(successMessage).toBeVisible({ timeout: 5000 });
+      await expect(successMessage).toBeVisible({ timeout: getTestTimeout(5000) });
 
       // Close modal
       await page.keyboard.press('Escape');
@@ -514,7 +515,7 @@ test.describe('Email Composer (Phase 5.2)', () => {
 
       // Verify Gmail link appears
       const gmailLink = page.getByTestId('open-gmail-link');
-      await expect(gmailLink).toBeVisible({ timeout: 5000 });
+      await expect(gmailLink).toBeVisible({ timeout: getTestTimeout(5000) });
       await expect(gmailLink).toHaveAttribute('href', /mail\.google\.com/);
     });
   });

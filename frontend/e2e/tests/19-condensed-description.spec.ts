@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestTimeout } from '../helpers/timeout-utils';
 import { shouldRunTest } from '../test-config';
 import { switchToTab } from '../helpers/tab-navigation';
 
@@ -63,7 +64,7 @@ test.describe('Condensed Job Descriptions', () => {
     const descriptionContainer = debugSection.locator('div').filter({ hasText: 'Condensed Description:' }).locator('div').last();
 
     // Wait for condensed description to load (not "Loading description...")
-    await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
+    await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: getTestTimeout(15000) });
 
     const descriptionText = await descriptionContainer.textContent();
     expect(descriptionText?.length).toBeGreaterThan(10);
@@ -79,7 +80,7 @@ test.describe('Condensed Job Descriptions', () => {
     const descriptionContainer = debugSection.locator('div').filter({ hasText: 'Condensed Description:' }).locator('div').last();
 
     // Wait for condensed description to load
-    await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
+    await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: getTestTimeout(15000) });
 
     // Get the description text
     const descriptionText = await descriptionContainer.textContent();
@@ -107,7 +108,7 @@ test.describe('Condensed Job Descriptions', () => {
 
       // Wait for and check that description is not loading
       const descriptionContainer = debugSection.locator('div').filter({ hasText: 'Condensed Description:' }).locator('div').last();
-      await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: 15000 });
+      await expect(descriptionContainer).not.toHaveText('Loading description...', { timeout: getTestTimeout(15000) });
     }
   });
 
@@ -137,7 +138,7 @@ test.describe('Condensed Job Descriptions', () => {
       await page.click(`button:has-text("${tab}")`);
 
       try {
-        await page.waitForSelector('[data-testid="job-card"]', { timeout: 3000 });
+        await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(3000) });
 
         const jobCard = page.locator('[data-testid="job-card"]').first();
         const debugSection = jobCard.locator('div:has-text("🔧 Debug Info")');

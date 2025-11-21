@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestTimeout } from '../helpers/timeout-utils';
 import { shouldRunTest } from '../test-config';
 
 // Conditionally skip entire file if disabled in test-config.ts
@@ -23,7 +24,7 @@ test.describe('Modal Scroll Position Stability', () => {
   test('scroll position should remain stable without jumping back to top', async ({ page }) => {
     // Navigate to a tab with job data
     await page.click('button:has-text("Filtered")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
     // Click on first job card to open modal
     const jobCard = page.locator('[data-testid="job-card"]').first();
@@ -62,7 +63,7 @@ test.describe('Modal Scroll Position Stability', () => {
 
   test('scroll position should remain stable during multiple scroll events', async ({ page }) => {
     await page.click('button:has-text("Filtered")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
     await jobCard.click();
@@ -106,7 +107,7 @@ test.describe('Modal Scroll Position Stability', () => {
 
   test('scroll position should remain stable while scrolling slowly with mouse wheel', async ({ page }) => {
     await page.click('button:has-text("Filtered")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
     await jobCard.click();
@@ -158,7 +159,7 @@ test.describe('Modal Scroll Position Stability', () => {
     });
 
     await page.click('button:has-text("Filtered")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
     await jobCard.click();
@@ -192,7 +193,7 @@ test.describe('Modal Scroll Position Stability', () => {
 
   test('scroll position should persist during rapid scrolling', async ({ page }) => {
     await page.click('button:has-text("Filtered")');
-    await page.waitForSelector('[data-testid="job-card"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
     const jobCard = page.locator('[data-testid="job-card"]').first();
     await jobCard.click();

@@ -8,6 +8,7 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { getTestTimeout } from '../helpers/timeout-utils';
 
 test.describe('Timeline View - Phase 5.1', () => {
   test.beforeEach(async ({ page }) => {
@@ -404,7 +405,7 @@ test.describe('Timeline View - Phase 5.1', () => {
           response => response.url().includes('/api/applications/') &&
                      response.url().includes('/timeline') &&
                      response.status() === 200,
-          { timeout: 5000 }
+          { timeout: getTestTimeout(5000) }
         ).catch(() => null);
 
         if (response) {

@@ -4,6 +4,7 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { getTestTimeout } from '../helpers/timeout-utils';
 
 test.describe('Calendar Management - Phase 5.1', () => {
   test.describe.configure({ mode: 'serial' });
@@ -109,7 +110,7 @@ test.describe('Calendar Management - Phase 5.1', () => {
           await page.click('button:has-text("Schedule")');
 
           // Verify success
-          await expect(page.locator('text=/Interview scheduled|Success/i')).toBeVisible({ timeout: 5000 });
+          await expect(page.locator('text=/Interview scheduled|Success/i')).toBeVisible({ timeout: getTestTimeout(5000) });
         }
       }
     });
@@ -129,7 +130,7 @@ test.describe('Calendar Management - Phase 5.1', () => {
       await responsePromise;
 
       // Wait for UI to render after API response (heading always appears)
-      await expect(page.locator('h2:has-text("Upcoming Interviews")')).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('h2:has-text("Upcoming Interviews")')).toBeVisible({ timeout: getTestTimeout(10000) });
 
       // Now safe to check if interviews exist
       const interviews = page.locator('.interview-card');
@@ -208,7 +209,7 @@ test.describe('Calendar Management - Phase 5.1', () => {
         const confirmDialog = page.locator('text=/Are you sure|Confirm/i');
         if (await confirmDialog.isVisible()) {
           await page.click('button:has-text("Yes"), button:has-text("Confirm")');
-          await expect(page.locator('text=/Interview cancelled|Canceled/i')).toBeVisible({ timeout: 5000 });
+          await expect(page.locator('text=/Interview cancelled|Canceled/i')).toBeVisible({ timeout: getTestTimeout(5000) });
         }
       }
     });

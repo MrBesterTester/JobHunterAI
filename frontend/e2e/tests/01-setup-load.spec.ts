@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { getTestTimeout } from '../helpers/timeout-utils';
 import { DashboardPage } from '../pages/DashboardPage';
 import { waitForApiCall, checkConsoleErrors, measurePageLoad } from '../fixtures/test-helpers';
 
@@ -104,11 +105,11 @@ test.describe('Setup & Initial Load', () => {
       // Set up response listeners before navigation with exact URL matching
       const jobsPromise = page.waitForResponse(
         (response) => !!response.url().match(/\/api\/jobs(\?|$)/) && response.request().method() === 'GET',
-        { timeout: 10000 }
+        { timeout: getTestTimeout(10000) }
       );
       const statsPromise = page.waitForResponse(
         (response) => response.url().includes('/api/jobs/stats') && response.request().method() === 'GET',
-        { timeout: 10000 }
+        { timeout: getTestTimeout(10000) }
       );
 
       // Navigate using page.goto directly to ensure fresh load
@@ -128,7 +129,7 @@ test.describe('Setup & Initial Load', () => {
       // Use exact URL matching to avoid matching /api/jobs/stats
       const responsePromise = page.waitForResponse(
         (response) => !!response.url().match(/\/api\/jobs(\?|$)/) && response.request().method() === 'GET',
-        { timeout: 5000 }
+        { timeout: getTestTimeout(5000) }
       );
 
       await dashboardPage.goto();
@@ -146,7 +147,7 @@ test.describe('Setup & Initial Load', () => {
     test('should make GET /api/jobs/stats request', async ({ page }) => {
       const responsePromise = page.waitForResponse(
         (response) => response.url().includes('/api/jobs/stats') && response.request().method() === 'GET',
-        { timeout: 10000 }
+        { timeout: getTestTimeout(10000) }
       );
 
       // Navigate using page.goto directly to ensure fresh load

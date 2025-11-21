@@ -2,6 +2,7 @@
 // Tests bulk delete functionality for Ignored tab and Rejected tab
 
 import { test, expect } from '@playwright/test';
+import { getTestTimeout } from '../helpers/timeout-utils';
 
 const BASE_URL = 'http://localhost:3000';
 const API_BASE = 'http://localhost:8080';
@@ -10,7 +11,7 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Ignored Tab', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(BASE_URL);
     // Wait for the app to load
-    await page.waitForSelector('[data-testid="stat-ignored"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="stat-ignored"]', { timeout: getTestTimeout(10000) });
   });
 
   test('should show checkboxes only for Gmail emails in Ignored tab', async ({ page }) => {
@@ -124,7 +125,7 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Ignored Tab', () => {
 
     // Verify confirmation dialog appears (look for the heading text)
     const confirmDialogHeading = page.locator('h3', { hasText: 'Confirm Deletion' });
-    await expect(confirmDialogHeading).toBeVisible({ timeout: 3000 });
+    await expect(confirmDialogHeading).toBeVisible({ timeout: getTestTimeout(3000) });
 
     console.log('Confirmation dialog appeared');
 
@@ -135,7 +136,7 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Ignored Tab', () => {
     // Intercept the API call to verify request and mock response
     const deletePromise = page.waitForResponse(
       (response) => response.url().includes('/bulk-delete-gmail') && response.request().method() === 'POST',
-      { timeout: 5000 }
+      { timeout: getTestTimeout(5000) }
     );
 
     // Click confirm
@@ -197,7 +198,7 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Ignored Tab', () => {
 
     // Verify confirmation dialog appears (look for the heading text)
     const confirmDialogHeading = page.locator('h3', { hasText: 'Confirm Deletion' });
-    await expect(confirmDialogHeading).toBeVisible({ timeout: 3000 });
+    await expect(confirmDialogHeading).toBeVisible({ timeout: getTestTimeout(3000) });
 
     // Click Cancel button
     const cancelButton = page.locator('button', { hasText: 'Cancel' });
@@ -223,7 +224,7 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Rejected Tab', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(BASE_URL);
     // Wait for the app to load (wait for stats section which always exists)
-    await page.waitForSelector('[data-testid="stat-new"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="stat-new"]', { timeout: getTestTimeout(10000) });
   });
 
   test('should show checkboxes only for Gmail jobs in Rejected tab', async ({ page }) => {
@@ -332,7 +333,7 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Rejected Tab', () => {
 
     // Verify confirmation dialog appears (look for the heading text)
     const confirmDialogHeading = page.locator('h3', { hasText: 'Confirm Deletion' });
-    await expect(confirmDialogHeading).toBeVisible({ timeout: 3000 });
+    await expect(confirmDialogHeading).toBeVisible({ timeout: getTestTimeout(3000) });
 
     console.log('Confirmation dialog appeared');
 
@@ -343,7 +344,7 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Rejected Tab', () => {
     // Intercept the API call to verify request and mock response
     const deletePromise = page.waitForResponse(
       (response) => response.url().includes('/jobs/bulk-delete-gmail') && response.request().method() === 'POST',
-      { timeout: 5000 }
+      { timeout: getTestTimeout(5000) }
     );
 
     // Click confirm

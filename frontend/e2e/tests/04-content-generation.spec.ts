@@ -451,7 +451,7 @@ test.describe('Content Generation', () => {
 
   test.describe('Content Quality Validation', () => {
     // Configure longer timeout for LLM tests (generation takes ~30s, this suite generates 2x)
-    test.describe.configure({ timeout: 90000 }); // 90 seconds for tests that generate content twice
+    test.describe.configure({ timeout: getTestTimeout(90000) }); // 90 seconds for tests that generate content twice
 
     test('should generate unique content for different jobs', async ({ page }) => {
       await dashboardPage.clickTab('approved');
