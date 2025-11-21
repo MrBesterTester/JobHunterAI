@@ -23,6 +23,16 @@ related: [PLAYWRIGHT_BEST_PRACTICES.md]
   - [Phase 4: Full Rollout (PENDING)](#phase-4-full-rollout-pending)
   - [Phase 5: Cleanup (PENDING)](#phase-5-cleanup-pending)
   - [Key Questions to Track](#key-questions-to-track)
+- [Remaining Challenge: Intra-Worker Test Isolation](#remaining-challenge-intra-worker-test-isolation)
+  - [What We've Solved (Inter-Worker Conflicts)](#what-weve-solved-inter-worker-conflicts)
+  - [What Remains Unsolved (Intra-Worker Conflicts)](#what-remains-unsolved-intra-worker-conflicts)
+  - [Proposed Solutions for Intra-Worker Isolation](#proposed-solutions-for-intra-worker-isolation)
+    - [Option 5A: Per-Test Database Reset (Thorough but Slow)](#option-5a-per-test-database-reset-thorough-but-slow)
+    - [Option 5B: Transaction Rollback per Test (Fast but Complex)](#option-5b-transaction-rollback-per-test-fast-but-complex)
+    - [Option 5C: Accept Partial Isolation (Pragmatic)](#option-5c-accept-partial-isolation-pragmatic)
+    - [Option 5D: Hybrid Approach (Reset Between Test Files)](#option-5d-hybrid-approach-reset-between-test-files)
+  - [Comparison Matrix](#comparison-matrix)
+  - [Decision Required](#decision-required)
 - [Summary](#summary)
 - [Impact](#impact)
 - [Problem Statement](#problem-statement)
@@ -44,7 +54,7 @@ related: [PLAYWRIGHT_BEST_PRACTICES.md]
   - [Option 2: Per-Test Database Seeding in beforeEach](#option-2-per-test-database-seeding-in-beforeeach)
   - [Option 3: Transaction Rollback Pattern](#option-3-transaction-rollback-pattern)
   - [Option 4: Test Data Pools with Worker Index](#option-4-test-data-pools-with-worker-index)
-  - [Comparison Matrix](#comparison-matrix)
+  - [Comparison Matrix](#comparison-matrix-1)
 - [Decision](#decision)
 - [Implementation](#implementation)
 - [Testing](#testing)
@@ -200,6 +210,178 @@ export const testWithPage = test.extend<{ page: Page }>({
 4. **Worker Assignment**: Automatic via Playwright? ✅ (yes, no manual mapping needed)
 5. **Database Lifecycle**: Create on worker start, destroy on worker end? 🔧 (needs validation)
 6. **OAuth Credentials**: How to handle per-worker? 🔧 (needs investigation)
+
+---
+
+## Remaining Challenge: Intra-Worker Test Isolation
+
+**Status**: 🟡 **OPEN FOR DISCUSSION** - Architectural concern identified after Phase 3 completion
+
+### What We've Solved (Inter-Worker Conflicts)
+
+**Before Phase 3**:
+```
+Worker 0 ──┐
+Worker 1 ──┼──> jobhunter_personal (SHARED DATABASE)
+Worker 2 ──┤    ❌ Race conditions, conflicts between workers
+Worker 3 ──┘
+```
+
+**After Phase 3** ✅:
+```
+Worker 0 ──> jobhunter_test_worker_0 ✅ Isolated from other workers
+Worker 1 ──> jobhunter_test_worker_1 ✅ Isolated from other workers
+Worker 2 ──> jobhunter_test_worker_2 ✅ Isolated from other workers
+Worker 3 ──> jobhunter_test_worker_3 ✅ Isolated from other workers
+```
+
+### What Remains Unsolved (Intra-Worker Conflicts)
+
+**Within Worker 0** (~142 tests running sequentially):
+```
+Test 1: Approve a job       → Database now has 1 fewer "new" job
+Test 2: Expects 10 "new"    → ❌ FAILS (only sees 9)
+Test 3: Creates 5 new jobs  → Database now has 14 "new" jobs
+Test 4: Expects 10 "new"    → ❌ FAILS (sees 14)
+```
+
+**The Problem**:
+- Tests within the same worker **share database state sequentially**
+- Test A's exit conditions become Test B's entry conditions
+- With 567 tests across 4 workers: **~142 tests per worker** run sequentially on the same database
+- Each test can modify state (approve jobs, sync Gmail, create records, etc.)
+- No automatic cleanup between tests
+- **Test assignment within a worker is fairly arbitrary** (Playwright decides based on file order, timing, etc.)
+
+**User Observation**: "I got the distinct feeling that we're not done with this issue, particularly if the tests running on a given worker database are fairly arbitrary."
+
+### Proposed Solutions for Intra-Worker Isolation
+
+#### Option 5A: Per-Test Database Reset (Thorough but Slow)
+
+```typescript
+test.beforeEach(async ({ workerDatabase }) => {
+  // Truncate all tables
+  await exec(`psql -d ${workerDatabase} -c "TRUNCATE TABLE jobs, email_jobs CASCADE"`);
+
+  // Reseed test data
+  await exec(`psql -d ${workerDatabase} -f database/seed_test_data.sql`);
+});
+```
+
+**Pros**:
+- Perfect isolation - clean entry conditions for every test
+- No test order dependencies within a worker
+- Guarantees test independence
+
+**Cons**:
+- ~500ms overhead per test
+- ~142 tests per worker × 500ms = ~71 seconds per worker
+- Tests run in parallel across workers, so total overhead ~71s (not 284s)
+- Still faster than old single-DB approach, but noticeable slowdown
+
+**Implementation Effort**: 1 day
+**Maintenance**: Low - simple pattern
+
+---
+
+#### Option 5B: Transaction Rollback per Test (Fast but Complex)
+
+```typescript
+test.beforeEach(async () => {
+  await backend.beginTransaction();
+});
+
+test.afterEach(async () => {
+  await backend.rollbackTransaction();
+});
+```
+
+**Pros**:
+- Very fast (no I/O for cleanup)
+- Perfect isolation
+- No runtime overhead
+
+**Cons**:
+- **Requires major backend refactoring** (must support long-lived transactions across HTTP requests)
+- Complex transaction management across process boundaries
+- Backend currently commits after each request (architectural change needed)
+
+**Implementation Effort**: 5-7 days (significant backend changes)
+**Maintenance**: High - complex transaction management logic
+
+---
+
+#### Option 5C: Accept Partial Isolation (Pragmatic)
+
+- Keep per-worker databases (solves inter-worker conflicts) ✅
+- Use `test.describe.configure({ mode: 'serial' })` for test files that heavily modify state
+- Document entry/exit conditions for critical tests
+- Reset database between test **files** (not individual tests) if needed
+
+**Pros**:
+- Works today with Phase 3 implementation
+- Good balance of performance and isolation
+- 75% problem solved (inter-worker conflicts eliminated)
+- Flexible - can add per-file resets where needed
+
+**Cons**:
+- Not perfect - tests within a worker may affect each other
+- Requires discipline and documentation
+- Some flakiness risk remains (lower than before)
+
+**Implementation Effort**: 0 days (use what we have)
+**Maintenance**: Medium - requires test design awareness
+
+---
+
+#### Option 5D: Hybrid Approach (Reset Between Test Files)
+
+```typescript
+// In each test file's afterAll
+test.afterAll(async ({ workerDatabase }) => {
+  // Reset database after this file's tests complete
+  await exec(`psql -d ${workerDatabase} -c "TRUNCATE TABLE jobs CASCADE"`);
+  await exec(`psql -d ${workerDatabase} -f database/seed_test_data.sql`);
+});
+```
+
+**Pros**:
+- Less frequent resets (only ~30-40 test files vs 567 individual tests)
+- Predictable state within a test file's lifecycle
+- Lower overhead than per-test reset (~30-40 resets × 500ms = ~15-20s total)
+- Tests within a file can be designed to work together
+
+**Cons**:
+- Tests within a file still share state sequentially
+- Requires coordination within test files
+
+**Implementation Effort**: 2-3 days (add afterAll hooks to test files)
+**Maintenance**: Medium - per-file awareness needed
+
+---
+
+### Comparison Matrix
+
+| Criterion | 5A: Per-Test Reset | 5B: Transactions | 5C: Pragmatic | 5D: Per-File Reset |
+|-----------|-------------------|------------------|---------------|-------------------|
+| **Isolation Quality** | ⭐⭐⭐⭐⭐ Perfect | ⭐⭐⭐⭐⭐ Perfect | ⭐⭐⭐ Moderate | ⭐⭐⭐⭐ Good |
+| **Speed** | ⭐⭐⭐ +71s overhead | ⭐⭐⭐⭐⭐ Fast | ⭐⭐⭐⭐⭐ No overhead | ⭐⭐⭐⭐ +15-20s |
+| **Complexity** | ⭐⭐⭐⭐⭐ Simple | ⭐ Very complex | ⭐⭐⭐⭐⭐ Simple | ⭐⭐⭐⭐ Simple |
+| **Backend Changes** | ⭐⭐⭐⭐⭐ None | ⭐ Major refactor | ⭐⭐⭐⭐⭐ None | ⭐⭐⭐⭐⭐ None |
+| **Implementation** | 1 day | 5-7 days | 0 days | 2-3 days |
+| **Maintenance** | ⭐⭐⭐⭐⭐ Low | ⭐ High | ⭐⭐⭐ Medium | ⭐⭐⭐ Medium |
+
+### Decision Required
+
+**Question for stakeholder**: How much intra-worker isolation do you want?
+
+1. **Strict isolation** (Option 5A): Every test gets fresh database (+71s runtime)
+2. **Fast isolation** (Option 5B): Transactions (requires major backend refactor)
+3. **Pragmatic** (Option 5C): Per-worker isolation only, manage dependencies (current state after Phase 3)
+4. **Balanced** (Option 5D): Per-file resets (+15-20s runtime)
+
+**Note**: This decision doesn't block Phase 4 rollout. We can deploy Phase 3's per-worker isolation and evaluate whether additional intra-worker isolation is needed based on actual test behavior.
 
 ---
 
