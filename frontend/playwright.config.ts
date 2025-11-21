@@ -83,12 +83,34 @@ export default defineConfig({
 
   // Test projects for different browsers
   projects: [
+    // Isolated tests project - runs FIRST with complete database isolation
+    // These tests require specific database state and must complete before any other tests start
+    {
+      name: 'chromium-isolated',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1920, height: 1080 },
+      },
+      testMatch: [
+        '**/16-gmail-sync-integration.spec.ts',
+        '**/23-description-quality.spec.ts',
+      ],
+    },
+
+    // Main chromium project - runs AFTER isolated tests complete
     {
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 1920, height: 1080 },
       },
+      // Exclude isolated tests from main parallel execution
+      testIgnore: [
+        '**/16-gmail-sync-integration.spec.ts',
+        '**/23-description-quality.spec.ts',
+      ],
+      // Wait for isolated tests to complete first
+      dependencies: ['chromium-isolated'],
     },
 
     {
@@ -99,6 +121,8 @@ export default defineConfig({
       },
       // Only run in CI or when explicitly requested
       testIgnore: process.env.CI ? undefined : /.*/,
+      // Wait for isolated tests to complete first
+      dependencies: ['chromium-isolated'],
     },
 
     {
@@ -109,6 +133,8 @@ export default defineConfig({
       },
       // Only run in CI or when explicitly requested
       testIgnore: process.env.CI ? undefined : /.*/,
+      // Wait for isolated tests to complete first
+      dependencies: ['chromium-isolated'],
     },
 
     // Mobile viewports for responsive testing
@@ -116,6 +142,8 @@ export default defineConfig({
       name: 'mobile-chrome',
       use: { ...devices['Pixel 5'] },
       testMatch: '**/08-responsive-design.spec.ts', // Only responsive tests
+      // Wait for isolated tests to complete first
+      dependencies: ['chromium-isolated'],
     },
 
     {
@@ -123,6 +151,8 @@ export default defineConfig({
       use: { ...devices['iPhone 12'] },
       testMatch: '**/08-responsive-design.spec.ts', // Only responsive tests
       testIgnore: process.env.CI ? undefined : /.*/,
+      // Wait for isolated tests to complete first
+      dependencies: ['chromium-isolated'],
     },
   ],
 
