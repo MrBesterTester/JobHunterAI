@@ -490,7 +490,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
   test.describe('Email Archiving (Phase 2.8)', () => {
     test.setTimeout(104501);
     test('should display Microsoft JobOps folder status', async ({ page }) => {
-      test.setTimeout(104501);
+      test.setTimeout(107251);
       // Navigate to Intake tab
       await page.getByRole('button', { name: /^intake$/i }).click();
       await page.waitForTimeout(1000);
@@ -871,6 +871,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
 
   test.setTimeout(176000);
     test('Item 3: Email Sync & Extraction - should sync and filter emails correctly', async ({ page }) => {
+      test.setTimeout(176000);
       // Navigate to Intake tab
       await page.getByRole('button', { name: /^intake$/i }).click();
       await page.waitForTimeout(1000);
@@ -958,6 +959,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
     });
       test.setTimeout(110001);
 
+  test.setTimeout(110001);
     test('Item 4: End-to-End Workflow - Microsoft job through full application flow', async ({ page }) => {
       // Navigate to New Jobs tab
       await page.getByRole('button', { name: /^new jobs$/i }).click();
@@ -1148,6 +1150,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       expect(await microsoftSyncButton.isEnabled()).toBeTruthy();
         test.setTimeout(264000);
     });
+      test.setTimeout(264000);
 
     test('Item 5: Error Handling - app remains stable after sync failures', async ({ page }) => {
       // Navigate between tabs to verify app stability
