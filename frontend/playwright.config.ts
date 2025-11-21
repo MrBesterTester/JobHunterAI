@@ -13,11 +13,17 @@ import * as dotenv from 'dotenv';
  * that Node.js child processes (Playwright workers) inherit them reliably.
  */
 const envFile = path.join(__dirname, '.env.playwright');
-const result = dotenv.config({ path: envFile });
+
+// Log before attempting to load
+console.log(`🔍 Playwright config: Looking for ${envFile}`);
+console.log(`🔍 File exists: ${require('fs').existsSync(envFile)}`);
+
+const result = dotenv.config({ path: envFile, override: true });
 
 if (result.error) {
   // File doesn't exist (running in standalone mode)
   console.log('ℹ️  Playwright: No .env.playwright found (running in standalone mode)');
+  console.log(`   Error: ${result.error.message}`);
 } else {
   console.log('🎭 Playwright: Loaded .env.playwright for worker process propagation');
   // Log loaded env vars
@@ -27,6 +33,10 @@ if (result.error) {
     });
   }
 }
+
+// CRITICAL: Log the actual process.env value
+console.log(`🔍 process.env.COMPREHENSIVE_TESTS = ${process.env.COMPREHENSIVE_TESTS}`);
+
 
 /**
  * Playwright Configuration for JobHunter Frontend Testing

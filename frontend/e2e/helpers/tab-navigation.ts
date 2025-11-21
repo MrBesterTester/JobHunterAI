@@ -39,8 +39,14 @@ export async function switchToTab(
 
   // Calculate load-aware timeouts for ALL waits (ISSUE-057 fix)
   // Under comprehensive test load (4 parallel workers), UI operations take longer
+
+  // DEBUG: Log what the worker process sees (ISSUE-056 debugging)
+  console.log(`[WORKER DEBUG] CI=${process.env.CI}, COMPREHENSIVE_TESTS=${process.env.COMPREHENSIVE_TESTS}`);
+
   const baseTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 15000 : 5000;
   const jobCardsTimeout = process.env.CI || process.env.COMPREHENSIVE_TESTS ? 45000 : 10000;
+
+  console.log(`[WORKER DEBUG] baseTimeout=${baseTimeout}, jobCardsTimeout=${jobCardsTimeout}`);
 
   // Click the tab button
   await page.click(tabButtonSelector);
