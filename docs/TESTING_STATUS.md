@@ -45,8 +45,9 @@ last_updated: 2025-11-20 20:41:10 PST (Added comprehensive test results after IS
   - 🟡 Test 16 (gmail-sync-integration): **PARTIAL** (2 failures → 1)
 - **Remaining Work**:
   - 1 timeout failure in Test 16 line 232 (switchToTab helper timing out at 61s, helper uses 45s timeout)
+  - **Key Insight**: Multi-level timeout architecture - helpers have their own timeouts separate from test-level timeouts (see ISSUE-063 "Key Architectural Insight" section)
   - **Recommended Fix**: Option 4 - Increase switchToTab helper's jobCardsTimeout from 45s to 90s (5-minute fix)
-  - **Alternative**: Option 5 - Add optional timeout parameter to switchToTab (15-minute fix)
+  - **Alternative**: Option 5 - Add optional timeout parameter to switchToTab for per-test control (15-minute fix)
   - **Defer**: Option 6 - Accept 0.25% flake rate as acceptable (0 minutes)
 - **Current Pass Rate**: 99.89% (943/944 tests, excluding skipped)
 

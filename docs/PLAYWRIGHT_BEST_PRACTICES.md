@@ -32,6 +32,7 @@ This document consolidates hard-earned lessons from fixing flaky E2E tests in th
   - [The Solution: Propagate Configuration via globalSetup](#the-solution-propagate-configuration-via-globalsetup)
   - [Battle-Tested Pattern: Load-Aware Timeouts](#battle-tested-pattern-load-aware-timeouts)
   - [Load-Aware Test Timeout Helper (ISSUE-062)](#load-aware-test-timeout-helper-issue-062)
+  - [Multi-Level Timeout Architecture (ISSUE-063)](#multi-level-timeout-architecture-issue-063)
   - [Alternative Approaches (For Reference)](#alternative-approaches-for-reference)
 - [7. Common Anti-Patterns and How to Fix Them](#7-common-anti-patterns-and-how-to-fix-them)
   - [❌ Anti-Pattern 1: Position-Based Selectors](#-anti-pattern-1-position-based-selectors)
@@ -707,6 +708,106 @@ await page.waitForFunction(
 - ❌ **Don't use** for timeouts that are business logic constraints (e.g., "LLM must respond within 30s")
 
 **Important:** Still prefer state polling (`waitForFunction`) over fixed timeouts whenever possible. `getTestTimeout()` is for cases where explicit timeouts are necessary (test timeouts, API call timeouts, etc.).
+
+### Multi-Level Timeout Architecture (ISSUE-063)
+
+**Understanding:** Timeouts exist at multiple levels in E2E test code, and each level operates independently. A timeout at one level can occur even if higher-level timeouts haven't been reached.
+
+**Timeout Hierarchy:**
+
+1. **Test-level timeout** - Playwright's `test.setTimeout()` controls maximum test execution time
+2. **Helper-level timeout** - Internal waits within helper functions (e.g., `switchToTab` helper's `jobCardsTimeout`)
+3. **Action-level timeout** - Individual Playwright action timeouts (e.g., `waitForSelector({ timeout: N })`)
+
+**Critical Point:** A helper can timeout even if the overall test still has time remaining!
+
+**Real Example from ISSUE-063:**
+
+```typescript
+// Test file: 16-gmail-sync-integration.spec.ts
+test('should allow approving jobs', async ({ page }) => {
+  test.setTimeout(getTestTimeout(90000)); // Test timeout: 90s under load
+
+  // Call helper function
+  await switchToTab(page, 'new'); // ❌ Times out at 45s!
+
+  // Test still has 45s remaining, but helper already failed
+});
+
+// Helper file: tab-navigation.ts
+export async function switchToTab(page: Page, tab: TabType) {
+  // Helper timeout: 45s under load (line 43)
+  const jobCardsTimeout = process.env.COMPREHENSIVE_TESTS ? 45000 : 10000;
+
+  await page.waitForFunction(
+    () => document.querySelectorAll('[data-testid="job-card"]').length > 0,
+    { timeout: jobCardsTimeout } // ⏰ Helper times out at 45s
+  );
+}
+```
+
+**What Happened:**
+- Test timeout: 90s (plenty of time remaining)
+- Helper timeout: 45s
+- Actual operation time: 61s under comprehensive load
+- **Result:** Helper times out at 45s before test timeout would occur at 90s
+
+**Debugging Strategy - Identify Which Level is Timing Out:**
+
+When you see a timeout error, determine which level caused it:
+
+```
+TimeoutError: page.waitForFunction: Timeout 45000ms exceeded.
+    at switchToTab (/path/to/tab-navigation.ts:64:18)
+    at /path/to/16-gmail-sync-integration.spec.ts:232:5
+```
+
+**Analysis:**
+- ❌ Not test-level (test.setTimeout would show test timeout value, e.g., 90000ms)
+- ✅ Helper-level (stack trace shows timeout occurred inside `switchToTab` at line 64)
+- Duration matches helper's `jobCardsTimeout` (45000ms)
+
+**Solutions by Level:**
+
+**Option 1: Increase helper timeout globally** (affects all tests using the helper)
+```typescript
+// frontend/e2e/helpers/tab-navigation.ts
+const jobCardsTimeout = process.env.COMPREHENSIVE_TESTS ? 90000 : 10000; // 45s → 90s
+```
+**Pros:** Simple, consistent across all tests
+**Cons:** Affects all ~72+ tests using this helper, slower failure feedback
+
+**Option 2: Add optional timeout parameter** (surgical fix)
+```typescript
+// Helper signature with optional parameter
+export async function switchToTab(
+  page: Page,
+  tab: TabType,
+  expectJobCards: boolean = shouldExpectJobCards(tab),
+  customTimeout?: number  // Optional override
+): Promise<void> {
+  const jobCardsTimeout = customTimeout ??
+    (process.env.COMPREHENSIVE_TESTS ? 45000 : 10000);
+  // ... rest of function
+}
+
+// Usage in specific test
+await switchToTab(page, 'new', true, getTestTimeout(90000)); // Override for this test only
+```
+**Pros:** Surgical, explicit, doesn't affect other tests
+**Cons:** More complex API, requires updating call sites
+
+**Key Takeaway for Shared Helpers:**
+
+When multiple tests share a helper function, the helper's timeout cannot vary per test (unless you add an optional parameter). Global helper timeouts affect all tests using that helper.
+
+**Best Practices:**
+
+1. **Always check timeout values at all levels** when debugging timeout failures
+2. **Look at the actual timeout duration in the error** (e.g., "Timeout 45000ms") to identify which level timed out
+3. **Consider the scope of your fix**: Does changing a helper timeout affect many tests? Is that acceptable?
+4. **Use optional timeout parameters** when specific tests need different timeouts than the helper's default
+5. **Document timeout rationale** in comments (e.g., "// Increased from 45s to 90s - Gmail sync takes 61s under load")
 
 ### Alternative Approaches (For Reference)
 

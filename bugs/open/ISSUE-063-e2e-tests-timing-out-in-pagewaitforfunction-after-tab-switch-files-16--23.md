@@ -42,6 +42,7 @@ related:
 - [Decision](#decision)
 - [Implementation](#implementation)
 - [Testing](#testing)
+- [Key Architectural Insight: Multi-Level Timeout Architecture](#key-architectural-insight-multi-level-timeout-architecture)
 - [Additional Options for Remaining Failure](#additional-options-for-remaining-failure)
   - [Option 4: Increase switchToTab Helper's jobCardsTimeout Globally (RECOMMENDED)](#option-4-increase-switchtotab-helpers-jobcardstimeout-globally-recommended)
   - [Option 5: Add Optional Timeout Parameter to switchToTab](#option-5-add-optional-timeout-parameter-to-switchtotab)
@@ -528,6 +529,33 @@ The remaining Test 16 failure occurs at a **different location** than the fix we
 **Why Test 23 Passed But Test 16 Still Fails**:
 - Test 23: Timeouts occurred AFTER switchToTab completed (in test-specific waits) → Fixed by our 90s timeout
 - Test 16: Timeout occurs INSIDE switchToTab itself (waiting for job cards to appear) → Not fixed, helper still uses 45s
+
+## Key Architectural Insight: Multi-Level Timeout Architecture
+
+**Understanding**: Timeouts exist at multiple levels in test code:
+
+1. **Test-level timeout**: Playwright's `test.setTimeout()` - overall test time limit
+2. **Helper-level timeout**: Internal waits within helper functions (like `switchToTab`)
+3. **Action-level timeout**: Individual Playwright actions (`waitForSelector`, `waitForFunction`, etc.)
+
+**Critical Point**: A helper can timeout even if the overall test still has time remaining!
+
+**Example from Test 16 (Remaining Failure)**:
+- Test timeout: 90s (plenty of time remaining)
+- Helper timeout (`jobCardsTimeout` in `switchToTab`): 45s
+- Actual operation time: 61s under comprehensive load
+- **Result**: Helper times out at 45s before test would timeout at 90s
+
+**Why This Matters**: When fixing timeout issues, you must identify WHICH LEVEL is timing out:
+- Test-level? → Adjust `test.setTimeout(getTestTimeout(N))`
+- Helper-level? → Adjust timeout constant inside the helper function
+- Action-level? → Adjust `{ timeout: getTestTimeout(N) }` parameter on the specific action
+
+**ISSUE-063 Remaining Failure Analysis**:
+- Original failures (fixed): Test-level timeouts in test-specific `page.waitForFunction()` calls
+- Remaining failure: Helper-level timeout in `switchToTab` function's `jobCardsTimeout` (45s insufficient for 61s operation)
+
+**Key Takeaway**: When multiple tests share a helper function, the helper's timeout cannot vary per test (unless you add an optional parameter - see Option 5 below). Global helper timeouts affect all tests using that helper.
 
 ## Additional Options for Remaining Failure
 
