@@ -50,6 +50,11 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Estimated runtime configuration (in minutes)
+# TODO: Derive from historical test runs (see ISSUE-XXX)
+ESTIMATED_MIN_MINUTES=15
+ESTIMATED_MAX_MINUTES=20
+
 echo -e "${BLUE}╔═══════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║       COMPREHENSIVE TEST ORCHESTRATOR (TypeScript)            ║${NC}"
 echo -e "${BLUE}╚═══════════════════════════════════════════════════════════════╝${NC}"
@@ -106,12 +111,12 @@ echo "  - Run cargo clean (full rebuild required)"
 echo ""
 # Calculate estimated completion time
 CURRENT_TIME=$(date +%s)
-START_OFFSET=$((15 * 60))  # 15 minutes in seconds
-END_OFFSET=$((20 * 60))    # 20 minutes in seconds
+START_OFFSET=$((ESTIMATED_MIN_MINUTES * 60))
+END_OFFSET=$((ESTIMATED_MAX_MINUTES * 60))
 COMPLETION_START=$(date -r $((CURRENT_TIME + START_OFFSET)) "+%l:%M %p" | sed 's/^ //')
 COMPLETION_END=$(date -r $((CURRENT_TIME + END_OFFSET)) "+%l:%M %p" | sed 's/^ //')
 
-echo -e "${YELLOW}⏱️  Estimated runtime: 15-20 minutes${NC}"
+echo -e "${YELLOW}⏱️  Estimated runtime: ${ESTIMATED_MIN_MINUTES}-${ESTIMATED_MAX_MINUTES} minutes${NC}"
 echo -e "${YELLOW}   Tests will complete around ${COMPLETION_START}-${COMPLETION_END}${NC}"
 echo ""
 
