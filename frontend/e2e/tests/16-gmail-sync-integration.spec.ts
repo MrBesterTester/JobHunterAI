@@ -228,6 +228,10 @@ test.describe('Gmail Sync Integration', () => {
   });
 
   test('should allow approving jobs synced from Gmail', async () => {
+    // ISSUE-063: Set test timeout to allow for slow Gmail sync operations under load
+    // 120s base → 180s under comprehensive load (sufficient for 61s+ switchToTab + subsequent operations)
+    test.setTimeout(getTestTimeout(120000));
+
     // Navigate to New Jobs tab (jobs awaiting approval)
     // ISSUE-063 Option 5: Use 90s timeout for Gmail sync under comprehensive load (4 workers)
     // This operation can take >61s when syncing new jobs with database + stats refresh

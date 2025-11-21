@@ -90,8 +90,13 @@ test.describe('Condensed Description Quality', () => {
   });
 
   test('should show actual job content (not just "No job description")', async ({ page }) => {
+    // ISSUE-063: Set test timeout to allow for slow LLM operations under load
+    // 120s base → 180s under comprehensive load (sufficient for 64s+ switchToTab + LLM description generation)
+    test.setTimeout(getTestTimeout(120000));
+
     // Use New Jobs tab which has jobs with long source descriptions (not filtered jobs with short descriptions)
-    await switchToTab(page, 'new');
+    // ISSUE-063 Option 5: Use 90s timeout for tab switch with LLM-heavy job cards under comprehensive load
+    await switchToTab(page, 'new', true, 90000);
 
     // Check multiple job cards to find one with substantial content
     // Note: Backend passes through short descriptions (≤150 words) as-is to save API costs
