@@ -23,10 +23,10 @@ related: [PLAYWRIGHT_BEST_PRACTICES.md]
   - [Phase 4: Full Rollout (PENDING)](#phase-4-full-rollout-pending)
   - [Phase 5: Cleanup (PENDING)](#phase-5-cleanup-pending)
   - [Key Questions to Track](#key-questions-to-track)
-- [Remaining Challenge: Intra-Worker Test Isolation](#remaining-challenge-intra-worker-test-isolation)
+- [Remaining Challenge: Inter-Test Isolation](#remaining-challenge-inter-test-isolation)
   - [What We've Solved (Inter-Worker Conflicts)](#what-weve-solved-inter-worker-conflicts)
-  - [What Remains Unsolved (Intra-Worker Conflicts)](#what-remains-unsolved-intra-worker-conflicts)
-  - [Proposed Solutions for Intra-Worker Isolation](#proposed-solutions-for-intra-worker-isolation)
+  - [What Remains Unsolved (Inter-Test Conflicts)](#what-remains-unsolved-inter-test-conflicts)
+  - [Proposed Solutions for Inter-Test Isolation](#proposed-solutions-for-inter-test-isolation)
     - [Option 5A: Per-Test Database Reset (Thorough but Slow)](#option-5a-per-test-database-reset-thorough-but-slow)
     - [Option 5B: Transaction Rollback per Test (Fast but Complex)](#option-5b-transaction-rollback-per-test-fast-but-complex)
     - [Option 5C: Accept Partial Isolation (Pragmatic)](#option-5c-accept-partial-isolation-pragmatic)
@@ -213,7 +213,7 @@ export const testWithPage = test.extend<{ page: Page }>({
 
 ---
 
-## Remaining Challenge: Intra-Worker Test Isolation
+## Remaining Challenge: Inter-Test Isolation
 
 **Status**: 🟡 **OPEN FOR DISCUSSION** - Architectural concern identified after Phase 3 completion
 
@@ -235,7 +235,7 @@ Worker 2 ──> jobhunter_test_worker_2 ✅ Isolated from other workers
 Worker 3 ──> jobhunter_test_worker_3 ✅ Isolated from other workers
 ```
 
-### What Remains Unsolved (Intra-Worker Conflicts)
+### What Remains Unsolved (Inter-Test Conflicts)
 
 **Within Worker 0** (~142 tests running sequentially):
 ```
@@ -255,7 +255,7 @@ Test 4: Expects 10 "new"    → ❌ FAILS (sees 14)
 
 **User Observation**: "I got the distinct feeling that we're not done with this issue, particularly if the tests running on a given worker database are fairly arbitrary."
 
-### Proposed Solutions for Intra-Worker Isolation
+### Proposed Solutions for Inter-Test Isolation
 
 #### Option 5A: Per-Test Database Reset (Thorough but Slow)
 
@@ -374,14 +374,14 @@ test.afterAll(async ({ workerDatabase }) => {
 
 ### Decision Required
 
-**Question for stakeholder**: How much intra-worker isolation do you want?
+**Question for stakeholder**: How much inter-test isolation do you want?
 
 1. **Strict isolation** (Option 5A): Every test gets fresh database (+71s runtime)
 2. **Fast isolation** (Option 5B): Transactions (requires major backend refactor)
 3. **Pragmatic** (Option 5C): Per-worker isolation only, manage dependencies (current state after Phase 3)
 4. **Balanced** (Option 5D): Per-file resets (+15-20s runtime)
 
-**Note**: This decision doesn't block Phase 4 rollout. We can deploy Phase 3's per-worker isolation and evaluate whether additional intra-worker isolation is needed based on actual test behavior.
+**Note**: This decision doesn't block Phase 4 rollout. We can deploy Phase 3's per-worker isolation and evaluate whether additional inter-test isolation is needed based on actual test behavior.
 
 ---
 
