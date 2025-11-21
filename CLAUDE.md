@@ -132,6 +132,19 @@ At the start of every Claude Code session, a SessionStart hook automatically:
 
 **✅ IMPLEMENTED**: iPhone notification setup is active! See [README_iPhone-notify-setup.md](README_iPhone-notify-setup.md) for configuration details.
 
+**IMPORTANT**: Always announce expected completion time BEFORE starting long-running tasks (>5 minutes).
+
+**When starting long-running tasks:**
+- Calculate expected completion time (current time + estimated duration)
+- Include completion time prominently in announcement message
+- Example: "I'll run the comprehensive test suite now. This will take approximately 15-20 minutes. Tests should complete around 2:45-3:00 PM."
+- Applies to: comprehensive test runs, large builds, database migrations, etc.
+
+**Why this matters:**
+- User can plan their time effectively
+- Clear expectations prevent "is it still running?" confusion
+- Completion time is more useful than just duration ("15 minutes" requires mental math)
+
 **IMPORTANT**: Always show dialog boxes WITH SOUND when completing long-running tasks (>30 seconds).
 
 **Command to use (sound then dialog):**
