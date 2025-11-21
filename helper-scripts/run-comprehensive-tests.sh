@@ -104,7 +104,15 @@ echo "  - Backup and clear the jobhunter_personal database"
 echo "  - Seed database with test fixtures"
 echo "  - Run cargo clean (full rebuild required)"
 echo ""
+# Calculate estimated completion time
+CURRENT_TIME=$(date +%s)
+START_OFFSET=$((15 * 60))  # 15 minutes in seconds
+END_OFFSET=$((20 * 60))    # 20 minutes in seconds
+COMPLETION_START=$(date -r $((CURRENT_TIME + START_OFFSET)) "+%l:%M %p" | sed 's/^ //')
+COMPLETION_END=$(date -r $((CURRENT_TIME + END_OFFSET)) "+%l:%M %p" | sed 's/^ //')
+
 echo -e "${YELLOW}⏱️  Estimated runtime: 15-20 minutes${NC}"
+echo -e "${YELLOW}   Tests will complete around ${COMPLETION_START}-${COMPLETION_END}${NC}"
 echo ""
 
 # Run the orchestrator
