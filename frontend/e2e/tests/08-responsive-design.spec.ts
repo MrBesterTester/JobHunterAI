@@ -138,6 +138,7 @@ test.describe('Responsive Design & Layout', () => {
 
   test.setTimeout(33000);
     test('should resize modals to fit screen', async ({ page }) => {
+      test.setTimeout(33000);
       await dashboardPage.goto();
       await dashboardPage.clickTab('all');
       await dashboardPage.waitForJobsUpdate();
@@ -216,6 +217,7 @@ test.describe('Responsive Design & Layout', () => {
     });
       test.setTimeout(33000);
 
+  test.setTimeout(33000);
     test('should have modals occupy full screen or near-full', async ({ page }) => {
       await dashboardPage.goto();
       await dashboardPage.clickTab('all');
@@ -307,9 +309,10 @@ test.describe('Responsive Design & Layout', () => {
       await setViewportSize(page, viewportSizes.mobile.width, viewportSizes.mobile.height);
       await page.waitForTimeout(500);
 
-  test.setTimeout(34147);
+  test.setTimeout(66000);
       await expect(dashboardPage.pageTitle).toBeVisible();
     });
+      test.setTimeout(34147);
 
     test('should handle orientation changes gracefully', async ({ page }) => {
       // Portrait

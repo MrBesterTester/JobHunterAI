@@ -66,6 +66,7 @@ test.describe('Job Scoring System', () => {
 
   test.setTimeout(66000);
   test('should display score badges on all job cards', async ({ page }) => {
+    test.setTimeout(66000);
     // Go to New tab to see job cards
     await page.locator('text=New').first().click();
     await page.waitForLoadState('networkidle');
@@ -115,6 +116,7 @@ test.describe('Job Scoring System', () => {
       test.setTimeout(198001);
   });
 
+  test.setTimeout(198001);
   test('minimum score filter should be functional', async ({ page }) => {
     // Navigate to Ranked Jobs tab
     await page.locator('text=Ranked Jobs').first().click();
@@ -166,6 +168,7 @@ test.describe('Job Scoring System', () => {
       test.setTimeout(132000);
     expect(true).toBe(true);
   });
+    test.setTimeout(132000);
 
   test('should be able to sort by different criteria', async ({ page }) => {
     // Navigate to Ranked Jobs tab
@@ -220,6 +223,7 @@ test.describe('Job Scoring System', () => {
       // At minimum, clicking should not cause errors
       expect(isExpanded || !isExpanded).toBeDefined();
     }
+      test.setTimeout(198001);
   });
 
   test('weight adjustment should update and recalculate scores', async ({ page }) => {
@@ -284,6 +288,7 @@ test.describe('Job Scoring System', () => {
     // Verify table is still functional with or without null scores
     const tableRows = page.locator('tbody tr');
     const rowCount = await tableRows.count();
+      test.setTimeout(66000);
     expect(rowCount).toBeGreaterThan(0);
   });
 

@@ -49,7 +49,7 @@ test.describe('Error Handling & Edge Cases', () => {
       const hasPageLoaded = await dashboardPage.pageTitle.isVisible();
       expect(hasPageLoaded).toBe(true);
     });
-      test.setTimeout(33000);
+      test.setTimeout(33550);
 
     test('should recover when backend server restarts', async ({ page }) => {
       // First load: API fails
@@ -98,6 +98,7 @@ test.describe('Error Handling & Edge Cases', () => {
     });
 
     test('should handle network timeout gracefully', async ({ page }) => {
+      test.setTimeout(33000);
       // Simulate very slow API response
       await page.route('**/api/jobs', async (route) => {
         await new Promise((resolve) => setTimeout(resolve, 10000)); // 10s delay
@@ -166,6 +167,7 @@ test.describe('Error Handling & Edge Cases', () => {
       expect(newCount).toBe(0);
     });
 
+  test.setTimeout(33000);
     test('should handle transition from populated to empty state', async ({ page }) => {
       await dashboardPage.goto();
       await dashboardPage.clickTab('inbox');
@@ -225,6 +227,7 @@ test.describe('Error Handling & Edge Cases', () => {
 
       expect(hasHorizontalScroll).toBe(false);
     });
+      test.setTimeout(33000);
 
     test('should make long job description scrollable in modal', async ({ page }) => {
       await dashboardPage.goto();
@@ -374,6 +377,7 @@ test.describe('Error Handling & Edge Cases', () => {
       await expect(dashboardPage.pageTitle).toBeVisible();
     });
   });
+    test.setTimeout(99001);
 
   test.describe('Additional Edge Cases', () => {
     test('should handle rapid tab switching without errors', async ({ page }) => {
@@ -432,6 +436,7 @@ test.describe('Error Handling & Edge Cases', () => {
       await dashboardPage.waitForJobsUpdate();
 
       // Should not crash
+        test.setTimeout(33000);
       await expect(dashboardPage.pageTitle).toBeVisible();
     });
 

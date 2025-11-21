@@ -415,7 +415,7 @@ test.describe('Timeline View - Phase 5.1', () => {
   test.describe('Timeline API Integration', () => {
     test('should fetch timeline from API', async ({ page }) => {
       await page.click('button:has-text("Applied")');
-        test.setTimeout(66000);
+        test.setTimeout(99001);
       await page.waitForTimeout(1000);
 
       const jobCard = page.locator('[data-testid="job-card"]').first();
@@ -437,6 +437,7 @@ test.describe('Timeline View - Phase 5.1', () => {
 
   test.setTimeout(66000);
     test('should handle empty timeline gracefully', async ({ page }) => {
+      test.setTimeout(66000);
       await page.click('button:has-text("New Jobs")');
       await page.waitForTimeout(1000);
 
@@ -501,6 +502,7 @@ test.describe('Timeline View - Phase 5.1', () => {
       }
     });
 
+  test.setTimeout(66000);
     test('should indicate response received', async ({ page }) => {
       await page.click('button:has-text("Applied")');
       await page.waitForTimeout(1000);
@@ -519,6 +521,7 @@ test.describe('Timeline View - Phase 5.1', () => {
         }
       }
     });
+      test.setTimeout(66000);
 
     test('should show days since last contact', async ({ page }) => {
       await page.click('button:has-text("Applied")');

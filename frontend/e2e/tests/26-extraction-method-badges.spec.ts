@@ -253,6 +253,7 @@ test.describe('Extraction Method Badges', () => {
 
   test.setTimeout(33000);
   test('should display badge in job details modal', async ({ page }) => {
+    test.setTimeout(33000);
     await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
     // Click on first job card to open modal

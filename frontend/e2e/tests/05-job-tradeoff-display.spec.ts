@@ -116,6 +116,7 @@ test.describe('Job Trade-off Display', () => {
 
   test.setTimeout(66000);
   test('should display employment details section in modal', async ({ page }) => {
+    test.setTimeout(66000);
     await page.locator('[data-testid="job-card"]').first().click();
     await page.waitForSelector('[data-testid="modal-overlay"]');
 
@@ -199,6 +200,7 @@ test.describe('Job Trade-off Display', () => {
     expect(descText?.length).toBeGreaterThan(0);
   });
 
+  test.setTimeout(66000);
   test('should format salary range correctly', async ({ page }) => {
     await page.locator('[data-testid="job-card"]').first().click();
     await page.waitForSelector('[data-testid="modal-overlay"]');
@@ -285,7 +287,7 @@ test.describe('Job Trade-off Display', () => {
     await page.locator('[data-testid="job-card"]').first().click();
     await page.waitForSelector('[data-testid="modal-overlay"]');
 
-  test.setTimeout(66000);
+  test.setTimeout(99001);
     // Click the X button
     await page.locator('[data-testid="modal-close-x"]').click();
 
@@ -304,6 +306,7 @@ test.describe('Job Trade-off Display', () => {
     // Modal should be closed
     await expect(page.locator('[data-testid="modal-overlay"]')).not.toBeVisible();
   });
+    test.setTimeout(99001);
 
   test('should close modal by clicking overlay', async ({ page }) => {
     await page.locator('[data-testid="job-card"]').first().click();

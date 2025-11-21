@@ -193,6 +193,7 @@ test.describe('Gmail Sync Integration', () => {
 
   test.setTimeout(132000);
   test('should verify stats update after Gmail sync', async () => {
+    test.setTimeout(132000);
     // Navigate to Intake tab
     const intakeTab = page.getByRole('button', { name: /^intake$/i });
     await intakeTab.click();

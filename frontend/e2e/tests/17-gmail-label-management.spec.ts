@@ -54,6 +54,7 @@ test.describe('Phase 2.9: Gmail Label Management', () => {
 
   test.setTimeout(165000);
   test('should reject job and move to Rejected tab', async ({ page }) => {
+    test.setTimeout(165000);
     // Click on New Jobs tab
     await page.click('[data-testid="new-tab-button"]');
 
@@ -100,6 +101,7 @@ test.describe('Phase 2.9: Gmail Label Management', () => {
   });
     test.setTimeout(198001);
 
+  test.setTimeout(198001);
   test('should reject job from modal dialog', async ({ page }) => {
     // Click on New Jobs tab
     await page.click('[data-testid="new-tab-button"]');
@@ -209,6 +211,7 @@ test.describe('Phase 2.9: Gmail Label Management', () => {
         test.setTimeout(264000);
     }
   });
+    test.setTimeout(264000);
 
   test('should handle multiple rapid rejections', async ({ page }) => {
     // This test verifies that rapidly rejecting multiple jobs doesn't cause race conditions

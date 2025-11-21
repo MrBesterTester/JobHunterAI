@@ -103,6 +103,7 @@ test.describe('Statistics & Real-time Updates', () => {
 
   test.setTimeout(33000);
     test('should update statistics immediately after rejecting a job', async ({ page }) => {
+      test.setTimeout(33000);
       await dashboardPage.clickTab('inbox');
       await dashboardPage.waitForJobsUpdate();
 
@@ -148,6 +149,7 @@ test.describe('Statistics & Real-time Updates', () => {
     });
       test.setTimeout(33000);
 
+  test.setTimeout(33000);
     test('should update statistics without page refresh', async ({ page }) => {
       await dashboardPage.clickTab('inbox');
       await dashboardPage.waitForJobsUpdate();
@@ -268,6 +270,7 @@ test.describe('Statistics & Real-time Updates', () => {
       expect(Array.isArray(criteria.preferred_domains)).toBe(true);
         test.setTimeout(33000);
     });
+      test.setTimeout(33000);
 
     test('should verify filtered jobs match criteria', async ({ page }) => {
       // Get criteria
@@ -453,6 +456,7 @@ test.describe('Statistics & Real-time Updates', () => {
         // Note: This depends on implementation
         // If polling is implemented, we should see multiple calls
       }
+        test.setTimeout(33000);
     });
 
     test('should recover from transient API failures', async ({ page }) => {

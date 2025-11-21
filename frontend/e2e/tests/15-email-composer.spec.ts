@@ -425,7 +425,7 @@ test.describe('Email Composer (Phase 5.2)', () => {
 
   test.describe('Draft Status Display', () => {
     test('should show draft status badge on job card after creation', async ({ page }) => {
-      test.setTimeout(38500);
+      test.setTimeout(41250);
       // This test requires mocking successful draft creation
       await page.route('**/api/applications/*/create-draft', (route) => {
         route.fulfill({

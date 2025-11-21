@@ -64,6 +64,7 @@ test.describe('Modal Scroll Position Stability', () => {
 
   test.setTimeout(99001);
   test('scroll position should remain stable during multiple scroll events', async ({ page }) => {
+    test.setTimeout(99001);
     await page.click('button:has-text("Filtered")');
     await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
@@ -196,6 +197,7 @@ test.describe('Modal Scroll Position Stability', () => {
     expect(Math.abs(scrollAfterHover - scrollAfterInitial)).toBeLessThan(10);
   });
 
+  test.setTimeout(99001);
   test('scroll position should persist during rapid scrolling', async ({ page }) => {
     await page.click('button:has-text("Filtered")');
     await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });

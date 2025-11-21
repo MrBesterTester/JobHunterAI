@@ -147,6 +147,7 @@ test.describe('Setup & Initial Load', () => {
 
   test.setTimeout(33000);
     test('should make GET /api/jobs/stats request', async ({ page }) => {
+      test.setTimeout(33000);
       const responsePromise = page.waitForResponse(
         (response) => response.url().includes('/api/jobs/stats') && response.request().method() === 'GET',
         { timeout: getTestTimeout(10000) }
@@ -170,6 +171,7 @@ test.describe('Setup & Initial Load', () => {
     });
       test.setTimeout(33000);
 
+  test.setTimeout(33000);
     test('should have API response times under 100ms', async ({ page }) => {
       const measurements: number[] = [];
       const requestTimes = new Map<string, number>();

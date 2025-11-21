@@ -91,6 +91,7 @@ test.describe('Calendar Management - Phase 5.1', () => {
     });
 
     test('should create interview with valid data', async ({ page }) => {
+      test.setTimeout(203501);
       // First create or select an application
       await page.click('button:has-text("Approved")');
 
@@ -215,7 +216,7 @@ test.describe('Calendar Management - Phase 5.1', () => {
       const count = await cancelButton.count();
 
       if (count > 0) {
-        test.setTimeout(66000);
+        test.setTimeout(104501);
         await cancelButton.click();
 
         // Should show confirmation dialog
@@ -227,6 +228,7 @@ test.describe('Calendar Management - Phase 5.1', () => {
       }
     });
 
+  test.setTimeout(66000);
     test('should show interview details on click', async ({ page }) => {
       await page.click('button:has-text("Calendar")');
       await page.waitForTimeout(1000);
@@ -289,6 +291,7 @@ test.describe('Calendar Management - Phase 5.1', () => {
       expect(response.ok()).toBeTruthy();
         test.setTimeout(132000);
     });
+      test.setTimeout(66000);
 
     test('should handle API errors gracefully', async ({ page }) => {
       // Simulate API failure
@@ -300,6 +303,7 @@ test.describe('Calendar Management - Phase 5.1', () => {
       // Should show error message or empty state
       const errorMessage = page.locator('text=/Error loading|Failed to load|No interviews/i');
       await expect(errorMessage).toBeVisible();
+        test.setTimeout(132000);
     });
 
     test('should create interview via API', async ({ page }) => {

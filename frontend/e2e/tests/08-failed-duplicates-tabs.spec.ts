@@ -50,6 +50,7 @@ test.describe('Failed and Duplicates Tabs', () => {
 
   test.setTimeout(66000);
   test('Duplicates counter should match Duplicates tab count', async ({ page }) => {
+    test.setTimeout(66000);
     // Get the duplicates counter value
     const duplicatedStat = page.locator('[data-testid="stat-duplicated"]');
     await expect(duplicatedStat).toBeVisible();
@@ -142,6 +143,7 @@ test.describe('Failed and Duplicates Tabs', () => {
     }
   });
 
+  test.setTimeout(66000);
   test('Non-Job Emails counter should match Ignored tab count', async ({ page }) => {
     // Get the ignored counter value
     const ignoredStat = page.locator('[data-testid="stat-ignored"]');

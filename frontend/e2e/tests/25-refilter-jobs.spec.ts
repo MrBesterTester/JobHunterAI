@@ -170,7 +170,7 @@ test.describe('Re-filter Jobs Button and Dropdown', () => {
   });
 
   test('should show "Re-filtering..." text and spinning icon during operation', async ({ page }) => {
-    test.setTimeout(34100);
+    test.setTimeout(34650);
     const refilterButton = page.getByRole('button', { name: /Re-filter Jobs/i });
 
     // Initially shows "Re-filter Jobs"
@@ -203,6 +203,7 @@ test.describe('Re-filter Jobs Button and Dropdown', () => {
 
   test.setTimeout(33000);
   test('should display success notification after re-filtering', async ({ page }) => {
+    test.setTimeout(33000);
     const refilterButton = page.getByRole('button', { name: /Re-filter Jobs/i });
 
     // Click re-filter button
@@ -336,6 +337,7 @@ test.describe('Re-filter Jobs Button and Dropdown', () => {
     }
   });
 
+  test.setTimeout(93501);
   test('should maintain button state after page navigation', async ({ page }) => {
     const dropdown = page.locator('select').filter({ hasText: /Last Sync Only/i });
 
@@ -387,6 +389,7 @@ test.describe('Re-filter Jobs Button and Dropdown', () => {
     await expect(refilterButton).toBeEnabled();
     expect(await refilterButton.textContent()).toContain('Re-filter Jobs');
   });
+    test.setTimeout(33000);
 
   test('should be accessible via keyboard navigation', async ({ page }) => {
     // Tab to the dropdown

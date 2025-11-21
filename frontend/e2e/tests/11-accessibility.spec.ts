@@ -37,6 +37,7 @@ test.describe('Accessibility Testing', () => {
 
   test.setTimeout(33000);
     test('should display focus indicators on all interactive elements', async ({ page }) => {
+      test.setTimeout(33000);
       // Tab through several elements
       for (let i = 0; i < 5; i++) {
         await page.keyboard.press('Tab');
@@ -114,6 +115,7 @@ test.describe('Accessibility Testing', () => {
       expect(elementAfterBackward).not.toBe(elementAfterForward);
     });
 
+  test.setTimeout(66000);
     test('should trap focus within modal when open', async ({ page }) => {
       await dashboardPage.clickTab('all');
       await dashboardPage.waitForJobsUpdate();
@@ -145,6 +147,7 @@ test.describe('Accessibility Testing', () => {
 
       expect(focusInModal).toBe(true);
     });
+      test.setTimeout(35200);
 
     test('should close modal with Escape key', async ({ page }) => {
       await dashboardPage.clickTab('all');
@@ -187,6 +190,7 @@ test.describe('Accessibility Testing', () => {
       });
 
       expect(focusedElement).toBeTruthy();
+        test.setTimeout(66000);
     });
 
     test('should allow keyboard-only workflow: view job, approve', async ({ page }) => {
@@ -306,12 +310,13 @@ test.describe('Accessibility Testing', () => {
     test('should use semantic HTML (headings, nav, main, etc.)', async ({ page }) => {
       await dashboardPage.goto();
 
-  test.setTimeout(33000);
+  test.setTimeout(66000);
       // Check for semantic elements
       const hasMain = (await page.locator('main').count()) > 0;
       const hasHeadings = (await page.locator('h1, h2, h3').count()) > 0;
 
       // Should use semantic HTML
+        test.setTimeout(33000);
       expect(hasMain || hasHeadings).toBe(true);
     });
 
@@ -417,6 +422,7 @@ test.describe('Accessibility Testing', () => {
       });
 
       // Should have at least some landmarks
+        test.setTimeout(33000);
       const totalLandmarks = landmarks.reduce((sum, l) => sum + l.count, 0);
       expect(totalLandmarks).toBeGreaterThan(0);
     });

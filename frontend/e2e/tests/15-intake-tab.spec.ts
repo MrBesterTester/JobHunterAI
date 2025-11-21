@@ -52,6 +52,7 @@ test.describe('Intake Tab', () => {
 
   test.setTimeout(33000);
     test('should display Intake tab content when active', async () => {
+      test.setTimeout(33000);
       const intakeTab = page.getByRole('button', { name: /^intake$/i });
       await intakeTab.click();
 
@@ -279,6 +280,7 @@ test.describe('Intake Tab', () => {
 
   test.setTimeout(33000);
   test.describe('Loading States', () => {
+    test.setTimeout(33000);
     test('should show loading indicator when Intake tab first loads', async () => {
       const intakeTab = page.getByRole('button', { name: /^intake$/i });
       await intakeTab.click();
@@ -315,6 +317,7 @@ test.describe('Intake Tab', () => {
         test.setTimeout(33000);
       await expect(gmailCard).toBeVisible();
     });
+      test.setTimeout(33000);
 
     test('should display integration cards stacked on mobile', async () => {
       // Set mobile viewport

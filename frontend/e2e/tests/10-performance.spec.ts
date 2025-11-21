@@ -203,6 +203,7 @@ test.describe('Performance Validation', () => {
 
   test.setTimeout(33000);
     test('should maintain smooth scrolling with many jobs', async ({ page }) => {
+      test.setTimeout(33000);
       await dashboardPage.goto();
       await dashboardPage.clickTab('all');
       await dashboardPage.waitForJobsUpdate();
@@ -311,6 +312,7 @@ test.describe('Performance Validation', () => {
     test.setTimeout(66000);
 
   test.describe('Runtime Performance', () => {
+    test.setTimeout(66000);
     test('should maintain FPS during animations', async ({ page }) => {
       await dashboardPage.goto();
 

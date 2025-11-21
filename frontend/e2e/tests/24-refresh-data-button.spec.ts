@@ -102,6 +102,7 @@ test.describe('Refresh Data Button', () => {
 
   test.setTimeout(33000);
   test('should be clickable and enabled', async ({ page }) => {
+    test.setTimeout(33000);
     const refreshButton = page.locator('button:has-text("Refresh Data")');
     await expect(refreshButton).toBeVisible();
     await expect(refreshButton).toBeEnabled();
@@ -129,6 +130,7 @@ test.describe('Refresh Data Button', () => {
   });
     test.setTimeout(66000);
 
+  test.setTimeout(66000);
   test('should work on mobile viewport', async ({ page }) => {
     // Set mobile viewport
     await page.setViewportSize({ width: 375, height: 667 });

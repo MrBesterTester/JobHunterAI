@@ -174,6 +174,7 @@ test.describe('Job Card Debug Section', () => {
 
   test.setTimeout(35200);
   test('should display debug section on multiple tabs', async ({ page }) => {
+    test.setTimeout(35200);
     const tabs = ['New', 'Approved', 'Filtered', 'All'];
 
     for (const tab of tabs) {

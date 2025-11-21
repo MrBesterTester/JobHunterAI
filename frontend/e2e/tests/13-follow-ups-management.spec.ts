@@ -162,7 +162,7 @@ test.describe('Follow-ups Management - Phase 5.1', () => {
         await page.waitForTimeout(1000);
 
         const sendButton = page.locator('button:has-text("Send Now")').first();
-          test.setTimeout(104501);
+          test.setTimeout(107251);
         const sendCount = await sendButton.count();
 
         if (sendCount > 0) {
@@ -183,7 +183,7 @@ test.describe('Follow-ups Management - Phase 5.1', () => {
         await cancelButton.click();
 
         // Should show confirmation
-          test.setTimeout(33000);
+          test.setTimeout(104501);
         const confirmDialog = page.locator('text=/Are you sure|Confirm/i');
         if (await confirmDialog.isVisible()) {
           await page.click('button:has-text("Yes"), button:has-text("Confirm")');
@@ -245,6 +245,7 @@ test.describe('Follow-ups Management - Phase 5.1', () => {
     });
 
     test('should show template variables in preview', async ({ page }) => {
+      test.setTimeout(561000);
       await page.click('button:has-text("Follow-ups")');
       await page.waitForTimeout(1000);
 

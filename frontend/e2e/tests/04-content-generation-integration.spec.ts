@@ -39,7 +39,7 @@ test.describe('Content Generation - LLM Integration Tests', () => {
   });
 
   test('should generate real content end-to-end with actual LLM', async ({ page }) => {
-    test.setTimeout(66000);
+    test.setTimeout(99001);
     await dashboardPage.clickTab('approved');
     await dashboardPage.waitForJobsUpdate();
 

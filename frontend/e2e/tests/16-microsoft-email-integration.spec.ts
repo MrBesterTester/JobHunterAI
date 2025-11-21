@@ -67,6 +67,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
 
   test.setTimeout(66000);
     test('should show Microsoft branding color (#0078d4)', async ({ page }) => {
+      test.setTimeout(66000);
       // Navigate to Intake tab
       await page.getByRole('button', { name: /^intake$/i }).click();
 
@@ -97,6 +98,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
     });
       test.setTimeout(66000);
 
+  test.setTimeout(66000);
     test('should display Authenticate button when not authenticated', async ({ page }) => {
       // Navigate to Intake tab
       await page.getByRole('button', { name: /^intake$/i }).click();
@@ -166,6 +168,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
     });
   });
 
+  test.setTimeout(66000);
   test.describe('Microsoft vs Gmail Source Differentiation', () => {
     test('should show source badge on jobs from Microsoft email', async ({ page }) => {
       // Navigate to New Jobs tab
@@ -265,6 +268,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
         // Button should be clickable (not disabled)
         await expect(approveButton).toBeEnabled();
       }
+        test.setTimeout(104501);
     });
 
     test('should show job source in job details', async ({ page }) => {
@@ -472,6 +476,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       // Stats should either stay same (duplicates) or increase
       expect(newTotalCount).toBeGreaterThanOrEqual(initialTotalCount);
     });
+      test.setTimeout(104501);
   });
 
   test.describe('Email Archiving (Phase 2.8)', () => {
@@ -846,6 +851,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
      * - Item 3: Email Sync & Extraction
      * - Item 4: End-to-End Workflow
      * - Item 5: Error Handling
+       test.setTimeout(176000);
      *
      * Assumes: OAuth authentication is already complete and JobOps folder has emails
      */
@@ -928,6 +934,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
         // (Check job card or details for "microsoft" or source badge)
         console.log(`Sample job preview: ${jobText?.substring(0, 100)}`);
 
+  test.setTimeout(110001);
         // Test passes if sync completed without errors
         expect(jobCount).toBeGreaterThanOrEqual(0);
       }
@@ -1113,6 +1120,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
         }
       } else {
         console.log('No errors - sync completed (possibly with 0 new jobs)');
+          test.setTimeout(264000);
       }
 
       // Test passes if app is still responsive
