@@ -49,6 +49,22 @@ interface Violation {
   operations: TimeoutOperation[];
 }
 
+interface FrameworkViolation {
+  type: 'framework';
+  framework: 'playwright';
+  configFile: string;
+  configTimeout: number;
+  requiredTimeout: number;
+  deficit: number;
+  affectedOperations: Array<{
+    file: string;
+    test: string;
+    line: number;
+    operation: string;
+    requestedTimeout: number;
+  }>;
+}
+
 // Default timeouts for various test frameworks
 const DEFAULT_TIMEOUTS = {
   playwright: 30000,        // Playwright test default: 30s
@@ -58,6 +74,93 @@ const DEFAULT_TIMEOUTS = {
 };
 
 const LOAD_MULTIPLIER = 1.5; // getTestTimeout multiplier
+
+/**
+ * Parse playwright.config.ts to extract actionTimeout configuration
+ */
+function parsePlaywrightConfig(configPath: string): { normal: number; comprehensive: number } | null {
+  try {
+    const content = fs.readFileSync(configPath, 'utf-8');
+
+    // Look for actionTimeout line with ternary expression
+    // Format: actionTimeout: process.env.COMPREHENSIVE_TESTS ? 120 * 1000 : 10 * 1000,
+    const actionTimeoutMatch = content.match(
+      /actionTimeout:\s*process\.env\.(?:COMPREHENSIVE_TESTS|CI)\s*\?\s*(\d+)\s*\*\s*1000\s*:\s*(\d+)\s*\*\s*1000/
+    );
+
+    if (actionTimeoutMatch) {
+      return {
+        comprehensive: parseInt(actionTimeoutMatch[1]) * 1000,
+        normal: parseInt(actionTimeoutMatch[2]) * 1000,
+      };
+    }
+
+    return null;
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * Check if operations exceed framework-level actionTimeout
+ */
+function checkFrameworkViolations(
+  violations: Violation[],
+  testFiles: string[],
+  projectRoot: string
+): FrameworkViolation | null {
+  // Look for playwright.config.ts
+  const configPath = path.join(projectRoot, 'frontend', 'playwright.config.ts');
+
+  if (!fs.existsSync(configPath)) {
+    return null;
+  }
+
+  const config = parsePlaywrightConfig(configPath);
+  if (!config) {
+    return null;
+  }
+
+  // Check under comprehensive load scenario (more restrictive)
+  const actionTimeout = config.comprehensive;
+
+  // Find all operations that exceed the framework actionTimeout
+  const affectedOps: FrameworkViolation['affectedOperations'] = [];
+  let maxRequestedTimeout = 0;
+
+  for (const violation of violations) {
+    for (const op of violation.operations) {
+      const opTimeout = op.timeout ?? DEFAULT_TIMEOUTS.playwrightAction;
+      const effectiveTimeout = op.isLoadAware ? Math.floor(opTimeout * LOAD_MULTIPLIER) : opTimeout;
+
+      if (effectiveTimeout > actionTimeout) {
+        affectedOps.push({
+          file: violation.file,
+          test: violation.test,
+          line: op.line,
+          operation: op.operation,
+          requestedTimeout: effectiveTimeout,
+        });
+
+        maxRequestedTimeout = Math.max(maxRequestedTimeout, effectiveTimeout);
+      }
+    }
+  }
+
+  if (affectedOps.length === 0) {
+    return null;
+  }
+
+  return {
+    type: 'framework',
+    framework: 'playwright',
+    configFile: configPath,
+    configTimeout: actionTimeout,
+    requiredTimeout: maxRequestedTimeout,
+    deficit: maxRequestedTimeout - actionTimeout,
+    affectedOperations: affectedOps,
+  };
+}
 
 /**
  * Parse a TypeScript/JavaScript test file to extract timeout information
@@ -221,33 +324,70 @@ async function auditDirectory(directory: string): Promise<Violation[]> {
 /**
  * Format violation report
  */
-function formatReport(violations: Violation[]): string {
-  if (violations.length === 0) {
+function formatReport(violations: Violation[], frameworkViolation: FrameworkViolation | null): string {
+  let hasViolations = violations.length > 0 || frameworkViolation !== null;
+
+  if (!hasViolations) {
     return '✅ No timeout budget violations detected!';
   }
 
-  let report = `\n⚠️  TIMEOUT BUDGET VIOLATIONS DETECTED (${violations.length} total)\n`;
-  report += '═'.repeat(80) + '\n\n';
+  let report = '';
 
-  for (const v of violations) {
-    report += `❌ File: ${v.file}:${v.testLine}\n`;
-    report += `   Test: "${v.test}"\n`;
-    report += `   Parent timeout: ${v.parentTimeout}ms\n`;
-    report += `   Sequential operations sum: ${v.childrenSum}ms\n`;
-    report += `   Required (with 10% buffer): ${Math.ceil(v.childrenSum * 1.1)}ms\n`;
-    report += `   ⚠️  DEFICIT: ${Math.ceil(v.deficit)}ms SHORT!\n\n`;
-
-    report += `   Operations:\n`;
-    for (const op of v.operations) {
-      const timeout = op.timeout ?? DEFAULT_TIMEOUTS.playwrightAction;
-      const loadAwareMarker = op.isLoadAware ? ' (load-aware)' : '';
-      report += `   - Line ${op.line}: ${op.operation} → ${timeout}ms${loadAwareMarker}\n`;
+  // Report framework-level violations first (these are critical)
+  if (frameworkViolation) {
+    report += '\n🚨 CRITICAL: FRAMEWORK-LEVEL TIMEOUT VIOLATION\n';
+    report += '═'.repeat(80) + '\n\n';
+    report += `❌ ${frameworkViolation.framework.toUpperCase()} CONFIGURATION ISSUE\n\n`;
+    report += `   Config File: ${frameworkViolation.configFile}\n`;
+    report += `   actionTimeout: ${frameworkViolation.configTimeout}ms (under COMPREHENSIVE_TESTS)\n\n`;
+    report += `   ⚠️  PROBLEM: Global actionTimeout is LOWER than operation timeouts in code!\n\n`;
+    report += `   The framework enforces a hard cap of ${frameworkViolation.configTimeout}ms on ALL actions,\n`;
+    report += `   which overrides any higher timeouts you specify in test code.\n\n`;
+    report += `   Required timeout: ${frameworkViolation.requiredTimeout}ms\n`;
+    report += `   ⚠️  DEFICIT: ${frameworkViolation.deficit}ms SHORT!\n\n`;
+    report += `   Affected operations (${frameworkViolation.affectedOperations.length} total):\n`;
+    for (const op of frameworkViolation.affectedOperations.slice(0, 10)) {
+      report += `   - ${op.file}:${op.line} "${op.test}"\n`;
+      report += `     ${op.operation} requests ${op.requestedTimeout}ms but capped at ${frameworkViolation.configTimeout}ms\n`;
+    }
+    if (frameworkViolation.affectedOperations.length > 10) {
+      report += `   ... and ${frameworkViolation.affectedOperations.length - 10} more\n`;
     }
     report += '\n';
-    report += '   Recommendation:\n';
-    report += `   Update test.setTimeout() to at least ${Math.ceil(v.childrenSum * 1.1)}ms\n`;
-    report += `   Or use: test.setTimeout(getTestTimeout(${Math.ceil(v.parentTimeout + v.deficit)}));\n`;
-    report += '\n' + '─'.repeat(80) + '\n\n';
+    report += '   🔧 IMMEDIATE FIX REQUIRED:\n';
+    report += `   Update ${frameworkViolation.configFile}:\n`;
+    report += `   \n`;
+    report += `   actionTimeout: process.env.COMPREHENSIVE_TESTS ? ${Math.ceil(frameworkViolation.requiredTimeout / 1000)} * 1000 : 10 * 1000\n`;
+    report += `   \n`;
+    report += `   Without this fix, ALL other timeout increases will be ineffective!\n`;
+    report += '\n' + '═'.repeat(80) + '\n\n';
+  }
+
+  // Report test-level violations
+  if (violations.length > 0) {
+    report += `\n⚠️  TEST-LEVEL TIMEOUT BUDGET VIOLATIONS (${violations.length} total)\n`;
+    report += '═'.repeat(80) + '\n\n';
+
+    for (const v of violations) {
+      report += `❌ File: ${v.file}:${v.testLine}\n`;
+      report += `   Test: "${v.test}"\n`;
+      report += `   Parent timeout: ${v.parentTimeout}ms\n`;
+      report += `   Sequential operations sum: ${v.childrenSum}ms\n`;
+      report += `   Required (with 10% buffer): ${Math.ceil(v.childrenSum * 1.1)}ms\n`;
+      report += `   ⚠️  DEFICIT: ${Math.ceil(v.deficit)}ms SHORT!\n\n`;
+
+      report += `   Operations:\n`;
+      for (const op of v.operations) {
+        const timeout = op.timeout ?? DEFAULT_TIMEOUTS.playwrightAction;
+        const loadAwareMarker = op.isLoadAware ? ' (load-aware)' : '';
+        report += `   - Line ${op.line}: ${op.operation} → ${timeout}ms${loadAwareMarker}\n`;
+      }
+      report += '\n';
+      report += '   Recommendation:\n';
+      report += `   Update test.setTimeout() to at least ${Math.ceil(v.childrenSum * 1.1)}ms\n`;
+      report += `   Or use: test.setTimeout(getTestTimeout(${Math.ceil(v.parentTimeout + v.deficit)}));\n`;
+      report += '\n' + '─'.repeat(80) + '\n\n';
+    }
   }
 
   report += 'See docs/PLAYWRIGHT_BEST_PRACTICES.md for detailed guidance on timeout budgets.\n';
@@ -280,11 +420,21 @@ async function main() {
 
   try {
     const violations = await auditDirectory(targetPath);
-    const report = formatReport(violations);
+
+    // Get test files for framework violation checking
+    const testFiles = await glob(`${targetPath}/**/*.{spec,test}.{ts,tsx,js,jsx}`, {
+      ignore: ['**/node_modules/**', '**/dist/**', '**/build/**'],
+    });
+
+    // Check for framework-level violations
+    const projectRoot = process.cwd();
+    const frameworkViolation = checkFrameworkViolations(violations, testFiles, projectRoot);
+
+    const report = formatReport(violations, frameworkViolation);
 
     console.log(report);
 
-    if (violations.length > 0) {
+    if (violations.length > 0 || frameworkViolation) {
       process.exit(1); // Exit with error code
     } else {
       process.exit(0); // Success
