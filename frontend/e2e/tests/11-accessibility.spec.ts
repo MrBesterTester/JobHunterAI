@@ -438,6 +438,7 @@ test.describe('Accessibility Testing', () => {
 
   test.setTimeout(33000);
     test('should have live region for dynamic updates (optional)', async ({ page }) => {
+      test.setTimeout(33000);
       await dashboardPage.goto();
 
       // Check for aria-live regions for dynamic content

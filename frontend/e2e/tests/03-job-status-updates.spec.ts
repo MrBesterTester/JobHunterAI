@@ -499,6 +499,7 @@ test.describe('Job Status Updates', () => {
 
   test.setTimeout(33000);
     test('should maintain data consistency after status updates', async ({ page }) => {
+      test.setTimeout(33000);
       await dashboardPage.clickTab('inbox');
       await dashboardPage.waitForJobsUpdate();
 

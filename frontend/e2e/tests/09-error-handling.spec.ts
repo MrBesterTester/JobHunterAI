@@ -450,6 +450,7 @@ test.describe('Error Handling & Edge Cases', () => {
 
   test.setTimeout(33000);
     test('should handle concurrent status updates on same job', async ({ page }) => {
+      test.setTimeout(33000);
       await dashboardPage.goto();
       await dashboardPage.clickTab('inbox');
       await dashboardPage.waitForJobsUpdate();

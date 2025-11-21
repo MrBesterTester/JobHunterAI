@@ -302,6 +302,7 @@ test.describe('Job Scoring System', () => {
 
   test.setTimeout(66000);
   test('score badge should appear as first badge on job cards', async ({ page }) => {
+    test.setTimeout(66000);
     // Go to New tab to see job cards
     await page.locator('text=New').first().click();
     await page.waitForLoadState('networkidle');
