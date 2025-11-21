@@ -153,12 +153,14 @@ async function main() {
   };
 
   const minDeficitIndex = args.indexOf('--min-deficit');
+  let minDeficitValue: string | undefined;
   if (minDeficitIndex !== -1 && args[minDeficitIndex + 1]) {
     options.minDeficit = parseInt(args[minDeficitIndex + 1]);
+    minDeficitValue = args[minDeficitIndex + 1];
   }
 
   // Get target path
-  const targetPath = args.find(arg => !arg.startsWith('--') && arg !== args[minDeficitIndex + 1]);
+  const targetPath = args.find(arg => !arg.startsWith('--') && arg !== minDeficitValue);
 
   if (!targetPath) {
     console.log('Usage: ts-node helper-scripts/fix-timeout-chains.ts <path-to-test-files> [options]');
