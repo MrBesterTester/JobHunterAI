@@ -170,7 +170,6 @@ test.describe('Re-filter Jobs Button and Dropdown', () => {
   });
 
   test('should show "Re-filtering..." text and spinning icon during operation', async ({ page }) => {
-    test.setTimeout(34650);
     const refilterButton = page.getByRole('button', { name: /Re-filter Jobs/i });
 
     // Initially shows "Re-filter Jobs"
@@ -201,9 +200,7 @@ test.describe('Re-filter Jobs Button and Dropdown', () => {
     await expect(refilterButton).toBeEnabled();
   });
 
-  test.setTimeout(33000);
   test('should display success notification after re-filtering', async ({ page }) => {
-    test.setTimeout(33000);
     const refilterButton = page.getByRole('button', { name: /Re-filter Jobs/i });
 
     // Click re-filter button
@@ -230,7 +227,6 @@ test.describe('Re-filter Jobs Button and Dropdown', () => {
       console.log('No re-filter notification appeared - likely no filtered jobs in database');
     }
   });
-    test.setTimeout(33000);
 
   test('should re-filter with "Last Sync Only" scope', async ({ page }) => {
     const dropdown = page.locator('select').filter({ hasText: /Last Sync Only/i });
@@ -248,7 +244,6 @@ test.describe('Re-filter Jobs Button and Dropdown', () => {
     // Button should return to enabled state
     await expect(refilterButton).toBeEnabled();
     expect(await refilterButton.textContent()).toContain('Re-filter Jobs');
-      test.setTimeout(33000);
   });
 
   test('should re-filter with "All Filtered Jobs" scope', async ({ page }) => {
@@ -269,7 +264,6 @@ test.describe('Re-filter Jobs Button and Dropdown', () => {
 
     // Button should return to enabled state
     await expect(refilterButton).toBeEnabled();
-      test.setTimeout(33000);
     expect(await refilterButton.textContent()).toContain('Re-filter Jobs');
   });
 
@@ -293,7 +287,6 @@ test.describe('Re-filter Jobs Button and Dropdown', () => {
     // Wait for operation to complete
     await page.waitForTimeout(3000);
 
-  test.setTimeout(33000);
     // Should NOT have made any Gmail API calls
     expect(requests.length).toBe(0);
   });
@@ -331,15 +324,12 @@ test.describe('Re-filter Jobs Button and Dropdown', () => {
 
     // Request body should include scope
     if (requestBody) {
-      test.setTimeout(93501);
       expect(requestBody).toHaveProperty('scope');
       expect(['last_sync', 'all_filtered']).toContain(requestBody.scope);
     }
   });
 
-  test.setTimeout(93501);
   test('should maintain button state after page navigation', async ({ page }) => {
-    test.setTimeout(93501);
     const dropdown = page.locator('select').filter({ hasText: /Last Sync Only/i });
 
     // Verify dropdown is visible initially
@@ -366,7 +356,6 @@ test.describe('Re-filter Jobs Button and Dropdown', () => {
     // Get the dropdown again after navigation (create fresh locator)
     const dropdownAfterNav = page.locator('select').filter({ hasText: /Last Sync Only/i });
     await expect(dropdownAfterNav).toBeVisible({ timeout: getTestTimeout(10000) });
-      test.setTimeout(33000);
 
     // Dropdown should reset to default ("Last Sync Only") since it's component state
     const dropdownValue = await dropdownAfterNav.inputValue();
@@ -383,18 +372,14 @@ test.describe('Re-filter Jobs Button and Dropdown', () => {
     await refilterButton.click();
 
     // Wait for operation
-      test.setTimeout(33000);
     await page.waitForTimeout(5000);
 
     // Button should return to enabled state even if there was an error
     await expect(refilterButton).toBeEnabled();
     expect(await refilterButton.textContent()).toContain('Re-filter Jobs');
   });
-    test.setTimeout(33000);
 
-  test.setTimeout(33000);
   test('should be accessible via keyboard navigation', async ({ page }) => {
-    test.setTimeout(33000);
     // Tab to the dropdown
     await page.keyboard.press('Tab');
     await page.keyboard.press('Tab');

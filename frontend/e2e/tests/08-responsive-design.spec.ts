@@ -78,7 +78,6 @@ test.describe('Responsive Design & Layout', () => {
     });
 
     test('should center and properly size modals', async ({ page }) => {
-      test.setTimeout(33000);
       await dashboardPage.goto();
       await dashboardPage.clickTab('all');
       await dashboardPage.waitForJobsUpdate();
@@ -136,9 +135,7 @@ test.describe('Responsive Design & Layout', () => {
       await expect(dashboardPage.jobCards.first()).toBeVisible();
     });
 
-  test.setTimeout(33000);
     test('should resize modals to fit screen', async ({ page }) => {
-      test.setTimeout(33000);
       await dashboardPage.goto();
       await dashboardPage.clickTab('all');
       await dashboardPage.waitForJobsUpdate();
@@ -215,11 +212,8 @@ test.describe('Responsive Design & Layout', () => {
         expect(inboxTabBox.height).toBeGreaterThanOrEqual(32); // Allow flexibility for mobile tabs
       }
     });
-      test.setTimeout(33000);
 
-  test.setTimeout(33000);
     test('should have modals occupy full screen or near-full', async ({ page }) => {
-      test.setTimeout(33000);
       await dashboardPage.goto();
       await dashboardPage.clickTab('all');
       await dashboardPage.waitForJobsUpdate();
@@ -290,7 +284,6 @@ test.describe('Responsive Design & Layout', () => {
       }
     });
   });
-    test.setTimeout(66000);
 
   test.describe('Cross-viewport Testing', () => {
     test('should maintain functionality across viewport changes', async ({ page }) => {
@@ -310,14 +303,10 @@ test.describe('Responsive Design & Layout', () => {
       await setViewportSize(page, viewportSizes.mobile.width, viewportSizes.mobile.height);
       await page.waitForTimeout(500);
 
-  test.setTimeout(66000);
       await expect(dashboardPage.pageTitle).toBeVisible();
     });
-      test.setTimeout(34147);
 
-  test.setTimeout(34147);
     test('should handle orientation changes gracefully', async ({ page }) => {
-      test.setTimeout(34147);
       // Portrait
       await setViewportSize(page, 375, 667);
       await dashboardPage.goto();

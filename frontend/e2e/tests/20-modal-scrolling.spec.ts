@@ -27,7 +27,6 @@ test.describe('Modal Scrolling', () => {
   });
 
   test('should open modal when clicking on a job card', async ({ page }) => {
-    test.setTimeout(33000);
     // Navigate to Filtered tab where we know there's a job with long content
     await page.click('button:has-text("Filtered")');
     await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
@@ -41,9 +40,7 @@ test.describe('Modal Scrolling', () => {
     await expect(modal).toBeVisible();
   });
 
-  test.setTimeout(33000);
   test('should display full email body in modal', async ({ page }) => {
-    test.setTimeout(33000);
     await page.click('button:has-text("Filtered")');
     await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
@@ -76,11 +73,8 @@ test.describe('Modal Scrolling', () => {
     const emailBodySection = page.locator('h3:has-text("Full Email Body")');
     await expect(emailBodySection).toBeVisible();
   });
-    test.setTimeout(66000);
 
-  test.setTimeout(66000);
   test('should allow scrolling through long email content without jumping', async ({ page }) => {
-    test.setTimeout(66000);
     await page.click('button:has-text("Filtered")');
     await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
@@ -124,7 +118,6 @@ test.describe('Modal Scrolling', () => {
       // Content not scrollable, test passes (validates modal displays correctly even with short content)
       console.log('Modal content not tall enough to scroll - test passes (no scrollable content)');
     }
-      test.setTimeout(33000);
   });
 
   test('should have proper overflow styling on modal overlay and content', async ({ page }) => {
@@ -151,7 +144,6 @@ test.describe('Modal Scrolling', () => {
 
     // Check that the content div has overflow auto
     const contentOverflow = await scrollableContent.evaluate(el => window.getComputedStyle(el).overflowY);
-      test.setTimeout(66000);
     expect(contentOverflow).toBe('auto');
   });
 
@@ -187,15 +179,11 @@ test.describe('Modal Scrolling', () => {
       const maxScrollTop = scrollHeight - clientHeight;
 
       // Should be within 50px of bottom
-        test.setTimeout(66000);
       expect(scrollTop).toBeGreaterThan(maxScrollTop - 50);
     }
   });
-    test.setTimeout(66000);
 
-  test.setTimeout(66000);
   test('should close modal when clicking X button after scrolling', async ({ page }) => {
-    test.setTimeout(66000);
     await page.click('button:has-text("Filtered")');
     await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
@@ -216,17 +204,12 @@ test.describe('Modal Scrolling', () => {
 
     // Click close button
     await page.click('[data-testid="modal-close-x"]');
-      test.setTimeout(33000);
 
     // Modal should be closed
     await expect(modalOverlay).not.toBeVisible();
-      test.setTimeout(33000);
   });
-    test.setTimeout(33000);
 
-  test.setTimeout(33000);
   test('should close modal when clicking overlay after scrolling', async ({ page }) => {
-    test.setTimeout(33000);
     await page.click('button:has-text("Filtered")');
     await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 

@@ -15,7 +15,6 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Ignored Tab', () => {
   });
 
   test('should show checkboxes only for Gmail emails in Ignored tab', async ({ page }) => {
-    test.setTimeout(33000);
     // Navigate to Ignored tab
     const ignoredTab = page.locator('button', { hasText: 'Ignored' });
     await ignoredTab.click();
@@ -73,9 +72,7 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Ignored Tab', () => {
     }
   });
 
-  test.setTimeout(135300);
   test('should delete selected Gmail emails from Ignored tab after confirmation', async ({ page }) => {
-    test.setTimeout(136950);
     // Navigate to Ignored tab
     const ignoredTab = page.locator('button', { hasText: 'Ignored' });
     await ignoredTab.click();
@@ -154,11 +151,8 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Ignored Tab', () => {
 
     console.log('Bulk delete workflow completed');
   });
-    test.setTimeout(135300);
 
-  test.setTimeout(135300);
   test('should handle bulk delete cancellation in Ignored tab', async ({ page }) => {
-    test.setTimeout(136950);
     // Navigate to Ignored tab
     const ignoredTab = page.locator('button', { hasText: 'Ignored' });
     await ignoredTab.click();
@@ -231,7 +225,6 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Rejected Tab', () => {
     await page.goto(BASE_URL);
     // Wait for the app to load (wait for stats section which always exists)
     await page.waitForSelector('[data-testid="stat-new"]', { timeout: getTestTimeout(10000) });
-      test.setTimeout(33000);
   });
 
   test('should show checkboxes only for Gmail jobs in Rejected tab', async ({ page }) => {
@@ -284,14 +277,10 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Rejected Tab', () => {
     if (gmailJobs.length > 0) {
       const bulkActionControls = page.locator('button', { hasText: 'Delete' });
       await expect(bulkActionControls.first()).toBeVisible();
-        test.setTimeout(135300);
     }
   });
-    test.setTimeout(135300);
 
-  test.setTimeout(135300);
   test('should delete selected Gmail jobs from Rejected tab after confirmation', async ({ page }) => {
-    test.setTimeout(135300);
     // Navigate to Rejected tab
     const rejectedTab = page.locator('button', { hasText: 'Rejected' });
     await rejectedTab.click();
@@ -367,16 +356,11 @@ test.describe('Phase 2.10: Gmail Junk Cleanup - Rejected Tab', () => {
 
     // Wait for success message or tab refresh
     await page.waitForTimeout(2000);
-      test.setTimeout(99001);
 
     console.log('Bulk delete workflow completed');
-      test.setTimeout(99001);
   });
-    test.setTimeout(99001);
 
-  test.setTimeout(99001);
   test('should handle select all and deselect all in Rejected tab', async ({ page }) => {
-    test.setTimeout(99001);
     // Navigate to Rejected tab
     const rejectedTab = page.locator('button', { hasText: 'Rejected' });
     await rejectedTab.click();

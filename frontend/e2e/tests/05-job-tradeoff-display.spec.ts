@@ -89,7 +89,6 @@ test.describe('Job Trade-off Display', () => {
   });
 
   test('should display compensation details section in modal', async ({ page }) => {
-    test.setTimeout(66000);
     // Click first job card to open modal
     await page.locator('[data-testid="job-card"]').first().click();
     await page.waitForSelector('[data-testid="modal-overlay"]');
@@ -114,9 +113,7 @@ test.describe('Job Trade-off Display', () => {
     }
   });
 
-  test.setTimeout(66000);
   test('should display employment details section in modal', async ({ page }) => {
-    test.setTimeout(66000);
     await page.locator('[data-testid="job-card"]').first().click();
     await page.waitForSelector('[data-testid="modal-overlay"]');
 
@@ -140,7 +137,6 @@ test.describe('Job Trade-off Display', () => {
       }
     }
   });
-    test.setTimeout(66000);
 
   test('should display location & commute section in modal', async ({ page }) => {
     await page.locator('[data-testid="job-card"]').first().click();
@@ -158,7 +154,6 @@ test.describe('Job Trade-off Display', () => {
         expect(policyText).toMatch(/Fully Remote|Hybrid|Onsite|Flexible/i);
       }
     }
-      test.setTimeout(66000);
   });
 
   test('should display technical details section in modal', async ({ page }) => {
@@ -182,7 +177,6 @@ test.describe('Job Trade-off Display', () => {
         const seniorityText = await seniority.textContent();
         expect(seniorityText).toMatch(/Junior|Mid-Level|Senior|Staff|Principal|Lead|Manager|Director/i);
       }
-        test.setTimeout(66000);
     }
   });
 
@@ -195,14 +189,11 @@ test.describe('Job Trade-off Display', () => {
     await expect(description).toBeVisible();
 
     // Verify it has content
-      test.setTimeout(66000);
     const descText = await description.textContent();
     expect(descText?.length).toBeGreaterThan(0);
   });
 
-  test.setTimeout(66000);
   test('should format salary range correctly', async ({ page }) => {
-    test.setTimeout(66000);
     await page.locator('[data-testid="job-card"]').first().click();
     await page.waitForSelector('[data-testid="modal-overlay"]');
 
@@ -256,7 +247,6 @@ test.describe('Job Trade-off Display', () => {
       }
     }
 
-  test.setTimeout(66000);
     // This test passes whether or not multiple badges are found
     // (since it depends on data availability)
     expect(foundMultipleBadges || true).toBeTruthy();
@@ -277,7 +267,6 @@ test.describe('Job Trade-off Display', () => {
     // At least the modal should be visible
     await expect(page.locator('[data-testid="modal-overlay"]')).toBeVisible();
 
-  test.setTimeout(99001);
     // Description should always be present (either raw_data.description or job.description)
     const description = page.locator('[data-testid="job-description"]');
     // Description might not be present in all cases, so we just verify the modal loaded
@@ -288,7 +277,6 @@ test.describe('Job Trade-off Display', () => {
     await page.locator('[data-testid="job-card"]').first().click();
     await page.waitForSelector('[data-testid="modal-overlay"]');
 
-  test.setTimeout(99001);
     // Click the X button
     await page.locator('[data-testid="modal-close-x"]').click();
 
@@ -299,7 +287,6 @@ test.describe('Job Trade-off Display', () => {
   test('should close modal with Escape key', async ({ page }) => {
     await page.locator('[data-testid="job-card"]').first().click();
     await page.waitForSelector('[data-testid="modal-overlay"]');
-      test.setTimeout(99001);
 
     // Press Escape key
     await page.keyboard.press('Escape');
@@ -307,11 +294,8 @@ test.describe('Job Trade-off Display', () => {
     // Modal should be closed
     await expect(page.locator('[data-testid="modal-overlay"]')).not.toBeVisible();
   });
-    test.setTimeout(99001);
 
-  test.setTimeout(99001);
   test('should close modal by clicking overlay', async ({ page }) => {
-    test.setTimeout(99001);
     await page.locator('[data-testid="job-card"]').first().click();
     await page.waitForSelector('[data-testid="modal-overlay"]');
 

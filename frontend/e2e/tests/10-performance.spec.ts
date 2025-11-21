@@ -54,7 +54,6 @@ test.describe('Performance Validation', () => {
     });
 
     test('should detect no memory leaks during tab navigation', async ({ page }) => {
-      test.setTimeout(99001);
       await dashboardPage.goto();
 
       // Get initial memory usage using Chrome's performance.memory API
@@ -201,9 +200,7 @@ test.describe('Performance Validation', () => {
       expect(renderTime).toBeLessThan(7500);
     });
 
-  test.setTimeout(33000);
     test('should maintain smooth scrolling with many jobs', async ({ page }) => {
-      test.setTimeout(33000);
       await dashboardPage.goto();
       await dashboardPage.clickTab('all');
       await dashboardPage.waitForJobsUpdate();
@@ -290,7 +287,6 @@ test.describe('Performance Validation', () => {
       // Threshold: 92 actual + 25% safety margin = 115 requests
       expect(requestCount).toBeLessThan(115); // Allow for dev mode
     });
-      test.setTimeout(66000);
 
     test('should use HTTP caching effectively', async ({ page }) => {
       await dashboardPage.goto();
@@ -309,12 +305,9 @@ test.describe('Performance Validation', () => {
       expect(loadTime).toBeLessThan(5000);
     });
   });
-    test.setTimeout(66000);
 
   test.describe('Runtime Performance', () => {
-    test.setTimeout(66000);
     test('should maintain FPS during animations', async ({ page }) => {
-      test.setTimeout(66000);
       await dashboardPage.goto();
 
       // Trigger animations (tab switching, modal opening)

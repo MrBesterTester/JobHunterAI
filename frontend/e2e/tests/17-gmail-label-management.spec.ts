@@ -22,7 +22,6 @@ test.describe('Phase 2.9: Gmail Label Management', () => {
   });
 
   test('should have Reject button on job cards in New Jobs tab', async ({ page }) => {
-    test.setTimeout(66000);
     // Click on New Jobs tab
     await page.click('[data-testid="new-tab-button"]');
 
@@ -52,9 +51,7 @@ test.describe('Phase 2.9: Gmail Label Management', () => {
     }
   });
 
-  test.setTimeout(165000);
   test('should reject job and move to Rejected tab', async ({ page }) => {
-    test.setTimeout(165000);
     // Click on New Jobs tab
     await page.click('[data-testid="new-tab-button"]');
 
@@ -99,11 +96,8 @@ test.describe('Phase 2.9: Gmail Label Management', () => {
       console.log('No job cards found - skipping rejection test');
     }
   });
-    test.setTimeout(198001);
 
-  test.setTimeout(198001);
   test('should reject job from modal dialog', async ({ page }) => {
-    test.setTimeout(198001);
     // Click on New Jobs tab
     await page.click('[data-testid="new-tab-button"]');
 
@@ -148,7 +142,6 @@ test.describe('Phase 2.9: Gmail Label Management', () => {
     } else {
       console.log('No job cards found - skipping modal rejection test');
     }
-      test.setTimeout(165000);
   });
 
   test('should handle Gmail label update failures gracefully', async ({ page }) => {
@@ -209,14 +202,10 @@ test.describe('Phase 2.9: Gmail Label Management', () => {
       expect(criticalErrors.length).toBe(0);
     } else {
       console.log('No job cards found - skipping graceful degradation test');
-        test.setTimeout(264000);
     }
   });
-    test.setTimeout(264000);
 
-  test.setTimeout(264000);
   test('should handle multiple rapid rejections', async ({ page }) => {
-    test.setTimeout(264000);
     // This test verifies that rapidly rejecting multiple jobs doesn't cause race conditions
     // or data corruption
 

@@ -18,7 +18,6 @@ test.describe('Failed and Duplicates Tabs', () => {
   });
 
   test('Failed counter should match Failed tab count', async ({ page }) => {
-    test.setTimeout(66000);
     // Get the failed counter value
     const failedStat = page.locator('[data-testid="stat-failed"]');
     await expect(failedStat).toBeVisible();
@@ -48,9 +47,7 @@ test.describe('Failed and Duplicates Tabs', () => {
     expect(counterValue).toBe(emailCount);
   });
 
-  test.setTimeout(66000);
   test('Duplicates counter should match Duplicates tab count', async ({ page }) => {
-    test.setTimeout(66000);
     // Get the duplicates counter value
     const duplicatedStat = page.locator('[data-testid="stat-duplicated"]');
     await expect(duplicatedStat).toBeVisible();
@@ -79,7 +76,6 @@ test.describe('Failed and Duplicates Tabs', () => {
     // The counter should match the tab count
     expect(counterValue).toBe(emailCount);
   });
-    test.setTimeout(33000);
 
   test('Failed tab should display email content', async ({ page }) => {
     // Navigate to Failed tab
@@ -109,7 +105,6 @@ test.describe('Failed and Duplicates Tabs', () => {
     } else {
       console.log('No failed emails to display');
     }
-      test.setTimeout(33000);
   });
 
   test('Duplicates tab should display email content', async ({ page }) => {
@@ -139,13 +134,10 @@ test.describe('Failed and Duplicates Tabs', () => {
       console.log(`Duplicates tab displays ${emailCount} emails with full content`);
     } else {
       console.log('No duplicate emails to display');
-        test.setTimeout(66000);
     }
   });
 
-  test.setTimeout(66000);
   test('Non-Job Emails counter should match Ignored tab count', async ({ page }) => {
-    test.setTimeout(66000);
     // Get the ignored counter value
     const ignoredStat = page.locator('[data-testid="stat-ignored"]');
     await expect(ignoredStat).toBeVisible();

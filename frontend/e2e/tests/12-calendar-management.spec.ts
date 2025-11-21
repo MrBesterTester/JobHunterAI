@@ -21,12 +21,10 @@ test.describe('Calendar Management - Phase 5.1', () => {
     });
 
     test('should navigate to Calendar tab on click', async ({ page }) => {
-      test.setTimeout(33000);
       await page.click('button:has-text("Calendar")');
       await expect(page.locator('h2:has-text("Upcoming Interviews")')).toBeVisible();
     });
 
-  test.setTimeout(33000);
     test('should show empty state when no interviews scheduled', async ({ page }) => {
       // Set up listener before clicking to catch the API call
       const responsePromise = page.waitForResponse(response =>
@@ -41,7 +39,6 @@ test.describe('Calendar Management - Phase 5.1', () => {
     });
   });
 
-  test.setTimeout(33000);
   test.describe('Interview Scheduling', () => {
     test('should open schedule interview modal', async ({ page }) => {
       await page.click('button:has-text("Calendar")');
@@ -51,7 +48,6 @@ test.describe('Calendar Management - Phase 5.1', () => {
         await scheduleButton.click();
         await expect(page.locator('h3:has-text("Schedule Interview")')).toBeVisible();
       }
-        test.setTimeout(33000);
     });
 
     test('should display interview scheduling form fields', async ({ page }) => {
@@ -67,7 +63,6 @@ test.describe('Calendar Management - Phase 5.1', () => {
         await expect(page.locator('label:has-text("Duration")')).toBeVisible();
         await expect(page.locator('label:has-text("Location")')).toBeVisible();
         await expect(page.locator('label:has-text("Interviewer Name")')).toBeVisible();
-          test.setTimeout(33000);
       }
     });
 
@@ -85,13 +80,11 @@ test.describe('Calendar Management - Phase 5.1', () => {
         // Should show validation errors or stay on form
         // The form doesn't use <form> or role="dialog", check for form heading instead
         const formHeading = page.locator('h3:has-text("Schedule Interview")');
-          test.setTimeout(203501);
         await expect(formHeading).toBeVisible();
       }
     });
 
     test('should create interview with valid data', async ({ page }) => {
-      test.setTimeout(203501);
       // First create or select an application
       await page.click('button:has-text("Approved")');
 
@@ -119,7 +112,6 @@ test.describe('Calendar Management - Phase 5.1', () => {
           // Verify success
           await expect(page.locator('text=/Interview scheduled|Success/i')).toBeVisible({ timeout: getTestTimeout(5000) });
         }
-          test.setTimeout(44000);
       }
     });
   });
@@ -143,7 +135,6 @@ test.describe('Calendar Management - Phase 5.1', () => {
       // Now safe to check if interviews exist
       const interviews = page.locator('.interview-card');
       const count = await interviews.count();
-        test.setTimeout(66000);
 
       if (count > 0) {
         await expect(interviews.first()).toBeVisible();
@@ -156,7 +147,6 @@ test.describe('Calendar Management - Phase 5.1', () => {
 
       const interviewCard = page.locator('.interview-card, [data-testid="interview-card"]').first();
       const count = await interviewCard.count();
-        test.setTimeout(66000);
 
       if (count > 0) {
         // Should show company, job title, date, time
@@ -168,7 +158,6 @@ test.describe('Calendar Management - Phase 5.1', () => {
       await page.click('button:has-text("Calendar")');
       await page.waitForTimeout(1000);
 
-  test.setTimeout(66000);
       const statusBadge = page.locator('.status-badge, [data-testid="interview-status"]').first();
       const count = await statusBadge.count();
 
@@ -184,7 +173,6 @@ test.describe('Calendar Management - Phase 5.1', () => {
       const interviewCards = page.locator('.interview-card, [data-testid="interview-card"]');
       const count = await interviewCards.count();
 
-  test.setTimeout(66000);
       if (count >= 2) {
         // Dates should be in chronological order
         // This is a basic check - full implementation would parse dates
@@ -197,7 +185,6 @@ test.describe('Calendar Management - Phase 5.1', () => {
     test('should allow editing interview details', async ({ page }) => {
       await page.click('button:has-text("Calendar")');
       await page.waitForTimeout(1000);
-        test.setTimeout(104501);
 
       const editButton = page.locator('button:has-text("Edit"), button[aria-label*="Edit"]').first();
       const count = await editButton.count();
@@ -216,7 +203,6 @@ test.describe('Calendar Management - Phase 5.1', () => {
       const count = await cancelButton.count();
 
       if (count > 0) {
-        test.setTimeout(107251);
         await cancelButton.click();
 
         // Should show confirmation dialog
@@ -228,9 +214,7 @@ test.describe('Calendar Management - Phase 5.1', () => {
       }
     });
 
-  test.setTimeout(66000);
     test('should show interview details on click', async ({ page }) => {
-      test.setTimeout(66000);
       await page.click('button:has-text("Calendar")');
       await page.waitForTimeout(1000);
 
@@ -266,7 +250,6 @@ test.describe('Calendar Management - Phase 5.1', () => {
       }
     });
 
-  test.setTimeout(33000);
     test('should link to Calendar tab from widget', async ({ page }) => {
       const widgetLink = page.locator('a:has-text("View all interviews"), a:has-text("Calendar")').first();
       const count = await widgetLink.count();
@@ -278,7 +261,6 @@ test.describe('Calendar Management - Phase 5.1', () => {
     });
   });
 
-  test.setTimeout(66000);
   test.describe('Calendar API Integration', () => {
     test('should fetch upcoming interviews from API', async ({ page }) => {
       // Set up listener before clicking to catch the API call
@@ -290,9 +272,7 @@ test.describe('Calendar Management - Phase 5.1', () => {
       const response = await responsePromise;
 
       expect(response.ok()).toBeTruthy();
-        test.setTimeout(132000);
     });
-      test.setTimeout(66000);
 
     test('should handle API errors gracefully', async ({ page }) => {
       // Simulate API failure
@@ -304,12 +284,9 @@ test.describe('Calendar Management - Phase 5.1', () => {
       // Should show error message or empty state
       const errorMessage = page.locator('text=/Error loading|Failed to load|No interviews/i');
       await expect(errorMessage).toBeVisible();
-        test.setTimeout(132000);
     });
 
-  test.setTimeout(132000);
     test('should create interview via API', async ({ page }) => {
-      test.setTimeout(132000);
       let interviewCreated = false;
 
       page.on('response', response => {

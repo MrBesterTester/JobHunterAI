@@ -36,7 +36,6 @@ test.describe('RapidAPI JSearch Sync Integration', () => {
   });
 
   test('should display RapidAPI JSearch card with correct information', async () => {
-    test.setTimeout(33000);
     // Navigate to Intake tab
     const intakeTab = page.getByRole('button', { name: /^intake$/i });
     await intakeTab.click();
@@ -209,7 +208,7 @@ test.describe('RapidAPI JSearch Sync Integration', () => {
   });
 
   test('should verify RapidAPI respects 10-job limit per sync', async () => {
-    test.setTimeout(getTestTimeout(99001)); // Sequential operations: 3 x 30s waits + buffer = 99s minimum
+    test.setTimeout(getTestTimeout(90000)); // 90s → 135s under comprehensive load
     // Navigate to Intake tab
     const intakeTab = page.getByRole('button', { name: /^intake$/i });
     await intakeTab.click();
@@ -270,9 +269,7 @@ test.describe('RapidAPI JSearch Sync Integration', () => {
     console.log(`✓ RapidAPI respects 10-job limit: ${discoveredCount} jobs discovered`);
   });
 
-  test.setTimeout(33000);
   test('should show correct status for RapidAPI source', async () => {
-    test.setTimeout(33000);
     // Navigate to Intake tab
     const intakeTab = page.getByRole('button', { name: /^intake$/i });
     await intakeTab.click();
@@ -344,11 +341,8 @@ test.describe('RapidAPI JSearch Sync Integration', () => {
   // ============================================================================
   // Phase 4.2: Automatic Pagination Tests
   // ============================================================================
-    test.setTimeout(33000);
 
-  test.setTimeout(33000);
   test('should display current page number in RapidAPI card', async () => {
-    test.setTimeout(33000);
     // Navigate to Intake tab
     const intakeTab = page.getByRole('button', { name: /^intake$/i });
     await intakeTab.click();

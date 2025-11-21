@@ -22,7 +22,6 @@ test.describe('Modal Scroll Position Stability', () => {
   });
 
   test('scroll position should remain stable without jumping back to top', async ({ page }) => {
-    test.setTimeout(99001);
     // Navigate to a tab with job data
     await page.click('button:has-text("Filtered")');
     await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
@@ -62,9 +61,7 @@ test.describe('Modal Scroll Position Stability', () => {
     expect(Math.abs(scrollPositionAfterWait - scrollPositionAfterScroll)).toBeLessThan(10);
   });
 
-  test.setTimeout(99001);
   test('scroll position should remain stable during multiple scroll events', async ({ page }) => {
-    test.setTimeout(99001);
     await page.click('button:has-text("Filtered")');
     await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
@@ -107,7 +104,6 @@ test.describe('Modal Scroll Position Stability', () => {
       console.log('Modal content not tall enough to scroll - test passes (no scrollable content)');
     }
   });
-    test.setTimeout(99001);
 
   test('scroll position should remain stable while scrolling slowly with mouse wheel', async ({ page }) => {
     await page.click('button:has-text("Filtered")');
@@ -152,7 +148,6 @@ test.describe('Modal Scroll Position Stability', () => {
       // Content not scrollable, test passes (validates modal displays correctly even with short content)
       console.log('Modal content not tall enough to scroll - test passes (no scrollable content)');
     }
-      test.setTimeout(99001);
   });
 
   test('scroll position should not reset when hovering over elements', async ({ page }) => {
@@ -193,13 +188,10 @@ test.describe('Modal Scroll Position Stability', () => {
 
     // Check scroll position hasn't changed
     const scrollAfterHover = await scrollableContent.evaluate(el => el.scrollTop);
-      test.setTimeout(99001);
     expect(Math.abs(scrollAfterHover - scrollAfterInitial)).toBeLessThan(10);
   });
 
-  test.setTimeout(99001);
   test('scroll position should persist during rapid scrolling', async ({ page }) => {
-    test.setTimeout(99001);
     await page.click('button:has-text("Filtered")');
     await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 

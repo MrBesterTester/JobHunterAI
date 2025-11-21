@@ -14,7 +14,6 @@ if (!shouldRunTest('filtered-tab-test')) {
 
 test.describe('Filtered Tab - Verification', () => {
   test('should show Expert Systems Architect job in Filtered tab', async ({ page }) => {
-    test.setTimeout(33000);
     await page.goto('http://localhost:3000');
 
     // Click on "Filtered" tab

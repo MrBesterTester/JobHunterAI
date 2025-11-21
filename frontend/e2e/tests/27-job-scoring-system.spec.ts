@@ -42,7 +42,6 @@ test.describe('Job Scoring System', () => {
   });
 
   test('should display job scores with color coding', async ({ page }) => {
-    test.setTimeout(66000);
     // Navigate to Ranked Jobs tab
     await page.locator('text=Ranked Jobs').first().click();
     await page.waitForLoadState('networkidle');
@@ -64,9 +63,7 @@ test.describe('Job Scoring System', () => {
     await expect(page.locator('text=🔴 0-39 (Poor)')).toBeVisible();
   });
 
-  test.setTimeout(66000);
   test('should display score badges on all job cards', async ({ page }) => {
-    test.setTimeout(66000);
     // Go to New tab to see job cards
     await page.locator('text=New').first().click();
     await page.waitForLoadState('networkidle');
@@ -89,7 +86,6 @@ test.describe('Job Scoring System', () => {
     // Test passes even if no scored jobs (they might all be unscored in test env)
     expect(badgeCount >= 0).toBe(true);
   });
-    test.setTimeout(99001);
 
   test('weight adjustment panel should be present and functional', async ({ page }) => {
     // Navigate to Ranked Jobs tab
@@ -113,12 +109,9 @@ test.describe('Job Scoring System', () => {
     const percentageDisplays = page.locator('text=/\\d+%/');
     const percentCount = await percentageDisplays.count();
     expect(percentCount).toBeGreaterThan(0);
-      test.setTimeout(198001);
   });
 
-  test.setTimeout(198001);
   test('minimum score filter should be functional', async ({ page }) => {
-    test.setTimeout(198001);
     // Navigate to Ranked Jobs tab
     await page.locator('text=Ranked Jobs').first().click();
     await page.waitForLoadState('networkidle');
@@ -166,14 +159,10 @@ test.describe('Job Scoring System', () => {
     await page.waitForTimeout(300);
 
     // Test passes - filter UI is functional
-      test.setTimeout(132000);
     expect(true).toBe(true);
   });
-    test.setTimeout(132000);
 
-  test.setTimeout(132000);
   test('should be able to sort by different criteria', async ({ page }) => {
-    test.setTimeout(132000);
     // Navigate to Ranked Jobs tab
     await page.locator('text=Ranked Jobs').first().click();
     await page.waitForLoadState('networkidle');
@@ -195,7 +184,6 @@ test.describe('Job Scoring System', () => {
     await scoreHeader.click();
     await page.waitForTimeout(500);
 
-  test.setTimeout(99001);
     // Should still be visible with icon
     await expect(headerWithIcon).toBeVisible();
   });
@@ -222,17 +210,12 @@ test.describe('Job Scoring System', () => {
       const expandedContent = page.locator('tbody tr').nth(1);
       const isExpanded = await expandedContent.isVisible();
 
-  test.setTimeout(198001);
       // At minimum, clicking should not cause errors
       expect(isExpanded || !isExpanded).toBeDefined();
     }
-      test.setTimeout(198001);
   });
-    test.setTimeout(198001);
 
-  test.setTimeout(198001);
   test('weight adjustment should update and recalculate scores', async ({ page }) => {
-    test.setTimeout(198001);
     // Navigate to Ranked Jobs tab
     await page.locator('text=Ranked Jobs').first().click();
     await page.waitForLoadState('networkidle');
@@ -268,7 +251,6 @@ test.describe('Job Scoring System', () => {
         // (Specific check depends on implementation)
         await page.waitForTimeout(1000);
       }
-        test.setTimeout(66000);
     }
 
     // Test passes if no errors occurred
@@ -289,20 +271,14 @@ test.describe('Job Scoring System', () => {
 
     // Whether or not there are N/A cells, page should render without errors
     expect(naCount >= 0).toBe(true);
-      test.setTimeout(66000);
 
     // Verify table is still functional with or without null scores
     const tableRows = page.locator('tbody tr');
     const rowCount = await tableRows.count();
-      test.setTimeout(66000);
     expect(rowCount).toBeGreaterThan(0);
-      test.setTimeout(66000);
   });
-    test.setTimeout(66000);
 
-  test.setTimeout(66000);
   test('score badge should appear as first badge on job cards', async ({ page }) => {
-    test.setTimeout(66000);
     // Go to New tab to see job cards
     await page.locator('text=New').first().click();
     await page.waitForLoadState('networkidle');

@@ -47,7 +47,6 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
 
   test.describe('Microsoft Email Account UI', () => {
     test('should display Microsoft Email Integration card in Intake tab', async ({ page }) => {
-      test.setTimeout(66000);
       // Navigate to Intake tab
       await page.getByRole('button', { name: /^intake$/i }).click();
 
@@ -65,9 +64,7 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       await expect(microsoftCard).toBeVisible();
     });
 
-  test.setTimeout(66000);
     test('should show Microsoft branding color (#0078d4)', async ({ page }) => {
-      test.setTimeout(66000);
       // Navigate to Intake tab
       await page.getByRole('button', { name: /^intake$/i }).click();
 
@@ -96,11 +93,8 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       // Microsoft blue is rgb(0, 120, 212) or #0078d4
       expect(color).toContain('0, 120, 212');
     });
-      test.setTimeout(66000);
 
-  test.setTimeout(66000);
     test('should display Authenticate button when not authenticated', async ({ page }) => {
-      test.setTimeout(66000);
       // Navigate to Intake tab
       await page.getByRole('button', { name: /^intake$/i }).click();
 
@@ -129,7 +123,6 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       expect(authButtonVisible || syncButtonVisible).toBeTruthy();
     });
   });
-    test.setTimeout(66000);
 
   test.describe('Folder Status Display', () => {
     test('should show folder status indicator', async ({ page }) => {
@@ -146,7 +139,6 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       // This is a soft assertion - folder status only shows when authenticated
       if (isVisible) {
         expect(await folderStatus.textContent()).toMatch(/folder/i);
-          test.setTimeout(66000);
       }
     });
 
@@ -165,15 +157,11 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
         const text = await unreadText.textContent();
         expect(text).toMatch(/\d+.*unread/i);
       }
-        test.setTimeout(66000);
     });
   });
 
-  test.setTimeout(66000);
   test.describe('Microsoft vs Gmail Source Differentiation', () => {
-    test.setTimeout(66000);
     test('should show source badge on jobs from Microsoft email', async ({ page }) => {
-      test.setTimeout(66000);
       // Navigate to New Jobs tab
       await page.getByRole('button', { name: /^new jobs$/i }).click();
       await page.waitForTimeout(1000);
@@ -215,7 +203,6 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       // 4. Click "Sync Microsoft Emails" button
       // 5. Wait for sync to complete
       //
-        test.setTimeout(66000);
       // Expected: Jobs appear in New Jobs tab with microsoft_email source
     });
   });
@@ -237,7 +224,6 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       if (isError) {
         const errorText = await errorMessage.textContent();
         expect(errorText).toBeTruthy();
-          test.setTimeout(99001);
         expect(errorText?.length).toBeGreaterThan(10); // Should have meaningful message
       }
     });
@@ -265,19 +251,14 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
           .getByRole('button', { name: /^approve$/i }).or(
             page.locator('[data-testid="modal-overlay"]').getByRole('button', { name: /^approve$/i })
           ).first();
-            test.setTimeout(104501);
         await expect(approveButton).toBeVisible();
 
         // Button should be clickable (not disabled)
         await expect(approveButton).toBeEnabled();
       }
-        test.setTimeout(104501);
     });
-      test.setTimeout(104501);
 
-  test.setTimeout(104501);
     test('should show job source in job details', async ({ page }) => {
-      test.setTimeout(107251);
       // Navigate to New Jobs tab
       await page.getByRole('button', { name: /^new jobs$/i }).click();
       await page.waitForTimeout(1000);
@@ -476,21 +457,15 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       // Check stats updated
       const newTotal = await page.getByText(/Total/i).last().textContent();
       const newTotalCount = parseInt(newTotal?.match(/\d+/)?.[0] || '0');
-        test.setTimeout(104501);
       console.log(`New total jobs: ${newTotalCount}`);
 
       // Stats should either stay same (duplicates) or increase
       expect(newTotalCount).toBeGreaterThanOrEqual(initialTotalCount);
     });
-      test.setTimeout(104501);
   });
-    test.setTimeout(104501);
 
-  test.setTimeout(104501);
   test.describe('Email Archiving (Phase 2.8)', () => {
-    test.setTimeout(104501);
     test('should display Microsoft JobOps folder status', async ({ page }) => {
-      test.setTimeout(107251);
       // Navigate to Intake tab
       await page.getByRole('button', { name: /^intake$/i }).click();
       await page.waitForTimeout(1000);
@@ -855,23 +830,16 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
   });
 
   test.describe('Automated Manual Test Coverage (Phase 2.7 Items 3-5)', () => {
-    test.setTimeout(176000);
     /**
      * These tests automate the manual testing checklist from Phase 2.7:
      * - Item 3: Email Sync & Extraction
      * - Item 4: End-to-End Workflow
      * - Item 5: Error Handling
-       test.setTimeout(176000);
      *
-       test.setTimeout(176000);
      * Assumes: OAuth authentication is already complete and JobOps folder has emails
-       test.setTimeout(176000);
      */
-       test.setTimeout(176000);
 
-  test.setTimeout(176000);
     test('Item 3: Email Sync & Extraction - should sync and filter emails correctly', async ({ page }) => {
-      test.setTimeout(176000);
       // Navigate to Intake tab
       await page.getByRole('button', { name: /^intake$/i }).click();
       await page.waitForTimeout(1000);
@@ -943,23 +911,16 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       if (jobCount > 0) {
         const firstJob = jobCards.first();
         const jobText = await firstJob.textContent();
-          test.setTimeout(110001);
 
         // Microsoft-sourced jobs should have source indicator
         // (Check job card or details for "microsoft" or source badge)
         console.log(`Sample job preview: ${jobText?.substring(0, 100)}`);
 
-  test.setTimeout(110001);
         // Test passes if sync completed without errors
-          test.setTimeout(110001);
         expect(jobCount).toBeGreaterThanOrEqual(0);
-          test.setTimeout(110001);
       }
-        test.setTimeout(110001);
     });
-      test.setTimeout(110001);
 
-  test.setTimeout(110001);
     test('Item 4: End-to-End Workflow - Microsoft job through full application flow', async ({ page }) => {
       // Navigate to New Jobs tab
       await page.getByRole('button', { name: /^new jobs$/i }).click();
@@ -1023,7 +984,6 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
 
       // Verify job details modal is displaying content
       // The modal always shows the job title (h2), company name, and basic fields
-        test.setTimeout(99001);
       // Check for elements that are always present regardless of data richness
       const jobTitleInModal = page.getByRole('heading', { level: 2 });
       const approveButtonInModal = page.locator('[data-testid="modal-overlay"]').getByRole('button', { name: /approve|reject/i }).first();
@@ -1060,7 +1020,6 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
       const generateButton = page.getByRole('button', { name: /generate|create.*resume|create.*cover/i }).first();
       const generateExists = await generateButton.isVisible().catch(() => false);
 
-  test.setTimeout(115501);
       if (generateExists) {
         console.log('Generate content button found');
         await expect(generateButton).toBeEnabled();
@@ -1132,7 +1091,6 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
         console.log('Error detected - checking if it\'s a graceful error');
         // If there's an error, it should be displayed gracefully (not crash)
         const errorDisplay = page.locator('text=/error|failed/i').first();
-          test.setTimeout(264000);
         const errorVisible = await errorDisplay.isVisible().catch(() => false);
 
         if (errorVisible) {
@@ -1140,17 +1098,11 @@ test.describe('Microsoft Email Integration (Phase 2.7)', () => {
         }
       } else {
         console.log('No errors - sync completed (possibly with 0 new jobs)');
-          test.setTimeout(264000);
       }
-        test.setTimeout(264000);
 
-  test.setTimeout(264000);
       // Test passes if app is still responsive
-        test.setTimeout(264000);
       expect(await microsoftSyncButton.isEnabled()).toBeTruthy();
-        test.setTimeout(264000);
     });
-      test.setTimeout(264000);
 
     test('Item 5: Error Handling - app remains stable after sync failures', async ({ page }) => {
       // Navigate between tabs to verify app stability

@@ -113,7 +113,6 @@ test.describe('Condensed Job Descriptions', () => {
   });
 
   test('should NOT display JSON structure in condensed description', async ({ page }) => {
-    test.setTimeout(99001);
     await switchToTab(page, 'all');
 
     const jobCard = page.locator('[data-testid="job-card"]').first();

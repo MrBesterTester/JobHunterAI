@@ -609,7 +609,6 @@ test.describe('New Job Card Badges - Edge Cases', () => {
 
 test.describe('New Job Card Badges - Responsive Layout', () => {
   test('badges should wrap properly on narrow screens - 768px width', async ({ page }) => {
-    test.setTimeout(66000);
     await page.setViewportSize({ width: 768, height: 1024 });
     await page.goto('http://localhost:3000');
     await page.click('button:has-text("All")');
@@ -628,9 +627,7 @@ test.describe('New Job Card Badges - Responsive Layout', () => {
     expect(gap).toBe('8px');
   });
 
-  test.setTimeout(66000);
   test('badges should wrap properly on mobile screens - 375px width', async ({ page }) => {
-    test.setTimeout(66000);
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('http://localhost:3000');
     await page.click('button:has-text("All")');
@@ -657,11 +654,8 @@ test.describe('New Job Card Badges - Responsive Layout', () => {
       }
     }
   });
-    test.setTimeout(66000);
 
-  test.setTimeout(66000);
   test('long tech stack and tool names should truncate with ellipsis on narrow screens', async ({ page }) => {
-    test.setTimeout(66000);
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('http://localhost:3000');
     await page.click('button:has-text("All")');

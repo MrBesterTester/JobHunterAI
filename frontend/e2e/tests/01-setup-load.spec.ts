@@ -102,7 +102,6 @@ test.describe('Setup & Initial Load', () => {
 
   test.describe('Section 2: Network Connectivity Test', () => {
     test('should make successful API calls on page load', async ({ page }) => {
-      test.setTimeout(33000);
       // Set up response listeners before navigation with exact URL matching
       const jobsPromise = page.waitForResponse(
         (response) => !!response.url().match(/\/api\/jobs(\?|$)/) && response.request().method() === 'GET',
@@ -145,9 +144,7 @@ test.describe('Setup & Initial Load', () => {
       expect(Array.isArray(body)).toBe(true);
     });
 
-  test.setTimeout(33000);
     test('should make GET /api/jobs/stats request', async ({ page }) => {
-      test.setTimeout(33000);
       const responsePromise = page.waitForResponse(
         (response) => response.url().includes('/api/jobs/stats') && response.request().method() === 'GET',
         { timeout: getTestTimeout(10000) }
@@ -169,11 +166,8 @@ test.describe('Setup & Initial Load', () => {
       expect(body).toHaveProperty('applied');
       expect(body).toHaveProperty('filtered');
     });
-      test.setTimeout(33000);
 
-  test.setTimeout(33000);
     test('should have API response times under 100ms', async ({ page }) => {
-      test.setTimeout(33000);
       const measurements: number[] = [];
       const requestTimes = new Map<string, number>();
 
