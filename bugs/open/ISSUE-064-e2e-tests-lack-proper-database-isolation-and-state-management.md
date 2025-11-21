@@ -18,8 +18,8 @@ related: [PLAYWRIGHT_BEST_PRACTICES.md]
 
 - [🚨 IMPLEMENTATION ROADMAP - LE PROBLEMA DU JOUR](#-implementation-roadmap---le-problema-du-jour)
   - [Phase 1: Foundation (COMPLETED ✅)](#phase-1-foundation-completed-)
-  - [Phase 2: Backend Connection Strategy (NEXT 🔧)](#phase-2-backend-connection-strategy-next-)
-  - [Phase 3: Playwright Worker Fixture (PENDING)](#phase-3-playwright-worker-fixture-pending)
+  - [Phase 2: Backend Connection Strategy (COMPLETED ✅)](#phase-2-backend-connection-strategy-completed-)
+  - [Phase 3: Playwright Worker Fixture (NEXT 🔧)](#phase-3-playwright-worker-fixture-next-)
   - [Phase 4: Full Rollout (PENDING)](#phase-4-full-rollout-pending)
   - [Phase 5: Cleanup (PENDING)](#phase-5-cleanup-pending)
   - [Key Questions to Track](#key-questions-to-track)
@@ -79,37 +79,47 @@ related: [PLAYWRIGHT_BEST_PRACTICES.md]
   - Added `source` column to email_jobs table
   - Schema now matches production
 
-### Phase 2: Backend Connection Strategy (NEXT 🔧)
+### Phase 2: Backend Connection Strategy (COMPLETED ✅)
 
-**Key Design Decision**: How does backend know which database to use?
+**Decision**: Option A (Request Header) - **IMPLEMENTED AND TESTED** ✅
 
-**Option A: Request Header** (Recommended - Cleanest):
-```typescript
-// Playwright fixture sets header with worker index
+**Implementation Details**:
+```rust
+// Backend - DatabasePools struct holds all pools
+struct DatabasePools {
+    default_pool: PgPool,
+    worker_pools: HashMap<usize, PgPool>,
+}
+
+// Backend - WorkerPool extractor reads X-Worker-Index header
+impl FromRequest for WorkerPool {
+    fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
+        // Read X-Worker-Index header
+        // Select worker pool or fallback to default
+    }
+}
+
+// Playwright fixture (Phase 3 implementation)
 page.setExtraHTTPHeaders({
   'X-Worker-Index': testInfo.workerIndex.toString()
 });
-
-// Backend reads header and connects to jobhunter_test_worker_{index}
 ```
-- ✅ Clean separation of concerns
-- ✅ Single backend process
-- ✅ Minimal backend changes
-- ✅ Tests transparent to change
 
-**Option B: Per-Worker Backend**:
-- Each worker starts backend on unique port
-- Worker 0 → localhost:8080 → database 0
-- Worker 1 → localhost:8081 → database 1
-- ❌ More complex (4 backend processes)
-- ❌ Port management overhead
+**Test Results** ✅:
+- Worker 0-3: All route correctly to `jobhunter_test_worker_{0-3}`
+- Invalid index (e.g., 99): Falls back to default database
+- No header: Uses default database (jobhunter_personal)
+- Backend startup: "Worker databases: 4 connected"
 
 **Tasks**:
-- [ ] **Decide on backend connection strategy** (A or B)
-- [ ] Implement backend database connection logic
-- [ ] Test backend connection with worker databases
+- [x] Decide on backend connection strategy (Option A selected)
+- [x] Implement backend database connection logic
+- [x] Test backend connection with worker databases
+- [x] Verify routing works for all workers (0-3)
+- [x] Verify fallback to default database
+- [x] Commit implementation (382ca73)
 
-### Phase 3: Playwright Worker Fixture (PENDING)
+### Phase 3: Playwright Worker Fixture (NEXT 🔧)
 
 **File**: `frontend/e2e/fixtures/worker-database.ts` (to be created)
 
