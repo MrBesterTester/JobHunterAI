@@ -48,6 +48,19 @@ related:
   - [Option 5: Add Optional Timeout Parameter to switchToTab](#option-5-add-optional-timeout-parameter-to-switchtotab)
   - [Option 6: Defer Fix as Acceptable Flake Rate](#option-6-defer-fix-as-acceptable-flake-rate)
 - [Recommended Approach](#recommended-approach)
+- [Sequential Timeout Budget Principle (Lessons Learned)](#sequential-timeout-budget-principle-lessons-learned)
+  - [The Core Problem](#the-core-problem)
+  - [What We Discovered](#what-we-discovered)
+  - [The Fix](#the-fix)
+  - [Timeout Budget Formula](#timeout-budget-formula)
+  - [Step-by-Step Calculation Method](#step-by-step-calculation-method)
+  - [Real Example from ISSUE-063](#real-example-from-issue-063)
+  - [Parallel vs Sequential Operations](#parallel-vs-sequential-operations)
+  - [Universal Applicability](#universal-applicability)
+  - [Debugging Workflow](#debugging-workflow)
+  - [Audit Tool](#audit-tool)
+  - [Key Takeaways](#key-takeaways)
+  - [Documentation](#documentation)
 - [Status History](#status-history)
 - [Notes](#notes)
   - [Why This Isn't a Regression from ISSUE-057](#why-this-isnt-a-regression-from-issue-057)
@@ -660,6 +673,196 @@ await switchToTab(page, 'new', true, 90000);  // Pass custom 90s timeout
 If you prefer surgical precision over global changes, choose **Option 5**.
 
 If you want to move forward and defer, choose **Option 6** and track as known flaky test.
+
+## Sequential Timeout Budget Principle (Lessons Learned)
+
+**⚠️ CRITICAL DISCOVERY**: This issue revealed a fundamental principle about timeout chains that applies universally to all testing and distributed systems.
+
+### The Core Problem
+
+**Parent timeout must be >= sum of all sequential child timeouts**, not just the largest single child.
+
+This issue initially appeared to be fixed when we increased individual operation timeouts (switchToTab: 90s, waitForFunction: 90s), but tests still failed in comprehensive runs because we missed the **sequential accumulation** of timeouts.
+
+### What We Discovered
+
+**Initial Fix (Incomplete):**
+```typescript
+// ❌ INCORRECT: Parent timeout insufficient for sequential operations
+test('should allow approving jobs', async ({ page }) => {
+  test.setTimeout(getTestTimeout(120000)); // Parent: 180s under load
+
+  await switchToTab(page, 'new', true, 90000);         // Operation 1: 90s max
+  await approveButton.click();                          // Operation 2: 30s max (default)
+  await statusUpdatePromise;                            // Operation 3: 30s max (default)
+  await page.waitForFunction(..., { timeout: 90000 }); // Operation 4: 90s max
+
+  // Sequential sum: 90 + 30 + 30 + 90 = 240s
+  // Parent timeout: 180s
+  // ❌ DEFICIT: 60s short! Test will timeout at 180s before operations complete
+});
+```
+
+**Why Tests Passed in Isolation But Failed Under Comprehensive Load:**
+- In isolation: Operations completed in ~5-10s → well under 180s parent timeout ✅
+- Under load: Operations took their full timeout values (worst-case) → 240s needed ❌
+- The parent timeout (180s) was **less than the sum** of sequential child timeouts (240s)
+
+### The Fix
+
+**Complete Fix (Correct):**
+```typescript
+// ✅ CORRECT: Parent timeout accounts for full sequential chain
+test('should allow approving jobs', async ({ page }) => {
+  test.setTimeout(getTestTimeout(180000)); // Parent: 270s under load
+
+  await switchToTab(page, 'new', true, 90000);         // 90s max
+  await approveButton.click();                          // 30s max
+  await statusUpdatePromise;                            // 30s max
+  await page.waitForFunction(..., { timeout: 90000 }); // 90s max
+
+  // Sequential sum: 90 + 30 + 30 + 90 = 240s
+  // Parent timeout: 270s
+  // ✅ BUFFER: 30s safety margin (12.5%)
+});
+```
+
+### Timeout Budget Formula
+
+```
+parent_timeout >= Σ(child_timeout_i) + buffer
+                  i=1 to n
+
+where:
+- n = number of sequential operations
+- child_timeout_i = maximum timeout for operation i
+- buffer = safety margin (10-20% recommended)
+```
+
+### Step-by-Step Calculation Method
+
+1. **List all sequential operations** in execution order (every `await`)
+2. **Identify maximum timeout** for each operation:
+   - Explicit: `{ timeout: 90000 }`
+   - Default: 30s for most Playwright actions
+   - Helper internal: Check helper implementation (e.g., switchToTab uses 90s)
+3. **Sum all maximum timeouts** to get minimum parent timeout
+4. **Add buffer** (10-20%) for framework overhead
+5. **Set parent timeout** to calculated value (rounded up)
+
+### Real Example from ISSUE-063
+
+**Test 23 (description-quality) Calculation:**
+
+```
+Sequential operation chain:
+├─ switchToTab(page, 'new', true, 90000)          → 90s max
+├─ Loop checking up to 3 cards (realistic worst-case):
+│  ├─ Card 1: page.waitForFunction(..., 90000)    → 90s max
+│  ├─ Card 2: page.waitForFunction(..., 90000)    → 90s max (if card 1 lacks content)
+│  └─ Card 3: page.waitForFunction(..., 90000)    → 90s max (if card 2 lacks content)
+└─ Assertion and validation                        → 5s max
+
+Worst-case sum: 90 + 90 + 90 + 90 + 5 = 365s
+Buffer (10%): 365 × 0.10 = 36s
+Minimum parent: 365 + 36 = 401s
+
+Practical value: 240s base → 360s under load (getTestTimeout multiplier 1.5×)
+Rationale: Assumes test typically finds content in 1-3 cards (not all 10)
+```
+
+### Parallel vs Sequential Operations
+
+**CRITICAL DISTINCTION:**
+
+```typescript
+// PARALLEL operations (use MAX, not SUM)
+await Promise.all([
+  operation1({ timeout: 30000 }),  // 30s
+  operation2({ timeout: 45000 }),  // 45s
+  operation3({ timeout: 60000 })   // 60s
+]);
+// Parent timeout: max(30, 45, 60) + buffer = 70s
+// Operations run concurrently, parent only needs longest timeout + buffer
+
+// SEQUENTIAL operations (use SUM)
+await operation1({ timeout: 30000 });  // 30s
+await operation2({ timeout: 45000 });  // 45s
+await operation3({ timeout: 60000 });  // 60s
+// Parent timeout: 30 + 45 + 60 + buffer = 150s
+// Operations run one after another, parent needs sum of all timeouts + buffer
+```
+
+### Universal Applicability
+
+This principle applies to **ALL timeout chains**:
+
+✅ **E2E Tests (Playwright)** - This issue (test.setTimeout vs operation timeouts)
+✅ **Backend Tests (Rust)** - `#[timeout]` attribute vs operation timeouts
+✅ **Frontend Tests (Jest)** - `jest.setTimeout()` vs async operation timeouts
+✅ **Integration Tests** - Test timeout vs API call chains
+✅ **API Timeout Chains** - Service SLAs vs downstream service calls
+✅ **Distributed Systems** - Request deadlines vs microservice call chains
+
+**Example from Distributed Systems** (Zalando pattern):
+```
+Edge Service (1000ms SLA)
+├─ calls Order Service (max: 500ms)
+│  └─ calls Inventory Service (max: 300ms)
+└─ calls Payment Service (max: 400ms)
+
+Edge timeout (1000ms) >= Order (500ms) + Payment (400ms) + overhead (100ms) ✅
+Order timeout (500ms) >= Inventory (300ms) + processing (150ms) + overhead (50ms) ✅
+```
+
+### Debugging Workflow
+
+When encountering timeout errors:
+
+1. **Map the sequential operation chain** - List all `await` statements in order
+2. **Extract timeout values** - Find explicit `{ timeout: N }` or defaults
+3. **Calculate sequential sum** - Add up all child timeouts
+4. **Compare to parent timeout** - If sum >= parent, you've found the issue
+5. **Recalculate budget** - Use formula above to determine correct parent timeout
+6. **Verify load-aware consistency** - Ensure all timeouts scale uniformly with load
+
+### Audit Tool
+
+Created `helper-scripts/audit-timeout-chains.ts` to automatically detect timeout budget violations:
+
+```bash
+# Audit E2E tests
+ts-node helper-scripts/audit-timeout-chains.ts frontend/e2e/tests/
+
+# Audit backend tests
+ts-node helper-scripts/audit-timeout-chains.ts backend/src/tests/
+```
+
+**Tool capabilities:**
+- Parses TypeScript/JavaScript test files
+- Extracts parent and child timeouts
+- Accounts for `getTestTimeout()` load-aware multipliers
+- Calculates sequential sums with buffer requirements
+- Generates violation reports with recommendations
+
+### Key Takeaways
+
+1. ⚠️ **Parent timeout must exceed sum of sequential children** (not just largest child)
+2. 🧮 **Always calculate worst-case sequential sum** before setting parent timeout
+3. 📊 **Add 10-20% buffer** for framework overhead and variability
+4. 🔄 **Ensure load-aware consistency** (all timeouts scale together or none do)
+5. 🔍 **Audit existing tests proactively** using automated tooling
+6. 🌐 **Universal principle** - applies beyond E2E tests to all timeout chains
+
+### Documentation
+
+**Full guidance added to:**
+- `docs/PLAYWRIGHT_BEST_PRACTICES.md` - "Sequential Timeout Budget Management" section
+- Includes real examples from Rust, Jest, Playwright, and microservices
+- Percentile-based timeout selection (p99.9 for 0.1% false-positive rate)
+- Deadline propagation pattern for deeply nested systems
+
+**This is a universal testing principle that should be applied to all future test development.**
 
 ## Status History
 
