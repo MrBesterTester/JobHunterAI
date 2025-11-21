@@ -190,5 +190,5 @@ export const test = base.extend<{ page: Page }, WorkerFixtures>({
   },
 });
 
-// Re-export expect and types for convenience
-export { expect, type Page } from '@playwright/test';
+// Re-export expect, types, and devices for convenience
+export { expect, type Page, devices } from '@playwright/test';
