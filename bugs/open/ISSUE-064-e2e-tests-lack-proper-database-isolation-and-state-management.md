@@ -16,6 +16,13 @@ related: [PLAYWRIGHT_BEST_PRACTICES.md]
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
+- [🚨 IMPLEMENTATION ROADMAP - LE PROBLEMA DU JOUR](#-implementation-roadmap---le-problema-du-jour)
+  - [Phase 1: Foundation (COMPLETED ✅)](#phase-1-foundation-completed-)
+  - [Phase 2: Backend Connection Strategy (NEXT 🔧)](#phase-2-backend-connection-strategy-next-)
+  - [Phase 3: Playwright Worker Fixture (PENDING)](#phase-3-playwright-worker-fixture-pending)
+  - [Phase 4: Full Rollout (PENDING)](#phase-4-full-rollout-pending)
+  - [Phase 5: Cleanup (PENDING)](#phase-5-cleanup-pending)
+  - [Key Questions to Track](#key-questions-to-track)
 - [Summary](#summary)
 - [Impact](#impact)
 - [Problem Statement](#problem-statement)
@@ -46,6 +53,121 @@ related: [PLAYWRIGHT_BEST_PRACTICES.md]
 - [Related Files](#related-files)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+---
+
+## 🚨 IMPLEMENTATION ROADMAP - LE PROBLEMA DU JOUR
+
+**Status**: 🔬 Prototyping Complete → 🔧 Implementation Phase
+
+**Solution**: Option 1 (Per-Worker Database Isolation) - **VALIDATED** ✅
+- ✅ Prototype successful (947ms startup, 0.18 MB memory)
+- ✅ Schema fixes committed (a8b231a)
+- 🔧 Ready for implementation
+
+---
+
+### Phase 1: Foundation (COMPLETED ✅)
+
+- [x] **Prototype validation** (Commit: a8b231a)
+  - Created 4 worker databases in parallel
+  - Measured startup time: 947ms (acceptable!)
+  - Measured memory: 0.18 MB (negligible!)
+  - Verified data: 45 jobs + 15 email_jobs per database
+- [x] **Schema synchronization**
+  - Added `extraction_method` column to jobs table
+  - Added `source` column to email_jobs table
+  - Schema now matches production
+
+### Phase 2: Backend Connection Strategy (NEXT 🔧)
+
+**Key Design Decision**: How does backend know which database to use?
+
+**Option A: Request Header** (Recommended - Cleanest):
+```typescript
+// Playwright fixture sets header with worker index
+page.setExtraHTTPHeaders({
+  'X-Worker-Index': testInfo.workerIndex.toString()
+});
+
+// Backend reads header and connects to jobhunter_test_worker_{index}
+```
+- ✅ Clean separation of concerns
+- ✅ Single backend process
+- ✅ Minimal backend changes
+- ✅ Tests transparent to change
+
+**Option B: Per-Worker Backend**:
+- Each worker starts backend on unique port
+- Worker 0 → localhost:8080 → database 0
+- Worker 1 → localhost:8081 → database 1
+- ❌ More complex (4 backend processes)
+- ❌ Port management overhead
+
+**Tasks**:
+- [ ] **Decide on backend connection strategy** (A or B)
+- [ ] Implement backend database connection logic
+- [ ] Test backend connection with worker databases
+
+### Phase 3: Playwright Worker Fixture (PENDING)
+
+**File**: `frontend/e2e/fixtures/worker-database.ts` (to be created)
+
+**Tasks**:
+- [ ] Create worker-scoped fixture
+- [ ] Implement database creation/seeding per worker
+- [ ] Implement database cleanup on worker teardown
+- [ ] Configure backend connection (header or port)
+- [ ] Test with 2-3 sample E2E tests
+
+**Fixture Structure**:
+```typescript
+export const test = base.extend<{}, WorkerFixture>({
+  workerDatabase: [async ({ }, use, workerInfo) => {
+    const dbName = `jobhunter_test_worker_${workerInfo.workerIndex}`;
+
+    // Setup: Create and seed database
+    await createWorkerDatabase(workerInfo.workerIndex);
+
+    // Use: Tests run with isolated database
+    await use(dbName);
+
+    // Teardown: Cleanup database
+    await dropWorkerDatabase(workerInfo.workerIndex);
+  }, { scope: 'worker' }]
+});
+```
+
+### Phase 4: Full Rollout (PENDING)
+
+**Tasks**:
+- [ ] Update `playwright.config.ts` to use new fixture
+- [ ] Remove global-setup database seeding (replaced by per-worker)
+- [ ] Test with full E2E suite (567 tests, 4 workers)
+- [ ] Verify all tests pass with isolation
+- [ ] Monitor test execution time (should stay <15 min)
+
+### Phase 5: Cleanup (PENDING)
+
+**Tasks**:
+- [ ] Remove serial mode from `03-job-status-updates.spec.ts`
+- [ ] Remove `chromium-isolated` project workaround
+- [ ] Remove serial mode from any other tests using it
+- [ ] Update `PLAYWRIGHT_BEST_PRACTICES.md` with new pattern
+- [ ] Archive prototype script (or move to helper-scripts/)
+
+---
+
+### Key Questions to Track
+
+1. **Database Naming**: `jobhunter_test_worker_{0-3}` ✅ (decided)
+2. **Backend Connection**: Request header vs per-worker backend? 🔧 (needs decision)
+3. **Seed Data Location**: Reuse `database/seed_test_data.sql`? ✅ (yes)
+4. **Worker Assignment**: Automatic via Playwright? ✅ (yes, no manual mapping needed)
+5. **Database Lifecycle**: Create on worker start, destroy on worker end? 🔧 (needs validation)
+6. **OAuth Credentials**: How to handle per-worker? 🔧 (needs investigation)
+
+---
 
 ## Summary
 
