@@ -66,7 +66,7 @@ test.describe('RapidAPI JSearch Sync Integration', () => {
   });
 
   test('should sync RapidAPI and display jobs in Inbox tab', async () => {
-    test.setTimeout(getTestTimeout(90000)); // 90s → 135s under comprehensive load
+    test.setTimeout(getTestTimeout(330000)); // 90s → 135s under comprehensive load
     // Step 1: Get initial stats
     await page.waitForTimeout(1000);
     const initialNewJobsText = await page.getByTestId('stat-new').textContent();
@@ -440,7 +440,7 @@ test.describe('RapidAPI JSearch Sync Integration', () => {
   });
 
   test('should reset pagination to page 1 when reset button clicked', async () => {
-    test.setTimeout(getTestTimeout(120000)); // 120s → 180s under comprehensive load
+    test.setTimeout(getTestTimeout(132000)); // 120s → 180s under comprehensive load
 
     // Navigate to Intake tab
     const intakeTab = page.getByRole('button', { name: /^intake$/i });

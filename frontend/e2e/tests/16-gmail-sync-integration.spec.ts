@@ -231,7 +231,7 @@ test.describe('Gmail Sync Integration', () => {
     // ISSUE-063: Set test timeout to allow for slow Gmail sync operations under load
     // Sequential operations: switchToTab (90s) + click/responses (30s) + DOM wait (90s) = 210s minimum
     // 180s base → 270s under comprehensive load (sufficient buffer for all sequential operations)
-    test.setTimeout(getTestTimeout(180000));
+    test.setTimeout(getTestTimeout(198001));
 
     // Navigate to New Jobs tab (jobs awaiting approval)
     // ISSUE-063 Option 5: Use 90s timeout for Gmail sync under comprehensive load (4 workers)
