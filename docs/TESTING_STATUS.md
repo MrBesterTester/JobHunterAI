@@ -10,8 +10,8 @@ related_docs:
   - testing-history/ (archived test runs - see testing-history/README.md for index)
   - TESTING_GUIDE.md (testing principles)
   - PROJECT_STATUS.md (overall project status)
-last_comprehensive_run: 2025-11-21 12:39:34 PST
-last_updated: 2025-11-21 12:42:01 PST (All tests passing - ISSUE-064 isolated projects + dashboard stats race condition fixes verified)
+last_comprehensive_run: 2025-11-21 13:07:12 PST
+last_updated: 2025-11-21 13:11:31 PST (Added test results with 2 E2E failures - dashboard statistics test regression)
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -26,8 +26,8 @@ last_updated: 2025-11-21 12:42:01 PST (All tests passing - ISSUE-064 isolated pr
     - [Frontend Unit Test Details](#frontend-unit-test-details)
     - [E2E Test Details](#e2e-test-details)
     - [Key Observations](#key-observations)
-    - [Comparison to Previous Run (2025-11-20 20:23 PST)](#comparison-to-previous-run-2025-11-20-2023-pst)
-  - [Previous Test Run Results (2025-11-20 20:23 PST)](#previous-test-run-results-2025-11-20-2023-pst)
+    - [Comparison to Previous Run (2025-11-21 12:27 PST)](#comparison-to-previous-run-2025-11-21-1227-pst)
+  - [Previous Test Run Results (2025-11-21 12:27 PST)](#previous-test-run-results-2025-11-21-1227-pst)
   - [Historical Context - Past Investigation Work](#historical-context---past-investigation-work)
     - [ISSUE-055 Investigation (November 18, 2025) - ✅ COMPLETED](#issue-055-investigation-november-18-2025----completed)
   - [Related Files](#related-files)
@@ -39,21 +39,28 @@ last_updated: 2025-11-21 12:42:01 PST (All tests passing - ISSUE-064 isolated pr
 
 ## Next Steps (Testing Priorities)
 
-**✅ ALL TESTS PASSING - No Critical Priorities**
+**⚠️ TEST REGRESSION DETECTED - 2 E2E Failures**
 
-**Overall Test Suite Health**: ✅ **100% pass rate** (940/940 active tests) - Excellent state!
+**Overall Test Suite Health**: ⚠️ **99.79% pass rate** (937/939 active tests) - Regression from 100%
 
-**Completed Fixes (2025-11-21)**:
+**Priority 1: Investigate Dashboard Statistics Test Regression** 🔴 **URGENT**
+- **Test**: `e2e/tests/07-dashboard-statistics.spec.ts:106` - "Total should equal discovered job opportunities from intake"
+- **Failure**: Expected 1, Received 0 (failed twice, possibly with retry)
+- **Context**: This test was passing in previous run (2025-11-21 12:27 PST) with ISSUE-064 fixes
+- **Observation**: Same test that was fixed for race conditions in ISSUE-064 is now failing again
+- **Action Required**:
+  - Investigate if test data seeding is working correctly
+  - Check if backend `/api/jobs/stats` endpoint returns correct `discovered` count
+  - Verify UI correctly displays value from backend
+  - This may be a data seeding issue or a true regression in stats calculation
+
+**Recent Work (2025-11-21)**:
 - ✅ **ISSUE-064**: E2E test isolation via Playwright projects (Commits bba389f, 4453468)
   - **Fix 1**: Isolated project for state-dependent tests (16-gmail-sync-integration, 23-description-quality)
   - **Fix 2**: Dashboard statistics race condition (wait for API response before reading UI)
   - **Result**: All 5 timeout failures eliminated + 2 dashboard stats failures fixed
   - **Performance**: 18.7 min → 12.4 min (34% faster!)
-
-**Optional Future Improvements** (Non-Critical):
-- Consider expanding isolated project approach if new state-dependent tests emerge
-- Monitor E2E runtime trends as test suite grows
-- Review skipped test coverage (203 E2E tests intentionally skipped)
+  - **Status**: Fixes were verified in 12:27 PST run, but regression appeared in 12:54 PST run
 
 **Previous Priorities** (✅ All Fixed and Verified):
 
@@ -76,30 +83,28 @@ last_updated: 2025-11-21 12:42:01 PST (All tests passing - ISSUE-064 isolated pr
 
 ## Latest Test Run Results (Quick Summary)
 
-**Run Date**: 2025-11-21 12:27:07 PST (completed 12:39:34 PST)
-**Runtime**: 12 minutes 27 seconds (746.6 seconds - full comprehensive suite)
-**Exit Code**: 0 (SUCCESS - ALL TESTS PASSING ✅)
-**Context**: Verification run after ISSUE-064 fixes (isolated projects + dashboard stats race condition)
+**Run Date**: 2025-11-21 12:54:25 PST (completed 13:07:12 PST)
+**Runtime**: 12 minutes 47 seconds (767.7 seconds - full comprehensive suite)
+**Exit Code**: 1 (FAILED - 2 E2E test failures ❌)
+**Context**: Routine comprehensive test run after tagging STABLE-E
 
 | Test Suite | Passed | Failed | Skipped | Pass Rate | Runtime | Status |
 |------------|--------|--------|---------|-----------|---------|--------|
-| **Backend Tests** | **32** | 0 | 4 (mock) | **100%** | 134.7s | ✅ **PASSING** |
-| **Frontend Unit** | **516** | 0 | 1 | **100%** | 81.4s | ✅ **PASSING** |
-| **E2E Tests** | **392** | **0** | **203** | **100%** | 624.7s (~10.4m) | ✅ **ALL PASSING** |
-| **TOTAL (Active)** | **940** | **0** | **208** | **100%** | **~12.4 min** | ✅ **SUCCESS** |
+| **Backend Tests** | **32** | 0 | 4 (mock) | **100%** | 132.1s | ✅ **PASSING** |
+| **Frontend Unit** | **516** | 0 | 1 | **100%** | 83.8s | ✅ **PASSING** |
+| **E2E Tests** | **389** | **2** | **205** | **99.49%** | 647.5s (~10.8m) | ❌ **2 FAILURES** |
+| **TOTAL (Active)** | **937** | **2** | **210** | **99.79%** | **~12.8 min** | ❌ **FAILED** |
 
-**🎉 Key Achievement: 100% Test Pass Rate**
-- **ISSUE-064 Complete Resolution**: **7 failures → 0 failures** (100% improvement)
-  - ✅ **Fix 1** (Isolated Projects): Eliminated 5 timeout failures (120s waits in tests 16 & 23)
-    - Created `chromium-isolated` Playwright project
-    - Tests requiring specific database state run first in isolation
-    - Prevents cross-file interference from parallel execution
-  - ✅ **Fix 2** (Dashboard Stats): Fixed 2 race condition failures (test 07)
-    - Added explicit wait for `/api/jobs/stats` API response
-    - Prevents reading UI before stats are loaded
-- **Pass rate**: 100% (940/940 active tests)
-- **Runtime**: 12.4 min (34% faster than pre-fix 18.7 min!)
-- **Performance gain**: Eliminating timeouts removed wasted wait time and retries
+**⚠️ Regression Detected: Dashboard Statistics Test Failing**
+- **Failures**: 2 instances of same test (possibly with retry)
+- **Test**: "Dashboard Statistics › Total should equal discovered job opportunities from intake"
+- **File**: `frontend/e2e/tests/07-dashboard-statistics.spec.ts:106`
+- **Error**: `expect(received).toBe(expected) // Expected: 1, Received: 0`
+- **Analysis**:
+  - Backend API returns `stats.discovered = 1`
+  - UI displays total = 0
+  - This is the same test that was fixed in ISSUE-064 for race conditions
+  - May indicate data seeding issue or stats calculation regression
 
 ---
 
@@ -108,14 +113,14 @@ last_updated: 2025-11-21 12:42:01 PST (All tests passing - ISSUE-064 isolated pr
 ### Test Status Summary
 
 **Run Type**: Full comprehensive suite (preflight + build + all test suites)
-**Start Time**: 2025-11-21 12:27:07 PST
-**End Time**: 2025-11-21 12:39:34 PST
-**Total Duration**: 746.6 seconds (12.4 minutes)
+**Start Time**: 2025-11-21 12:54:25 PST
+**End Time**: 2025-11-21 13:07:12 PST
+**Total Duration**: 767.7 seconds (12.8 minutes)
 
 ### Backend Test Details
 
 **Test Framework**: Cargo test (Rust)
-**Runtime**: 134.7 seconds
+**Runtime**: 132.1 seconds
 **Results**:
 - ✅ 32 passed
 - ❌ 0 failed
@@ -126,7 +131,7 @@ last_updated: 2025-11-21 12:42:01 PST (All tests passing - ISSUE-064 isolated pr
 ### Frontend Unit Test Details
 
 **Test Framework**: Jest (React Testing Library)
-**Runtime**: 81.4 seconds
+**Runtime**: 83.8 seconds
 **Results**:
 - ✅ 516 passed
 - ❌ 0 failed
@@ -137,63 +142,74 @@ last_updated: 2025-11-21 12:42:01 PST (All tests passing - ISSUE-064 isolated pr
 ### E2E Test Details
 
 **Test Framework**: Playwright
-**Runtime**: 624.7 seconds (~10.4 minutes)
+**Runtime**: 647.5 seconds (~10.8 minutes)
 **Results**:
-- ✅ 392 passed
-- ❌ 0 failed
-- ⏭️ 203 skipped (intentional - browser/device variants, performance tests)
+- ✅ 389 passed
+- ❌ 2 failed
+- ⏭️ 205 skipped (intentional - browser/device variants, performance tests)
 
 **Test Execution**:
-- Isolated project (`chromium-isolated`): 10 tests ran first sequentially
-- Main project (`chromium`): 585 tests ran after with 4 parallel workers
+- Isolated project (`chromium-isolated`): Tests ran first sequentially
+- Main project (`chromium`): Tests ran after with 4 parallel workers
 
-**Status**: ✅ **100% passing**
+**Status**: ❌ **2 failures** (dashboard statistics test)
+
+**Failure Details**:
+Both failures are the same test (possibly with retry):
+- **Test**: "Dashboard Statistics › Total should equal discovered job opportunities from intake"
+- **File**: `frontend/e2e/tests/07-dashboard-statistics.spec.ts:106`
+- **Error**: `expect(received).toBe(expected) // Expected: 1, Received: 0`
+- **Stack Trace**: Line 106:21 in spec file
+- **Duration**: 678ms (first), 861ms (second)
 
 ### Key Observations
 
-1. **All Tests Passing**: First time achieving 100% pass rate with all 940 active tests passing
-2. **Isolated Projects Working**: Tests requiring database isolation (files 16, 23) completed without timeouts
-3. **Dashboard Stats Fixed**: Race condition resolved with explicit API response wait
-4. **Performance Excellent**: 12.4 min runtime is 34% faster than pre-fix baseline (18.7 min)
-5. **Stability Verified**: No flaky tests, no retries needed, clean execution
+1. **Regression Detected**: Dashboard statistics test that was passing in previous run (12:27 PST) is now failing
+2. **Same Test, Different Outcome**: Test was fixed for race conditions in ISSUE-064, but now failing with data assertion
+3. **Backend Returns Correct Value**: API endpoint returns `discovered = 1`
+4. **UI Shows Incorrect Value**: Frontend displays `total = 0`
+5. **Possible Causes**:
+   - Test data seeding issue (database not seeded correctly)
+   - Stats calculation regression in backend
+   - UI not fetching/displaying stats correctly
+   - Race condition still present (though less likely given explicit wait for API response)
 
-### Comparison to Previous Run (2025-11-20 20:23 PST)
+### Comparison to Previous Run (2025-11-21 12:27 PST)
 
 | Metric | Previous | Current | Change |
 |--------|----------|---------|--------|
-| **Total Passed** | 943 | 940 | -3 (E2E count variation) |
-| **Total Failed** | 1 | 0 | ✅ -1 (fixed!) |
-| **Pass Rate** | 99.89% | 100% | ✅ +0.11% |
-| **Runtime** | 12.7 min | 12.4 min | ✅ -0.3 min |
-| **E2E Passed** | 395 | 392 | -3 (count variation) |
-| **E2E Failed** | 1 | 0 | ✅ -1 (fixed!) |
+| **Total Passed** | 940 | 937 | -3 (regression) |
+| **Total Failed** | 0 | 2 | ❌ +2 (regression!) |
+| **Pass Rate** | 100% | 99.79% | ❌ -0.21% |
+| **Runtime** | 12.4 min | 12.8 min | +0.4 min |
+| **E2E Passed** | 392 | 389 | -3 |
+| **E2E Failed** | 0 | 2 | ❌ +2 (regression!) |
 
-**Key Improvements**:
-- ✅ Eliminated final timeout failure (test 16 line 232)
-- ✅ Fixed dashboard stats race conditions (2 failures in test 07)
-- ✅ Achieved 100% pass rate (first time in test suite history)
-- ✅ Maintained excellent runtime performance
-
-**Note**: E2E test count variation (-3) is normal - depends on which tests are seeded with data and which skip themselves
+**Key Changes**:
+- ❌ Regression in dashboard statistics test (was passing, now failing)
+- Same test that was fixed in ISSUE-064 is now failing with different error
+- No code changes between runs - suggests data seeding or environmental issue
+- Runtime slightly longer (normal variation)
 
 ---
 
-## Previous Test Run Results (2025-11-20 20:23 PST)
+## Previous Test Run Results (2025-11-21 12:27 PST)
 
-**Run Date**: 2025-11-20 20:23:53 PST (completed 20:36:35 PST)
-**Runtime**: 12 minutes 42 seconds
-**Exit Code**: 1 (FAILED - 1 E2E test timeout)
-**Context**: Verification run after ISSUE-063 Option 1 timeout fixes
+**Run Date**: 2025-11-21 12:27:07 PST (completed 12:39:34 PST)
+**Runtime**: 12 minutes 27 seconds (746.6 seconds)
+**Exit Code**: 0 (SUCCESS - ALL TESTS PASSING ✅)
+**Context**: Verification run after ISSUE-064 fixes (isolated projects + dashboard stats race condition)
 
 | Test Suite | Passed | Failed | Skipped | Pass Rate | Runtime |
 |------------|--------|--------|---------|-----------|---------|
-| **Backend Tests** | **32** | 0 | 4 | **100%** | 125.7s |
-| **Frontend Unit** | **516** | 0 | 1 | **100%** | 72.5s |
-| **E2E Tests** | **395** | **1** | **202** | **99.75%** | 655.1s |
-| **TOTAL** | **943** | **1** | **207** | **99.89%** | **~12.7 min** |
+| **Backend Tests** | **32** | 0 | 4 | **100%** | 134.7s |
+| **Frontend Unit** | **516** | 0 | 1 | **100%** | 81.4s |
+| **E2E Tests** | **392** | **0** | **203** | **100%** | 624.7s |
+| **TOTAL** | **940** | **0** | **208** | **100%** | **~12.4 min** |
 
-**Status**: ⚠️ Near-passing with 1 remaining timeout in Test 16 line 232
+**Status**: ✅ All tests passing (100% pass rate achieved)
 
+---
 
 ## Historical Context - Past Investigation Work
 
