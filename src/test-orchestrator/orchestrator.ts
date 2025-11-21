@@ -860,7 +860,12 @@ export class TestOrchestrator {
 
       try {
         writeFileSync(envFilePath, envContent);
+        // Verify file was written successfully (filesystem sync)
+        if (!require('fs').existsSync(envFilePath)) {
+          throw new Error('File write succeeded but file not visible (filesystem cache issue?)');
+        }
         console.log('  ✅ Created .env.playwright for worker process propagation');
+        console.log(`  🔍 Verified file exists at: ${envFilePath}`);
       } catch (err) {
         console.warn(`  ⚠️  Failed to write .env.playwright: ${err}`);
         // Continue anyway - spawn env vars may still work
