@@ -87,6 +87,8 @@
       - [`helper-scripts/regenerate-bug-index.sh`](#helper-scriptsregenerate-bug-indexsh)
       - [`helper-scripts/count-test-runs.sh`](#helper-scriptscount-test-runssh)
       - [`helper-scripts/archive-oldest-test-run.sh`](#helper-scriptsarchive-oldest-test-runsh)
+      - [`helper-scripts/audit-timeout-chains.ts`](#helper-scriptsaudit-timeout-chainsts)
+      - [`helper-scripts/fix-timeout-chains.ts`](#helper-scriptsfix-timeout-chainsts)
       - [`scripts/update-project-status.sh`](#scriptsupdate-project-statussh)
       - [`helper-scripts/system-health-check.sh`](#helper-scriptssystem-health-checksh)
     - [Security Notes](#security-notes)
@@ -2826,6 +2828,145 @@ Next steps:
 **See also:**
 - [Testing Status Update Requirements](CLAUDE.md#testing-status-update-requirements) in CLAUDE.md
 - `testing-history/README.md` for archive index
+
+#### [`helper-scripts/audit-timeout-chains.ts`](helper-scripts/audit-timeout-chains.ts)
+Analyzes E2E test files to detect timeout budget violations where parent timeouts are insufficient for sequential child operations.
+
+**Context:** Implements the **Sequential Timeout Budget Principle** discovered during [ISSUE-063](bugs/open/ISSUE-063-e2e-tests-timing-out-in-pagewaitforfunction-after-tab-switch-files-16--23.md). This principle states that parent timeouts must be >= sum of all sequential child timeouts, not just the largest single child.
+
+**Usage:**
+```bash
+# Audit E2E tests
+npx ts-node helper-scripts/audit-timeout-chains.ts frontend/e2e/tests/
+
+# Save report to file
+npx ts-node helper-scripts/audit-timeout-chains.ts frontend/e2e/tests/ > timeout-violations-report.txt
+```
+
+**What this tool does:**
+- Parses TypeScript test files to extract timeout information
+- Calculates sequential sums of child operation timeouts
+- Accounts for `getTestTimeout()` load-aware multipliers
+- Detects violations where parent timeout < required timeout (with 10% buffer)
+- Generates detailed reports with recommendations for each violation
+
+**Exit codes:**
+- `0` - No violations found (all tests have adequate timeout budgets)
+- `1` - Violations detected (tests need timeout adjustments)
+- `2` - Error during execution
+
+**When to use:**
+- Before running comprehensive tests to proactively check timeout health
+- After adding new tests with multiple sequential operations
+- When investigating timeout-related test failures
+- As part of test code review process
+- Periodically to ensure timeout budgets remain healthy as tests evolve
+
+**Tool characteristics:**
+- **Read-only**: Analyzes and reports but does NOT modify files
+- **Fast**: TypeScript-based for quick execution
+- **Comprehensive**: Scans all test files in specified directory
+- **Accurate**: Handles both explicit timeouts and Playwright defaults
+
+**Why this matters:**
+Under comprehensive test load (4 parallel workers), operations may take their full timeout values. If parent timeout < sum of child timeouts, tests will timeout even when operations are working correctly.
+
+**See also:** [ISSUE-063 - Sequential Timeout Budget Principle](bugs/open/ISSUE-063-e2e-tests-timing-out-in-pagewaitforfunction-after-tab-switch-files-16--23.md#sequential-timeout-budget-principle-lessons-learned) for detailed explanation, real examples, and universal applicability to all timeout chains.
+
+#### [`helper-scripts/fix-timeout-chains.ts`](helper-scripts/fix-timeout-chains.ts)
+Automatically fixes timeout budget violations by updating `test.setTimeout()` values to accommodate sequential operation chains.
+
+**Context:** Companion tool to `audit-timeout-chains.ts` that applies fixes automatically based on the Sequential Timeout Budget Principle from [ISSUE-063](bugs/open/ISSUE-063-e2e-tests-timing-out-in-pagewaitforfunction-after-tab-switch-files-16--23.md).
+
+**Prerequisites:**
+- Clean git status (no uncommitted changes) - **REQUIRED** in normal mode
+- Backend and frontend must not be running (to ensure file safety)
+
+**Usage:**
+```bash
+# Fix all violations (requires clean git)
+npx ts-node helper-scripts/fix-timeout-chains.ts frontend/e2e/tests/
+
+# Preview changes without modifying files
+npx ts-node helper-scripts/fix-timeout-chains.ts frontend/e2e/tests/ --dry-run
+
+# Only fix severe violations (>= 10 seconds deficit)
+npx ts-node helper-scripts/fix-timeout-chains.ts frontend/e2e/tests/ --min-deficit 10000
+```
+
+**What this tool does:**
+1. Checks git status (must be clean in normal mode)
+2. Runs audit to detect violations
+3. Calculates required timeout = sum(child timeouts) × 1.1 (10% buffer)
+4. Locates and updates `test.setTimeout()` lines
+5. Preserves `getTestTimeout()` wrapper if present
+6. Reports changes made
+7. Stages files for commit (does NOT auto-commit)
+
+**Options:**
+- `--dry-run` - Show what would be fixed without making changes
+- `--min-deficit N` - Only fix violations with deficit >= N milliseconds (default: 0)
+
+**Exit codes:**
+- `0` - No violations or all fixed successfully
+- `1` - Git status not clean (prerequisite failed)
+- `2` - Error during execution
+
+**When to use:**
+- After running audit tool and reviewing violations
+- Before running comprehensive tests to prevent timeout failures
+- After adding tests with complex sequential operation chains
+- When refactoring tests that involve multiple async operations
+
+**Workflow (recommended):**
+```bash
+# Step 1: Ensure clean git state
+git status
+
+# Step 2: Preview fixes (dry run)
+npx ts-node helper-scripts/fix-timeout-chains.ts frontend/e2e/tests/ --dry-run
+
+# Step 3: Apply fixes
+npx ts-node helper-scripts/fix-timeout-chains.ts frontend/e2e/tests/
+
+# Step 4: Review changes
+git diff
+
+# Step 5: Run comprehensive tests to verify
+./run-comprehensive-tests.sh
+
+# Step 6: If tests pass, commit
+git commit -m "fix: Apply sequential timeout budget fixes (ISSUE-063)"
+
+# Step 7: If tests fail, investigate or revert
+git restore .
+```
+
+**Safety features:**
+- **Git prerequisite check**: Prevents running on dirty working directory
+- **No auto-commit**: Allows comprehensive test verification before committing
+- **Dry run mode**: Preview changes before applying
+- **Staged changes**: Easy to review with `git diff --staged`
+- **Easy rollback**: `git restore .` if tests fail
+
+**Tool characteristics:**
+- **Automatic**: Applies fixes without manual intervention
+- **Fast**: TypeScript-based for quick execution
+- **Safe**: Requires clean git and doesn't auto-commit
+- **Transparent**: Clear reporting of changes made
+- **Flexible**: `--min-deficit` for filtering by severity
+
+**Why automatic fixing is safe:**
+- Parent timeout calculations are mathematical (sum + 10% buffer)
+- No subjective judgment needed (unlike performance optimization)
+- Changes are easily reviewed with `git diff`
+- Comprehensive tests verify correctness before commit
+- Clean git requirement ensures easy rollback
+
+**Regarding npm dependencies:**
+This tool uses TypeScript (.ts) for speed and maintainability. Dependencies (`glob`, `@types/node`, `ts-node`, `typescript`) are installed at project root alongside the test orchestrator dependencies. This is intentional and acceptable for development tooling.
+
+**See also:** [ISSUE-063 - Sequential Timeout Budget Principle](bugs/open/ISSUE-063-e2e-tests-timing-out-in-pagewaitforfunction-after-tab-switch-files-16--23.md#sequential-timeout-budget-principle-lessons-learned) for detailed explanation and rationale.
 
 #### [`scripts/update-project-status.sh`](scripts/update-project-status.sh)
 Updates the central project status document with current metrics from various sources.
