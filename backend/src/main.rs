@@ -1,4 +1,5 @@
-use actix_web::{web, App, HttpResponse, HttpServer, Result};
+use actix_web::{web, App, HttpResponse, HttpServer, Result, HttpRequest, FromRequest};
+use actix_web::dev::Payload;
 use actix_cors::Cors;
 use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, FromRow, Row};
@@ -10,6 +11,8 @@ use base64::{Engine as _, engine::general_purpose};
 use bigdecimal::{BigDecimal, ToPrimitive};
 use std::fs::OpenOptions;
 use std::io::Write;
+use std::collections::HashMap;
+use std::future::{ready, Ready};
 
 // ============================================================================
 // Module Declarations
@@ -18,6 +21,66 @@ use std::io::Write;
 mod llm;
 mod calendar_auth;
 mod calendar_service;
+
+// ============================================================================
+// Per-Worker Database Isolation (ISSUE-064)
+// ============================================================================
+
+/// Holds multiple database pools: one default pool and worker-specific pools for E2E test isolation
+#[derive(Clone)]
+struct DatabasePools {
+    default_pool: PgPool,
+    worker_pools: HashMap<usize, PgPool>,
+}
+
+/// Custom extractor that selects the appropriate database pool based on X-Worker-Index header
+/// Falls back to default pool if header is missing or invalid (production/dev mode)
+pub struct WorkerPool(PgPool);
+
+impl WorkerPool {
+    /// Get reference to underlying pool
+    pub fn get_ref(&self) -> &PgPool {
+        &self.0
+    }
+}
+
+impl std::ops::Deref for WorkerPool {
+    type Target = PgPool;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl FromRequest for WorkerPool {
+    type Error = actix_web::Error;
+    type Future = Ready<Result<Self, Self::Error>>;
+
+    fn from_request(req: &HttpRequest, _payload: &mut Payload) -> Self::Future {
+        let pools = req
+            .app_data::<web::Data<DatabasePools>>()
+            .expect("DatabasePools not configured in app_data");
+
+        // Check for X-Worker-Index header (E2E test mode)
+        let pool = if let Some(worker_index) = req
+            .headers()
+            .get("X-Worker-Index")
+            .and_then(|h| h.to_str().ok())
+            .and_then(|s| s.parse::<usize>().ok())
+        {
+            // E2E test mode: use worker-specific database
+            pools
+                .worker_pools
+                .get(&worker_index)
+                .unwrap_or(&pools.default_pool)
+        } else {
+            // Production/dev mode: use default database
+            &pools.default_pool
+        };
+
+        ready(Ok(WorkerPool(pool.clone())))
+    }
+}
 
 // ============================================================================
 // Debug Logging
@@ -1605,7 +1668,6 @@ fn generate_personalized_opening(job: &Job) -> String {
 // ============================================================================
 
 use llm::AnthropicClient;
-use std::collections::HashMap;
 
 /// Generate content for job using LLM (NEW implementation)
 async fn generate_content_for_job_llm(
@@ -1745,7 +1807,7 @@ async fn generate_content_for_job(job: &Job, pool: &PgPool) -> Result<GeneratedC
 // Job Handlers
 // ============================================================================
 
-async fn get_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn get_jobs(pool: WorkerPool) -> Result<HttpResponse> {
     let jobs = sqlx::query_as::<_, JobWithScore>(
         "SELECT
             j.job_id, j.title, j.company, j.location, j.source, j.salary,
@@ -1764,7 +1826,7 @@ async fn get_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
 }
 
 async fn get_job(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     job_id: web::Path<Uuid>,
 ) -> Result<HttpResponse> {
     let job = sqlx::query_as::<_, Job>(
@@ -1782,7 +1844,7 @@ async fn get_job(
 }
 
 async fn create_job(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     job_req: web::Json<CreateJobRequest>,
 ) -> Result<HttpResponse> {
     // Check for duplicates first
@@ -1844,7 +1906,7 @@ async fn create_job(
 }
 
 async fn update_job_status(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     job_id: web::Path<Uuid>,
     status_req: web::Json<UpdateJobStatusRequest>,
 ) -> Result<HttpResponse> {
@@ -1864,7 +1926,7 @@ async fn update_job_status(
 }
 
 async fn get_jobs_by_status(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     status: web::Path<String>,
 ) -> Result<HttpResponse> {
     let jobs = sqlx::query_as::<_, Job>(
@@ -1890,7 +1952,7 @@ async fn get_jobs_by_status(
 /// Such records appear in the Ignored tab only if they don't have JobOps-OLD label
 /// (see get_ignored_emails function for filtering logic).
 async fn reject_job(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     job_id: web::Path<Uuid>,
 ) -> Result<HttpResponse> {
     let job_id_val = *job_id;
@@ -2034,7 +2096,7 @@ struct BulkDeleteFailure {
 
 // Bulk delete Gmail emails for rejected jobs
 async fn bulk_delete_gmail_jobs(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     request: web::Json<BulkDeleteJobsRequest>,
 ) -> Result<HttpResponse> {
     // 1. Validate all jobs are from Gmail source and get message IDs
@@ -2117,7 +2179,7 @@ async fn bulk_delete_gmail_jobs(
 
 // Bulk delete Gmail emails for non-job emails (Ignored tab)
 async fn bulk_delete_gmail_email_jobs(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     request: web::Json<BulkDeleteEmailJobsRequest>,
 ) -> Result<HttpResponse> {
     // 1. Validate all email_jobs are from Gmail source and get message IDs
@@ -2202,7 +2264,7 @@ async fn bulk_delete_gmail_email_jobs(
 // ============================================================================
 
 async fn create_application(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     app_req: web::Json<CreateApplicationRequest>,
 ) -> Result<HttpResponse> {
     let application_id = Uuid::new_v4();
@@ -2226,7 +2288,7 @@ async fn create_application(
     Ok(HttpResponse::Created().json(application))
 }
 
-async fn get_applications(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn get_applications(pool: WorkerPool) -> Result<HttpResponse> {
     let applications = sqlx::query_as::<_, Application>(
         "SELECT * FROM applications ORDER BY date_applied DESC"
     )
@@ -2241,7 +2303,7 @@ async fn get_applications(pool: web::Data<PgPool>) -> Result<HttpResponse> {
 // Job Criteria Handlers
 // ============================================================================
 
-async fn get_criteria(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn get_criteria(pool: WorkerPool) -> Result<HttpResponse> {
     let criteria = sqlx::query_as::<_, JobCriteria>(
         "SELECT * FROM job_criteria ORDER BY updated_at DESC LIMIT 1"
     )
@@ -2256,7 +2318,7 @@ async fn get_criteria(pool: web::Data<PgPool>) -> Result<HttpResponse> {
 }
 
 async fn update_criteria(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     criteria_req: web::Json<UpdateCriteriaRequest>,
 ) -> Result<HttpResponse> {
     let criteria_id = Uuid::new_v4();
@@ -2286,7 +2348,7 @@ async fn update_criteria(
 // Filtering and Stats Handlers
 // ============================================================================
 
-async fn get_filtered_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn get_filtered_jobs(pool: WorkerPool) -> Result<HttpResponse> {
     let jobs = sqlx::query_as::<_, Job>(
         "SELECT job_id, title, company, location, source, salary, commute_time, status, date_email_sent, description, condensed_description, url, filter_reason, extraction_method, raw_data FROM jobs WHERE status = 'filtered' ORDER BY date_email_sent DESC"
     )
@@ -2303,7 +2365,7 @@ async fn get_filtered_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
 
 /// POST /api/jobs/{id}/calculate-score - Calculate score for single job
 async fn calculate_single_job_score(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     job_id: web::Path<Uuid>,
 ) -> Result<HttpResponse> {
     // Fetch job
@@ -2329,7 +2391,7 @@ async fn calculate_single_job_score(
 }
 
 /// POST /api/jobs/calculate-all-scores - Bulk score all jobs
-async fn calculate_all_job_scores(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn calculate_all_job_scores(pool: WorkerPool) -> Result<HttpResponse> {
     // Fetch all jobs
     let jobs = sqlx::query_as::<_, Job>(
         "SELECT * FROM jobs WHERE raw_data IS NOT NULL"
@@ -2363,7 +2425,7 @@ async fn calculate_all_job_scores(pool: web::Data<PgPool>) -> Result<HttpRespons
 }
 
 /// GET /api/jobs/ranked - Get jobs ordered by score
-async fn get_ranked_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn get_ranked_jobs(pool: WorkerPool) -> Result<HttpResponse> {
     // Fetch jobs with their scores using raw SQL
     let jobs = sqlx::query_as::<_, Job>(
         r#"
@@ -2382,7 +2444,7 @@ async fn get_ranked_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
 
 /// GET /api/jobs/{id}/score - Get score for a specific job
 async fn get_job_score_handler(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     job_id: web::Path<Uuid>,
 ) -> Result<HttpResponse> {
     let score = get_job_score(pool.get_ref(), *job_id)
@@ -2398,7 +2460,7 @@ async fn get_job_score_handler(
 }
 
 /// GET /api/scoring-criteria - Get current weights
-async fn get_scoring_criteria_handler(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn get_scoring_criteria_handler(pool: WorkerPool) -> Result<HttpResponse> {
     let criteria = get_scoring_criteria(pool.get_ref())
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?;
@@ -2413,7 +2475,7 @@ struct UpdateScoringCriteriaRequest {
 }
 
 async fn update_scoring_criteria_handler(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     req: web::Json<UpdateScoringCriteriaRequest>,
 ) -> Result<HttpResponse> {
     // Validate weights sum to 1.0 (±0.001 tolerance)
@@ -2439,7 +2501,7 @@ async fn update_scoring_criteria_handler(
     Ok(HttpResponse::Ok().json(serde_json::json!({"success": true})))
 }
 
-async fn get_job_stats(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn get_job_stats(pool: WorkerPool) -> Result<HttpResponse> {
     let stats = sqlx::query!(
         r#"
         SELECT
@@ -2524,7 +2586,7 @@ async fn get_job_stats(pool: web::Data<PgPool>) -> Result<HttpResponse> {
 // Content Generation Handlers
 // ============================================================================
 
-async fn get_resumes(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn get_resumes(pool: WorkerPool) -> Result<HttpResponse> {
     let resumes = sqlx::query_as::<_, ResumeVersion>(
         "SELECT version_id, version_name, content, format, file_path, is_master, created_at, updated_at FROM resume_versions ORDER BY created_at DESC"
     )
@@ -2544,7 +2606,7 @@ struct CreateResumeRequest {
 }
 
 async fn create_resume(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     resume_data: web::Json<CreateResumeRequest>,
 ) -> Result<HttpResponse> {
     let format = resume_data.format.clone().unwrap_or_else(|| "markdown".to_string());
@@ -2573,7 +2635,7 @@ async fn create_resume(
 }
 
 async fn set_master_resume(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse> {
     let version_id = path.into_inner();
@@ -2597,7 +2659,7 @@ async fn set_master_resume(
 }
 
 async fn delete_resume(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse> {
     let version_id = path.into_inner();
@@ -2623,7 +2685,7 @@ async fn delete_resume(
     Ok(HttpResponse::NoContent().finish())
 }
 
-async fn load_master_resume_from_file(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn load_master_resume_from_file(pool: WorkerPool) -> Result<HttpResponse> {
     use std::fs;
 
     // Read the master resume file (path relative to project root, not backend/)
@@ -2672,7 +2734,7 @@ async fn load_master_resume_from_file(pool: web::Data<PgPool>) -> Result<HttpRes
     Ok(HttpResponse::Ok().json(resume))
 }
 
-async fn get_cover_letter_templates_handler(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn get_cover_letter_templates_handler(pool: WorkerPool) -> Result<HttpResponse> {
     let templates = sqlx::query_as::<_, CoverLetterTemplate>(
         "SELECT template_id, template_name, content, created_at, updated_at FROM cover_letter_templates ORDER BY created_at DESC"
     )
@@ -2684,7 +2746,7 @@ async fn get_cover_letter_templates_handler(pool: web::Data<PgPool>) -> Result<H
 }
 
 async fn generate_content_handler(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse> {
     let job_id = path.into_inner();
@@ -2742,7 +2804,7 @@ async fn generate_content_handler(
 }
 
 async fn generate_content_with_options_handler(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     path: web::Path<Uuid>,
     req: web::Json<GenerateContentRequest>,
 ) -> Result<HttpResponse> {
@@ -2809,7 +2871,7 @@ async fn generate_content_with_options_handler(
 
 // Handler to condense job description
 async fn condense_description_handler(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse> {
     let job_id = path.into_inner();
@@ -3036,7 +3098,7 @@ fn is_valid_description(text: &str) -> bool {
 
 // Handler to get the original email body for a job
 async fn get_job_email_body_handler(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse> {
     let job_id = path.into_inner();
@@ -3105,7 +3167,7 @@ async fn get_gmail_oauth_url() -> Result<HttpResponse> {
 }
 
 async fn handle_gmail_oauth_callback(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     query: web::Query<std::collections::HashMap<String, String>>
 ) -> Result<HttpResponse> {
     let code = query.get("code")
@@ -3192,7 +3254,7 @@ async fn handle_gmail_oauth_callback(
 // Phase 2.4: Google Calendar OAuth Integration
 // ============================================================================
 
-async fn get_calendar_oauth_url(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn get_calendar_oauth_url(pool: WorkerPool) -> Result<HttpResponse> {
     let calendar_auth = calendar_auth::CalendarAuth::from_env(pool.get_ref().clone())
         .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Calendar auth initialization failed: {}", e)))?;
 
@@ -3205,7 +3267,7 @@ async fn get_calendar_oauth_url(pool: web::Data<PgPool>) -> Result<HttpResponse>
 }
 
 async fn handle_calendar_oauth_callback(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     query: web::Query<std::collections::HashMap<String, String>>
 ) -> Result<HttpResponse> {
     let code = query.get("code")
@@ -3255,7 +3317,7 @@ async fn get_microsoft_oauth_url() -> Result<HttpResponse> {
 }
 
 async fn handle_microsoft_oauth_callback(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     query: web::Query<std::collections::HashMap<String, String>>
 ) -> Result<HttpResponse> {
     let code = query.get("code")
@@ -3493,7 +3555,7 @@ async fn get_microsoft_user_email(access_token: &str) -> std::result::Result<Str
     Ok(email.to_string())
 }
 
-async fn get_microsoft_folders(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn get_microsoft_folders(pool: WorkerPool) -> Result<HttpResponse> {
     // Use auto-refresh wrapper to handle token expiration
     let folders_result = with_microsoft_token_refresh(pool.get_ref(), |token| async move {
         let client = reqwest::Client::new();
@@ -3522,7 +3584,7 @@ async fn get_microsoft_folders(pool: web::Data<PgPool>) -> Result<HttpResponse> 
     })))
 }
 
-async fn seed_microsoft_test_emails(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn seed_microsoft_test_emails(pool: WorkerPool) -> Result<HttpResponse> {
     // Get or create JobOps folder using auto-refresh wrapper
     let folder_id = with_microsoft_token_refresh(pool.get_ref(), |token| async move {
         // First, list all folders to find existing JobOps folder
@@ -3712,7 +3774,7 @@ AI Innovations Talent Team"#
     })))
 }
 
-async fn sync_microsoft_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn sync_microsoft_jobs(pool: WorkerPool) -> Result<HttpResponse> {
     let log_id = Uuid::new_v4();
 
     // Get Microsoft email source
@@ -4516,7 +4578,7 @@ async fn move_microsoft_message(
     Ok(())
 }
 
-async fn sync_gmail_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn sync_gmail_jobs(pool: WorkerPool) -> Result<HttpResponse> {
     let log_id = Uuid::new_v4();
 
     // Get Gmail source
@@ -5649,7 +5711,7 @@ async fn process_jsearch_jobs(
 }
 
 /// Phase 4.2: Reset RapidAPI pagination to page 1
-async fn reset_rapidapi_pagination(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn reset_rapidapi_pagination(pool: WorkerPool) -> Result<HttpResponse> {
     log_debug("🔄 Resetting RapidAPI pagination to page 1");
 
     let result = sqlx::query!(
@@ -5670,7 +5732,7 @@ async fn reset_rapidapi_pagination(pool: web::Data<PgPool>) -> Result<HttpRespon
 }
 
 /// Phase 4.2: Get current RapidAPI pagination state
-async fn get_rapidapi_state(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn get_rapidapi_state(pool: WorkerPool) -> Result<HttpResponse> {
     let source = sqlx::query_as::<_, JobSource>(
         "SELECT * FROM job_sources WHERE source_name = 'rapidapi' LIMIT 1"
     )
@@ -5698,7 +5760,7 @@ async fn get_rapidapi_state(pool: web::Data<PgPool>) -> Result<HttpResponse> {
 
 /// Sync RapidAPI JSearch jobs endpoint (mirrors Gmail sync)
 /// Phase 4.2: Now with automatic page increment
-async fn sync_jsearch_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn sync_jsearch_jobs(pool: WorkerPool) -> Result<HttpResponse> {
     let log_id = Uuid::new_v4();
 
     // Get RapidAPI (JSearch) source
@@ -6553,7 +6615,7 @@ async fn create_job_internal(
     Ok(JobCreationResult::Created(job_id))
 }
 
-async fn get_job_sources(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn get_job_sources(pool: WorkerPool) -> Result<HttpResponse> {
     let sources_with_creds = sqlx::query!(
         r#"
         SELECT
@@ -6585,7 +6647,7 @@ async fn get_job_sources(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     Ok(HttpResponse::Ok().json(result))
 }
 
-async fn get_intake_logs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn get_intake_logs(pool: WorkerPool) -> Result<HttpResponse> {
     let logs = sqlx::query_as::<_, JobIntakeLog>(
         "SELECT * FROM job_intake_logs ORDER BY sync_started_at DESC LIMIT 100"
     )
@@ -6597,7 +6659,7 @@ async fn get_intake_logs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
 }
 
 // Get ignored/unprocessed emails
-async fn get_ignored_emails(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn get_ignored_emails(pool: WorkerPool) -> Result<HttpResponse> {
     // Get all email_jobs with NULL job_id
     let ignored = sqlx::query!(
         r#"
@@ -6671,7 +6733,7 @@ async fn get_ignored_emails(pool: web::Data<PgPool>) -> Result<HttpResponse> {
 }
 
 // Get failed emails (emails with processing errors or failed extraction)
-async fn get_failed_emails(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn get_failed_emails(pool: WorkerPool) -> Result<HttpResponse> {
     let failed = sqlx::query!(
         r#"
         SELECT
@@ -6715,7 +6777,7 @@ async fn get_failed_emails(pool: web::Data<PgPool>) -> Result<HttpResponse> {
 }
 
 // Get duplicate emails (processed but no job created due to duplication, high confidence only)
-async fn get_duplicate_emails(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn get_duplicate_emails(pool: WorkerPool) -> Result<HttpResponse> {
     let duplicates = sqlx::query!(
         r#"
         SELECT
@@ -6771,7 +6833,7 @@ struct RefilterRequest {
 
 // Re-filter existing jobs without fetching from Gmail
 async fn refilter_jobs(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     req: web::Json<RefilterRequest>,
 ) -> Result<HttpResponse> {
     // Define a common query based on scope
@@ -6871,7 +6933,7 @@ async fn refilter_jobs(
 }
 
 // Reprocess emails with missing bodies by re-fetching from Gmail
-async fn reprocess_empty_email_bodies(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn reprocess_empty_email_bodies(pool: WorkerPool) -> Result<HttpResponse> {
     // Get Gmail OAuth credentials
     let credentials = sqlx::query_as::<_, OAuthCredential>(
         "SELECT * FROM oauth_credentials WHERE source_id = (SELECT source_id FROM job_sources WHERE source_name = 'gmail' LIMIT 1) LIMIT 1"
@@ -6968,7 +7030,7 @@ async fn reprocess_empty_email_bodies(pool: web::Data<PgPool>) -> Result<HttpRes
 }
 
 // Re-extract job descriptions from emails with full bodies
-async fn reextract_job_descriptions(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn reextract_job_descriptions(pool: WorkerPool) -> Result<HttpResponse> {
     // Find jobs with short descriptions that have email bodies
     // Short description indicates LLM extraction failed due to missing email body
     let jobs_to_reextract = sqlx::query!(
@@ -7106,7 +7168,7 @@ async fn reextract_job_descriptions(pool: web::Data<PgPool>) -> Result<HttpRespo
 // Re-extract ALL job descriptions from emails (not just short ones)
 async fn reextract_single_job(
     job_id: web::Path<String>,
-    pool: web::Data<PgPool>
+    pool: WorkerPool
 ) -> Result<HttpResponse> {
     let job_id_str = job_id.into_inner();
     let job_uuid = Uuid::parse_str(&job_id_str)
@@ -7225,7 +7287,7 @@ async fn reextract_single_job(
     }
 }
 
-async fn reextract_all_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn reextract_all_jobs(pool: WorkerPool) -> Result<HttpResponse> {
     // Find ALL jobs that have email bodies, regardless of description length
     let jobs_to_reextract = sqlx::query!(
         r#"
@@ -7358,7 +7420,7 @@ async fn reextract_all_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
 // Phase 4: LinkedIn API Integration
 // ============================================================================
 
-async fn sync_linkedin_jobs(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn sync_linkedin_jobs(pool: WorkerPool) -> Result<HttpResponse> {
     let log_id = Uuid::new_v4();
 
     // Get LinkedIn source
@@ -7621,7 +7683,7 @@ fn extract_job_from_linkedin(job_data: &serde_json::Value) -> Option<JobExtracti
 // Phase 4: Multi-Source Job Aggregation & Scheduling
 // ============================================================================
 
-async fn sync_all_sources(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn sync_all_sources(pool: WorkerPool) -> Result<HttpResponse> {
     let mut results = Vec::new();
     let mut total_discovered = 0;
     let mut total_processed = 0;
@@ -7759,7 +7821,7 @@ async fn sync_single_linkedin_source(
     process_linkedin_jobs(source, pool, Uuid::new_v4()).await
 }
 
-async fn schedule_job_sync(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn schedule_job_sync(pool: WorkerPool) -> Result<HttpResponse> {
     // Check which sources need syncing based on their sync interval
     let sources_needing_sync = sqlx::query_as::<_, JobSource>(
         r#"
@@ -7810,7 +7872,7 @@ async fn schedule_job_sync(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     }
 }
 
-async fn get_job_intake_summary(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn get_job_intake_summary(pool: WorkerPool) -> Result<HttpResponse> {
     let summary_data = sqlx::query!(
         r#"
         SELECT
@@ -7857,7 +7919,7 @@ async fn get_job_intake_summary(pool: web::Data<PgPool>) -> Result<HttpResponse>
 // ============================================================================
 
 async fn create_interview(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     request: web::Json<CreateInterviewRequest>,
 ) -> Result<HttpResponse> {
     let duration = request.duration_minutes.unwrap_or(60);
@@ -7975,7 +8037,7 @@ async fn create_interview(
     Ok(HttpResponse::Created().json(interview))
 }
 
-async fn get_upcoming_interviews(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn get_upcoming_interviews(pool: WorkerPool) -> Result<HttpResponse> {
     let interviews = sqlx::query_as::<_, ApplicationTimeline>(
         r#"
         SELECT
@@ -8002,7 +8064,7 @@ async fn get_upcoming_interviews(pool: web::Data<PgPool>) -> Result<HttpResponse
 }
 
 async fn get_interview(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse> {
     let interview_id = path.into_inner();
@@ -8024,7 +8086,7 @@ async fn get_interview(
 }
 
 async fn update_interview(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     path: web::Path<Uuid>,
     request: web::Json<CreateInterviewRequest>,
 ) -> Result<HttpResponse> {
@@ -8146,7 +8208,7 @@ async fn update_interview(
 }
 
 async fn delete_interview(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse> {
     let interview_id = path.into_inner();
@@ -8204,7 +8266,7 @@ async fn delete_interview(
 }
 
 async fn create_follow_up(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     request: web::Json<CreateFollowUpRequest>,
 ) -> Result<HttpResponse> {
     // Get application details for default scheduling
@@ -8264,7 +8326,7 @@ async fn create_follow_up(
     Ok(HttpResponse::Created().json(follow_up))
 }
 
-async fn get_pending_follow_ups(pool: web::Data<PgPool>) -> Result<HttpResponse> {
+async fn get_pending_follow_ups(pool: WorkerPool) -> Result<HttpResponse> {
     let follow_ups = sqlx::query!(
         r#"
         SELECT
@@ -8306,7 +8368,7 @@ async fn get_pending_follow_ups(pool: web::Data<PgPool>) -> Result<HttpResponse>
 }
 
 async fn approve_follow_up(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     path: web::Path<Uuid>,
     request: web::Json<ApproveFollowUpRequest>,
 ) -> Result<HttpResponse> {
@@ -8340,7 +8402,7 @@ async fn approve_follow_up(
 }
 
 async fn send_follow_up(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse> {
     let follow_up_id = path.into_inner();
@@ -8494,7 +8556,7 @@ async fn send_follow_up(
 }
 
 async fn get_application_timeline(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse> {
     let application_id = path.into_inner();
@@ -8869,7 +8931,7 @@ async fn check_draft_status(
 
 /// API endpoint: Create Gmail draft for application
 async fn create_draft_handler(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     path: web::Path<Uuid>,
     body: web::Json<CreateDraftRequest>,
 ) -> Result<HttpResponse> {
@@ -8886,7 +8948,7 @@ async fn create_draft_handler(
 
 /// API endpoint: Check draft status
 async fn get_draft_status_handler(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse> {
     let application_id = path.into_inner();
@@ -8898,7 +8960,7 @@ async fn get_draft_status_handler(
 
 /// API endpoint: Delete draft
 async fn delete_draft_handler(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse> {
     let application_id = path.into_inner();
@@ -8964,7 +9026,7 @@ async fn delete_draft_handler(
 // ============================================================================
 
 async fn get_active_extraction_prompt_handler(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
 ) -> Result<HttpResponse> {
     match get_active_extraction_prompt(pool.get_ref()).await {
         Ok(prompt) => Ok(HttpResponse::Ok().json(prompt)),
@@ -8973,7 +9035,7 @@ async fn get_active_extraction_prompt_handler(
 }
 
 async fn update_active_extraction_prompt_handler(
-    pool: web::Data<PgPool>,
+    pool: WorkerPool,
     req: web::Json<UpdatePromptRequest>,
 ) -> Result<HttpResponse> {
     // Deactivate all current prompts
@@ -9025,22 +9087,57 @@ async fn update_active_extraction_prompt_handler(
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
-    
+
     let database_url = std::env::var("DATABASE_URL")
         .expect("DATABASE_URL must be set");
-    
-    let pool = PgPool::connect(&database_url)
+
+    // Connect to default database (production/dev mode)
+    let default_pool = PgPool::connect(&database_url)
         .await
         .expect("Failed to connect to Postgres");
 
+    // ISSUE-064: Per-Worker Database Isolation for E2E tests
+    // Try to connect to worker-specific databases (jobhunter_test_worker_0 through jobhunter_test_worker_3)
+    // If they don't exist, continue with just the default pool
+    let mut worker_pools = HashMap::new();
+    let num_workers = 4;
+
+    for worker_index in 0..num_workers {
+        let worker_db_name = format!("jobhunter_test_worker_{}", worker_index);
+        let worker_url = database_url.replace(
+            database_url.split('/').last().unwrap(),
+            &worker_db_name
+        );
+
+        match PgPool::connect(&worker_url).await {
+            Ok(worker_pool) => {
+                println!("✅ Connected to worker database: {}", worker_db_name);
+                worker_pools.insert(worker_index, worker_pool);
+            }
+            Err(_) => {
+                // Worker database doesn't exist - this is expected in production/dev mode
+                // Only worker databases are created during E2E test setup
+            }
+        }
+    }
+
+    let pools = DatabasePools {
+        default_pool,
+        worker_pools,
+    };
+
     println!("🚀 JobHunter Backend starting on http://localhost:8080");
+    println!("   Default database: {}", database_url.split('/').last().unwrap());
+    if !pools.worker_pools.is_empty() {
+        println!("   Worker databases: {} connected", pools.worker_pools.len());
+    }
 
     HttpServer::new(move || {
         let cors = Cors::permissive();
 
         App::new()
             .wrap(cors)
-            .app_data(web::Data::new(pool.clone()))
+            .app_data(web::Data::new(pools.clone()))
             .route("/api/jobs", web::get().to(get_jobs))
             .route("/api/jobs", web::post().to(create_job))
             .route("/api/jobs/filtered", web::get().to(get_filtered_jobs))
