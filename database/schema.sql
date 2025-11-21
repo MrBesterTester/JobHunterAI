@@ -22,6 +22,7 @@ CREATE TABLE jobs (
     url TEXT,
     raw_data JSONB,
     filter_reason TEXT,
+    extraction_method VARCHAR(50),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -269,6 +270,7 @@ CREATE TABLE email_jobs (
     extraction_confidence DECIMAL(3,2), -- 0.00 to 1.00
     extracted_data JSONB,
     processing_errors JSONB,
+    source VARCHAR(50) DEFAULT 'gmail',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     processed_at TIMESTAMP WITH TIME ZONE
 );
