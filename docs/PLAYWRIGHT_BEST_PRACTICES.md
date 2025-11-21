@@ -33,6 +33,7 @@ This document consolidates hard-earned lessons from fixing flaky E2E tests in th
   - [Battle-Tested Pattern: Load-Aware Timeouts](#battle-tested-pattern-load-aware-timeouts)
   - [Load-Aware Test Timeout Helper (ISSUE-062)](#load-aware-test-timeout-helper-issue-062)
   - [Multi-Level Timeout Architecture (ISSUE-063)](#multi-level-timeout-architecture-issue-063)
+  - [Sequential Timeout Budget Management (Critical Principle)](#sequential-timeout-budget-management-critical-principle)
   - [Alternative Approaches (For Reference)](#alternative-approaches-for-reference)
 - [7. Common Anti-Patterns and How to Fix Them](#7-common-anti-patterns-and-how-to-fix-them)
   - [❌ Anti-Pattern 1: Position-Based Selectors](#-anti-pattern-1-position-based-selectors)
@@ -808,6 +809,246 @@ When multiple tests share a helper function, the helper's timeout cannot vary pe
 3. **Consider the scope of your fix**: Does changing a helper timeout affect many tests? Is that acceptable?
 4. **Use optional timeout parameters** when specific tests need different timeouts than the helper's default
 5. **Document timeout rationale** in comments (e.g., "// Increased from 45s to 90s - Gmail sync takes 61s under load")
+
+### Sequential Timeout Budget Management (Critical Principle)
+
+**⚠️ CRITICAL RULE:** Parent timeout must be **greater than or equal to** the sum of all sequential child timeouts.
+
+This principle applies universally to:
+- ✅ E2E tests (Playwright)
+- ✅ Backend tests (Rust/cargo test)
+- ✅ Frontend unit tests (Jest)
+- ✅ Integration tests
+- ✅ API timeout chains
+- ✅ Distributed system calls
+
+**The Problem:**
+
+When operations execute **sequentially** (one after another), each operation consumes time from the parent's timeout budget. If the sum of child timeouts exceeds the parent timeout, the parent will timeout before children have a chance to complete.
+
+**Real Example from ISSUE-063:**
+
+```typescript
+// ❌ INCORRECT: Parent timeout insufficient for sequential operations
+test('should allow approving jobs', async ({ page }) => {
+  test.setTimeout(getTestTimeout(120000)); // Parent: 180s under load
+
+  await switchToTab(page, 'new', true, 90000);     // Child 1: 90s max
+  await approveButton.click();                      // Child 2: 30s max (default)
+  await statusUpdatePromise;                        // Child 3: 30s max (default)
+  await page.waitForFunction(..., { timeout: 90000 }); // Child 4: 90s max
+
+  // Sequential sum: 90 + 30 + 30 + 90 = 240s
+  // Parent timeout: 180s
+  // ❌ Deficit: 60s short! Test will timeout at 180s before operations can complete
+});
+
+// ✅ CORRECT: Parent timeout accounts for sequential chain
+test('should allow approving jobs', async ({ page }) => {
+  test.setTimeout(getTestTimeout(180000)); // Parent: 270s under load
+
+  await switchToTab(page, 'new', true, 90000);     // Child 1: 90s max
+  await approveButton.click();                      // Child 2: 30s max
+  await statusUpdatePromise;                        // Child 3: 30s max
+  await page.waitForFunction(..., { timeout: 90000 }); // Child 4: 90s max
+
+  // Sequential sum: 90 + 30 + 30 + 90 = 240s
+  // Parent timeout: 270s
+  // ✅ Buffer: 30s safety margin
+});
+```
+
+**Timeout Budget Formula:**
+
+```
+parent_timeout >= Σ(child_timeout_i) + buffer
+                  i=1 to n
+
+where:
+- n = number of sequential operations
+- child_timeout_i = maximum timeout for operation i
+- buffer = safety margin for overhead (10-20% of total)
+```
+
+**Step-by-Step Calculation:**
+
+1. **List all sequential operations** in execution order
+2. **Identify the maximum timeout** for each operation (worst-case)
+3. **Sum all maximum timeouts** to get minimum parent timeout
+4. **Add buffer** (10-20%) for test framework overhead, retries, etc.
+5. **Set parent timeout** to calculated value (rounded up)
+
+**Example Calculation - Test 23 (description-quality):**
+
+```
+Operation chain:
+├─ switchToTab(page, 'new', true, 90000)          → 90s max
+├─ Loop checking up to 10 cards:
+│  ├─ Card 1: page.waitForFunction(..., 90000)    → 90s max
+│  ├─ Card 2: page.waitForFunction(..., 90000)    → 90s max (if card 1 fails)
+│  └─ Card 3: page.waitForFunction(..., 90000)    → 90s max (if card 2 fails)
+└─ Assertion and validation                        → 5s max
+
+Worst-case sum: 90 + 90 + 90 + 90 + 5 = 365s
+Buffer (10%): 365 × 0.10 = 36s
+Minimum parent: 365 + 36 = 401s
+
+Practical value: 240s base → 360s under load
+Rationale: Assumes test breaks on first substantial description (1-3 cards typically)
+```
+
+**When Operations are Parallel vs Sequential:**
+
+```typescript
+// PARALLEL operations (use MAX, not SUM)
+Promise.all([
+  operation1({ timeout: 30000 }),  // 30s
+  operation2({ timeout: 45000 }),  // 45s
+  operation3({ timeout: 60000 })   // 60s
+]);
+// Parent timeout: max(30, 45, 60) + buffer = 70s (operations run concurrently)
+
+// SEQUENTIAL operations (use SUM)
+await operation1({ timeout: 30000 });  // 30s
+await operation2({ timeout: 45000 });  // 45s
+await operation3({ timeout: 60000 });  // 60s
+// Parent timeout: 30 + 45 + 60 + buffer = 150s (operations run one after another)
+```
+
+**Load-Aware Timeout Budget:**
+
+When using `getTestTimeout()` multipliers, **all child timeouts must also use the same multiplier** or the budget calculation breaks:
+
+```typescript
+// ❌ INCONSISTENT: Child not load-aware, breaks budget calculation
+test.setTimeout(getTestTimeout(120000)); // 120s → 180s under load
+await helper({ timeout: 90000 }); // Fixed 90s, not load-aware!
+// Under load: parent=180s, child=90s ✅
+// In isolation: parent=120s, child=90s ✅
+// Looks OK but is fragile - child timeout should scale with parent
+
+// ✅ CONSISTENT: Both use load-aware timeouts
+test.setTimeout(getTestTimeout(120000)); // 120s → 180s under load
+await helper({ timeout: getTestTimeout(90000) }); // 90s → 135s under load
+// Ratios remain consistent across environments
+```
+
+**Debugging Sequential Timeout Issues:**
+
+When you encounter "Timeout exceeded" errors:
+
+1. **Map the sequential operation chain** - List all `await` statements in execution order
+2. **Extract timeout values** - Find explicit `{ timeout: N }` or defaults (30s for most Playwright actions)
+3. **Calculate sequential sum** - Add up all child timeouts
+4. **Compare to parent timeout** - If sum >= parent, you've found the issue
+5. **Recalculate budget** - Use formula above to determine correct parent timeout
+6. **Verify consistency** - Ensure load-aware multipliers are applied uniformly
+
+**Real-World Performance-Based Timeout Selection:**
+
+Instead of guessing, use percentile-based timeout selection (industry best practice from distributed systems):
+
+```typescript
+// Collect latency metrics (p50, p99, p99.9) for your operations
+// Example: Gmail sync operation under comprehensive load
+// p50:  25s (median - 50% of operations complete by this time)
+// p99:  55s (99% of operations complete by this time)
+// p99.9: 61s (99.9% of operations complete by this time)
+
+// Set timeout based on acceptable false-positive rate
+const switchToTabTimeout = getTestTimeout(90000); // Set to ~1.5× p99.9 for 0.1% false timeout rate
+
+// Rationale: With 90s timeout
+// - 99.9% of operations complete within 61s → pass
+// - 0.1% take longer than 61s but timeout at 90s → gives them chance to complete
+// - Anything taking >90s is likely genuinely stuck → fail fast
+```
+
+**This Principle Applies Beyond E2E Tests:**
+
+**Backend Tests (Rust):**
+```rust
+#[tokio::test]
+#[timeout(Duration::from_secs(120))] // Parent: 120s
+async fn test_gmail_sync() {
+    // Sequential operations
+    let emails = fetch_emails().await;     // 30s max (network)
+    let jobs = parse_jobs(&emails).await;  // 20s max (LLM API)
+    let stored = store_jobs(&jobs).await;  // 10s max (database)
+    // Sum: 30 + 20 + 10 = 60s, buffer: 60s → 120s parent ✅
+}
+```
+
+**Frontend Tests (Jest):**
+```javascript
+// jest.setTimeout() must account for sequential mock setup + test execution
+jest.setTimeout(60000); // Parent: 60s
+
+test('complex API flow', async () => {
+  await setupMocks();           // 10s max (database fixtures)
+  await simulateUserFlow();     // 30s max (UI interactions)
+  await verifyApiCalls();       // 15s max (API assertions)
+  // Sum: 10 + 30 + 15 = 55s, buffer: 5s → 60s parent ✅
+});
+```
+
+**Distributed System Timeout Chains:**
+
+In microservices, this principle becomes even more critical (from Zalando Engineering Blog):
+
+> "The closer to the end user, the longer the request timeout needs to be. Deeper into the system, request timeouts need to be shorter."
+
+```
+Edge Service (1000ms SLA)
+├─ calls Order Service (max: 500ms timeout)
+│  └─ calls Inventory Service (max: 300ms timeout)
+└─ calls Payment Service (max: 400ms timeout)
+
+Edge timeout (1000ms) >= Order (500ms) + Payment (400ms) + overhead (100ms)
+Order timeout (500ms) >= Inventory (300ms) + processing (150ms) + overhead (50ms)
+```
+
+**Deadline Propagation Pattern** (Advanced):
+
+For deeply nested systems, pass a deadline timestamp through the chain instead of individual timeouts:
+
+```typescript
+interface RequestContext {
+  deadline: Date; // Absolute time when request must complete
+}
+
+async function handleRequest(ctx: RequestContext) {
+  const remainingTime = ctx.deadline.getTime() - Date.now();
+  if (remainingTime <= 0) throw new TimeoutError('Deadline exceeded');
+
+  // Allocate remaining time budget to sub-operations
+  await subOperation1({ timeout: remainingTime * 0.4 }); // 40% of budget
+  await subOperation2({ timeout: remainingTime * 0.6 }); // 60% of budget (if we get here)
+}
+```
+
+**Audit Tool: Validating Timeout Chains**
+
+See `helper-scripts/audit-timeout-chains.ts` (or manual audit steps below) to automatically detect timeout budget violations.
+
+**Manual Audit Checklist:**
+
+For each test file:
+1. ☐ Identify test-level timeout (`test.setTimeout()` or default 30s)
+2. ☐ List all sequential `await` statements
+3. ☐ Extract timeout for each operation (explicit or default)
+4. ☐ Calculate sequential sum
+5. ☐ Verify: parent timeout >= sum + 10% buffer
+6. ☐ Check load-aware consistency (all timeouts use `getTestTimeout()` or none do)
+
+**Key Takeaways:**
+
+1. ⚠️ **Parent timeout must exceed sum of sequential children** (not just the largest child)
+2. 📊 **Use percentile-based timeout selection** (p99.9 for 0.1% false-positive rate)
+3. 🔄 **Ensure load-aware multipliers are consistent** (don't mix fixed and scaled timeouts)
+4. 🧮 **Always add buffer** (10-20%) for framework overhead
+5. 🔍 **Audit existing tests** to catch timeout budget violations before they cause flaky tests
+6. 🌐 **Universal principle** - applies to E2E, unit, integration, API, and distributed system timeouts
 
 ### Alternative Approaches (For Reference)
 
