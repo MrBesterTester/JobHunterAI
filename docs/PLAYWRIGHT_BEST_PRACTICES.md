@@ -15,6 +15,7 @@ This document consolidates hard-earned lessons from fixing flaky E2E tests in th
   - [When to Use Serial Mode](#when-to-use-serial-mode)
   - [Serial Mode Syntax](#serial-mode-syntax)
   - [Battle-Tested Pattern: Database State Isolation](#battle-tested-pattern-database-state-isolation)
+  - [Battle-Tested Pattern: Complete Test Isolation via Projects](#battle-tested-pattern-complete-test-isolation-via-projects)
 - [3. State Synchronization: Polling vs Fixed Timeouts](#3-state-synchronization-polling-vs-fixed-timeouts)
   - [The Anti-Pattern: Fixed Timeouts](#the-anti-pattern-fixed-timeouts)
   - [The Solution: State Polling with `page.waitForFunction()`](#the-solution-state-polling-with-pagewaitforfunction)
@@ -44,7 +45,7 @@ This document consolidates hard-earned lessons from fixing flaky E2E tests in th
 - [8. Quick Reference: Decision Trees](#8-quick-reference-decision-trees)
   - [How Should I Pass Configuration to Tests?](#how-should-i-pass-configuration-to-tests)
   - [Which Locator Should I Use?](#which-locator-should-i-use)
-  - [Should I Use Serial Mode?](#should-i-use-serial-mode)
+  - [Should I Use Serial Mode or Isolated Projects?](#should-i-use-serial-mode-or-isolated-projects)
   - [Should I Use a Fixed Timeout?](#should-i-use-a-fixed-timeout)
 - [References](#references)
 
@@ -271,6 +272,122 @@ test.afterAll(async () => {
   await db.query('ROLLBACK'); // Perfect isolation
 });
 ```
+
+### Battle-Tested Pattern: Complete Test Isolation via Projects
+
+**Problem:** Serial mode (`test.describe.serial()`) prevents parallel execution **within a test file**, but doesn't prevent **other test files** from running concurrently and interfering with shared database state.
+
+**Real Example from JobHunter (Commit bba389f, ISSUE-064):**
+
+**Symptoms:**
+- Tests marked as serial (`test.describe.configure({ mode: 'serial' })`)
+- Tests pass when run individually
+- Tests fail with 120s timeouts in comprehensive suite
+- Error: `page.waitForFunction: Timeout 120000ms exceeded` in `switchToTab` helper
+- All failures occur in same helper waiting for job cards to appear
+
+**Root Cause Analysis:**
+```typescript
+// Test file: 16-gmail-sync-integration.spec.ts
+test.describe('Gmail Sync Integration', () => {
+  test.describe.configure({ mode: 'serial' }); // ✅ Tests within file run serially
+
+  test('should allow approving jobs', async () => {
+    await switchToTab(page, 'new', true, 90000);
+    // ❌ Times out at 120s waiting for job cards
+    // Jobs were moved to 'approved' status by OTHER test files running in parallel!
+  });
+});
+```
+
+**The Issue:**
+- 4 parallel workers running across **different test files**
+- Test file #16 (Gmail sync) runs serially internally
+- Test file #7 (Dashboard stats) runs in parallel with file #16
+- Test file #7 moves jobs from "new" to "approved" status
+- Test file #16 waits forever for jobs in "new" tab that no longer exist
+- Result: Timeout after 120s
+
+**Solution: Isolated Test Project**
+
+Create a separate Playwright project for tests requiring complete database isolation:
+
+```typescript
+// playwright.config.ts
+export default defineConfig({
+  projects: [
+    // Isolated tests project - runs FIRST with complete database isolation
+    {
+      name: 'chromium-isolated',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: [
+        '**/16-gmail-sync-integration.spec.ts',
+        '**/23-description-quality.spec.ts',
+      ],
+    },
+
+    // Main chromium project - runs AFTER isolated tests complete
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+      // Exclude isolated tests from main parallel execution
+      testIgnore: [
+        '**/16-gmail-sync-integration.spec.ts',
+        '**/23-description-quality.spec.ts',
+      ],
+      // Wait for isolated tests to complete first
+      dependencies: ['chromium-isolated'],
+    },
+  ],
+});
+```
+
+**How This Works:**
+
+1. **Execution Order:** Playwright runs projects with dependencies last
+   ```
+   [chromium-isolated] → Runs first (10 tests, sequential)
+   [chromium]          → Runs after (585 tests, 4 workers parallel)
+   ```
+
+2. **Complete Isolation:** Isolated tests complete before any other tests start
+   - No other workers can interfere with database state
+   - Jobs in "new" status remain stable throughout isolated tests
+   - No race conditions from parallel execution
+
+3. **Performance Impact:** Minimal (~1-2 minutes added)
+   - Isolated: 10 tests sequential (~2-3 min)
+   - Main: 585 tests parallel (~14-15 min)
+   - Total: ~17-18 min (vs ~16-17 min without isolation)
+   - **Actual result:** 12.6 min total (6 min faster due to eliminating timeouts!)
+
+**Results:**
+- ✅ All 5 timeout failures eliminated (120s waits in Gmail sync + description quality)
+- ✅ Pass rate: 939/941 (99.8%)
+- ✅ Remaining 2 failures: Different issue (race condition in stats loading - fixed separately)
+- ✅ Runtime improved: 18.7 min → 12.6 min (33% faster)
+
+**When to Use Isolated Projects:**
+
+Use this pattern when:
+- ✅ Tests require specific database state (e.g., jobs in "new" status)
+- ✅ Tests modify shared state that other tests depend on
+- ✅ Serial mode within test file isn't sufficient (other files still interfere)
+- ✅ Small number of tests need isolation (2-5 test files)
+- ✅ Cost-benefit: Slight slowdown acceptable for reliability
+
+**Don't use when:**
+- ❌ Tests are truly independent (no shared state)
+- ❌ Large percentage of tests need isolation (>25% of suite) - reconsider test data strategy
+- ❌ Tests can be fixed with better test data isolation (per-worker data pools)
+
+**Key Insight:** Serial mode has **two scopes**:
+1. **Within a test file** - `test.describe.serial()` prevents parallel execution of tests in same file
+2. **Across test files** - Playwright projects with `dependencies` prevent parallel execution across files
+
+Use serial mode for #1, isolated projects for #2.
+
+**From:** Commit bba389f - Add isolated project for state-dependent E2E tests
 
 ---
 
@@ -1268,22 +1385,42 @@ START
              ✅ page.getByTestId('custom-element')
 ```
 
-### Should I Use Serial Mode?
+### Should I Use Serial Mode or Isolated Projects?
 
 ```
 START
 │
 ├─ Do tests modify shared database state?
-│  └─ YES → Use serial mode
-│         ✅ test.describe.serial()
+│  │
+│  ├─ Is interference happening WITHIN the same test file?
+│  │  └─ YES → Use serial mode within file
+│  │         ✅ test.describe.serial()
+│  │
+│  └─ Is interference happening ACROSS different test files?
+│     └─ YES → Use isolated project + serial mode
+│            ✅ Create separate Playwright project
+│            ✅ Use testMatch to isolate specific files
+│            ✅ Add dependencies to control execution order
+│
+├─ Do tests require specific database state (e.g., jobs in "new" status)?
+│  │
+│  └─ YES → Check if other tests can interfere
+│     │
+│     ├─ Other tests modify this state → Use isolated project
+│     │     ✅ Prevents cross-file race conditions
+│     │
+│     └─ State is stable → Use serial mode only
+│            ✅ test.describe.configure({ mode: 'serial' })
 │
 ├─ Do tests consume limited test data pool?
 │  └─ YES → Use serial mode
 │         ✅ test.describe.configure({ mode: 'serial' })
 │
 ├─ Are tests flaky in parallel but pass in isolation?
-│  └─ YES → Consider serial mode (or fix root cause)
-│         ⚠️ Better: Make tests truly independent
+│  └─ YES → Diagnose which level
+│         ├─ Flaky within same file → Serial mode
+│         ├─ Flaky across different files → Isolated project
+│         └─ ⚠️ Better: Make tests truly independent
 │
 └─ NO → Use default parallel execution
        ✅ Better performance
@@ -1327,11 +1464,14 @@ START
 **JobHunter Project References:**
 - ISSUE-046: E2E Test Suite Context-Dependent Flakiness (`bugs/open/ISSUE-046-*.md`)
 - ISSUE-055 Priority 1: Environment variable propagation to Playwright workers (2025-11-19)
+- ISSUE-064: Test isolation via Playwright projects (2025-11-21)
 - Commit 2485e934: Add data-testid attributes to Intake Tab buttons
 - Commit 4a6c0a35: Use stable job ID locator instead of position-based selector
 - Commit f458c574: Make Gmail tests serial to prevent race conditions
 - Commit 9f067bfe: Serialize Tab Navigation tests
 - Commit abb1620e: Resolve ISSUE-046 with state polling (5 flaky tests fixed)
+- Commit bba389f: Add isolated project for state-dependent E2E tests (ISSUE-064)
+- Commit 4453468: Fix race condition in dashboard statistics tests (2025-11-21)
 
 **External Resources:**
 - [Checkly: Performance Testing with Playwright](https://www.checklyhq.com/docs/learn/playwright/performance/)
@@ -1340,6 +1480,8 @@ START
 
 ---
 
-**Last Updated:** 2025-11-19
+**Last Updated:** 2025-11-21
 
 **Document Status:** Living document - update as new patterns emerge from test fixes
+
+**Latest Addition:** Battle-Tested Pattern: Complete Test Isolation via Projects (ISSUE-064) - How to prevent cross-file test interference using Playwright project dependencies
