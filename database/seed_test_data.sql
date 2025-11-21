@@ -176,12 +176,196 @@ FROM generate_series(1, 5) AS series
 ON CONFLICT (job_id) DO NOTHING;
 
 -- =====================================================
+-- EMAIL_JOBS (15 total for statistics)
+-- =====================================================
+-- These seed email_jobs for dashboard statistics tests
+-- Must have proper distribution across categories to test stats
+
+-- EMAIL_JOBS 1-5: Created jobs (job_id IS NOT NULL)
+-- These emails successfully created jobs in the jobs table
+INSERT INTO email_jobs (
+    email_job_id,
+    message_id,
+    sender_email,
+    sender_name,
+    subject,
+    received_date,
+    body_text,
+    processed,
+    job_id,
+    extraction_confidence,
+    extracted_data,
+    processed_at,
+    source
+)
+SELECT
+    gen_random_uuid(),
+    'test-email-created-' || series || '@example.com',
+    'recruiter' || series || '@company.com',
+    'Recruiter ' || series,
+    'Job Opportunity: Test Position ' || series,
+    now() - interval '1 day' * series,
+    'Job posting for Test Position ' || series,
+    true,
+    (SELECT job_id FROM jobs WHERE status = 'new' LIMIT 1 OFFSET (series - 1)), -- Link to existing new jobs
+    0.95,
+    ('{"title": "Test Position ' || series || '", "company": "Company ' || series || '", "salary": "150000"}')::jsonb,
+    now() - interval '1 day' * series + interval '1 hour',
+    'gmail'
+FROM generate_series(1, 5) AS series
+ON CONFLICT (message_id) DO NOTHING;
+
+-- EMAIL_JOBS 6-8: Duplicates (processed=true, job_id IS NULL, high confidence, complete data)
+-- These are high-confidence emails with complete data that didn't create jobs (likely duplicates)
+INSERT INTO email_jobs (
+    email_job_id,
+    message_id,
+    sender_email,
+    sender_name,
+    subject,
+    received_date,
+    body_text,
+    processed,
+    job_id,
+    extraction_confidence,
+    extracted_data,
+    processed_at,
+    source
+)
+SELECT
+    gen_random_uuid(),
+    'test-email-duplicate-' || series || '@example.com',
+    'recruiter-dup' || series || '@company.com',
+    'Duplicate Recruiter ' || series,
+    'RE: Job Opportunity (duplicate) ' || series,
+    now() - interval '2 days' * series,
+    'Duplicate job posting ' || series,
+    true,
+    NULL, -- No job created (duplicate)
+    0.85,
+    ('{"title": "Duplicate Position ' || series || '", "company": "Duplicate Company ' || series || '", "salary": "140000"}')::jsonb,
+    now() - interval '2 days' * series + interval '1 hour',
+    'gmail'
+FROM generate_series(6, 8) AS series
+ON CONFLICT (message_id) DO NOTHING;
+
+-- EMAIL_JOBS 9-11: Filtered (processed=true, job_id IS NULL, low confidence or incomplete data)
+-- These are low-confidence emails or emails with missing data
+INSERT INTO email_jobs (
+    email_job_id,
+    message_id,
+    sender_email,
+    sender_name,
+    subject,
+    received_date,
+    body_text,
+    processed,
+    job_id,
+    extraction_confidence,
+    extracted_data,
+    processed_at,
+    source
+)
+SELECT
+    gen_random_uuid(),
+    'test-email-filtered-' || series || '@example.com',
+    'lowconf' || series || '@company.com',
+    'Low Confidence Sender ' || series,
+    'Maybe Job? ' || series,
+    now() - interval '3 days' * series,
+    'Unclear job information ' || series,
+    true,
+    NULL, -- No job created (filtered)
+    0.15, -- Low confidence
+    ('{"title": "", "company": ""}')::jsonb, -- Incomplete data
+    now() - interval '3 days' * series + interval '1 hour',
+    'gmail'
+FROM generate_series(9, 11) AS series
+ON CONFLICT (message_id) DO NOTHING;
+
+-- EMAIL_JOBS 12-13: Failed (processing_errors IS NOT NULL)
+-- These emails failed during processing
+INSERT INTO email_jobs (
+    email_job_id,
+    message_id,
+    sender_email,
+    sender_name,
+    subject,
+    received_date,
+    body_text,
+    processed,
+    job_id,
+    extraction_confidence,
+    extracted_data,
+    processing_errors,
+    processed_at,
+    source
+)
+SELECT
+    gen_random_uuid(),
+    'test-email-failed-' || series || '@example.com',
+    'failed' || series || '@company.com',
+    'Failed Sender ' || series,
+    'Job Error ' || series,
+    now() - interval '4 days' * series,
+    'Email with processing errors ' || series,
+    false,
+    NULL,
+    NULL,
+    NULL,
+    ('{"error": "Extraction failed", "details": "Test failure ' || series || '"}')::jsonb,
+    now() - interval '4 days' * series + interval '1 hour',
+    'gmail'
+FROM generate_series(12, 13) AS series
+ON CONFLICT (message_id) DO NOTHING;
+
+-- EMAIL_JOBS 14-15: Additional created jobs for variety
+INSERT INTO email_jobs (
+    email_job_id,
+    message_id,
+    sender_email,
+    sender_name,
+    subject,
+    received_date,
+    body_text,
+    processed,
+    job_id,
+    extraction_confidence,
+    extracted_data,
+    processed_at,
+    source
+)
+SELECT
+    gen_random_uuid(),
+    'test-email-created-extra-' || series || '@example.com',
+    'recruiter-extra' || series || '@company.com',
+    'Extra Recruiter ' || series,
+    'Additional Job: Position ' || series,
+    now() - interval '5 days' * series,
+    'Additional job posting ' || series,
+    true,
+    (SELECT job_id FROM jobs WHERE status = 'approved' LIMIT 1 OFFSET (series - 14)), -- Link to approved jobs
+    0.92,
+    ('{"title": "Extra Position ' || series || '", "company": "Extra Company ' || series || '", "salary": "155000"}')::jsonb,
+    now() - interval '5 days' * series + interval '1 hour',
+    'gmail'
+FROM generate_series(14, 15) AS series
+ON CONFLICT (message_id) DO NOTHING;
+
+-- =====================================================
 -- SUMMARY
 -- =====================================================
 -- Total jobs seeded: 45
 -- - Filtered: 30
 -- - New: 10
 -- - Approved: 5
+--
+-- Total email_jobs seeded: 15
+-- - Created jobs: 7 (emails that created jobs)
+-- - Duplicates: 3 (high confidence, complete data, no job)
+-- - Filtered: 3 (low confidence or incomplete data)
+-- - Failed: 2 (processing errors)
+-- - Total discovered: 15 (all emails)
 
 COMMIT;
 
