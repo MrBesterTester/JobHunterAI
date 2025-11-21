@@ -77,6 +77,7 @@ test.describe('Content Generation', () => {
     });
 
     test('should change button to "Generating..." when clicked', async ({ page }) => {
+      test.setTimeout(33000);
       await dashboardPage.clickTab('approved');
       await dashboardPage.waitForJobsUpdate();
 

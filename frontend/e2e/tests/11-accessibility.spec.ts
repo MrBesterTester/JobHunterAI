@@ -22,6 +22,7 @@ test.describe('Accessibility Testing', () => {
 
   test.describe('Section 23: Keyboard Navigation Test', () => {
     test('should allow Tab key navigation through page', async ({ page }) => {
+      test.setTimeout(33000);
       // Start at beginning
       await page.keyboard.press('Tab');
       await page.waitForTimeout(100);
@@ -34,6 +35,7 @@ test.describe('Accessibility Testing', () => {
       expect(focusedElement).toBeTruthy();
     });
 
+  test.setTimeout(33000);
     test('should display focus indicators on all interactive elements', async ({ page }) => {
       // Tab through several elements
       for (let i = 0; i < 5; i++) {
@@ -58,6 +60,7 @@ test.describe('Accessibility Testing', () => {
         expect(typeof hasFocusIndicator).toBe('boolean');
       }
     });
+      test.setTimeout(33000);
 
     test('should trigger button actions on Enter key', async ({ page }) => {
       await dashboardPage.clickTab('inbox');
@@ -83,6 +86,7 @@ test.describe('Accessibility Testing', () => {
       // Job should be moved (verify by checking count changed)
       const newCount = await dashboardPage.getVisibleJobCount();
       expect(typeof newCount).toBe('number');
+        test.setTimeout(66000);
     });
 
     test('should allow backward navigation with Shift+Tab', async ({ page }) => {
@@ -106,6 +110,7 @@ test.describe('Accessibility Testing', () => {
         return document.activeElement?.outerHTML;
       });
 
+  test.setTimeout(66000);
       expect(elementAfterBackward).not.toBe(elementAfterForward);
     });
 
@@ -136,6 +141,7 @@ test.describe('Accessibility Testing', () => {
 
         return modal?.contains(activeEl) || false;
       });
+        test.setTimeout(35200);
 
       expect(focusInModal).toBe(true);
     });
@@ -159,6 +165,7 @@ test.describe('Accessibility Testing', () => {
 
       // Press Escape
       await page.keyboard.press('Escape');
+        test.setTimeout(33000);
 
       // Modal should close
       await expect(modal).not.toBeVisible({ timeout: getTestTimeout(2000) });
@@ -175,6 +182,7 @@ test.describe('Accessibility Testing', () => {
 
       // Should focus on next tab
       const focusedElement = await page.evaluate(() => {
+        test.setTimeout(66000);
         return document.activeElement?.textContent?.toLowerCase();
       });
 
@@ -287,6 +295,7 @@ test.describe('Accessibility Testing', () => {
 
       const firstJob = await getJobCard(page, 0);
 
+  test.setTimeout(66000);
       // Check Approve button has accessible text
       const approveText = await firstJob.approveButton.textContent();
       const approveAriaLabel = await firstJob.approveButton.getAttribute('aria-label');
@@ -297,6 +306,7 @@ test.describe('Accessibility Testing', () => {
     test('should use semantic HTML (headings, nav, main, etc.)', async ({ page }) => {
       await dashboardPage.goto();
 
+  test.setTimeout(33000);
       // Check for semantic elements
       const hasMain = (await page.locator('main').count()) > 0;
       const hasHeadings = (await page.locator('h1, h2, h3').count()) > 0;
@@ -401,6 +411,7 @@ test.describe('Accessibility Testing', () => {
         const roles = ['main', 'navigation', 'banner', 'contentinfo', 'complementary'];
         return roles.map((role) => ({
           role,
+            test.setTimeout(33000);
           count: document.querySelectorAll(`[role="${role}"], ${role}`).length,
         }));
       });

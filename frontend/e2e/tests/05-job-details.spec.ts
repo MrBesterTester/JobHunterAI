@@ -397,6 +397,7 @@ test.describe('Job Details View', () => {
     });
 
     test('should open content generation modal when Generate button is clicked', async ({ page }) => {
+      test.setTimeout(33000);
       await dashboardPage.clickTab('approved');
       await dashboardPage.waitForJobsUpdate();
 

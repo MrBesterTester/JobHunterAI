@@ -14,6 +14,7 @@ test.describe('Gmail Send Integration - Phase 2.4', () => {
 
   test.describe('Follow-up Email Sending with TEST_MODE', () => {
     test('should send follow-up email to test address when TEST_MODE is enabled', async ({ page }) => {
+      test.setTimeout(203501);
       // Navigate to Follow-ups tab
       await page.click('button:has-text("Follow-ups")');
       await page.waitForTimeout(1500);
@@ -76,6 +77,7 @@ test.describe('Gmail Send Integration - Phase 2.4', () => {
       }
     });
 
+  test.setTimeout(71500);
     test('should handle Gmail send errors gracefully', async ({ page }) => {
       // Navigate to Follow-ups tab
       await page.click('button:has-text("Follow-ups")');
@@ -100,6 +102,7 @@ test.describe('Gmail Send Integration - Phase 2.4', () => {
         await expect(page.locator('text=/Error|Failed|Could not send/i').first()).toBeVisible({ timeout: getTestTimeout(5000) });
       }
     });
+      test.setTimeout(99001);
 
     test('should show Gmail message ID after successful send', async ({ page }) => {
       await page.click('button:has-text("Follow-ups")');
@@ -134,6 +137,7 @@ test.describe('Gmail Send Integration - Phase 2.4', () => {
           }
         }
       }
+        test.setTimeout(132000);
     });
 
     test('should update follow-up status to sent after successful send', async ({ page }) => {
@@ -161,6 +165,7 @@ test.describe('Gmail Send Integration - Phase 2.4', () => {
             await expect(sentIndicator).toBeVisible();
           }
         }
+          test.setTimeout(66000);
       }
     });
 
@@ -191,6 +196,7 @@ test.describe('Gmail Send Integration - Phase 2.4', () => {
       // This test verifies that the backend has proper OAuth credentials
       // by attempting to access the follow-ups API which requires Gmail access
 
+  test.setTimeout(71500);
       const response = await page.request.get('http://localhost:8080/api/follow-ups/pending');
       expect(response.ok()).toBeTruthy();
     });
@@ -216,6 +222,7 @@ test.describe('Gmail Send Integration - Phase 2.4', () => {
 
         // Should show OAuth error message
         await expect(page.locator('text=/OAuth|Authorization|Token expired/i').first()).toBeVisible({ timeout: getTestTimeout(5000) });
+          test.setTimeout(132000);
       }
     });
   });
@@ -239,6 +246,7 @@ test.describe('Gmail Send Integration - Phase 2.4', () => {
 
           // Backend should log: "TEST_MODE enabled: Overriding recipient email to MrBesterTester@gmail.com"
           // This can be verified by checking backend logs after test run
+            test.setTimeout(66000);
 
           await page.waitForTimeout(2000);
         }

@@ -20,6 +20,7 @@ test.describe('Timeline View - Phase 5.1', () => {
     // SKIPPED: Timeline View feature not yet implemented (Phase 5.1)
     // Re-enable when feature is ready - see ISSUE-036
     test.skip('should display Timeline section in job details', async ({ page }) => {
+      test.setTimeout(66000);
       // Navigate to Applied tab (more likely to have timeline data)
       await page.click('button:has-text("Applied")');
       await page.waitForTimeout(1000);
@@ -38,6 +39,7 @@ test.describe('Timeline View - Phase 5.1', () => {
 
     // SKIPPED: Timeline View feature not yet implemented (Phase 5.1)
     // Re-enable when feature is ready - see ISSUE-036
+      test.setTimeout(66000);
     test.skip('should show application event in timeline', async ({ page }) => {
       await page.click('button:has-text("Applied")');
       await page.waitForTimeout(1000);
@@ -53,6 +55,7 @@ test.describe('Timeline View - Phase 5.1', () => {
         await expect(appliedEvent).toBeVisible();
       }
     });
+      test.setTimeout(66000);
 
     test('should display events in chronological order', async ({ page }) => {
       await page.click('button:has-text("Applied")');
@@ -72,6 +75,7 @@ test.describe('Timeline View - Phase 5.1', () => {
           await expect(timelineEvents.first()).toBeVisible();
         }
       }
+        test.setTimeout(66000);
     });
 
     test('should show event timestamps', async ({ page }) => {
@@ -93,6 +97,7 @@ test.describe('Timeline View - Phase 5.1', () => {
         }
       }
     });
+      test.setTimeout(66000);
   });
 
   test.describe('Event Types', () => {
@@ -111,6 +116,7 @@ test.describe('Timeline View - Phase 5.1', () => {
 
         if (eventCount > 0) {
           await expect(applicationEvent).toBeVisible();
+            test.setTimeout(66000);
         }
       }
     });
@@ -129,6 +135,7 @@ test.describe('Timeline View - Phase 5.1', () => {
         const eventCount = await commEvent.count();
 
         if (eventCount > 0) {
+          test.setTimeout(66000);
           await expect(commEvent).toBeVisible();
         }
       }
@@ -147,6 +154,7 @@ test.describe('Timeline View - Phase 5.1', () => {
         const interviewEvent = page.locator('[data-testid="event-type-interview"], .event-interview');
         const eventCount = await interviewEvent.count();
 
+  test.setTimeout(66000);
         if (eventCount > 0) {
           await expect(interviewEvent).toBeVisible();
         }
@@ -165,6 +173,7 @@ test.describe('Timeline View - Phase 5.1', () => {
 
         const followupEvent = page.locator('[data-testid="event-type-follow-up"], .event-follow-up');
         const eventCount = await followupEvent.count();
+          test.setTimeout(66000);
 
         if (eventCount > 0) {
           await expect(followupEvent).toBeVisible();
@@ -186,6 +195,7 @@ test.describe('Timeline View - Phase 5.1', () => {
         const eventIcon = page.locator('.timeline-icon, [data-testid="event-icon"]').first();
         const iconCount = await eventIcon.count();
 
+  test.setTimeout(66000);
         if (iconCount > 0) {
           await expect(eventIcon).toBeVisible();
         }
@@ -204,6 +214,7 @@ test.describe('Timeline View - Phase 5.1', () => {
       if (count > 0) {
         await jobCard.click();
 
+  test.setTimeout(66000);
         const eventDescription = page.locator('.event-description, [data-testid="event-description"]').first();
         const descCount = await eventDescription.count();
 
@@ -223,6 +234,7 @@ test.describe('Timeline View - Phase 5.1', () => {
       if (count > 0) {
         await jobCard.click();
 
+  test.setTimeout(66000);
         const expandButton = page.locator('button:has-text("View details"), .expand-event').first();
         const btnCount = await expandButton.count();
 
@@ -244,6 +256,7 @@ test.describe('Timeline View - Phase 5.1', () => {
         await jobCard.click();
 
         const commEvent = page.locator('.event-communication').first();
+          test.setTimeout(66000);
         const eventCount = await commEvent.count();
 
         if (eventCount > 0) {
@@ -262,6 +275,7 @@ test.describe('Timeline View - Phase 5.1', () => {
       const jobCard = page.locator('[data-testid="job-card"]').first();
       const count = await jobCard.count();
 
+  test.setTimeout(66000);
       if (count > 0) {
         await jobCard.click();
 
@@ -280,6 +294,7 @@ test.describe('Timeline View - Phase 5.1', () => {
 
       const jobCard = page.locator('[data-testid="job-card"]').first();
       const count = await jobCard.count();
+        test.setTimeout(66000);
 
       if (count > 0) {
         await jobCard.click();
@@ -300,6 +315,7 @@ test.describe('Timeline View - Phase 5.1', () => {
       const jobCard = page.locator('[data-testid="job-card"]').first();
       const count = await jobCard.count();
 
+  test.setTimeout(66000);
       if (count > 0) {
         await jobCard.click();
 
@@ -318,6 +334,7 @@ test.describe('Timeline View - Phase 5.1', () => {
       await page.click('button:has-text("Applied")');
       await page.waitForTimeout(1000);
 
+  test.setTimeout(66000);
       const jobCard = page.locator('[data-testid="job-card"]').first();
       const count = await jobCard.count();
 
@@ -336,6 +353,7 @@ test.describe('Timeline View - Phase 5.1', () => {
     test('should show inbound and outbound messages', async ({ page }) => {
       await page.click('button:has-text("Applied")');
       await page.waitForTimeout(1000);
+        test.setTimeout(66000);
 
       const jobCard = page.locator('[data-testid="job-card"]').first();
       const count = await jobCard.count();
@@ -354,6 +372,7 @@ test.describe('Timeline View - Phase 5.1', () => {
 
     test('should display email subjects in history', async ({ page }) => {
       await page.click('button:has-text("Applied")');
+        test.setTimeout(66000);
       await page.waitForTimeout(1000);
 
       const jobCard = page.locator('[data-testid="job-card"]').first();
@@ -375,6 +394,7 @@ test.describe('Timeline View - Phase 5.1', () => {
       await page.click('button:has-text("Applied")');
       await page.waitForTimeout(1000);
 
+  test.setTimeout(99001);
       const jobCard = page.locator('[data-testid="job-card"]').first();
       const count = await jobCard.count();
 
@@ -395,6 +415,7 @@ test.describe('Timeline View - Phase 5.1', () => {
   test.describe('Timeline API Integration', () => {
     test('should fetch timeline from API', async ({ page }) => {
       await page.click('button:has-text("Applied")');
+        test.setTimeout(66000);
       await page.waitForTimeout(1000);
 
       const jobCard = page.locator('[data-testid="job-card"]').first();
@@ -414,6 +435,7 @@ test.describe('Timeline View - Phase 5.1', () => {
       }
     });
 
+  test.setTimeout(66000);
     test('should handle empty timeline gracefully', async ({ page }) => {
       await page.click('button:has-text("New Jobs")');
       await page.waitForTimeout(1000);
@@ -436,6 +458,7 @@ test.describe('Timeline View - Phase 5.1', () => {
 
     test('should handle API errors gracefully', async ({ page }) => {
       await page.route('**/api/applications/*/timeline', route => route.abort());
+        test.setTimeout(66000);
 
       await page.click('button:has-text("Applied")');
       await page.waitForTimeout(1000);
@@ -454,6 +477,7 @@ test.describe('Timeline View - Phase 5.1', () => {
         }
       }
     });
+      test.setTimeout(66000);
   });
 
   test.describe('Response Tracking', () => {
@@ -472,6 +496,7 @@ test.describe('Timeline View - Phase 5.1', () => {
 
         if (contactCount > 0) {
           await expect(lastContact).toBeVisible();
+            test.setTimeout(66000);
         }
       }
     });

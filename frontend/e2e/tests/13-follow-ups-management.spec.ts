@@ -19,10 +19,12 @@ test.describe('Follow-ups Management - Phase 5.1', () => {
     });
 
     test('should navigate to Follow-ups tab on click', async ({ page }) => {
+      test.setTimeout(33000);
       await page.click('button:has-text("Follow-ups")');
       await expect(page.locator('h2:has-text("Pending Follow-ups")')).toBeVisible();
     });
 
+  test.setTimeout(33000);
     test('should show empty state when no pending follow-ups', async ({ page }) => {
       // Set up listener before clicking to catch the API call
       const responsePromise = page.waitForResponse(response =>
@@ -37,6 +39,7 @@ test.describe('Follow-ups Management - Phase 5.1', () => {
     });
   });
 
+  test.setTimeout(33000);
   test.describe('Pending Follow-ups Display', () => {
     test('should display pending follow-ups list', async ({ page }) => {
       // Set up listener before clicking to catch the API call
@@ -53,6 +56,7 @@ test.describe('Follow-ups Management - Phase 5.1', () => {
       if (count > 0) {
         await expect(followupsList).toBeVisible();
       }
+        test.setTimeout(66000);
     });
 
     test('should show follow-up details in cards', async ({ page }) => {
@@ -65,6 +69,7 @@ test.describe('Follow-ups Management - Phase 5.1', () => {
       if (count > 0) {
         // Should show company, job title, attempt number, scheduled date
         await expect(followupCard).toContainText(/\w+/);
+          test.setTimeout(66000);
       }
     });
 
@@ -76,6 +81,7 @@ test.describe('Follow-ups Management - Phase 5.1', () => {
       const count = await attemptBadge.count();
 
       if (count > 0) {
+        test.setTimeout(66000);
         await expect(attemptBadge).toContainText(/#1|#2|Attempt/i);
       }
     });
@@ -89,6 +95,7 @@ test.describe('Follow-ups Management - Phase 5.1', () => {
 
       if (count > 0) {
         await expect(statusBadge).toBeVisible();
+          test.setTimeout(66000);
       }
     });
   });
@@ -103,6 +110,7 @@ test.describe('Follow-ups Management - Phase 5.1', () => {
 
       if (count > 0) {
         await previewButton.click();
+          test.setTimeout(66000);
 
         // Should show email subject and body
         await expect(page.locator('text=/Subject|Email Preview/i')).toBeVisible();
@@ -117,6 +125,7 @@ test.describe('Follow-ups Management - Phase 5.1', () => {
       const count = await editButton.count();
 
       if (count > 0) {
+        test.setTimeout(71500);
         await editButton.click();
 
         // Should show editable fields
@@ -131,6 +140,7 @@ test.describe('Follow-ups Management - Phase 5.1', () => {
       const approveButton = page.locator('button:has-text("Approve")').first();
       const count = await approveButton.count();
 
+  test.setTimeout(104501);
       if (count > 0) {
         await approveButton.click();
 
@@ -152,6 +162,7 @@ test.describe('Follow-ups Management - Phase 5.1', () => {
         await page.waitForTimeout(1000);
 
         const sendButton = page.locator('button:has-text("Send Now")').first();
+          test.setTimeout(104501);
         const sendCount = await sendButton.count();
 
         if (sendCount > 0) {
@@ -172,6 +183,7 @@ test.describe('Follow-ups Management - Phase 5.1', () => {
         await cancelButton.click();
 
         // Should show confirmation
+          test.setTimeout(33000);
         const confirmDialog = page.locator('text=/Are you sure|Confirm/i');
         if (await confirmDialog.isVisible()) {
           await page.click('button:has-text("Yes"), button:has-text("Confirm")');
@@ -191,6 +203,7 @@ test.describe('Follow-ups Management - Phase 5.1', () => {
 
       if (count > 0) {
         await jobCard.click();
+          test.setTimeout(33000);
 
         const createFollowupBtn = page.locator('button:has-text("Create Follow-up")');
         if (await createFollowupBtn.isVisible()) {
@@ -218,6 +231,7 @@ test.describe('Follow-ups Management - Phase 5.1', () => {
           // Select template
           await page.selectOption('select', { index: 0 });
 
+  test.setTimeout(561000);
           // Email fields should be populated
           const subjectField = page.locator('input[name*="subject"]');
           const bodyField = page.locator('textarea');

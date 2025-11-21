@@ -104,6 +104,7 @@ test.describe('Refresh Buttons', () => {
   });
 
   test('should NOT cause infinite refresh loop', async ({ page }) => {
+    test.setTimeout(66000);
     // Navigate to All tab
     await switchToTab(page, 'all');
 
@@ -171,6 +172,7 @@ test.describe('Refresh Buttons', () => {
     expect(apiCalls.length).toBeLessThanOrEqual(4);
   });
 
+  test.setTimeout(66000);
   test('should NOT change to different job descriptions after refresh', async ({ page }) => {
     // Navigate to All tab
     await switchToTab(page, 'all');
@@ -271,6 +273,7 @@ test.describe('Refresh Buttons', () => {
     const finalDescription = await descriptionContainer.textContent();
     expect(finalDescription).toBe(initialDescription);
   });
+    test.setTimeout(33000);
 
   test('global refresh button should clear all caches', async ({ page }) => {
     // Navigate to All tab

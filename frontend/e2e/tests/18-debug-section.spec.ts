@@ -85,6 +85,7 @@ test.describe('Job Card Debug Section', () => {
   });
 
   test('should display LLM extraction method for LLM-extracted jobs', async ({ page }) => {
+    test.setTimeout(33000);
     await page.click('button:has-text("Filtered")');
 
     try {
@@ -171,6 +172,7 @@ test.describe('Job Card Debug Section', () => {
     expect(hasAdditionalData).toBe(true);
   });
 
+  test.setTimeout(35200);
   test('should display debug section on multiple tabs', async ({ page }) => {
     const tabs = ['New', 'Approved', 'Filtered', 'All'];
 

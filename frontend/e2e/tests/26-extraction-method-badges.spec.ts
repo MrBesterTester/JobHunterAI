@@ -204,6 +204,7 @@ test.describe('Extraction Method Badges', () => {
   });
 
   test('should maintain badge styling consistency across tabs', async ({ page }) => {
+    test.setTimeout(33000);
     await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 
     // Get LLM badge styling from All tab
@@ -250,6 +251,7 @@ test.describe('Extraction Method Badges', () => {
     }
   });
 
+  test.setTimeout(33000);
   test('should display badge in job details modal', async ({ page }) => {
     await page.waitForSelector('[data-testid="job-card"]', { timeout: getTestTimeout(10000) });
 

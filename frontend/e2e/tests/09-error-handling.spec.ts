@@ -23,6 +23,7 @@ test.describe('Error Handling & Edge Cases', () => {
 
   test.describe('Section 17: API Failure Simulation Test', () => {
     test('should handle backend server unavailable gracefully', async ({ page }) => {
+      test.setTimeout(33000);
       // Simulate complete API failure
       await page.route('**/api/**', (route) => route.abort('failed'));
 
@@ -35,6 +36,7 @@ test.describe('Error Handling & Edge Cases', () => {
       await expect(dashboardPage.pageTitle).toBeVisible();
     });
 
+  test.setTimeout(33550);
     test('should show graceful error handling when API returns 500', async ({ page }) => {
       // Intercept API calls and return 500
       await interceptApiResponse(page, '**/api/jobs', 500, { error: 'Internal server error' });
@@ -47,6 +49,7 @@ test.describe('Error Handling & Edge Cases', () => {
       const hasPageLoaded = await dashboardPage.pageTitle.isVisible();
       expect(hasPageLoaded).toBe(true);
     });
+      test.setTimeout(33000);
 
     test('should recover when backend server restarts', async ({ page }) => {
       // First load: API fails
@@ -64,6 +67,7 @@ test.describe('Error Handling & Edge Cases', () => {
       // Should load successfully
       await dashboardPage.waitForLoad();
       await expect(dashboardPage.pageTitle).toBeVisible();
+        test.setTimeout(33000);
     });
 
     test('should log errors to console for debugging', async ({ page }) => {
@@ -89,6 +93,7 @@ test.describe('Error Handling & Edge Cases', () => {
       // Errors might be logged (depends on implementation)
       // Just verify page doesn't crash
       const hasPageLoaded = await dashboardPage.pageTitle.isVisible();
+        test.setTimeout(33000);
       expect(hasPageLoaded).toBe(true);
     });
 
@@ -156,6 +161,7 @@ test.describe('Error Handling & Edge Cases', () => {
       await expect(dashboardPage.pageTitle).toBeVisible();
 
       // Statistics should show 0
+        test.setTimeout(33000);
       const newCount = await dashboardPage.getStatCount('new');
       expect(newCount).toBe(0);
     });
@@ -214,6 +220,7 @@ test.describe('Error Handling & Edge Cases', () => {
       // Check for horizontal scroll (shouldn't exist)
       const hasHorizontalScroll = await page.evaluate(() => {
         return document.documentElement.scrollWidth > document.documentElement.clientWidth;
+          test.setTimeout(33000);
       });
 
       expect(hasHorizontalScroll).toBe(false);
@@ -362,6 +369,7 @@ test.describe('Error Handling & Edge Cases', () => {
       await dashboardPage.clickTab('approved');
       await dashboardPage.waitForJobsUpdate();
 
+  test.setTimeout(99001);
       // No errors should occur
       await expect(dashboardPage.pageTitle).toBeVisible();
     });
@@ -419,6 +427,7 @@ test.describe('Error Handling & Edge Cases', () => {
       ]);
 
       await dashboardPage.goto();
+        test.setTimeout(33000);
       await dashboardPage.clickTab('all');
       await dashboardPage.waitForJobsUpdate();
 

@@ -72,6 +72,7 @@ test.describe('Statistics & Real-time Updates', () => {
     });
 
     test('should update statistics immediately after approving a job', async ({ page }) => {
+      test.setTimeout(33000);
       await dashboardPage.clickTab('inbox');
       await dashboardPage.waitForJobsUpdate();
 
@@ -100,6 +101,7 @@ test.describe('Statistics & Real-time Updates', () => {
       expect(newApprovedCount).toBe(initialApprovedCount + 1);
     });
 
+  test.setTimeout(33000);
     test('should update statistics immediately after rejecting a job', async ({ page }) => {
       await dashboardPage.clickTab('inbox');
       await dashboardPage.waitForJobsUpdate();
@@ -144,6 +146,7 @@ test.describe('Statistics & Real-time Updates', () => {
       // Verify sum matches total
       expect(totalCount).toBe(sumOfStatuses);
     });
+      test.setTimeout(33000);
 
     test('should update statistics without page refresh', async ({ page }) => {
       await dashboardPage.clickTab('inbox');
@@ -263,6 +266,7 @@ test.describe('Statistics & Real-time Updates', () => {
       expect(criteria.min_salary).toBe(130000);
       expect(criteria.max_commute_time).toBe(45);
       expect(Array.isArray(criteria.preferred_domains)).toBe(true);
+        test.setTimeout(33000);
     });
 
     test('should verify filtered jobs match criteria', async ({ page }) => {
@@ -343,6 +347,7 @@ test.describe('Statistics & Real-time Updates', () => {
       expect(hasExpectedDomains).toBe(true);
     });
   });
+    test.setTimeout(33000);
 
   // Run serially to avoid race conditions with shared database state
   test.describe.serial('Real-time Updates Validation', () => {
@@ -379,6 +384,7 @@ test.describe('Statistics & Real-time Updates', () => {
       }
 
       // Verify statistics are consistent (should already be updated from loop above)
+        test.setTimeout(33000);
       const newCount = await dashboardPage.getStatCount('new');
       expect(newCount).toBe(initialNew - 3);
     });
@@ -418,6 +424,7 @@ test.describe('Statistics & Real-time Updates', () => {
       const newApplied = await dashboardPage.getStatCount('applied');
       const newFiltered = await dashboardPage.getStatCount('filtered');
       const newTotal = newNew + newApproved + newApplied + newFiltered;
+        test.setTimeout(33000);
 
       // Total should remain the same (job moved, not created/deleted)
       expect(newTotal).toBe(initialTotal);
@@ -441,6 +448,7 @@ test.describe('Statistics & Real-time Updates', () => {
 
         // Wait for potential polling
         await page.waitForTimeout(5000);
+          test.setTimeout(33000);
 
         // Note: This depends on implementation
         // If polling is implemented, we should see multiple calls

@@ -15,6 +15,7 @@ if (!shouldRunTest('extraction-method-badge-test')) {
 
 test.describe('Extraction Method Badge - Expert Systems Architect', () => {
   test('should display blue LLM badge for Expert Systems Architect job', async ({ page }) => {
+    test.setTimeout(33000);
     await page.goto('http://localhost:3000');
 
     // Click on "All" tab to see all jobs

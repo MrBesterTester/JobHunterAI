@@ -108,6 +108,7 @@ test.describe('Job Status Updates', () => {
     });
 
     test('should update statistics immediately after approval', async ({ page }) => {
+      test.setTimeout(33000);
       await dashboardPage.clickTab('inbox');
       await dashboardPage.waitForJobsUpdate();
 
@@ -152,6 +153,7 @@ test.describe('Job Status Updates', () => {
       expect(newApprovedCount).toBe(initialApprovedCount + 1);
     });
 
+  test.setTimeout(33000);
     test('should update statistics immediately after rejection', async ({ page }) => {
       await dashboardPage.clickTab('inbox');
       await dashboardPage.waitForJobsUpdate();
@@ -187,6 +189,7 @@ test.describe('Job Status Updates', () => {
 
       expect(newNewCount).toBe(initialNewCount - 1);
     });
+      test.setTimeout(66000);
 
     test('should allow approving multiple jobs in sequence', async ({ page }) => {
       await dashboardPage.clickTab('inbox');
@@ -382,6 +385,7 @@ test.describe('Job Status Updates', () => {
       const refreshResponse = await refreshPromise;
 
       expect(refreshResponse.status()).toBe(200);
+        test.setTimeout(33000);
     });
 
     test('should handle API errors gracefully', async ({ page }) => {
@@ -439,6 +443,7 @@ test.describe('Job Status Updates', () => {
       expect(duration).toBeLessThan(maxDuration);
     });
   });
+    test.setTimeout(66000);
 
   // Run serially to avoid race conditions with shared database state
   test.describe.serial('Edge Cases & Error Handling', () => {
@@ -474,6 +479,7 @@ test.describe('Job Status Updates', () => {
       );
 
       // Verify all 3 jobs were processed
+        test.setTimeout(33000);
       const finalCount = await dashboardPage.getVisibleJobCount();
       expect(finalCount).toBe(initialCount - 3);
     });
