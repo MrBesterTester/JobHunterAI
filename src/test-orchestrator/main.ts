@@ -11,10 +11,19 @@
  *   ts-node src/test-orchestrator/main.ts
  *   # E2E only:
  *   ts-node src/test-orchestrator/main.ts --e2e-only
+ *   # E2E only, skip builds:
+ *   ts-node src/test-orchestrator/main.ts --e2e-only --skip-builds
  *   # Backend only:
  *   ts-node src/test-orchestrator/main.ts --backend-only
  *   # Frontend only:
  *   ts-node src/test-orchestrator/main.ts --frontend-only
+ *
+ * Flags:
+ *   --e2e-only        Run only E2E tests (skip backend/frontend unit tests)
+ *   --backend-only    Run only backend tests
+ *   --frontend-only   Run only frontend tests
+ *   --skip-builds     Skip build phase (use existing builds)
+ *   --skip-preflight  Skip preflight checks (use for rapid iteration)
  */
 
 import { TestOrchestrator } from './orchestrator';
@@ -41,6 +50,14 @@ async function main() {
     config.runBackendTests = false;
     config.runFrontendTests = true;
     config.runE2ETests = false;
+  }
+
+  // Optional flags
+  if (args.includes('--skip-builds')) {
+    config.runBuilds = false;
+  }
+  if (args.includes('--skip-preflight')) {
+    config.runPreflight = false;
   }
 
   const orchestrator = new TestOrchestrator(config);
