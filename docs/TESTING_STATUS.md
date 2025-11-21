@@ -39,20 +39,26 @@ last_updated: 2025-11-21 13:11:31 PST (Added test results with 2 E2E failures - 
 
 ## Next Steps (Testing Priorities)
 
-**⚠️ TEST REGRESSION DETECTED - 2 E2E Failures**
+**🚨 LE PROBLEMA DU JOUR - CRITICAL PRIORITY**
 
-**Overall Test Suite Health**: ⚠️ **99.79% pass rate** (937/939 active tests) - Regression from 100%
+**Priority 0: ISSUE-064 - E2E Test Isolation and Database State Management** 🔴 **CRITICAL**
+- **Issue**: [ISSUE-064](../bugs/open/ISSUE-064-e2e-tests-lack-proper-database-isolation-and-state-management.md)
+- **Problem**: 567 tests run in parallel (4 workers) against single shared database with no isolation
+- **Impact**: Inter-test dependencies, flaky tests, entry/exit condition violations
+- **User Concern**: "We don't know whether the entry conditions are understood and met as well as clear understanding of the exit condition of each test"
+- **Solution**: Per-worker database isolation (Option 1)
+- **Status**: 🔬 Prototyping phase started
+- **Action**: Validate resource usage, implement worker fixtures, roll out to full suite
 
-**Priority 1: Investigate Dashboard Statistics Test Regression** 🔴 **URGENT**
+---
+
+**Priority 1: Dashboard Statistics Test Regression** ✅ **FIXED (2025-11-21)**
 - **Test**: `e2e/tests/07-dashboard-statistics.spec.ts:106` - "Total should equal discovered job opportunities from intake"
-- **Failure**: Expected 1, Received 0 (failed twice, possibly with retry)
-- **Context**: This test was passing in previous run (2025-11-21 12:27 PST) with ISSUE-064 fixes
-- **Observation**: Same test that was fixed for race conditions in ISSUE-064 is now failing again
-- **Action Required**:
-  - Investigate if test data seeding is working correctly
-  - Check if backend `/api/jobs/stats` endpoint returns correct `discovered` count
-  - Verify UI correctly displays value from backend
-  - This may be a data seeding issue or a true regression in stats calculation
+- **Root Cause**: Missing email_jobs seed data (backend queries email_jobs table for discovered count)
+- **Fix**: Added 15 email_jobs entries to test seed data (7 created, 3 duplicates, 3 filtered, 2 failed)
+- **Result**: Backend now returns `discovered: 15` correctly
+- **Commit**: 77fd4f2 - "fix: Add email_jobs seed data for dashboard statistics tests"
+- **Next**: Run comprehensive tests to verify fix
 
 **Recent Work (2025-11-21)**:
 - ✅ **ISSUE-064**: E2E test isolation via Playwright projects (Commits bba389f, 4453468)
