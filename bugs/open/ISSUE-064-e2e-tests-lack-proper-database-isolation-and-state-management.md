@@ -31,8 +31,17 @@ related: [PLAYWRIGHT_BEST_PRACTICES.md]
     - [Option 5B: Transaction Rollback per Test (Fast but Complex)](#option-5b-transaction-rollback-per-test-fast-but-complex)
     - [Option 5C: Accept Partial Isolation (Pragmatic)](#option-5c-accept-partial-isolation-pragmatic)
     - [Option 5D: Hybrid Approach (Reset Between Test Files)](#option-5d-hybrid-approach-reset-between-test-files)
+    - [Option 6: 4-Project Architecture with Deterministic Ordering (RECOMMENDED) ⭐](#option-6-4-project-architecture-with-deterministic-ordering-recommended-)
   - [Comparison Matrix](#comparison-matrix)
   - [Decision Required](#decision-required)
+- [Rollback Plan: Reverting to Pre-Phase 1 State](#rollback-plan-reverting-to-pre-phase-1-state)
+  - [What to Undo (Phase 1-5 Infrastructure):](#what-to-undo-phase-1-5-infrastructure)
+  - [What to Keep (Valuable Improvements):](#what-to-keep-valuable-improvements)
+  - [Rollback Commands:](#rollback-commands)
+  - [Verification Steps After Rollback:](#verification-steps-after-rollback)
+  - [Post-Rollback State:](#post-rollback-state)
+  - [Estimated Time:](#estimated-time)
+  - [Risk Assessment:](#risk-assessment)
 - [Summary](#summary)
 - [Impact](#impact)
 - [Problem Statement](#problem-statement)
@@ -448,16 +457,176 @@ test.afterAll(async ({ workerDatabase }) => {
 
 ---
 
+#### Option 6: 4-Project Architecture with Deterministic Ordering (RECOMMENDED) ⭐
+
+**Philosophy**: Stop fighting non-determinism. Embrace predictable execution order and stable database state through strict test grouping and project-level serialization.
+
+**Architecture**:
+
+```typescript
+// playwright.config.ts
+export default defineConfig({
+  projects: [
+    // Project 1: Read-Only Tests (Database State: Read-only validation)
+    {
+      name: 'project-1-read-only',
+      fullyParallel: false,  // Tests run serially within project
+      testMatch: [
+        '**/01-app-loads.spec.ts',
+        '**/02-tab-navigation.spec.ts',
+        '**/05-job-filtering.spec.ts',
+        '**/06-search-and-sort.spec.ts',
+        '**/08-job-source-colors.spec.ts',
+        '**/09-extraction-method-badges.spec.ts',
+        '**/19-extraction-debugging-feature.spec.ts',
+        '**/20-modal-scrolling.spec.ts',
+        '**/21-scroll-stability.spec.ts',
+        // All tests that only READ database state
+      ],
+    },
+
+    // Project 2: State-Modifying Tests (Database State: Job status changes)
+    {
+      name: 'project-2-state-modifying',
+      fullyParallel: false,  // Tests run serially within project
+      testMatch: [
+        '**/03-job-status-updates.spec.ts',
+        '**/04-bulk-job-actions.spec.ts',
+        '**/10-application-workflow.spec.ts',
+        '**/12-refresh-button.spec.ts',
+        // Tests that modify job statuses, create applications
+      ],
+      dependencies: ['project-1-read-only'],  // Wait for read-only tests
+    },
+
+    // Project 3: Integration Tests (Database State: External data ingestion)
+    {
+      name: 'project-3-integration',
+      fullyParallel: false,  // Tests run serially within project
+      testMatch: [
+        '**/11-intake-tab.spec.ts',
+        '**/13-msmail-sync.spec.ts',
+        '**/14-msmail-sync-scenarios.spec.ts',
+        '**/15-msmail-oauth-revoked.spec.ts',
+        '**/16-gmail-sync-integration.spec.ts',
+        '**/17-linkedin-integration.spec.ts',
+        '**/18-rapidapi-integration.spec.ts',
+        // Tests that trigger external syncs, add new jobs
+      ],
+      dependencies: ['project-2-state-modifying'],
+    },
+
+    // Project 4: LLM & Performance Tests (Database State: LLM-generated content)
+    {
+      name: 'project-4-llm-performance',
+      fullyParallel: false,  // Tests run serially within project
+      testMatch: [
+        '**/07-dashboard-statistics.spec.ts',
+        '**/22-cover-letter-generation.spec.ts',
+        '**/23-description-quality.spec.ts',
+        // Tests with LLM operations, performance-sensitive
+      ],
+      dependencies: ['project-3-integration'],
+    },
+  ],
+});
+```
+
+**Execution Flow**:
+```
+Project 1 (Read-Only) → ~100-120 tests, serial
+  ↓ (waits for completion)
+Project 2 (State-Modifying) → ~80-100 tests, serial
+  ↓ (waits for completion)
+Project 3 (Integration) → ~100-120 tests, serial
+  ↓ (waits for completion)
+Project 4 (LLM/Performance) → ~60-80 tests, serial
+```
+
+**Key Benefits**:
+
+1. **Deterministic Execution Order**:
+   - Projects run in strict dependency chain (1→2→3→4)
+   - Tests within each project run in strict order (01→02→03...)
+   - **Zero non-determinism** from Playwright's test orchestrator
+
+2. **Stable Database State**:
+   - Each project maintains predictable database state throughout
+   - Read-only tests never modify state
+   - State-modifying tests build on each other predictably
+   - Integration tests add external data in known sequence
+   - LLM tests work with stable, complete dataset
+
+3. **Test Independence Within Projects**:
+   - Tests in same project can depend on each other (acceptable)
+   - Tests in different projects are isolated by execution order
+   - No cross-project interference (projects run sequentially)
+
+4. **Simplified Database Strategy**:
+   - **Option A**: Single database (`jobhunter_personal`), no per-worker isolation needed
+     - Simpler: No worker database creation/cleanup
+     - Slower: Full serial execution (~60 min estimated)
+   - **Option B**: 4 databases (one per project), projects run in parallel
+     - More complex: Need per-project database setup
+     - Faster: ~15 min (1/4 of Option A)
+
+**Pros**:
+- **Maximum repeatability**: Tests always run in same order with same database state
+- **Zero flakiness from race conditions**: Serial execution eliminates all timing issues
+- **Simpler debugging**: Predictable order makes failures easy to reproduce
+- **Clear test categorization**: Tests grouped by behavior (read vs write vs integrate)
+- **No test code changes**: Just configuration and test file assignment
+
+**Cons**:
+- **Slower than current**: Serial execution within projects (but acceptable trade-off for stability)
+- **Upfront categorization work**: Must classify all ~400 tests into 4 projects
+- **Rigidity**: Adding new tests requires choosing correct project
+
+**Runtime Analysis**:
+
+*Option A (Single Database, Full Serial):*
+- All tests serial: ~400 tests × 9s avg = ~60 minutes
+
+*Option B (4 Databases, Parallel Projects):*
+- Projects run in parallel: ~100 tests × 9s avg = ~15 minutes per project
+- With staggered starts (dependencies), total ~15-20 minutes
+
+**Implementation Effort**: 3-5 days
+1. Day 1: Audit all 44 test files, categorize by behavior
+2. Day 2: Create 4-project configuration
+3. Day 3: Test execution, adjust categorization
+4. Day 4: Verify deterministic behavior across 5+ runs
+5. Day 5: Documentation and rollback preparation
+
+**Maintenance**: Low
+- New tests: Choose correct project based on behavior
+- Test categorization documented in PLAYWRIGHT_BEST_PRACTICES.md
+- Clear project boundaries make test placement obvious
+
+**Decision Criteria**:
+
+Choose Option 6 if:
+- ✅ You value **repeatability** over **speed**
+- ✅ You want **zero tolerance** for flaky tests
+- ✅ You're willing to trade 4x slower execution for deterministic behavior
+- ✅ You want to eliminate all timing-related issues
+
+---
+
 ### Comparison Matrix
 
-| Criterion | 5A: Per-Test Reset | 5B: Transactions | 5C: Pragmatic | 5D: Per-File Reset |
-|-----------|-------------------|------------------|---------------|-------------------|
-| **Isolation Quality** | ⭐⭐⭐⭐⭐ Perfect | ⭐⭐⭐⭐⭐ Perfect | ⭐⭐⭐ Moderate | ⭐⭐⭐⭐ Good |
-| **Speed** | ⭐⭐⭐ +71s overhead | ⭐⭐⭐⭐⭐ Fast | ⭐⭐⭐⭐⭐ No overhead | ⭐⭐⭐⭐ +15-20s |
-| **Complexity** | ⭐⭐⭐⭐⭐ Simple | ⭐ Very complex | ⭐⭐⭐⭐⭐ Simple | ⭐⭐⭐⭐ Simple |
-| **Backend Changes** | ⭐⭐⭐⭐⭐ None | ⭐ Major refactor | ⭐⭐⭐⭐⭐ None | ⭐⭐⭐⭐⭐ None |
-| **Implementation** | 1 day | 5-7 days | 0 days | 2-3 days |
-| **Maintenance** | ⭐⭐⭐⭐⭐ Low | ⭐ High | ⭐⭐⭐ Medium | ⭐⭐⭐ Medium |
+| Criterion | 5A: Per-Test | 5B: Transactions | 5C: Pragmatic | 5D: Per-File | **6: 4-Project** ⭐ |
+|-----------|-------------|------------------|---------------|-------------|------------------|
+| **Isolation Quality** | ⭐⭐⭐⭐⭐ Perfect | ⭐⭐⭐⭐⭐ Perfect | ⭐⭐⭐ Moderate | ⭐⭐⭐⭐ Good | ⭐⭐⭐⭐⭐ **Perfect** |
+| **Repeatability** | ⭐⭐⭐⭐ Good | ⭐⭐⭐⭐ Good | ⭐⭐ Poor | ⭐⭐⭐ Fair | ⭐⭐⭐⭐⭐ **Perfect** |
+| **Speed (Option A)** | ⭐⭐⭐ +71s | ⭐⭐⭐⭐⭐ Fast | ⭐⭐⭐⭐⭐ No overhead | ⭐⭐⭐⭐ +15-20s | ⭐ ~60 min |
+| **Speed (Option B)** | N/A | N/A | N/A | N/A | ⭐⭐⭐⭐ **~15-20 min** |
+| **Complexity** | ⭐⭐⭐⭐⭐ Simple | ⭐ Very complex | ⭐⭐⭐⭐⭐ Simple | ⭐⭐⭐⭐ Simple | ⭐⭐⭐ Moderate |
+| **Backend Changes** | ⭐⭐⭐⭐⭐ None | ⭐ Major refactor | ⭐⭐⭐⭐⭐ None | ⭐⭐⭐⭐⭐ None | ⭐⭐⭐⭐⭐ **None** |
+| **Implementation** | 1 day | 5-7 days | 0 days | 2-3 days | **3-5 days** |
+| **Maintenance** | ⭐⭐⭐⭐⭐ Low | ⭐ High | ⭐⭐⭐ Medium | ⭐⭐⭐ Medium | ⭐⭐⭐⭐⭐ **Low** |
+| **Debugging** | ⭐⭐⭐⭐ Good | ⭐⭐⭐⭐ Good | ⭐⭐ Hard | ⭐⭐⭐ Fair | ⭐⭐⭐⭐⭐ **Easy** |
+| **Flakiness Risk** | ⭐⭐⭐⭐ Low | ⭐⭐⭐⭐ Low | ⭐⭐ High | ⭐⭐⭐ Moderate | ⭐⭐⭐⭐⭐ **Zero** |
 
 ### Decision Required
 
@@ -469,6 +638,138 @@ test.afterAll(async ({ workerDatabase }) => {
 4. **Balanced** (Option 5D): Per-file resets (+15-20s runtime)
 
 **Note**: This decision doesn't block Phase 4 rollout. We can deploy Phase 3's per-worker isolation and evaluate whether additional inter-test isolation is needed based on actual test behavior.
+
+---
+
+## Rollback Plan: Reverting to Pre-Phase 1 State
+
+**Objective**: Undo Phase 1-5 per-worker database isolation work while preserving valuable improvements made during this investigation.
+
+**Context**: After implementing Phase 1-5 (per-worker database isolation), we discovered this approach doesn't solve the core problem of non-deterministic test execution order. Option 6 (4-project architecture) provides a better solution. This rollback plan allows us to cleanly revert Phase 1-5 infrastructure while keeping valuable test data improvements.
+
+### What to Undo (Phase 1-5 Infrastructure):
+
+1. **Backend Changes** (Commit 382ca73):
+   - Remove `DatabasePools` struct with worker pool HashMap
+   - Remove `WorkerPool` extractor and X-Worker-Index header routing
+   - Revert to single `PgPool` connection pool
+   - **Why**: Option 6 uses deterministic ordering within projects on single database, not per-worker databases
+
+2. **Playwright Fixtures** (Commits fe7d650, c3de7b9):
+   - Delete `frontend/e2e/fixtures/worker-database.ts`
+   - Revert all 44 test files from `import { test, expect } from '../fixtures/worker-database'`
+   - Restore standard imports: `import { test, expect } from '@playwright/test'`
+   - **Why**: Custom fixture is specific to per-worker database routing, not needed for project-based approach
+
+3. **Global Setup** (Commit c3de7b9):
+   - Restore database seeding in `frontend/e2e/global-setup.ts`
+   - Add back: `seedTestData()`, `seedMSMailData()`, `calculateAllJobScores()`
+   - **Why**: Single database means seed once in global setup, not per-worker
+
+4. **Playwright Configuration**:
+   - Remove `chromium-isolated` project workaround (added as temporary fix)
+   - Remove any serial mode configurations added specifically for worker isolation
+   - **Why**: Option 6 replaces chromium-isolated with proper 4-project architecture
+
+### What to Keep (Valuable Improvements):
+
+1. **Test Data Quality** (Commit b875182):
+   - ✅ **Keep**: Realistic 100-120 word job descriptions in `database/seed_test_data.sql`
+   - ✅ **Keep**: 30-word minimum threshold in `frontend/e2e/tests/23-description-quality.spec.ts`
+   - ✅ **Keep**: 200-word maximum threshold for condensed descriptions
+   - **Why**: These improvements make tests validate actual production behavior with realistic multi-paragraph content
+
+2. **Documentation & Knowledge**:
+   - ✅ **Keep**: All investigation findings in ISSUE-064
+   - ✅ **Keep**: Playwright best practices learned during investigation
+   - ✅ **Keep**: Option 6 architecture proposal (implementation target)
+   - **Why**: Valuable knowledge gained through investigation process
+
+3. **Test Comments & Context** (if valuable):
+   - Review test files for improved comments added during investigation
+   - Keep comments that explain test behavior or edge cases
+   - Remove comments specific to per-worker isolation approach
+
+### Rollback Commands:
+
+```bash
+# Step 1: Identify commits to revert (Phase 1-4)
+git log --oneline --grep="ISSUE-064" --since="2025-11-01"
+
+# Step 2: Revert backend changes (in reverse chronological order)
+# Note: Keep commit b875182 (test data improvements) - do NOT revert this one
+git revert c3de7b9  # Phase 4: Full rollout to 44 test files
+git revert fe7d650  # Phase 3: Worker database fixture
+git revert 382ca73  # Phase 1-2: Backend worker pool routing
+
+# Step 3: Manual cleanup (if needed)
+rm frontend/e2e/fixtures/worker-database.ts  # Should be removed by revert
+
+# Step 4: Restore global-setup.ts database seeding logic (if needed)
+# Check if global-setup.ts needs manual restoration of seedTestData() calls
+
+# Step 5: Verify test imports (should be reverted automatically)
+grep -r "from '../fixtures/worker-database'" frontend/e2e/tests/
+# Should return no results after revert
+
+# Step 6: Run tests to verify rollback
+cd frontend && npx playwright test e2e/tests/01-app-loads.spec.ts
+```
+
+### Verification Steps After Rollback:
+
+1. **Backend Verification**:
+   ```bash
+   cd backend
+   cargo build  # Should compile successfully
+   cargo run &  # Start backend
+   # Verify single database pool in logs
+   ```
+
+2. **Test Imports**:
+   ```bash
+   cd frontend
+   # All tests should use standard Playwright imports
+   grep -r "from '@playwright/test'" e2e/tests/ | wc -l  # Should match test count
+   grep -r "from '../fixtures/worker-database'" e2e/tests/ | wc -l  # Should be 0
+   ```
+
+3. **Database Seeding**:
+   ```bash
+   # Verify global-setup.ts calls seedTestData()
+   grep "seedTestData" e2e/global-setup.ts
+   ```
+
+4. **Run Sample Tests**:
+   ```bash
+   # Run a few tests to verify basic functionality
+   npx playwright test e2e/tests/01-app-loads.spec.ts
+   npx playwright test e2e/tests/02-tab-navigation.spec.ts
+   npx playwright test e2e/tests/03-job-status-updates.spec.ts
+   ```
+
+### Post-Rollback State:
+
+After successful rollback:
+- ✅ Single `jobhunter_personal` database (no per-worker databases)
+- ✅ Backend uses single `PgPool` connection
+- ✅ Tests use standard `@playwright/test` imports
+- ✅ Global setup seeds database once before test execution
+- ✅ Realistic test data preserved (100-120 word descriptions)
+- ✅ Ready for Option 6 (4-project architecture) implementation
+
+### Estimated Time:
+
+- **Git Reverts**: 30 minutes
+- **Manual Cleanup**: 30 minutes
+- **Verification**: 1 hour (build, test runs, validation)
+- **Total**: 2-3 hours
+
+### Risk Assessment:
+
+- **Low Risk**: Git reverts are well-defined operations
+- **Mitigation**: Test at each stage (backend build → sample test → full suite)
+- **Rollback of Rollback**: If issues arise, original commits are preserved in git history
 
 ---
 
