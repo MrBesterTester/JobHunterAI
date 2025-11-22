@@ -155,8 +155,8 @@ test.describe('Condensed Description Quality', () => {
 
       // Short descriptions (≤150 words source) are passed through as-is
       // We want to find at least one substantial description (from a long source that was condensed)
-      // Lowered from 20 to 15 words to match actual test data (ISSUE-064 Phase 4)
-      if (wordCount > 15) {
+      // Raised to 30 words to match realistic test data with proper job descriptions (ISSUE-064 Phase 4)
+      if (wordCount > 30) {
         foundSubstantialDescription = true;
 
         // Should contain job-related keywords (at least one)
@@ -237,8 +237,8 @@ test.describe('Condensed Description Quality', () => {
       const wordCount = descText!.trim().split(/\s+/).length;
 
       // Find a job with substantial content (condensed from long source)
-      // Lowered from 20 to 15 words to match actual test data (ISSUE-064 Phase 4)
-      if (wordCount > 15 && descText !== 'No job description to be extracted.') {
+      // Raised to 30 words to match realistic test data with proper job descriptions (ISSUE-064 Phase 4)
+      if (wordCount > 30 && descText !== 'No job description to be extracted.') {
         jobId = await card.getAttribute('data-job-id');
         jobCard = page.locator(`[data-testid="job-card"][data-job-id="${jobId}"]`);
         descriptionContainer = jobCard.getByTestId('condensed-description-text');
@@ -332,9 +332,9 @@ test.describe('Condensed Description Quality', () => {
 
     // Verify it's still a quality description (reasonable length)
     // Note: We selected a job with substantial content, so refresh should maintain that
-    // Lowered from 20 to 15 words to match actual test data (ISSUE-064 Phase 4)
+    // Raised to 30 words to match realistic test data with proper job descriptions (ISSUE-064 Phase 4)
     const wordCount = newDescription!.trim().split(/\s+/).length;
-    expect(wordCount).toBeGreaterThan(15);
+    expect(wordCount).toBeGreaterThan(30);
     expect(wordCount).toBeLessThanOrEqual(200);
   });
 

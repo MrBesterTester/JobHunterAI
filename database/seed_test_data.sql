@@ -47,7 +47,7 @@ INSERT INTO jobs (
     'gmail',
     NULL, -- No salary = filtered
     'filtered',
-    'Design and implement expert systems for knowledge-based AI applications. Work with rule engines, knowledge representation, and inference mechanisms.',
+    'We are seeking an Expert Systems Architect to design and implement knowledge-based AI applications for enterprise clients. This role involves working with rule engines, knowledge representation frameworks, and inference mechanisms to build intelligent decision support systems. You will collaborate with domain experts to capture business logic and translate it into formal knowledge representations. The ideal candidate has experience with expert system shells, ontology design, and semantic web technologies. Strong background in AI/ML concepts, logic programming, and natural language processing is required. This position offers the opportunity to work on cutting-edge AI projects in healthcare, finance, and manufacturing domains.',
     'No salary information provided',
     'llm',
     '{"company": "OMH Systems", "title": "Expert Systems Architect", "location": "Remote", "description": "Design and implement expert systems...", "extraction_method": "llm", "confidence": 0.95}'::jsonb
@@ -73,7 +73,7 @@ SELECT
     'gmail',
     110000 + (series * 1000), -- Salaries from $111k-$119k
     'filtered',
-    'Manual and automated testing for web applications. Experience with Selenium required.',
+    'Join our QA team to perform comprehensive manual and automated testing for enterprise web applications. You will design test cases, execute test plans, and report defects using Jira and TestRail. The role requires hands-on experience with Selenium WebDriver, API testing with Postman, and SQL for database validation. You will work in an Agile environment, participating in sprint planning and daily standups. Responsibilities include creating test automation scripts, performing regression testing, and collaborating with developers to ensure quality releases. Strong attention to detail and excellent communication skills are essential. This position offers growth opportunities into test automation architecture roles.',
     'Salary below minimum threshold ($130,000)',
     CASE WHEN series % 2 = 0 THEN 'llm' ELSE 'regex' END,
     ('{"company": "TechCorp ' || series || '", "title": "QA Engineer ' || series || '", "salary": ' || (110000 + series * 1000) || ', "extraction_method": "' || CASE WHEN series % 2 = 0 THEN 'llm' ELSE 'regex' END || '"}')::jsonb
@@ -94,7 +94,7 @@ SELECT
     'gmail',
     140000 + (series * 1000),
     'filtered',
-    'Automated testing and continuous integration for cloud-based applications.',
+    'We are looking for a Software Test Engineer to lead automated testing initiatives for our cloud-based SaaS platform. You will build and maintain CI/CD pipelines using Jenkins and GitLab, integrating automated tests at every stage. The role involves writing test automation scripts in Python and JavaScript, performing API testing with REST Assured, and conducting load testing with JMeter. You will work closely with DevOps teams to ensure seamless deployments and quick feedback loops. Experience with Docker containers, microservices testing, and AWS cloud services is highly valued. This is an opportunity to shape quality practices in a fast-growing company.',
     'Location exceeds 45 minute commute from Fremont, CA',
     'llm',
     ('{"company": "Remote Company ' || series || '", "title": "Software Test Engineer ' || series || '", "salary": ' || (140000 + series * 1000) || ', "extraction_method": "llm"}')::jsonb
@@ -111,7 +111,7 @@ SELECT
     'gmail',
     NULL,
     'filtered',
-    'Build and maintain test automation frameworks using Python and pytest.',
+    'Exciting opportunity for a Test Automation Engineer to build robust testing frameworks from the ground up. You will design and implement end-to-end test automation solutions using Python and pytest, covering web, mobile, and API testing. The role includes creating reusable test libraries, integrating tests with CI/CD pipelines, and mentoring junior engineers on automation best practices. You will work with modern tools like Selenium, Appium, and Playwright to ensure comprehensive test coverage. Strong programming skills, understanding of design patterns, and experience with version control systems are required. Join us to make a significant impact on product quality.',
     'No salary information provided',
     CASE WHEN series % 2 = 0 THEN 'llm' ELSE 'regex' END,
     ('{"company": "Startup ' || series || '", "title": "Test Automation Engineer ' || series || '", "extraction_method": "' || CASE WHEN series % 2 = 0 THEN 'llm' ELSE 'regex' END || '"}')::jsonb
@@ -128,7 +128,7 @@ SELECT
     'gmail',
     150000 + (series * 2000),
     'filtered',
-    'Lead QA team for enterprise software. Required in-office 5 days/week.',
+    'We are seeking an experienced Senior QA Lead to manage our quality assurance team and drive testing excellence for enterprise software products. You will oversee test planning, resource allocation, and quality metrics reporting to stakeholders. The role requires strong leadership skills to mentor QA engineers, establish testing standards, and implement process improvements. You will collaborate with product managers and development leads to ensure timely releases while maintaining high quality standards. Experience with test management tools, Agile methodologies, and both manual and automated testing approaches is essential. This position requires in-office presence five days per week to facilitate team collaboration and stakeholder meetings.',
     'Commute requirement exceeds 3 days per week',
     'llm',
     ('{"company": "Enterprise Corp ' || series || '", "title": "Senior QA Lead ' || series || '", "salary": ' || (150000 + series * 2000) || ', "commute_days": 5, "extraction_method": "llm"}')::jsonb
