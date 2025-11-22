@@ -40,6 +40,8 @@ related:
   - [Option 4: Intelligent Report Naming with User Confirmation ⭐ (Solves Naming Problem)](#option-4-intelligent-report-naming-with-user-confirmation--solves-naming-problem)
   - [Option 5: Two-Stage Notification + Intelligent Naming ⭐⭐ (Best User Experience)](#option-5-two-stage-notification--intelligent-naming--best-user-experience)
   - [Option 6: Basic Automation + Intelligent Naming ⭐⭐⭐ (RECOMMENDED)](#option-6-basic-automation--intelligent-naming--recommended)
+- [Options Comparison Table](#options-comparison-table)
+  - [Quick Decision Guide](#quick-decision-guide)
 - [Decision](#decision)
 - [Implementation](#implementation)
   - [Option 6: Basic Automation + Intelligent Naming (RECOMMENDED)](#option-6-basic-automation--intelligent-naming-recommended)
@@ -389,6 +391,54 @@ Currently, notification fires too early (step 3 of current workflow) and Claude 
 - Testing (~30 min)
 
 **Maintenance**: Low - policy + simple naming rules
+
+---
+
+## Options Comparison Table
+
+| Option | Key Features | Pros Summary | Cons Summary | Effort | Maintenance |
+|--------|-------------|--------------|--------------|--------|-------------|
+| **Option 1: Basic Automation** | Auto-monitor, timestamp filenames (`test-report-2025-11-22-1042.md`) | ✅ Zero user intervention<br>✅ No script changes<br>✅ Fast (30-60 min)<br>✅ Simple | ❌ Generic filenames lack context<br>❌ Doesn't match existing convention<br>❌ Hard to find reports later | 1-2 hrs | Low |
+| **Option 2: Two-Stage Notifications** | Quiet notification → signal file → loud notification | ✅ User knows analysis in progress<br>✅ Final notification means "truly done"<br>✅ Clear workflow | ❌ Requires script modification<br>❌ Signal file can fail<br>❌ Still needs Option 1<br>❌ More moving parts | 3-4 hrs | Medium |
+| **Option 3: Claude API Integration** | Script calls Claude API directly | ✅ Fully automated<br>✅ Works without Claude Code<br>✅ Clear boundary | ❌ API costs every run<br>❌ Complex error handling<br>❌ Loses session context<br>❌ Can't update issues intelligently<br>❌ Overkill | 8-10 hrs | High |
+| **Option 4: Intelligent Naming** ⭐ | Context analysis → propose filename → user confirms | ✅ Self-documenting filenames<br>✅ Matches convention<br>✅ Easy to find later<br>✅ User control | ❌ 30s confirmation delay<br>❌ Claude might guess wrong<br>❌ More complex logic | 2-3 hrs | Low |
+| **Option 5: Two-Stage + Naming** ⭐⭐ | Combines Option 2 + Option 4 | ✅ Best of both worlds<br>✅ User knows progress<br>✅ Self-documenting names<br>✅ Final notification when done | ❌ Most complex<br>❌ Requires script changes<br>❌ Signal file can fail<br>❌ Confirmation delay | 5-7 hrs | Medium |
+| **Option 6: Basic + Naming** ⭐⭐⭐ | Combines Option 1 + Option 4 (RECOMMENDED) | ✅ Solves both problems<br>✅ No script changes<br>✅ Self-documenting names<br>✅ User control<br>✅ Fast implementation<br>✅ Can evolve to Option 5 | ❌ Confirmation delay (30s)<br>❌ Claude might guess wrong<br>❌ No two-stage notifications | 2-3 hrs | Low |
+
+### Quick Decision Guide
+
+**Choose Option 1 if:**
+- You just want automation ASAP
+- Timestamp filenames are acceptable
+- Don't care about discoverability
+
+**Choose Option 2 if:**
+- You want clear progress indication
+- Willing to modify script
+- Don't mind signal file complexity
+
+**Choose Option 3 if:**
+- Need to work without Claude Code session
+- API costs acceptable
+- Want complete separation of concerns
+
+**Choose Option 4 if:**
+- Descriptive filenames are critical
+- Willing to confirm each report
+- Don't need two-stage notifications
+
+**Choose Option 5 if:**
+- Want best user experience
+- Willing to invest 5-7 hours
+- Need both features (notifications + naming)
+
+**Choose Option 6 if:** ⭐⭐⭐ (RECOMMENDED)
+- Want both automation + naming (best value)
+- Need immediate deployment (no script changes)
+- Want to iterate (can add Option 2 later)
+- Descriptive filenames important for organization
+
+---
 
 ## Decision
 
