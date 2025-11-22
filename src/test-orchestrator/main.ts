@@ -32,6 +32,7 @@ async function main() {
   // Signal comprehensive testing (enables load-aware timeouts)
   // This env var is checked by global-setup.ts and propagated to Playwright workers
   // (ISSUE-056: Playwright workers don't inherit command-line env vars reliably)
+  // (ISSUE-064: E2E tests use 4-project architecture with workers=1 for deterministic execution)
   process.env.COMPREHENSIVE_TESTS = 'true';
 
   // Parse command-line arguments

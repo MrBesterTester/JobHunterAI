@@ -12,6 +12,8 @@
 #   2. BUILD PHASE (cargo clean + build, npm build, E2E typecheck)
 #      - Quality Gate: Zero warnings/errors required
 #   3. TEST PHASE (backend + frontend + E2E concurrently)
+#      - E2E uses 4-project architecture (ISSUE-064): Read-Only → State-Modifying → Integration → LLM
+#      - True serial execution (workers=1) for deterministic behavior
 #   4. REPORT & NOTIFY (JSON report + desktop notification)
 #
 # Usage:
@@ -54,10 +56,11 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Estimated runtime configuration (in minutes)
-# Based on actual comprehensive test runs with isolated project optimization (ISSUE-064)
-# Latest run: 12.6 minutes (755s) - 2025-11-21
-ESTIMATED_MIN_MINUTES=12
-ESTIMATED_MAX_MINUTES=15
+# Based on actual comprehensive test runs with 4-project serial architecture (ISSUE-064 Day 3)
+# Latest run: 20 minutes - 2025-11-21 (595 E2E tests with workers=1, true serial execution)
+# Breakdown: Backend (~2 min) + Frontend (~0.5 min) + E2E (~20 min) + Builds (~2 min) = ~24-25 min total
+ESTIMATED_MIN_MINUTES=24
+ESTIMATED_MAX_MINUTES=26
 
 echo -e "${BLUE}╔═══════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║       COMPREHENSIVE TEST ORCHESTRATOR (TypeScript)            ║${NC}"

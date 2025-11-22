@@ -1,0 +1,175 @@
+import { defineConfig, devices } from '@playwright/test';
+import * as path from 'path';
+import * as dotenv from 'dotenv';
+
+/**
+ * Load .env.playwright for reliable environment variable propagation to workers
+ *
+ * ISSUE-056: Playwright workers don't reliably inherit env vars from spawn() on all platforms.
+ * The test orchestrator writes .env.playwright before running tests, and we load it here
+ * using dotenv (which sets env vars at Node.js level before workers spawn).
+ *
+ * Using dotenv.config() ensures environment variables are set at a low enough level
+ * that Node.js child processes (Playwright workers) inherit them reliably.
+ */
+const envFile = path.join(__dirname, '.env.playwright');
+const result = dotenv.config({ path: envFile, override: true });
+
+if (!result.error && result.parsed) {
+  console.log('🎭 Playwright: Loaded .env.playwright for worker process propagation');
+  Object.entries(result.parsed).forEach(([key, value]) => {
+    console.log(`  ✅ Set ${key}=${value}`);
+  });
+}
+
+
+/**
+ * Playwright Configuration for JobHunter Frontend Testing
+ *
+ * Multi-Browser Strategy:
+ * - Chromium: Primary target (100% test coverage, every run)
+ * - Firefox: CI/CD only (cross-browser validation)
+ * - WebKit: CI/CD only (Safari-equivalent testing)
+ *
+ * Test Suite Timing (based on October 29, 2025 post-RSBuild test run):
+ * - E2E Tests: 15.9 minutes reported / 11 min wall clock (529 tests, 4 workers)
+ * - Recommended CI/CD Timeout: 20 minutes (with 20.5% buffer)
+ * - Global Timeout: 20 minutes (adequate for CI/CD variability)
+ */
+export default defineConfig({
+  // Test directory structure
+  testDir: './e2e/tests',
+
+  // Maximum time one test can run
+  // ISSUE-056: Load-aware timeout - comprehensive tests need longer due to 4 parallel workers
+  timeout: process.env.COMPREHENSIVE_TESTS ? 90 * 1000 : 30 * 1000,
+
+  // Global timeout for entire test suite (all tests must complete within this time)
+  globalTimeout: 20 * 60 * 1000, // 20 minutes (safety buffer for CI/CD)
+
+  // Test execution settings
+  fullyParallel: true,
+  workers: process.env.CI ? 4 : 4, // 4 parallel workers
+  retries: process.env.CI ? 2 : 1, // Retry flaky tests
+  reporter: [
+    ['html', { open: 'never' }],  // Generate HTML report but don't auto-serve it
+    ['list'],
+    ['json', { outputFile: 'test-results/results.json' }]
+  ],
+
+  // Shared settings for all projects
+  use: {
+    // Base URL for tests
+    baseURL: 'http://localhost:3000',
+
+    // Collect trace on first retry
+    trace: 'on-first-retry',
+
+    // Screenshot on failure
+    screenshot: 'only-on-failure',
+
+    // Video on failure
+    video: 'retain-on-failure',
+
+    // Maximum time for each action (click, fill, etc.)
+    // ISSUE-056: Load-aware timeout - comprehensive tests need longer timeouts due to 4 parallel workers
+    // ISSUE-063: Increased from 60s to 120s to accommodate Gmail sync operations that take >60s under load
+    actionTimeout: process.env.COMPREHENSIVE_TESTS ? 120 * 1000 : 10 * 1000,
+
+    // Navigation timeout
+    // ISSUE-056: Load-aware timeout - comprehensive tests need longer timeouts due to 4 parallel workers
+    navigationTimeout: process.env.COMPREHENSIVE_TESTS ? 60 * 1000 : 30 * 1000,
+  },
+
+  // Test projects for different browsers
+  projects: [
+    // Isolated tests project - runs FIRST with complete database isolation
+    // These tests require specific database state and must complete before any other tests start
+    {
+      name: 'chromium-isolated',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1920, height: 1080 },
+      },
+      testMatch: [
+        '**/16-gmail-sync-integration.spec.ts',
+        '**/23-description-quality.spec.ts',
+      ],
+    },
+
+    // Main chromium project - runs AFTER isolated tests complete
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1920, height: 1080 },
+      },
+      // Exclude isolated tests from main parallel execution
+      testIgnore: [
+        '**/16-gmail-sync-integration.spec.ts',
+        '**/23-description-quality.spec.ts',
+      ],
+      // Wait for isolated tests to complete first
+      dependencies: ['chromium-isolated'],
+    },
+
+    {
+      name: 'firefox',
+      use: {
+        ...devices['Desktop Firefox'],
+        viewport: { width: 1920, height: 1080 },
+      },
+      // Only run in CI or when explicitly requested
+      testIgnore: process.env.CI ? undefined : /.*/,
+      // Wait for isolated tests to complete first
+      dependencies: ['chromium-isolated'],
+    },
+
+    {
+      name: 'webkit',
+      use: {
+        ...devices['Desktop Safari'],
+        viewport: { width: 1920, height: 1080 },
+      },
+      // Only run in CI or when explicitly requested
+      testIgnore: process.env.CI ? undefined : /.*/,
+      // Wait for isolated tests to complete first
+      dependencies: ['chromium-isolated'],
+    },
+
+    // Mobile viewports for responsive testing
+    {
+      name: 'mobile-chrome',
+      use: { ...devices['Pixel 5'] },
+      testMatch: '**/08-responsive-design.spec.ts', // Only responsive tests
+      // Wait for isolated tests to complete first
+      dependencies: ['chromium-isolated'],
+    },
+
+    {
+      name: 'mobile-safari',
+      use: { ...devices['iPhone 12'] },
+      testMatch: '**/08-responsive-design.spec.ts', // Only responsive tests
+      testIgnore: process.env.CI ? undefined : /.*/,
+      // Wait for isolated tests to complete first
+      dependencies: ['chromium-isolated'],
+    },
+  ],
+
+  // Web server configuration - start dev server before tests
+  webServer: {
+    command: 'NODE_NO_WARNINGS=1 npm start',  // Suppress Node.js deprecation warnings (CRA webpack-dev-server)
+    url: 'http://localhost:3000',
+    reuseExistingServer: !process.env.CI,
+    timeout: 120 * 1000, // 2 minutes to start
+    stdout: 'ignore',
+    stderr: 'pipe',  // Keep stderr for real errors
+  },
+
+  // Output folder for test artifacts
+  outputDir: 'test-results/',
+
+  // Global setup/teardown
+  globalSetup: require.resolve('./e2e/global-setup.ts'),
+  globalTeardown: require.resolve('./e2e/global-teardown.ts'),
+});

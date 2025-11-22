@@ -49,7 +49,7 @@ export default defineConfig({
 
   // Test execution settings
   fullyParallel: true,
-  workers: process.env.CI ? 4 : 4, // 4 parallel workers
+  workers: 1, // ISSUE-064: Single worker for deterministic execution
   retries: process.env.CI ? 2 : 1, // Retry flaky tests
   reporter: [
     ['html', { open: 'never' }],  // Generate HTML report but don't auto-serve it
@@ -81,38 +81,170 @@ export default defineConfig({
     navigationTimeout: process.env.COMPREHENSIVE_TESTS ? 60 * 1000 : 30 * 1000,
   },
 
-  // Test projects for different browsers
+  // 4-Project Architecture for Deterministic Test Execution (ISSUE-064 Option 6)
+  // Projects run in strict sequence: project-1 → project-2 → project-3 → project-4
+  // Tests within each project run serially (fullyParallel: false, workers: 1)
+  // Only 1 test runs at any moment across entire suite (true serial execution)
+  // This ensures predictable execution order and stable database state
   projects: [
-    // Isolated tests project - runs FIRST with complete database isolation
-    // These tests require specific database state and must complete before any other tests start
+    // ========================================
+    // PROJECT 1: READ-ONLY TESTS (26 files)
+    // ========================================
+    // User Journey: "I open the app, navigate around, explore features, review jobs"
+    // Database State: Read-only validation, no modifications
     {
-      name: 'chromium-isolated',
+      name: 'project-1-read-only',
+      fullyParallel: false,  // Serial execution within project
+      workers: 1,  // ISSUE-064: Force single worker for true serial execution (database stability)
       use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 1920, height: 1080 },
       },
       testMatch: [
-        '**/16-gmail-sync-integration.spec.ts',
-        '**/23-description-quality.spec.ts',
+        // 1. INITIAL SETUP: App loads, basic navigation
+        '**/01-setup-load.spec.ts',
+        '**/02-tab-navigation.spec.ts',
+
+        // 2. JOB DISCOVERY: Dashboard overview
+        '**/06-statistics.spec.ts',
+        '**/07-dashboard-statistics.spec.ts',
+
+        // 3. JOB FILTERING: Find relevant jobs
+        '**/07-filtered-jobs.spec.ts',
+        '**/08-failed-duplicates-tabs.spec.ts',
+        '**/99b-filtered-tab-test.spec.ts',
+
+        // 4. JOB REVIEW: Individual job details
+        '**/05-job-details.spec.ts',
+        '**/17-job-card-summary.spec.ts',
+
+        // 5. JOB EVALUATION: Quality assessment
+        '**/27-job-scoring-system.spec.ts',
+        '**/05-job-tradeoff-display.spec.ts',
+
+        // 6. BADGES & INDICATORS: Visual information
+        '**/05b-new-job-badges.spec.ts',
+        '**/06-job-badge-styling.spec.ts',
+        '**/26-extraction-method-badges.spec.ts',
+        '**/99-extraction-method-badge-test.spec.ts',
+
+        // 7. DESCRIPTIONS: Read job descriptions
+        '**/19-condensed-description.spec.ts',
+
+        // 8. ACTIVITY TRACKING: Timeline & follow-ups
+        '**/14-timeline-view.spec.ts',
+        '**/13-follow-ups-management.spec.ts',
+
+        // 9. DEBUG & ERROR HANDLING: App reliability
+        '**/18-debug-section.spec.ts',
+        '**/09-error-handling.spec.ts',
+
+        // 10. QUALITY CHECKS: Performance & accessibility
+        '**/10-performance.spec.ts',
+        '**/10-performance-debug.spec.ts',
+        '**/11-accessibility.spec.ts',
+
+        // 11. UI POLISH: Scrolling, responsive design
+        '**/20-modal-scrolling.spec.ts',
+        '**/21-scroll-stability.spec.ts',
+        '**/08-responsive-design.spec.ts',
       ],
     },
 
-    // Main chromium project - runs AFTER isolated tests complete
+    // ========================================
+    // PROJECT 2: STATE-MODIFYING TESTS (11 files)
+    // ========================================
+    // User Journey: "I refresh data, approve/reject jobs, schedule interviews, send emails"
+    // Database State: Job status changes, application records, calendar events
     {
-      name: 'chromium',
+      name: 'project-2-state-modifying',
+      fullyParallel: false,  // Serial execution within project
+      workers: 1,  // ISSUE-064: Force single worker for true serial execution (database stability)
       use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 1920, height: 1080 },
       },
-      // Exclude isolated tests from main parallel execution
-      testIgnore: [
-        '**/16-gmail-sync-integration.spec.ts',
-        '**/23-description-quality.spec.ts',
+      testMatch: [
+        // 1. DATA REFRESH: Get latest data before taking actions
+        '**/22-refresh-buttons.spec.ts',
+        '**/24-refresh-data-button.spec.ts',
+
+        // 2. JOB ACTIONS: Core workflow - approve/reject
+        '**/03-job-status-updates.spec.ts',
+        '**/05-phase-3.1.5-testing-refinement.spec.ts',
+        '**/25-refilter-jobs.spec.ts',
+
+        // 3. INTERVIEW SCHEDULING: Next step after approval
+        '**/12-calendar-management.spec.ts',
+
+        // 4. EMAIL COMMUNICATION: Reach out to companies
+        '**/15-email-composer.spec.ts',
+        '**/20-gmail-send-integration.spec.ts',
+
+        // 5. EMAIL MANAGEMENT: Organize inbox
+        '**/17-gmail-label-management.spec.ts',
+        '**/18-gmail-junk-cleanup.spec.ts',
       ],
-      // Wait for isolated tests to complete first
-      dependencies: ['chromium-isolated'],
+      dependencies: ['project-1-read-only'],  // Wait for read-only tests
     },
 
+    // ========================================
+    // PROJECT 3: INTEGRATION TESTS (5 files)
+    // ========================================
+    // User Journey: "I check intake tab, sync Gmail/MS Mail, pull from job boards"
+    // Database State: External data ingestion, new job records from APIs
+    {
+      name: 'project-3-integration',
+      fullyParallel: false,  // Serial execution within project
+      workers: 1,  // ISSUE-064: Force single worker for true serial execution (database stability)
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1920, height: 1080 },
+      },
+      testMatch: [
+        // 1. INTAKE TAB: Where external jobs first appear
+        '**/15-intake-tab.spec.ts',
+
+        // 2. EMAIL INTEGRATIONS: Sync from email
+        '**/16-gmail-sync-integration.spec.ts',
+        '**/16-microsoft-email-integration.spec.ts',
+
+        // 3. JOB BOARD INTEGRATIONS: External APIs
+        '**/28-rapidapi-sync-integration.spec.ts',
+
+        // 4. CONTENT INTEGRATION: External content generation
+        '**/04-content-generation-integration.spec.ts',
+      ],
+      dependencies: ['project-2-state-modifying'],
+    },
+
+    // ========================================
+    // PROJECT 4: LLM & PERFORMANCE TESTS (2 files)
+    // ========================================
+    // User Journey: "I generate cover letter and resume, ensure quality"
+    // Database State: LLM-generated content (cover letters, descriptions)
+    {
+      name: 'project-4-llm-performance',
+      fullyParallel: false,  // Serial execution within project
+      workers: 1,  // ISSUE-064: Force single worker for true serial execution (database stability)
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1920, height: 1080 },
+      },
+      testMatch: [
+        // 1. CONTENT GENERATION: Create application materials
+        '**/04-content-generation.spec.ts',
+
+        // 2. QUALITY VALIDATION: Ensure output quality
+        '**/23-description-quality.spec.ts',
+      ],
+      dependencies: ['project-3-integration'],
+    },
+
+    // ========================================
+    // CROSS-BROWSER TESTING (CI/CD only)
+    // ========================================
+    // Firefox and WebKit projects run after all 4 main projects complete
     {
       name: 'firefox',
       use: {
@@ -121,8 +253,8 @@ export default defineConfig({
       },
       // Only run in CI or when explicitly requested
       testIgnore: process.env.CI ? undefined : /.*/,
-      // Wait for isolated tests to complete first
-      dependencies: ['chromium-isolated'],
+      // Wait for all 4 main projects to complete first
+      dependencies: ['project-4-llm-performance'],
     },
 
     {
@@ -133,17 +265,20 @@ export default defineConfig({
       },
       // Only run in CI or when explicitly requested
       testIgnore: process.env.CI ? undefined : /.*/,
-      // Wait for isolated tests to complete first
-      dependencies: ['chromium-isolated'],
+      // Wait for all 4 main projects to complete first
+      dependencies: ['project-4-llm-performance'],
     },
 
+    // ========================================
+    // MOBILE TESTING (CI/CD only)
+    // ========================================
     // Mobile viewports for responsive testing
     {
       name: 'mobile-chrome',
       use: { ...devices['Pixel 5'] },
       testMatch: '**/08-responsive-design.spec.ts', // Only responsive tests
-      // Wait for isolated tests to complete first
-      dependencies: ['chromium-isolated'],
+      // Wait for all 4 main projects to complete first
+      dependencies: ['project-4-llm-performance'],
     },
 
     {
@@ -151,8 +286,8 @@ export default defineConfig({
       use: { ...devices['iPhone 12'] },
       testMatch: '**/08-responsive-design.spec.ts', // Only responsive tests
       testIgnore: process.env.CI ? undefined : /.*/,
-      // Wait for isolated tests to complete first
-      dependencies: ['chromium-isolated'],
+      // Wait for all 4 main projects to complete first
+      dependencies: ['project-4-llm-performance'],
     },
   ],
 
