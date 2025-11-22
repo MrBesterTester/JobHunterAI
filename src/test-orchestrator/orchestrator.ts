@@ -392,26 +392,27 @@ export class TestOrchestrator {
   }
 
   /**
-   * Check OAuth token expiry (with auto-refresh if expired)
+   * Validate OAuth tokens (checks both access and refresh tokens)
+   * Uses validate-oauth-tokens.sh for comprehensive validation
    */
   private async checkOAuthExpiry(): Promise<void> {
     return new Promise((resolve, reject) => {
-      console.log('🔐 Checking OAuth token expiry...');
+      console.log('🔐 Validating OAuth tokens...');
 
-      const oauthScript = spawn('./helper-scripts/refresh-oauth-tokens.sh', [], {
+      const oauthScript = spawn('./helper-scripts/validate-oauth-tokens.sh', [], {
         cwd: path.join(__dirname, '../..'),
         stdio: 'inherit'
       });
 
       oauthScript.on('close', (code) => {
         if (code !== 0) {
-          console.error('❌ OAuth token validation FAILED');
-          console.error('   Tokens are expired or invalid');
-          console.error('   Run: ./helper-scripts/setup-test-oauth.sh');
-          reject(new Error('OAuth tokens expired or invalid'));
+          // Validation script provides detailed error messages
+          // Exit code 1 = refresh tokens invalid (needs re-auth)
+          // Exit code 2 = configuration error (.env.test missing)
+          reject(new Error('OAuth token validation failed'));
           return;
         }
-        console.log('✅ OAuth tokens valid\n');
+        console.log('✅ OAuth tokens validated\n');
         resolve();
       });
 

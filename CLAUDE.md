@@ -358,6 +358,72 @@ cd backend && cargo test && cd ../frontend && npm test
 - **Orchestrator README**: `src/test-orchestrator/README.md`
 - **E2E best practices**: `docs/PLAYWRIGHT_BEST_PRACTICES.md` ← **Required reading for E2E test work**
 
+**OAuth Token Management Policy** 🔐:
+
+**⚠️ CRITICAL: NEVER try to orchestrate interactive OAuth flows programmatically**
+
+OAuth tokens enable E2E tests to access real Gmail and Microsoft Mail accounts. These tokens have specific expiration rules that require understanding.
+
+**Token Lifecycle**:
+- **Access tokens**: Expire in 60-90 minutes (auto-refreshed by test orchestrator)
+- **Refresh tokens (Google)**: Valid indefinitely UNLESS:
+  - Unused for 6+ months
+  - Password changed
+  - Explicitly revoked
+  - OAuth app in "Testing" mode (7-day expiry)
+  - 100 token limit reached (creating #101 invalidates #1)
+- **Refresh tokens (Microsoft)**: 90-day expiration (each refresh generates new 90-day token)
+
+**Before Running Comprehensive Tests**:
+
+The test orchestrator automatically validates OAuth tokens during preflight. If validation fails:
+
+1. **STOP IMMEDIATELY** - Do not attempt to run tests
+2. **DO NOT** try to run `setup-test-oauth.sh` programmatically
+3. **INFORM USER** that OAuth tokens need refresh
+4. **PROVIDE COMMAND**: `./helper-scripts/setup-test-oauth.sh`
+5. **EXPLAIN**: This opens browser for OAuth authorization (requires user interaction)
+6. **ESTIMATE**: Takes 2-3 minutes to complete
+
+**Why This Is Critical**:
+- OAuth authorization codes expire in ~10 minutes
+- Interactive flow requires user to paste callback URLs
+- Programmatic attempts will fail due to timeout/coordination issues
+- Failed attempts create more refresh tokens (worsening Google's 100 token limit)
+
+**Validation vs. Setup Scripts**:
+- `./helper-scripts/validate-oauth-tokens.sh` - Check token validity (automated, safe)
+- `./helper-scripts/setup-test-oauth.sh` - Get new tokens (interactive, USER MUST RUN)
+
+**When OAuth Validation Fails**:
+
+```bash
+# Correct approach (user runs manually)
+./helper-scripts/setup-test-oauth.sh
+# Follow prompts, authorize in browser, paste callback URLs
+# Estimated time: 2-3 minutes
+
+# Then re-run comprehensive tests
+./run-comprehensive-tests.sh
+```
+
+**Common Failure Messages**:
+- `"invalid_grant"` / `"Token has been expired or revoked"` → Refresh token invalid
+- `"Bad Request"` → Authorization code expired (took too long)
+- `"error": "invalid_grant", "error_description": "Malformed auth code"` → Code already used
+
+**Quarterly Maintenance** (Recommended):
+- Microsoft refresh tokens expire every 90 days
+- Set calendar reminder to re-run `setup-test-oauth.sh` quarterly
+- Prevents unexpected test failures from token expiration
+
+**Documentation**:
+- Token analysis: `docs/OAUTH_TOKEN_ANALYSIS.md`
+- Validation script: `helper-scripts/validate-oauth-tokens.sh`
+- Setup script: `helper-scripts/setup-test-oauth.sh`
+
+---
+
 **Analyzing Test Results - Phased Approach** ⭐:
 
 When creating summary reports after comprehensive test runs, use this **phased approach for maximum token efficiency**:
