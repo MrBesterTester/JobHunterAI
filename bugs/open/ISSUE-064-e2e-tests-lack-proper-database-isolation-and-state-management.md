@@ -16,13 +16,9 @@ related: [PLAYWRIGHT_BEST_PRACTICES.md]
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-- [🚨 IMPLEMENTATION ROADMAP - LE PROBLEMA DU JOUR](#-implementation-roadmap---le-problema-du-jour)
-  - [Phase 1: Foundation (COMPLETED ✅)](#phase-1-foundation-completed-)
-  - [Phase 2: Backend Connection Strategy (COMPLETED ✅)](#phase-2-backend-connection-strategy-completed-)
-  - [Phase 3: Playwright Worker Fixture (COMPLETED ✅)](#phase-3-playwright-worker-fixture-completed-)
-  - [Phase 4: Full Rollout (COMPLETED ✅)](#phase-4-full-rollout-completed-)
-  - [Phase 5: Cleanup (PENDING)](#phase-5-cleanup-pending)
-  - [Key Questions to Track](#key-questions-to-track)
+- [Next Steps: Path Forward](#next-steps-path-forward)
+  - [1. **Execute Rollback Plan** (2-3 hours)](#1-execute-rollback-plan-2-3-hours)
+  - [2. **Implement Option 6: 4-Project Architecture** (3-5 days)](#2-implement-option-6-4-project-architecture-3-5-days)
 - [Remaining Challenge: Inter-Test Isolation](#remaining-challenge-inter-test-isolation)
   - [What We've Solved (Inter-Worker Conflicts)](#what-weve-solved-inter-worker-conflicts)
   - [What Remains Unsolved (Inter-Test Conflicts)](#what-remains-unsolved-inter-test-conflicts)
@@ -70,242 +66,50 @@ related: [PLAYWRIGHT_BEST_PRACTICES.md]
 - [Status History](#status-history)
 - [Notes](#notes)
 - [Related Files](#related-files)
+- [Phase 1-5 Implementation History (Superseded by Option 6)](#phase-1-5-implementation-history-superseded-by-option-6)
+  - [🚨 IMPLEMENTATION ROADMAP - LE PROBLEMA DU JOUR](#-implementation-roadmap---le-problema-du-jour)
+  - [Phase 1: Foundation (COMPLETED ✅)](#phase-1-foundation-completed-)
+  - [Phase 2: Backend Connection Strategy (COMPLETED ✅)](#phase-2-backend-connection-strategy-completed-)
+  - [Phase 3: Playwright Worker Fixture (COMPLETED ✅)](#phase-3-playwright-worker-fixture-completed-)
+  - [Phase 4: Full Rollout (COMPLETED ✅)](#phase-4-full-rollout-completed-)
+  - [Phase 5: Cleanup (PENDING)](#phase-5-cleanup-pending)
+  - [Key Questions to Track](#key-questions-to-track)
+  - [Lessons Learned](#lessons-learned)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ---
 
-## 🚨 IMPLEMENTATION ROADMAP - LE PROBLEMA DU JOUR
+## Next Steps: Path Forward
 
-**Status**: 🔬 Prototyping Complete → 🔧 Implementation Phase
+**Current Situation**: Phase 1-5 implemented per-worker database isolation, but this approach doesn't solve the core problem of non-deterministic test execution order. We need to roll back and implement a better solution.
 
-**Solution**: Option 1 (Per-Worker Database Isolation) - **VALIDATED** ✅
-- ✅ Prototype successful (947ms startup, 0.18 MB memory)
-- ✅ Schema fixes committed (a8b231a)
-- 🔧 Ready for implementation
+**Recommended Action Plan**:
 
----
+### 1. **Execute Rollback Plan** (2-3 hours)
 
-### Phase 1: Foundation (COMPLETED ✅)
+Revert Phase 1-5 infrastructure while keeping valuable improvements:
+- ✅ **Keep**: Realistic test data (100-120 word job descriptions)
+- ❌ **Undo**: Backend worker pools, fixtures, per-worker seeding
+- 📋 **Details**: See [Rollback Plan: Reverting to Pre-Phase 1 State](#rollback-plan-reverting-to-pre-phase-1-state)
 
-- [x] **Prototype validation** (Commit: a8b231a)
-  - Created 4 worker databases in parallel
-  - Measured startup time: 947ms (acceptable!)
-  - Measured memory: 0.18 MB (negligible!)
-  - Verified data: 45 jobs + 15 email_jobs per database
-- [x] **Schema synchronization**
-  - Added `extraction_method` column to jobs table
-  - Added `source` column to email_jobs table
-  - Schema now matches production
+### 2. **Implement Option 6: 4-Project Architecture** (3-5 days)
 
-### Phase 2: Backend Connection Strategy (COMPLETED ✅)
+Replace per-worker isolation with deterministic test execution order:
+- **4 test projects** with strict dependencies and serial execution within each
+- **Projects**: read-only → state-modifying → integration → LLM/performance
+- **Runtime**: 15-20 minutes (Option B: parallel projects)
+- **Benefits**: Perfect isolation, perfect repeatability, zero flakiness risk
+- 📋 **Details**: See [Option 6: 4-Project Architecture with Deterministic Ordering](#option-6-4-project-architecture-with-deterministic-ordering-recommended-)
 
-**Decision**: Option A (Request Header) - **IMPLEMENTED AND TESTED** ✅
+**Why This Approach?**
+- ✅ Addresses root cause: non-deterministic test order
+- ✅ No backend changes required (simple rollback)
+- ✅ Maintains parallelization benefits (4 projects run concurrently)
+- ✅ Easy to debug (predictable execution order)
+- ✅ Zero flakiness risk (tests run in stable database state)
 
-**Implementation Details**:
-```rust
-// Backend - DatabasePools struct holds all pools
-struct DatabasePools {
-    default_pool: PgPool,
-    worker_pools: HashMap<usize, PgPool>,
-}
-
-// Backend - WorkerPool extractor reads X-Worker-Index header
-impl FromRequest for WorkerPool {
-    fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
-        // Read X-Worker-Index header
-        // Select worker pool or fallback to default
-    }
-}
-
-// Playwright fixture (Phase 3 implementation)
-page.setExtraHTTPHeaders({
-  'X-Worker-Index': testInfo.workerIndex.toString()
-});
-```
-
-**Test Results** ✅:
-- Worker 0-3: All route correctly to `jobhunter_test_worker_{0-3}`
-- Invalid index (e.g., 99): Falls back to default database
-- No header: Uses default database (jobhunter_personal)
-- Backend startup: "Worker databases: 4 connected"
-
-**Tasks**:
-- [x] Decide on backend connection strategy (Option A selected)
-- [x] Implement backend database connection logic
-- [x] Test backend connection with worker databases
-- [x] Verify routing works for all workers (0-3)
-- [x] Verify fallback to default database
-- [x] Commit implementation (382ca73)
-
-### Phase 3: Playwright Worker Fixture (COMPLETED ✅)
-
-**File**: `frontend/e2e/fixtures/worker-database.ts` ✅ **CREATED**
-
-**Tasks**:
-- [x] Create worker-scoped fixture
-- [x] Implement database creation/seeding per worker
-- [x] Implement database cleanup on worker teardown
-- [x] Configure backend connection (X-Worker-Index header)
-- [x] Test with sample E2E tests (3 tests created)
-
-**Test Results** ✅:
-- **Test file**: `frontend/e2e/tests/99-worker-database-fixture-test.spec.ts`
-- **Tests**: 13 passed in 23.3 seconds
-- **Workers**: 2 and 3 (automatic assignment)
-- **Database lifecycle**: Successfully created and cleaned up per worker
-- **Console output verification**:
-  - `[Worker 2] Creating database: jobhunter_test_worker_2`
-  - `[Worker 3] Creating database: jobhunter_test_worker_3`
-  - `[Worker 2] ✅ Database dropped: jobhunter_test_worker_2`
-  - `[Worker 3] ✅ Database dropped: jobhunter_test_worker_3`
-
-**Implementation Details**:
-```typescript
-export const test = base.extend<{}, WorkerFixtures>({
-  workerDatabase: [async ({ }, use, workerInfo) => {
-    const workerIndex = workerInfo.workerIndex;
-    const dbName = `jobhunter_test_worker_${workerIndex}`;
-
-    // Setup: Create and seed worker database
-    await createWorkerDatabase(workerIndex);
-
-    // Provide database name to tests
-    await use(dbName);
-
-    // Teardown: Drop worker database
-    await dropWorkerDatabase(workerIndex);
-  }, { scope: 'worker' }],
-});
-
-// Extended page fixture with automatic X-Worker-Index header
-export const testWithPage = test.extend<{ page: Page }>({
-  page: async ({ page, workerDatabase }, use, workerInfo) => {
-    await page.setExtraHTTPHeaders({
-      'X-Worker-Index': workerInfo.workerIndex.toString()
-    });
-    await use(page);
-  },
-});
-```
-
-**Commit**: fe7d650
-
-### Phase 4: Full Rollout (COMPLETED ✅)
-
-**Status**: All 44 test files updated to use per-worker database isolation
-
-**Tasks**:
-- [x] Enhanced worker-database fixture with MS Mail seeding and score calculation
-- [x] Updated all 44 test files to import from `../fixtures/worker-database`
-- [x] Removed global-setup database seeding (now handled by worker fixtures)
-- [x] Tested enhanced fixture (13/13 tests passed in 22.0s)
-- [x] Test with full E2E suite (567 tests, 4 workers) - **✅ COMPLETED**
-- [x] Verify all tests pass with isolation - **389 E2E tests passed!**
-- [x] Monitor test execution time (should stay <15 min) - **12.8 min ✅**
-
-**Implementation Details**:
-
-1. **Enhanced Worker Fixture** (`frontend/e2e/fixtures/worker-database.ts`):
-   ```typescript
-   async function initializeWorkerDatabase(workerIndex: number): Promise<void> {
-     // Step 1: Create database and seed SQL data
-     await createWorkerDatabase(workerIndex);
-
-     // Step 2: Seed MS Mail test data via API (with X-Worker-Index header)
-     await seedMSMailData(workerIndex);
-
-     // Step 3: Calculate job scores via API (with X-Worker-Index header)
-     await calculateAllJobScores(workerIndex);
-   }
-
-   export const test = base.extend<{ page: Page }, WorkerFixtures>({
-     workerDatabase: [async ({ }, use, workerInfo) => {
-       await initializeWorkerDatabase(workerInfo.workerIndex);
-       await use(`jobhunter_test_worker_${workerInfo.workerIndex}`);
-       await dropWorkerDatabase(workerInfo.workerIndex);
-     }, { scope: 'worker' }],
-
-     // Automatic X-Worker-Index header on all page requests
-     page: async ({ page }, use, workerInfo) => {
-       await page.setExtraHTTPHeaders({
-         'X-Worker-Index': workerInfo.workerIndex.toString()
-       });
-       await use(page);
-     },
-   });
-   ```
-
-2. **Bulk Test File Update**:
-   - Changed all 44 test files from `import { test, expect } from '@playwright/test'`
-   - To: `import { test, expect } from '../fixtures/worker-database'`
-   - Bulk update via sed: `sed -i '' "s/from '@playwright\/test'/from '..\/fixtures\/worker-database'/g"`
-   - Fixture exports `{ test, expect, type Page }` for full compatibility
-
-3. **Global Setup Simplification** (`frontend/e2e/global-setup.ts`):
-   - Removed: `seedTestData()`, `seedMSMailData()`, `calculateAllJobScores()`
-   - Kept: Backend health check and startup logic
-   - Added documentation: "Database seeding now handled by per-worker fixtures"
-
-**Test Results** ✅:
-
-1. **Validation Test** (Initial Prototype):
-   - **Tests**: 13 passed in 22.0 seconds
-   - **Workers Used**: 2 and 3 (automatic Playwright assignment)
-   - **Console Output**: `[Worker 2] ✅ Worker database fully initialized`
-
-2. **Comprehensive Test Run** (Full E2E Suite):
-   - **Timestamp**: 2025-11-21, 12:54 PM PST
-   - **Total Duration**: 767.7s (12.8 minutes) - Under 15-minute target ✅
-   - **Backend Tests**: 32 passed, 0 failed, 4 skipped (132.1s)
-   - **Frontend Tests**: 516 passed, 0 failed, 1 skipped (83.8s)
-   - **E2E Tests**: 389 passed, 2 failed, 205 skipped (647.5s = 10.8 min)
-   - **Total**: 937 passed, 2 failed, 210 skipped
-   - **E2E Failures** (unrelated to isolation):
-     - `07-dashboard-statistics.spec.ts` - "Total should equal discovered job opportunities from intake" (2 failures, likely retries)
-     - This is a test logic issue, NOT a database isolation issue
-
-**Key Achievement**: **389 E2E tests passed** confirms that per-worker database isolation is working correctly across the full test suite!
-
-**Architecture**:
-```
-Worker 0 (process) → jobhunter_test_worker_0
-  ├─ Creates isolated database at startup
-  ├─ Seeds: schema + SQL data + MS Mail + job scores
-  ├─ Runs ~142 tests sequentially (tests share this database)
-  └─ Drops database at teardown
-
-Worker 1-3 → same pattern (jobhunter_test_worker_1, _2, _3)
-```
-
-**Key Architectural Note**:
-- ✅ **Solves**: Inter-worker conflicts (workers can't interfere with each other)
-- ⚠️ **Does NOT solve**: Inter-test conflicts within a worker (tests on same worker share database state sequentially)
-- See "Remaining Challenge: Inter-Test Isolation" section for Options 5A-5D to address intra-worker test dependencies
-
-**Commits**:
-- c3de7b9: Rollout to all 44 test files + global-setup updates
-- fe7d650: Original worker fixture implementation (Phase 3)
-
-### Phase 5: Cleanup (PENDING)
-
-**Tasks**:
-- [ ] Remove serial mode from `03-job-status-updates.spec.ts`
-- [ ] Remove `chromium-isolated` project workaround
-- [ ] Remove serial mode from any other tests using it
-- [ ] Update `PLAYWRIGHT_BEST_PRACTICES.md` with new pattern
-- [ ] Archive prototype script (or move to helper-scripts/)
-
----
-
-### Key Questions to Track
-
-1. **Database Naming**: `jobhunter_test_worker_{0-3}` ✅ (decided)
-2. **Backend Connection**: Request header vs per-worker backend? 🔧 (needs decision)
-3. **Seed Data Location**: Reuse `database/seed_test_data.sql`? ✅ (yes)
-4. **Worker Assignment**: Automatic via Playwright? ✅ (yes, no manual mapping needed)
-5. **Database Lifecycle**: Create on worker start, destroy on worker end? 🔧 (needs validation)
-6. **OAuth Credentials**: How to handle per-worker? 🔧 (needs investigation)
+**Status**: Awaiting decision to proceed with rollback + Option 6 implementation
 
 ---
 
@@ -1228,3 +1032,269 @@ cd frontend && for i in {1..10}; do npx playwright test --workers=4; done
 - `backend/src/main.rs` - Database connection management
 - `database/schema.sql` - Database schema
 - `database/seed_test_data.sql` - Test data seeding script
+
+---
+
+## Phase 1-5 Implementation History (Superseded by Option 6)
+
+> **⚠️ HISTORICAL CONTEXT**
+> This section documents Phase 1-5 work that implemented per-worker database isolation.
+> **Status**: This approach has been **superseded by Option 6** (4-Project Architecture).
+> **Action**: See [Rollback Plan](#rollback-plan-reverting-to-pre-phase-1-state) to revert this work.
+> This section is preserved for historical reference and to document lessons learned.
+
+---
+
+### 🚨 IMPLEMENTATION ROADMAP - LE PROBLEMA DU JOUR
+
+**Status**: 🔬 Prototyping Complete → 🔧 Implementation Phase → ⚠️ **SUPERSEDED**
+
+**Solution**: Option 1 (Per-Worker Database Isolation) - **VALIDATED** ✅ → **SUPERSEDED by Option 6** ⚠️
+- ✅ Prototype successful (947ms startup, 0.18 MB memory)
+- ✅ Schema fixes committed (a8b231a)
+- ⚠️ **Does not solve core problem**: Non-deterministic test execution order
+- ⚠️ **Superseded by**: Option 6 (4-Project Architecture with Deterministic Ordering)
+
+---
+
+### Phase 1: Foundation (COMPLETED ✅)
+
+- [x] **Prototype validation** (Commit: a8b231a)
+  - Created 4 worker databases in parallel
+  - Measured startup time: 947ms (acceptable!)
+  - Measured memory: 0.18 MB (negligible!)
+  - Verified data: 45 jobs + 15 email_jobs per database
+- [x] **Schema synchronization**
+  - Added `extraction_method` column to jobs table
+  - Added `source` column to email_jobs table
+  - Schema now matches production
+
+### Phase 2: Backend Connection Strategy (COMPLETED ✅)
+
+**Decision**: Option A (Request Header) - **IMPLEMENTED AND TESTED** ✅
+
+**Implementation Details**:
+```rust
+// Backend - DatabasePools struct holds all pools
+struct DatabasePools {
+    default_pool: PgPool,
+    worker_pools: HashMap<usize, PgPool>,
+}
+
+// Backend - WorkerPool extractor reads X-Worker-Index header
+impl FromRequest for WorkerPool {
+    fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
+        // Read X-Worker-Index header
+        // Select worker pool or fallback to default
+    }
+}
+
+// Playwright fixture (Phase 3 implementation)
+page.setExtraHTTPHeaders({
+  'X-Worker-Index': testInfo.workerIndex.toString()
+});
+```
+
+**Test Results** ✅:
+- Worker 0-3: All route correctly to `jobhunter_test_worker_{0-3}`
+- Invalid index (e.g., 99): Falls back to default database
+- No header: Uses default database (jobhunter_personal)
+- Backend startup: "Worker databases: 4 connected"
+
+**Tasks**:
+- [x] Decide on backend connection strategy (Option A selected)
+- [x] Implement backend database connection logic
+- [x] Test backend connection with worker databases
+- [x] Verify routing works for all workers (0-3)
+- [x] Verify fallback to default database
+- [x] Commit implementation (382ca73)
+
+### Phase 3: Playwright Worker Fixture (COMPLETED ✅)
+
+**File**: `frontend/e2e/fixtures/worker-database.ts` ✅ **CREATED**
+
+**Tasks**:
+- [x] Create worker-scoped fixture
+- [x] Implement database creation/seeding per worker
+- [x] Implement database cleanup on worker teardown
+- [x] Configure backend connection (X-Worker-Index header)
+- [x] Test with sample E2E tests (3 tests created)
+
+**Test Results** ✅:
+- **Test file**: `frontend/e2e/tests/99-worker-database-fixture-test.spec.ts`
+- **Tests**: 13 passed in 23.3 seconds
+- **Workers**: 2 and 3 (automatic assignment)
+- **Database lifecycle**: Successfully created and cleaned up per worker
+- **Console output verification**:
+  - `[Worker 2] Creating database: jobhunter_test_worker_2`
+  - `[Worker 3] Creating database: jobhunter_test_worker_3`
+  - `[Worker 2] ✅ Database dropped: jobhunter_test_worker_2`
+  - `[Worker 3] ✅ Database dropped: jobhunter_test_worker_3`
+
+**Implementation Details**:
+```typescript
+export const test = base.extend<{}, WorkerFixtures>({
+  workerDatabase: [async ({ }, use, workerInfo) => {
+    const workerIndex = workerInfo.workerIndex;
+    const dbName = `jobhunter_test_worker_${workerIndex}`;
+
+    // Setup: Create and seed worker database
+    await createWorkerDatabase(workerIndex);
+
+    // Provide database name to tests
+    await use(dbName);
+
+    // Teardown: Drop worker database
+    await dropWorkerDatabase(workerIndex);
+  }, { scope: 'worker' }],
+});
+
+// Extended page fixture with automatic X-Worker-Index header
+export const testWithPage = test.extend<{ page: Page }>({
+  page: async ({ page, workerDatabase }, use, workerInfo) => {
+    await page.setExtraHTTPHeaders({
+      'X-Worker-Index': workerInfo.workerIndex.toString()
+    });
+    await use(page);
+  },
+});
+```
+
+**Commit**: fe7d650
+
+### Phase 4: Full Rollout (COMPLETED ✅)
+
+**Status**: All 44 test files updated to use per-worker database isolation
+
+**Tasks**:
+- [x] Enhanced worker-database fixture with MS Mail seeding and score calculation
+- [x] Updated all 44 test files to import from `../fixtures/worker-database`
+- [x] Removed global-setup database seeding (now handled by worker fixtures)
+- [x] Tested enhanced fixture (13/13 tests passed in 22.0s)
+- [x] Test with full E2E suite (567 tests, 4 workers) - **✅ COMPLETED**
+- [x] Verify all tests pass with isolation - **389 E2E tests passed!**
+- [x] Monitor test execution time (should stay <15 min) - **12.8 min ✅**
+
+**Implementation Details**:
+
+1. **Enhanced Worker Fixture** (`frontend/e2e/fixtures/worker-database.ts`):
+   ```typescript
+   async function initializeWorkerDatabase(workerIndex: number): Promise<void> {
+     // Step 1: Create database and seed SQL data
+     await createWorkerDatabase(workerIndex);
+
+     // Step 2: Seed MS Mail test data via API (with X-Worker-Index header)
+     await seedMSMailData(workerIndex);
+
+     // Step 3: Calculate job scores via API (with X-Worker-Index header)
+     await calculateAllJobScores(workerIndex);
+   }
+
+   export const test = base.extend<{ page: Page }, WorkerFixtures>({
+     workerDatabase: [async ({ }, use, workerInfo) => {
+       await initializeWorkerDatabase(workerInfo.workerIndex);
+       await use(`jobhunter_test_worker_${workerInfo.workerIndex}`);
+       await dropWorkerDatabase(workerInfo.workerIndex);
+     }, { scope: 'worker' }],
+
+     // Automatic X-Worker-Index header on all page requests
+     page: async ({ page }, use, workerInfo) => {
+       await page.setExtraHTTPHeaders({
+         'X-Worker-Index': workerInfo.workerIndex.toString()
+       });
+       await use(page);
+     },
+   });
+   ```
+
+2. **Bulk Test File Update**:
+   - Changed all 44 test files from `import { test, expect } from '@playwright/test'`
+   - To: `import { test, expect } from '../fixtures/worker-database'`
+   - Bulk update via sed: `sed -i '' "s/from '@playwright\/test'/from '..\/fixtures\/worker-database'/g"`
+   - Fixture exports `{ test, expect, type Page }` for full compatibility
+
+3. **Global Setup Simplification** (`frontend/e2e/global-setup.ts`):
+   - Removed: `seedTestData()`, `seedMSMailData()`, `calculateAllJobScores()`
+   - Kept: Backend health check and startup logic
+   - Added documentation: "Database seeding now handled by per-worker fixtures"
+
+**Test Results** ✅:
+
+1. **Validation Test** (Initial Prototype):
+   - **Tests**: 13 passed in 22.0 seconds
+   - **Workers Used**: 2 and 3 (automatic Playwright assignment)
+   - **Console Output**: `[Worker 2] ✅ Worker database fully initialized`
+
+2. **Comprehensive Test Run** (Full E2E Suite):
+   - **Timestamp**: 2025-11-21, 12:54 PM PST
+   - **Total Duration**: 767.7s (12.8 minutes) - Under 15-minute target ✅
+   - **Backend Tests**: 32 passed, 0 failed, 4 skipped (132.1s)
+   - **Frontend Tests**: 516 passed, 0 failed, 1 skipped (83.8s)
+   - **E2E Tests**: 389 passed, 2 failed, 205 skipped (647.5s = 10.8 min)
+   - **Total**: 937 passed, 2 failed, 210 skipped
+   - **E2E Failures** (unrelated to isolation):
+     - `07-dashboard-statistics.spec.ts` - "Total should equal discovered job opportunities from intake" (2 failures, likely retries)
+     - This is a test logic issue, NOT a database isolation issue
+
+**Key Achievement**: **389 E2E tests passed** confirms that per-worker database isolation is working correctly across the full test suite!
+
+**Architecture**:
+```
+Worker 0 (process) → jobhunter_test_worker_0
+  ├─ Creates isolated database at startup
+  ├─ Seeds: schema + SQL data + MS Mail + job scores
+  ├─ Runs ~142 tests sequentially (tests share this database)
+  └─ Drops database at teardown
+
+Worker 1-3 → same pattern (jobhunter_test_worker_1, _2, _3)
+```
+
+**Key Architectural Note**:
+- ✅ **Solves**: Inter-worker conflicts (workers can't interfere with each other)
+- ⚠️ **Does NOT solve**: Inter-test conflicts within a worker (tests on same worker share database state sequentially)
+- See "Remaining Challenge: Inter-Test Isolation" section for Options 5A-5D to address intra-worker test dependencies
+
+**Commits**:
+- c3de7b9: Rollout to all 44 test files + global-setup updates
+- fe7d650: Original worker fixture implementation (Phase 3)
+
+### Phase 5: Cleanup (PENDING)
+
+**Tasks**:
+- [ ] Remove serial mode from `03-job-status-updates.spec.ts`
+- [ ] Remove `chromium-isolated` project workaround
+- [ ] Remove serial mode from any other tests using it
+- [ ] Update `PLAYWRIGHT_BEST_PRACTICES.md` with new pattern
+- [ ] Archive prototype script (or move to helper-scripts/)
+
+---
+
+### Key Questions to Track
+
+1. **Database Naming**: `jobhunter_test_worker_{0-3}` ✅ (decided)
+2. **Backend Connection**: Request header vs per-worker backend? ✅ (Option A: Request header)
+3. **Seed Data Location**: Reuse `database/seed_test_data.sql`? ✅ (yes)
+4. **Worker Assignment**: Automatic via Playwright? ✅ (yes, no manual mapping needed)
+5. **Database Lifecycle**: Create on worker start, destroy on worker end? ✅ (validated)
+6. **OAuth Credentials**: How to handle per-worker? ✅ (handled via API seed calls with worker index)
+
+### Lessons Learned
+
+**What Worked**:
+- ✅ Per-worker database isolation (workers don't interfere with each other)
+- ✅ Request header routing (X-Worker-Index) - simple and effective
+- ✅ Worker-scoped fixtures - clean lifecycle management
+- ✅ Parallel database creation (947ms startup for 4 databases)
+- ✅ Test data improvements (realistic 100-120 word job descriptions)
+
+**What Didn't Work**:
+- ❌ **Root cause not addressed**: Non-deterministic test execution order within workers
+- ❌ **Inter-test dependencies remain**: Tests on same worker share database state
+- ❌ **Complexity added without benefit**: Backend changes, fixtures, per-worker seeding
+- ❌ **False sense of isolation**: Workers isolated, but tests within worker are not
+
+**Key Insight**:
+> "Stop fighting non-determinism with isolation. Embrace predictable execution order."
+> - Option 6 (4-Project Architecture) addresses the root cause by ensuring tests run in strict, predictable order with stable database state.
+
+---
