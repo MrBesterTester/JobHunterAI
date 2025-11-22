@@ -130,16 +130,41 @@ At the start of every Claude Code session, a SessionStart hook automatically:
 
 ### Notifications
 
-**✅ IMPLEMENTED**: iPhone notification setup active. See [README_iPhone-notify-setup.md](README_iPhone-notify-setup.md).
+**✅ IMPLEMENTED**: iPhone notification setup is active! See [README_iPhone-notify-setup.md](README_iPhone-notify-setup.md) for configuration details.
 
-**Long-running tasks (>5 min)**: Announce expected completion time before starting (e.g., "Tests should complete around 2:45-3:00 PM")
+**IMPORTANT**: Always announce expected completion time BEFORE starting long-running tasks (>5 minutes).
 
-**After completing tasks (>30 sec)**: Show dialog box WITH SOUND:
+**When starting long-running tasks:**
+- Calculate expected completion time (current time + estimated duration)
+- Include completion time prominently in announcement message
+- Example: "I'll run the comprehensive test suite now. This will take approximately 15-20 minutes. Tests should complete around 2:45-3:00 PM."
+- Applies to: comprehensive test runs, large builds, database migrations, etc.
+
+**Why this matters:**
+- User can plan their time effectively
+- Clear expectations prevent "is it still running?" confusion
+- Completion time is more useful than just duration ("15 minutes" requires mental math)
+
+**IMPORTANT**: Always show dialog boxes WITH SOUND when completing long-running tasks (>30 seconds).
+
+**Command to use (sound then dialog):**
 ```bash
 afplay /System/Library/Sounds/Glass.aiff && osascript -e "display dialog \"[message]\" with title \"Claude Code\" buttons {\"OK\"} default button \"OK\" with icon note"
 ```
 
-Use double quotes with escaped inner quotes (`\"`). Applies to: test suites, builds, extended operations.
+**When to send notifications:**
+- After running test suites (backend cargo test, E2E playwright tests)
+- After build operations (cargo build, npm build)
+- After extended operations that take >30 seconds
+- When waiting for user input after completing a complex multi-step task
+
+**Why dialog boxes with sound:**
+- Dialog box appears front and center (not in Notification Center)
+- Requires user acknowledgment (must click OK)
+- Sound alert plays immediately so you know task is done
+- Not affected by Focus mode or notification settings
+
+**Note**: Use **double quotes** on the outside with **escaped quotes** (`\"`) inside. Single quotes don't work with the curly braces in AppleScript.
 
 ### TypeScript Preference
 
@@ -337,34 +362,194 @@ cd backend && cargo test && cd ../frontend && npm test
 
 **⚠️ CRITICAL: NEVER try to orchestrate interactive OAuth flows programmatically**
 
-OAuth tokens enable E2E tests. Access tokens expire in 60-90 minutes (auto-refreshed). Refresh tokens: Google (indefinite unless conditions), Microsoft (90-day expiry).
+OAuth tokens enable E2E tests to access real Gmail and Microsoft Mail accounts. These tokens have specific expiration rules that require understanding.
+
+**Token Lifecycle**:
+- **Access tokens**: Expire in 60-90 minutes (auto-refreshed by test orchestrator)
+- **Refresh tokens (Google)**: Valid indefinitely UNLESS:
+  - Unused for 6+ months
+  - Password changed
+  - Explicitly revoked
+  - OAuth app in "Testing" mode (7-day expiry)
+  - 100 token limit reached (creating #101 invalidates #1)
+- **Refresh tokens (Microsoft)**: 90-day expiration (each refresh generates new 90-day token)
+
+**Before Running Comprehensive Tests**:
+
+The test orchestrator automatically validates OAuth tokens during preflight. If validation fails:
+
+1. **STOP IMMEDIATELY** - Do not attempt to run tests
+2. **DO NOT** try to run `setup-test-oauth.sh` programmatically
+3. **INFORM USER** that OAuth tokens need refresh
+4. **PROVIDE COMMAND**: `./helper-scripts/setup-test-oauth.sh`
+5. **EXPLAIN**: This opens browser for OAuth authorization (requires user interaction)
+6. **ESTIMATE**: Takes 2-3 minutes to complete
+
+**Why This Is Critical**:
+- OAuth authorization codes expire in ~10 minutes
+- Interactive flow requires user to paste callback URLs
+- Programmatic attempts will fail due to timeout/coordination issues
+- Failed attempts create more refresh tokens (worsening Google's 100 token limit)
+
+**Validation vs. Setup Scripts**:
+- `./helper-scripts/validate-oauth-tokens.sh` - Check token validity (automated, safe)
+- `./helper-scripts/setup-test-oauth.sh` - Get new tokens (interactive, USER MUST RUN)
 
 **When OAuth Validation Fails**:
-1. **STOP** - Do not run tests
-2. **Inform user** tokens need refresh
-3. **Provide command**: `./helper-scripts/setup-test-oauth.sh` (interactive, 2-3 min)
-4. **Never** run programmatically - requires user browser interaction
 
-**OAuth Scripts**:
-- `validate-oauth-tokens.sh` - Check validity (automated)
-- `setup-test-oauth.sh` - Full setup both providers (interactive)
-- `refresh-oauth-tokens.sh` - Auto-refresh (non-interactive, used by orchestrator)
-- `add-gmail-tokens-manual.sh` - Gmail only (interactive)
-- `add-microsoft-tokens-manual.sh` - Microsoft only (interactive)
+```bash
+# Correct approach (user runs manually)
+./helper-scripts/setup-test-oauth.sh
+# Follow prompts, authorize in browser, paste callback URLs
+# Estimated time: 2-3 minutes
 
-**Quick Decision**: Run `validate-oauth-tokens.sh` first - it tells you exactly which script to use.
+# Then re-run comprehensive tests
+./run-comprehensive-tests.sh
+```
 
-**Docs**: `docs/OAUTH_TOKEN_ANALYSIS.md`, `docs/OAUTH_SCRIPT_INTEGRATION.md`
+**Common Failure Messages**:
+- `"invalid_grant"` / `"Token has been expired or revoked"` → Refresh token invalid
+- `"Bad Request"` → Authorization code expired (took too long)
+- `"error": "invalid_grant", "error_description": "Malformed auth code"` → Code already used
+
+**Quarterly Maintenance** (Recommended):
+- Microsoft refresh tokens expire every 90 days
+- Set calendar reminder to re-run `setup-test-oauth.sh` quarterly
+- Prevents unexpected test failures from token expiration
+
+**Documentation**:
+- Token analysis: `docs/OAUTH_TOKEN_ANALYSIS.md`
+- Script integration strategy: `docs/OAUTH_SCRIPT_INTEGRATION.md`
+- Validation script: `helper-scripts/validate-oauth-tokens.sh`
+- Setup script: `helper-scripts/setup-test-oauth.sh`
 
 ---
 
-**Analyzing Test Results** ⭐:
+**OAuth Toolkit - Script Reference** 🔧:
 
-**ALWAYS use JSON report first** for token efficiency:
-- `test-results/comprehensive-report.json` - Complete data, ~77 lines
-- `test-results/failures-detailed.txt` - Only if JSON missing or user requests details
+The project has 5 OAuth management scripts for different scenarios:
 
-**Standard workflow**: Read JSON → Generate summary (stats, per-suite, failures) → Only read detailed text if needed
+**1. Full Setup (Both Providers)**
+```bash
+./helper-scripts/setup-test-oauth.sh
+```
+- Use when: First-time setup, both providers expired
+- Interactive: Yes (browser OAuth for Gmail + Microsoft)
+- Duration: 2-3 minutes
+- Saves tokens incrementally (Gmail first, then Microsoft)
+
+**2. Validate Tokens**
+```bash
+./helper-scripts/validate-oauth-tokens.sh
+```
+- Use when: Check token validity before tests
+- Interactive: No
+- Duration: 5-10 seconds
+- Tests both access AND refresh token validity
+- Provides targeted fix commands based on which provider failed
+
+**3. Auto-Refresh (Non-Interactive)**
+```bash
+./helper-scripts/refresh-oauth-tokens.sh
+```
+- Use when: Access tokens expired, refresh tokens valid
+- Interactive: No
+- Duration: 2-5 seconds
+- Called automatically by test orchestrator during preflight
+
+**4. Gmail Only (Manual)**
+```bash
+./helper-scripts/add-gmail-tokens-manual.sh '<callback_url_or_code>'
+```
+- Use when: Gmail tokens expired, Microsoft tokens still valid
+- Interactive: Yes (browser OAuth for Gmail only)
+- Duration: 1-2 minutes
+- Useful for quarterly Microsoft maintenance without touching Gmail
+
+**5. Microsoft Only (Manual)**
+```bash
+./helper-scripts/add-microsoft-tokens-manual.sh '<callback_url_or_code>'
+```
+- Use when: Microsoft tokens expired (90 days), Gmail tokens still valid
+- Interactive: Yes (browser OAuth for Microsoft only)
+- Duration: 1-2 minutes
+- **Most common**: Microsoft's 90-day expiry triggers quarterly refresh
+
+**Decision Tree**:
+
+```
+Need to fix OAuth tokens?
+│
+├─ Don't know what's wrong
+│  └─ Run: ./helper-scripts/validate-oauth-tokens.sh
+│     (Script will tell you exactly what to do)
+│
+├─ Both providers expired
+│  └─ Run: ./helper-scripts/setup-test-oauth.sh
+│
+├─ Gmail only expired
+│  └─ Option 1: ./helper-scripts/add-gmail-tokens-manual.sh '<code>'
+│  └─ Option 2: ./helper-scripts/setup-test-oauth.sh (both)
+│
+├─ Microsoft only expired (quarterly)
+│  └─ Option 1: ./helper-scripts/add-microsoft-tokens-manual.sh '<code>'
+│  └─ Option 2: ./helper-scripts/setup-test-oauth.sh (both)
+│
+└─ Just checking status
+   └─ Run: ./helper-scripts/validate-oauth-tokens.sh
+```
+
+**Claude Behavior with Manual Scripts**:
+
+When validation reports ONE provider failed:
+1. **Inform user** which provider failed and which is valid
+2. **Provide BOTH options**: Manual script (faster) OR full setup (complete)
+3. **Let user choose** which approach
+4. **If user chooses manual script**:
+   - Explain: "I'll guide you through but you must do the OAuth in browser"
+   - Provide OAuth URL to open
+   - Wait for user to paste callback URL
+   - Run manual script with their code
+5. **NEVER** try to orchestrate the interactive browser flow programmatically
+
+---
+
+**Analyzing Test Results - Phased Approach** ⭐:
+
+When creating summary reports after comprehensive test runs, use this **phased approach for maximum token efficiency**:
+
+**Phase 1: JSON Report Only** (PREFERRED)
+- **File**: `/Users/sam/Projects/JobHunterAI-Claude/test-results/comprehensive-report.json` (working directory available in `<env>`)
+- **When**: Default approach for all test result summaries
+- **Why**:
+  - ✅ Most token-efficient (~77 lines structured data)
+  - ✅ Complete information: test counts, durations, failure details (testName, testFile, errorMessage, stackTrace)
+  - ✅ Easy to parse programmatically
+  - ✅ All data needed for summary reports
+
+**Phase 2: Detailed Text File** (ONLY IF NEEDED)
+- **File**: `/Users/sam/Projects/JobHunterAI-Claude/test-results/failures-detailed.txt` (working directory available in `<env>`)
+- **When**: Only consult in these specific cases:
+  - JSON file missing or corrupted
+  - User explicitly asks to see human-readable formatted output
+  - Need to verify text formatting itself
+  - Debugging the report generation process
+- **Why**: Designed for human consumption in terminal, not LLM analysis
+
+**Standard Workflow**:
+1. Read `/Users/sam/Projects/JobHunterAI-Claude/test-results/comprehensive-report.json`
+2. Generate summary with:
+   - Overall stats (passed/failed/skipped, duration)
+   - Per-suite breakdown
+   - Failure list with test name, file, error summary (first line)
+3. Only read `failures-detailed.txt` if user requests full details for specific failure
+
+**Key Principle**: JSON for efficiency, detailed text only when specifically needed.
+
+**Standard Test Result File Paths** (always use these exact absolute paths):
+- **JSON Report**: `/Users/sam/Projects/JobHunterAI-Claude/test-results/comprehensive-report.json`
+- **Detailed Failures**: `/Users/sam/Projects/JobHunterAI-Claude/test-results/failures-detailed.txt`
+- **Pushover Notification Script**: `~/bin/notify_claude.sh`
 
 ---
 
@@ -390,11 +575,31 @@ Claude Code follows comprehensive workflow standards for this project. **For det
 
 ### Documentation Timestamp Standards
 
-**REQUIRED**: Use format `YYYY-MM-DD HH:MM:SS TZ (optional description)` in all status docs (PROJECT_STATUS.md, TESTING_STATUS.md, bug files, work summaries).
+**REQUIRED**: All status documents MUST use full timestamps in the format:
 
-**Get timestamp**: `date "+%Y-%m-%d %H:%M:%S %Z"`
+**Format**: `YYYY-MM-DD HH:MM:SS TZ (optional description)`
 
-**Why**: Precise point-in-time references, correlates with git commits, prevents ambiguity.
+**Examples**:
+- `2025-10-31 09:52:20 PDT`
+- `2025-10-31 09:52:20 PDT (Bug tracking synchronized)`
+
+**Applies to**:
+- `docs/PROJECT_STATUS.md` - "Last Updated" field (top and bottom)
+- `docs/TESTING_STATUS.md` - All timestamp fields
+- `docs/TESTING_HISTORY.md` - All timestamp fields
+- Work summaries (`README_work-summary-*.md`) - Date headers
+- Bug tracking files - `created`, `updated`, `fixed` fields
+
+**Get current timestamp**:
+```bash
+date "+%Y-%m-%d %H:%M:%S %Z"  # Full timestamp with timezone
+```
+
+**Why this matters**:
+- Provides precise point-in-time references for all documentation
+- Enables exact correlation between doc updates and git commits
+- Tracks historical changes with minute-level precision
+- Prevents ambiguity when multiple updates happen same day
 
 ### Results Document Organization (General Principle)
 
@@ -523,17 +728,78 @@ git commit -m "docs: Add test results ($TIMESTAMP), archive oldest run to testin
 
 #### Step 4: Managing Historical Investigation Content
 
-**⚠️ CRITICAL**: Historical investigation content (tests that failed during investigation but were fixed) MUST be clearly distinguished from current test status.
+**⚠️ CRITICAL**: To prevent timeline confusion, historical investigation content (tests that failed during investigation but were fixed) MUST be clearly distinguished from current test status.
+
+**When to Apply This**:
+- When TESTING_STATUS.md contains detailed investigation of test failures
+- When test failures occurred during investigation but were fixed before current runs
+- When historical context could be confused with current test status
 
 **Required Actions**:
-1. **Add timeline warning** at top of historical section stating failures occurred during investigation and were fixed
-2. **Archive detailed investigations** to `testing-history/ISSUE-NNN_INVESTIGATION_YYYY-MM-DD.md`
-3. **Replace with brief summary** including: date, status, affected tests, key fix, link to archive
-4. **Update** `testing-history/README.md` index
 
-**Key Point**: TESTING_STATUS.md = current + previous run only (2 max). Archive older runs and investigations to `testing-history/`
+1. **Add Clear Timeline Warnings**:
+   - Add prominent warning box at top of historical section
+   - Emphasize that failures occurred DURING INVESTIGATION (with specific date)
+   - Clarify that tests were FIXED (with specific date)
+   - State this is historical documentation, not current status
 
-**See**: `testing-history/README.md` for full archive index and [CLAUDE_WORKFLOWS.md](CLAUDE_WORKFLOWS.md) for details
+   Example:
+   ```markdown
+   > **⚠️ IMPORTANT TIMELINE NOTE**
+   > The investigation below describes tests that **FAILED on [DATE] during investigation**.
+   > **All tests were FIXED the same day ([DATE])** and have been passing in all subsequent runs.
+   > This section is **historical documentation** only - all tests are currently working.
+   ```
+
+2. **Move Detailed Investigations to Archive**:
+   - Create investigation archive file in `testing-history/`
+   - Naming convention: `ISSUE-NNN_INVESTIGATION_YYYY-MM-DD.md` or similar descriptive name
+   - Include complete investigation timeline, evidence, fixes, and final status
+   - Include same timeline warning in archive file
+
+3. **Update Section Structure**:
+   - Rename section to clearly indicate historical context
+   - Example: "Historical Context - Past Investigation Work" instead of "Recent Testing Work"
+   - Replace detailed content with brief summary + link to archive
+   - Summary should include: investigation date, status (✅ COMPLETED), affected tests, key finding, link to detailed archive
+   - Update `testing-history/README.md` index with new investigation archive
+
+**Example Summary Structure**:
+```markdown
+## Historical Context - Past Investigation Work
+
+### ISSUE-055 Investigation (November 18, 2025) - ✅ COMPLETED
+
+> **⚠️ IMPORTANT TIMELINE NOTE**
+> [Timeline clarification here]
+
+**Investigation Date**: 2025-11-18 (completed same day)
+**Status**: ✅ All 4 tests fixed and verified
+**Affected Tests**: #504, #511, #441, #547
+**Key Fix**: Replaced UI state waits with API response waits
+**Detailed Investigation**: See [testing-history/ISSUE-055_INVESTIGATION_2025-11-18.md](...)
+```
+
+**Why This Matters**:
+- Prevents confusion where current runs show "all passed" while investigation section describes failures
+- Makes timeline crystal clear: failures were during investigation, not in current runs
+- Maintains valuable investigation documentation without cluttering current status
+- Enables future reference to investigation process without timeline ambiguity
+
+**Important Notes**:
+- TESTING_STATUS.md = workspace for **current + previous run only** (2 runs max)
+- testing-history/ = permanent archive of **all older runs** (one file per run) + **investigation archives**
+- Completed work summaries (like ISSUE-053) can stay in TESTING_STATUS.md for 1-2 weeks, then archive
+- Use `testing-history/README.md` as index to find specific runs and investigations
+
+**See also**: `testing-history/README.md` for full archive index
+
+**Why this matters:**
+- User can see exact test results at any point in time
+- Historical tracking of test performance over time
+- Prevents confusion between estimates and actual results
+- Prevents confusion between historical investigations and current test status
+- Enables debugging of test regressions with precise timestamps
 
 ---
 
