@@ -217,17 +217,58 @@ echo ""
 if [ "$VALIDATION_FAILED" = true ]; then
     log_error "OAuth token validation FAILED"
     echo ""
-    log_error "One or more refresh tokens are invalid or expired"
-    echo ""
-    echo -e "${YELLOW}Required Action:${NC}"
-    echo "   Run: ${GREEN}./helper-scripts/setup-test-oauth.sh${NC}"
-    echo ""
-    echo "This will:"
-    echo "   1. Open browser for OAuth authorization"
-    echo "   2. Obtain fresh access and refresh tokens"
-    echo "   3. Save tokens to .env.test"
-    echo ""
-    echo "Estimated time: 2-3 minutes"
+
+    # Determine which providers failed
+    GMAIL_FAILED=false
+    MSMAIL_FAILED=false
+
+    if [ "$GMAIL_STATUS" = "REFRESH_TOKEN_INVALID" ] || [ "$GMAIL_STATUS" = "MISSING_CREDENTIALS" ] || [ "$GMAIL_STATUS" = "MISSING_REFRESH_TOKEN" ]; then
+        GMAIL_FAILED=true
+    fi
+
+    if [ "$MSMAIL_STATUS" = "REFRESH_TOKEN_INVALID" ] || [ "$MSMAIL_STATUS" = "MISSING_CREDENTIALS" ] || [ "$MSMAIL_STATUS" = "MISSING_REFRESH_TOKEN" ]; then
+        MSMAIL_FAILED=true
+    fi
+
+    # Provide targeted guidance based on which provider(s) failed
+    if [ "$GMAIL_FAILED" = true ] && [ "$MSMAIL_FAILED" = true ]; then
+        # Both failed - need full setup
+        log_error "Both Gmail and Microsoft tokens are invalid"
+        echo ""
+        echo -e "${YELLOW}Required Action:${NC}"
+        echo "   Run: ${GREEN}./helper-scripts/setup-test-oauth.sh${NC}"
+        echo ""
+        echo "This will refresh BOTH providers (2-3 minutes)"
+
+    elif [ "$GMAIL_FAILED" = true ]; then
+        # Only Gmail failed
+        log_error "Gmail tokens are invalid"
+        log_info "Microsoft tokens: ${GREEN}VALID${NC} ✅"
+        echo ""
+        echo -e "${YELLOW}Choose an option:${NC}"
+        echo ""
+        echo "   ${BLUE}Option 1: Gmail only (Faster - 1-2 min)${NC}"
+        echo "   ./helper-scripts/add-gmail-tokens-manual.sh '<code>'"
+        echo "   (Open Gmail OAuth, copy callback URL, paste as argument)"
+        echo ""
+        echo "   ${BLUE}Option 2: Both providers (Complete - 2-3 min)${NC}"
+        echo "   ./helper-scripts/setup-test-oauth.sh"
+
+    elif [ "$MSMAIL_FAILED" = true ]; then
+        # Only Microsoft failed
+        log_error "Microsoft tokens are invalid"
+        log_info "Gmail tokens: ${GREEN}VALID${NC} ✅"
+        echo ""
+        echo -e "${YELLOW}Choose an option:${NC}"
+        echo ""
+        echo "   ${BLUE}Option 1: Microsoft only (Faster - 1-2 min)${NC}"
+        echo "   ./helper-scripts/add-microsoft-tokens-manual.sh '<code>'"
+        echo "   (Open Microsoft OAuth, copy callback URL, paste as argument)"
+        echo ""
+        echo "   ${BLUE}Option 2: Both providers (Complete - 2-3 min)${NC}"
+        echo "   ./helper-scripts/setup-test-oauth.sh"
+    fi
+
     echo ""
 
     # Provide specific guidance based on failure type

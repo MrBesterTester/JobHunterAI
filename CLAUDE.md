@@ -419,8 +419,98 @@ The test orchestrator automatically validates OAuth tokens during preflight. If 
 
 **Documentation**:
 - Token analysis: `docs/OAUTH_TOKEN_ANALYSIS.md`
+- Script integration strategy: `docs/OAUTH_SCRIPT_INTEGRATION.md`
 - Validation script: `helper-scripts/validate-oauth-tokens.sh`
 - Setup script: `helper-scripts/setup-test-oauth.sh`
+
+---
+
+**OAuth Toolkit - Script Reference** 🔧:
+
+The project has 5 OAuth management scripts for different scenarios:
+
+**1. Full Setup (Both Providers)**
+```bash
+./helper-scripts/setup-test-oauth.sh
+```
+- Use when: First-time setup, both providers expired
+- Interactive: Yes (browser OAuth for Gmail + Microsoft)
+- Duration: 2-3 minutes
+- Saves tokens incrementally (Gmail first, then Microsoft)
+
+**2. Validate Tokens**
+```bash
+./helper-scripts/validate-oauth-tokens.sh
+```
+- Use when: Check token validity before tests
+- Interactive: No
+- Duration: 5-10 seconds
+- Tests both access AND refresh token validity
+- Provides targeted fix commands based on which provider failed
+
+**3. Auto-Refresh (Non-Interactive)**
+```bash
+./helper-scripts/refresh-oauth-tokens.sh
+```
+- Use when: Access tokens expired, refresh tokens valid
+- Interactive: No
+- Duration: 2-5 seconds
+- Called automatically by test orchestrator during preflight
+
+**4. Gmail Only (Manual)**
+```bash
+./helper-scripts/add-gmail-tokens-manual.sh '<callback_url_or_code>'
+```
+- Use when: Gmail tokens expired, Microsoft tokens still valid
+- Interactive: Yes (browser OAuth for Gmail only)
+- Duration: 1-2 minutes
+- Useful for quarterly Microsoft maintenance without touching Gmail
+
+**5. Microsoft Only (Manual)**
+```bash
+./helper-scripts/add-microsoft-tokens-manual.sh '<callback_url_or_code>'
+```
+- Use when: Microsoft tokens expired (90 days), Gmail tokens still valid
+- Interactive: Yes (browser OAuth for Microsoft only)
+- Duration: 1-2 minutes
+- **Most common**: Microsoft's 90-day expiry triggers quarterly refresh
+
+**Decision Tree**:
+
+```
+Need to fix OAuth tokens?
+│
+├─ Don't know what's wrong
+│  └─ Run: ./helper-scripts/validate-oauth-tokens.sh
+│     (Script will tell you exactly what to do)
+│
+├─ Both providers expired
+│  └─ Run: ./helper-scripts/setup-test-oauth.sh
+│
+├─ Gmail only expired
+│  └─ Option 1: ./helper-scripts/add-gmail-tokens-manual.sh '<code>'
+│  └─ Option 2: ./helper-scripts/setup-test-oauth.sh (both)
+│
+├─ Microsoft only expired (quarterly)
+│  └─ Option 1: ./helper-scripts/add-microsoft-tokens-manual.sh '<code>'
+│  └─ Option 2: ./helper-scripts/setup-test-oauth.sh (both)
+│
+└─ Just checking status
+   └─ Run: ./helper-scripts/validate-oauth-tokens.sh
+```
+
+**Claude Behavior with Manual Scripts**:
+
+When validation reports ONE provider failed:
+1. **Inform user** which provider failed and which is valid
+2. **Provide BOTH options**: Manual script (faster) OR full setup (complete)
+3. **Let user choose** which approach
+4. **If user chooses manual script**:
+   - Explain: "I'll guide you through but you must do the OAuth in browser"
+   - Provide OAuth URL to open
+   - Wait for user to paste callback URL
+   - Run manual script with their code
+5. **NEVER** try to orchestrate the interactive browser flow programmatically
 
 ---
 
