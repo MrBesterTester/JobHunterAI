@@ -96,14 +96,27 @@ test.describe('Dashboard Statistics', () => {
     expect(response.ok()).toBeTruthy();
 
     const stats = await response.json();
+    const expectedDiscovered = stats.discovered || 0;
 
-    // Get Total from UI
+    // Wait for UI to display the expected value (state polling pattern from PLAYWRIGHT_BEST_PRACTICES.md)
+    await page.waitForFunction(
+      (expected) => {
+        const statElement = document.querySelector('[data-testid="stat-total"]');
+        const textContent = statElement?.querySelector('p')?.textContent;
+        const match = textContent?.match(/\d+/);
+        return match && parseInt(match[0]) === expected;
+      },
+      expectedDiscovered,
+      { timeout: getTestTimeout(10000) }
+    );
+
+    // Get Total from UI (now guaranteed to match)
     const totalStat = page.locator('[data-testid="stat-total"]');
     const totalText = await totalStat.locator('p').first().textContent();
     const totalUI = parseInt(totalText || '0');
 
     // Total should equal discovered count from backend
-    expect(totalUI).toBe(stats.discovered || 0);
+    expect(totalUI).toBe(expectedDiscovered);
   });
 
   test('should display processed counter from intake logs', async ({ page }) => {
