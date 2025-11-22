@@ -17,8 +17,8 @@ related: [PLAYWRIGHT_BEST_PRACTICES.md]
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Next Steps: Path Forward](#next-steps-path-forward)
-  - [1. **Execute Rollback Plan** (2-3 hours)](#1-execute-rollback-plan-2-3-hours)
-  - [2. **Implement Option 6: 4-Project Architecture** (3-5 days)](#2-implement-option-6-4-project-architecture-3-5-days)
+  - [1. ✅ **Execute Rollback Plan** - COMPLETE (2-3 hours)](#1--execute-rollback-plan---complete-2-3-hours)
+  - [2. **Implement Option 6: 4-Project Architecture** (3-5 days) - NEXT](#2-implement-option-6-4-project-architecture-3-5-days---next)
 - [Remaining Challenge: Inter-Test Isolation](#remaining-challenge-inter-test-isolation)
   - [What We've Solved (Inter-Worker Conflicts)](#what-weve-solved-inter-worker-conflicts)
   - [What Remains Unsolved (Inter-Test Conflicts)](#what-remains-unsolved-inter-test-conflicts)
@@ -86,14 +86,15 @@ related: [PLAYWRIGHT_BEST_PRACTICES.md]
 
 **Recommended Action Plan**:
 
-### 1. **Execute Rollback Plan** (2-3 hours)
+### 1. ✅ **Execute Rollback Plan** - COMPLETE (2-3 hours)
 
 Revert Phase 1-5 infrastructure while keeping valuable improvements:
 - ✅ **Keep**: Realistic test data (100-120 word job descriptions)
 - ❌ **Undo**: Backend worker pools, fixtures, per-worker seeding
 - 📋 **Details**: See [Rollback Plan: Reverting to Pre-Phase 1 State](#rollback-plan-reverting-to-pre-phase-1-state)
+- 🏁 **Status**: Completed 2025-11-21 (see Rollback Execution Summary below)
 
-### 2. **Implement Option 6: 4-Project Architecture** (3-5 days)
+### 2. **Implement Option 6: 4-Project Architecture** (3-5 days) - NEXT
 
 Replace per-worker isolation with deterministic test execution order:
 - **4 test projects** with strict dependencies and serial execution within each
@@ -109,7 +110,24 @@ Replace per-worker isolation with deterministic test execution order:
 - ✅ Easy to debug (predictable execution order)
 - ✅ Zero flakiness risk (tests run in stable database state)
 
-**Status**: Awaiting decision to proceed with rollback + Option 6 implementation
+**Status**: ✅ **ROLLBACK COMPLETE** (2025-11-21)
+
+**Rollback Execution Summary**:
+- **Commits**: e4db879 (Phase 1-2), 65f28bb (Phase 3), b225081 (Phase 4)
+- **Verification**: All 3 reverts completed successfully
+- **Backend**: Compiles cleanly, single PgPool connection restored
+- **Test Imports**: All 44 test files back to `@playwright/test`
+- **Global Setup**: Database seeding restored
+- **Test Data**: Realistic 100-120 word descriptions preserved ✅
+
+**Post-Rollback Test Results** (Comprehensive Run - 2025-11-21, 5:25 PM):
+- **Duration**: 12.5 minutes (748.7s)
+- **Backend**: 32/32 passed (100%)
+- **Frontend**: 516/516 passed (100%)
+- **E2E**: 391/392 passed (99.7%)
+- **Total**: 939/940 passed (99.9%)
+- **Note**: This is one of the better comprehensive test runs. System is stable and ready for Option 6 implementation.
+- **Tag**: STABLE-F (baseline for Option 6 work)
 
 ---
 
