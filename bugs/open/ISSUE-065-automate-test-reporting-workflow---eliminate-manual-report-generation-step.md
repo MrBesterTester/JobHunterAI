@@ -48,6 +48,9 @@ related:
 - [Status History](#status-history)
 - [Notes](#notes)
   - [Why This Issue Matters](#why-this-issue-matters)
+- [Original User Prompts](#original-user-prompts)
+  - [Prompt 1: Initial Problem Identification (2025-11-22)](#prompt-1-initial-problem-identification-2025-11-22)
+  - [Prompt 2: Intelligent Naming Requirement (2025-11-22)](#prompt-2-intelligent-naming-requirement-2025-11-22)
 - [Related Files](#related-files)
 - [Related Issues](#related-issues)
 
@@ -578,6 +581,42 @@ git log -1
 **Key Insight**: Notification timing is wrong - should fire when everything is done, not just when tests finish.
 
 **User Quote**: "Why do I have to keep asking you?" → Clear signal this should be automatic.
+
+## Original User Prompts
+
+This issue was created in response to the following user requests, which capture the thinking and requirements that shaped the solution:
+
+### Prompt 1: Initial Problem Identification (2025-11-22)
+
+> Can't the comprehensive script know when the tests are done and proceed immediately to results compilation and notification?
+> - I am getting notification. Isn't that enough to prod you into check results, compile a test report and then file it in test-results/ as test-report-<date/timestamp>? Why do I have to keep asking you? Do we need a test reporting policy, procedure or guidelines with Claude.md? Does the comprehensive testing script need an update?
+> - If so, I would like the completion alert and notification be moved:
+>     - from: when the testing is done
+>     - to: when the the test report has been filed
+> If need be, please open a new issue on this because I really need to have the overall, comprehensive test process run very smoothly.
+
+**Key Insights from Prompt 1**:
+- Manual "please file the report" step is friction that should not exist
+- Notification timing is wrong (should fire when EVERYTHING is done, not just tests)
+- Need for automation policy in CLAUDE.md
+- Goal: Smooth end-to-end comprehensive test workflow
+
+---
+
+### Prompt 2: Intelligent Naming Requirement (2025-11-22)
+
+> Please revise that issue to include pro's and con's analysis of all the Options. Ideally, I would like an option in the new procedure to rename the filed test report to something more descriptive like ISSUE-64-Day3-OptionC-test-report.md or ISSUE-64-Day4-run2-test-report.md so that the name of the filed report indicates in what plan the report is getting tracked and why that report was generated per that plan. That is a little tricky, so I'm keeping it as an option for now. In that option, you would guess the best name and allow me to confirm, change or have it default to what we have already specified. That may seem like a lot to ask for, but it would really save me some work and allow me to keep the reports straight.
+
+**Key Insights from Prompt 2**:
+- Generic timestamp filenames are not discoverable (hard to know what report is for)
+- Need descriptive filenames that match existing convention (ISSUE-XX-DayY-runZ-test-report.md)
+- Claude should intelligently guess filename based on context
+- User should be able to confirm, change, or auto-accept suggestion
+- Goal: Self-documenting report filenames that keep reports organized by plan/issue
+
+**Result**: These two prompts led to **Option 6 (Basic Automation + Intelligent Naming)** - the recommended solution that addresses both problems with no script changes needed.
+
+---
 
 ## Related Files
 
