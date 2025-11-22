@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures/worker-database';
+import { test, expect } from '@playwright/test';
 import { shouldRunTest } from '../test-config';
 import { switchToTab } from '../helpers/tab-navigation';
 

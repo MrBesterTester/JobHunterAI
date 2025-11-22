@@ -1,4 +1,4 @@
-import { test, expect, Page } from '../fixtures/worker-database';
+import { test, expect, Page } from '@playwright/test';
 import { getTestTimeout } from '../helpers/timeout-utils';
 import { switchToTab } from '../helpers/tab-navigation';
 

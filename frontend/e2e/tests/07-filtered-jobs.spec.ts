@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures/worker-database';
+import { test, expect } from '@playwright/test';
 import { DashboardPage } from '../pages/DashboardPage';
 import { getAllJobCards } from '../pages/JobCardComponent';
 

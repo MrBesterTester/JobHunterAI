@@ -1,4 +1,4 @@
-import { test, expect, devices } from '../fixtures/worker-database';
+import { test, expect, devices } from '@playwright/test';
 import { shouldRunTest } from '../test-config';
 import { DashboardPage } from '../pages/DashboardPage';
 import { getJobCard } from '../pages/JobCardComponent';

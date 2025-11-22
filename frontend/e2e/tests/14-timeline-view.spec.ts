@@ -7,7 +7,7 @@
  * RE-ENABLE: When Phase 5.1 Timeline View is implemented, remove .skip() from tests below
  */
 
-import { test, expect } from '../fixtures/worker-database';
+import { test, expect } from '@playwright/test';
 import { getTestTimeout } from '../helpers/timeout-utils';
 
 test.describe('Timeline View - Phase 5.1', () => {

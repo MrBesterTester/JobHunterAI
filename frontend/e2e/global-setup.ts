@@ -99,13 +99,9 @@ async function globalSetup() {
     console.log('ℹ️  COMPREHENSIVE_TESTS not set - using default timeouts (10s)');
   }
 
-  // ISSUE-064 Phase 4: Database seeding now handled by per-worker fixtures
-  // Each Playwright worker creates and seeds its own isolated database:
-  // - Worker 0 → jobhunter_test_worker_0
-  // - Worker 1 → jobhunter_test_worker_1
-  // - Worker 2 → jobhunter_test_worker_2
-  // - Worker 3 → jobhunter_test_worker_3
-  // See frontend/e2e/fixtures/worker-database.ts for implementation
+  // Note: E2E tests use jobhunter_personal database (set by SessionStart hook)
+  // Decision: Single database is simpler and avoids OAuth credential sync issues
+  // Test data will be seeded into personal database alongside real data
 
   // Check if backend is already running
   try {
@@ -116,7 +112,14 @@ async function globalSetup() {
       // Mark that we did NOT start the backend (so teardown won't kill it)
       process.env.E2E_STARTED_SERVICES = 'false';
 
-      console.log('✅ Test environment setup complete (worker fixtures will handle database seeding)');
+      // Seed test data before running tests
+      await seedTestData();
+
+      // Seed MS Mail test data (ISSUE-034: Moved from preflight to test setup)
+      await seedMSMailData();
+
+      // Calculate scores for all jobs to prevent 404 errors in E2E tests
+      await calculateAllJobScores();
       return;
     }
   } catch (error) {
@@ -140,7 +143,16 @@ async function globalSetup() {
       throw new Error('Backend failed to start within 30 seconds');
     }
 
-    console.log('✅ Test environment setup complete (worker fixtures will handle database seeding)');
+    // Seed test data before running tests
+    await seedTestData();
+
+    // Seed MS Mail test data (ISSUE-034: Moved from preflight to test setup)
+    await seedMSMailData();
+
+    // Calculate scores for all jobs to prevent 404 errors in E2E tests
+    await calculateAllJobScores();
+
+    console.log('✅ Test environment setup complete');
   } catch (error) {
     console.error('❌ Failed to start backend:', error);
     throw error;

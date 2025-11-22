@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures/worker-database';
+import { test, expect } from '@playwright/test';
 import { shouldRunTest } from '../test-config';
 
 // Conditionally skip entire file if disabled in test-config.ts

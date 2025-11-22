@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures/worker-database';
+import { test, expect } from '@playwright/test';
 import { DashboardPage } from '../pages/DashboardPage';
 import { exec } from 'child_process';
 import { promisify } from 'util';
