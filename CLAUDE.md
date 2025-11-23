@@ -13,6 +13,7 @@
     - [File Discovery Tools](#file-discovery-tools)
     - [Work Session Tagging](#work-session-tagging)
     - [Comprehensive Testing Policy](#comprehensive-testing-policy)
+    - [Background Task Automation - Comprehensive Test Reporting with Intelligent Naming](#background-task-automation---comprehensive-test-reporting-with-intelligent-naming)
   - [Workflow Standards (Summary)](#workflow-standards-summary)
     - [Documentation Timestamp Standards](#documentation-timestamp-standards)
     - [Results Document Organization (General Principle)](#results-document-organization-general-principle)
@@ -365,6 +366,82 @@ OAuth tokens enable E2E tests. Access tokens expire in 60-90 minutes (auto-refre
 - `test-results/failures-detailed.txt` - Only if JSON missing or user requests details
 
 **Standard workflow**: Read JSON → Generate summary (stats, per-suite, failures) → Only read detailed text if needed
+
+---
+
+### Background Task Automation - Comprehensive Test Reporting with Intelligent Naming
+
+**⚠️ CRITICAL REQUIREMENT**: When comprehensive tests run in background, Claude MUST proactively monitor, analyze context, and report results with intelligent filename.
+
+**Automatic Workflow**:
+
+When `./run-comprehensive-tests.sh` runs in background:
+
+1. **Monitor Background Task**: Check status every 30-60 seconds
+2. **Detect Completion**: When task status changes to "completed" or "failed"
+3. **Read Results**: Immediately read `test-results/comprehensive-report.json`
+4. **Analyze Context**: Determine what this test run is for based on conversation history
+   - Look for: "Day 4 Run 3", "ISSUE-064", "Day 3 Option C", etc.
+   - Infer from recent messages about what validation/testing is happening
+5. **Propose Filename**: Suggest descriptive filename based on context
+   - Pattern: `ISSUE-XX-DayY-runZ-test-report.md` or `ISSUE-XX-DayY-OptionZ-test-report.md`
+   - Fallback: `test-report-YYYY-MM-DD-HHMM.md` if no clear context
+6. **User Confirmation**: Present suggestion and wait for response
+   - "Suggested filename: `ISSUE-64-Day4-run3-test-report.md`"
+   - "Reply 'ok' to accept, provide custom name, or wait 30s for auto-accept"
+   - User can: confirm ("ok" / "yes"), provide custom name, or timeout (30s → auto-accept)
+7. **Generate Report**: Create detailed markdown report with chosen filename
+8. **File Report**: Save to `test-results/[chosen-filename].md`
+9. **Update Issues**: Determine if tracking issue should be updated
+   - If filename contains `ISSUE-064` → update ISSUE-064 with new completed goal
+   - If Day 4/Day 3 validation → add to appropriate tracking issue
+   - General validation → no issue update needed
+10. **Commit Changes**: Stage and commit report + issue updates
+11. **Announce**: Proactively tell user with summary (pass rate, runtime, failures, filename)
+
+**DO NOT wait for user to ask** - take initiative immediately upon test completion.
+
+**Context Analysis Rules**:
+- Recent mention of "Day 4" + "Run 3" → `ISSUE-64-Day4-run3-test-report.md`
+- Recent mention of "Day 3" + "Option C" → `ISSUE-64-Day3-OptionC-test-report.md`
+- Recent mention of different issue → `ISSUE-XX-context-test-report.md`
+- No clear context → `test-report-YYYY-MM-DD-HHMM.md` (fallback)
+
+**Report Format**:
+- **Filename**: Descriptive based on context (e.g., `ISSUE-64-Day4-run3-test-report.md`)
+- **Content**: Comprehensive report with:
+  - Executive summary
+  - Test results (pass rate, failures)
+  - Comparison to previous runs
+  - Architecture validation
+  - Performance analysis
+  - Key findings and recommendations
+
+**Example Workflow**:
+```
+[Tests complete at 10:42 AM]
+
+Claude: "Comprehensive tests complete! Analyzing results...
+
+Based on context, suggested filename: ISSUE-64-Day4-run3-test-report.md
+
+Reply 'ok' to accept, provide custom name, or wait 30s for auto-accept."
+
+[User says "ok" or timeout occurs]
+
+Claude: "Generated report: test-results/ISSUE-64-Day4-run3-test-report.md
+
+Results: 757/757 tests passed (100%), runtime 21.9 min
+Updated ISSUE-064 Day 4 Run 3 with results
+All changes committed."
+```
+
+**Why This Matters**:
+- Eliminates manual "please file the report" step every test run
+- User gets notified when full analysis is complete, not just when tests finish
+- Self-documenting filenames make reports easy to find later
+- Matches existing naming convention (ISSUE-64-Day4-run2-test-report.md)
+- User maintains control (can override if Claude guesses wrong)
 
 ---
 
