@@ -12,6 +12,7 @@
     - [File Path Conventions](#file-path-conventions)
     - [File Discovery Tools](#file-discovery-tools)
     - [Work Session Tagging](#work-session-tagging)
+    - [Git Remote and Push Policy](#git-remote-and-push-policy)
     - [Comprehensive Testing Policy](#comprehensive-testing-policy)
     - [Background Task Automation - Comprehensive Test Reporting](#background-task-automation---comprehensive-test-reporting)
   - [Workflow Standards (Summary)](#workflow-standards-summary)
@@ -61,6 +62,7 @@ This file provides essential project information and guidance to Claude Code (cl
   - [File Path Conventions](#file-path-conventions)
   - [File Discovery Tools](#file-discovery-tools)
   - [Work Session Tagging](#work-session-tagging)
+  - [Git Remote and Push Policy](#git-remote-and-push-policy)
   - [Comprehensive Testing Policy](#comprehensive-testing-policy)
 - [Workflow Standards (Summary)](#workflow-standards-summary)
 - [Development Commands](#development-commands)
@@ -260,6 +262,35 @@ Use double quotes with escaped inner quotes (`\"`). Applies to: test suites, bui
 **Common session types**: `end-of-am`, `end-of-pm`, `end-of-day`, `end-of-evening`
 
 **Full documentation**: See [README_dev.md - Helper Scripts](README_dev.md#tag-sessionsh) for detailed usage instructions.
+
+### Git Remote and Push Policy
+
+**⚠️ CRITICAL POLICY**: This repository uses a **local-only commit workflow** by default.
+
+**Remote Configuration**:
+- **Public GitHub repository**: https://github.com/MrBesterTester/JobHunterAI
+- **Remote name**: `origin`
+- **Initial push**: Completed (one-time setup)
+
+**Commit Policy**:
+- ✅ **ALWAYS commit to local repository** - This is the default and preferred workflow
+- ❌ **NEVER push to remote** unless user provides **explicit authorization**
+- All work, bug fixes, features, and documentation updates remain local-only
+- User controls when (if ever) changes are pushed to GitHub
+
+**Why This Policy Exists**:
+- Protects work-in-progress and experimental changes
+- Prevents accidental publication of sensitive information
+- Gives user full control over public repository state
+- Local commits provide full version control benefits without remote sync
+
+**When User Authorizes Push**:
+- User will explicitly say "push to GitHub" or "sync with remote"
+- Verify clean working tree before pushing
+- Confirm no sensitive data in commits (check `.env*` files, OAuth tokens, etc.)
+- Use standard push command: `git push origin [branch-name]`
+
+**See also**: [GitHub Publication Workflow](#github-publication-workflow) for sanitization procedures before publication.
 
 ### Comprehensive Testing Policy
 
