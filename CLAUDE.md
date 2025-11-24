@@ -13,7 +13,7 @@
     - [File Discovery Tools](#file-discovery-tools)
     - [Work Session Tagging](#work-session-tagging)
     - [Comprehensive Testing Policy](#comprehensive-testing-policy)
-    - [Background Task Automation - Comprehensive Test Reporting with Intelligent Naming](#background-task-automation---comprehensive-test-reporting-with-intelligent-naming)
+    - [Background Task Automation - Comprehensive Test Reporting](#background-task-automation---comprehensive-test-reporting)
   - [Workflow Standards (Summary)](#workflow-standards-summary)
     - [Documentation Timestamp Standards](#documentation-timestamp-standards)
     - [Results Document Organization (General Principle)](#results-document-organization-general-principle)
@@ -369,9 +369,9 @@ OAuth tokens enable E2E tests. Access tokens expire in 60-90 minutes (auto-refre
 
 ---
 
-### Background Task Automation - Comprehensive Test Reporting with Intelligent Naming
+### Background Task Automation - Comprehensive Test Reporting
 
-**⚠️ CRITICAL REQUIREMENT**: When comprehensive tests run in background, Claude MUST proactively monitor, analyze context, and report results with intelligent filename.
+**⚠️ CRITICAL REQUIREMENT**: When comprehensive tests run in background, Claude MUST proactively monitor, analyze context, and report results.
 
 **Automatic Workflow**:
 
@@ -381,67 +381,47 @@ When `./run-comprehensive-tests.sh` runs in background:
 2. **Detect Completion**: When task status changes to "completed" or "failed"
 3. **Read Results**: Immediately read `test-results/comprehensive-report.json`
 4. **Analyze Context**: Determine what this test run is for based on conversation history
-   - Look for: "Day 4 Run 3", "ISSUE-064", "Day 3 Option C", etc.
-   - Infer from recent messages about what validation/testing is happening
-5. **Propose Filename**: Suggest descriptive filename based on context
-   - Pattern: `ISSUE-XX-DayY-runZ-test-report.md` or `ISSUE-XX-DayY-OptionZ-test-report.md`
-   - Fallback: `test-report-YYYY-MM-DD-HHMM.md` if no clear context
-6. **User Confirmation**: Present suggestion and wait for response
-   - "Suggested filename: `ISSUE-64-Day4-run3-test-report.md`"
-   - "Reply 'ok' to accept, provide custom name, or wait 30s for auto-accept"
-   - User can: confirm ("ok" / "yes"), provide custom name, or timeout (30s → auto-accept)
-7. **Generate Report**: Create detailed markdown report with chosen filename
-8. **File Report**: Save to `test-results/[chosen-filename].md`
-9. **Update Issues**: Determine if tracking issue should be updated
-   - If filename contains `ISSUE-064` → update ISSUE-064 with new completed goal
-   - If Day 4/Day 3 validation → add to appropriate tracking issue
-   - General validation → no issue update needed
-10. **Commit Changes**: Stage and commit report + issue updates
-11. **Announce**: Proactively tell user with summary (pass rate, runtime, failures, filename)
+   - Look for: issue numbers, validation context, feature names
+   - Infer from recent messages about what testing is happening
+5. **Generate Filename**: Use standardized naming format
+   - **Required format**: `test-report_YYYYMMDD_HHMMSS_slug.md`
+   - **Timestamp**: Date and time in format `YYYYMMDD_HHMMSS` (e.g., `20251123_221711`)
+   - **Slug**: Short kebab-case descriptor (e.g., `post-revert-validation`, `oauth-fix`, `issue-064-day3`)
+   - **Example**: `test-report_20251123_221711_post-revert-validation.md`
+6. **Generate Report**: Create detailed markdown report with filename
+7. **File Report**: Save to `test-results/[filename].md`
+8. **Commit Changes**: Stage and commit report
+9. **Announce**: Proactively tell user with summary (pass rate, runtime, failures, filename)
 
 **DO NOT wait for user to ask** - take initiative immediately upon test completion.
 
-**Context Analysis Rules**:
-- Recent mention of "Day 4" + "Run 3" → `ISSUE-64-Day4-run3-test-report.md`
-- Recent mention of "Day 3" + "Option C" → `ISSUE-64-Day3-OptionC-test-report.md`
-- Recent mention of different issue → `ISSUE-XX-context-test-report.md`
-- No clear context → `test-report-YYYY-MM-DD-HHMM.md` (fallback)
+**Filename Format Rules**:
+- **Always use underscores** (`_`) not hyphens (`-`) in main structure
+- **Slug uses hyphens** (`-`) for kebab-case (e.g., `post-revert-validation`)
+- **Benefits of this format**:
+  - Chronological sorting by default (timestamp comes first after prefix)
+  - Machine-readable timestamps for automation
+  - Human-readable slugs for context
+  - Consistent structure across all reports
 
-**Report Format**:
-- **Filename**: Descriptive based on context (e.g., `ISSUE-64-Day4-run3-test-report.md`)
-- **Content**: Comprehensive report with:
-  - Executive summary
-  - Test results (pass rate, failures)
-  - Comparison to previous runs
-  - Architecture validation
-  - Performance analysis
-  - Key findings and recommendations
+**Report Content**:
+- Executive summary
+- Test results (pass rate, failures)
+- Comparison to previous runs (if applicable)
+- Architecture/system validation
+- Performance analysis
+- Key findings and recommendations
 
-**Example Workflow**:
-```
-[Tests complete at 10:42 AM]
+**Example Filenames**:
+- `test-report_20251123_221711_post-revert-validation.md`
+- `test-report_20251124_103045_oauth-refresh-fix.md`
+- `test-report_20251125_143020_issue-064-parallel-test.md`
 
-Claude: "Comprehensive tests complete! Analyzing results...
-
-Based on context, suggested filename: ISSUE-64-Day4-run3-test-report.md
-
-Reply 'ok' to accept, provide custom name, or wait 30s for auto-accept."
-
-[User says "ok" or timeout occurs]
-
-Claude: "Generated report: test-results/ISSUE-64-Day4-run3-test-report.md
-
-Results: 757/757 tests passed (100%), runtime 21.9 min
-Updated ISSUE-064 Day 4 Run 3 with results
-All changes committed."
-```
-
-**Why This Matters**:
-- Eliminates manual "please file the report" step every test run
-- User gets notified when full analysis is complete, not just when tests finish
-- Self-documenting filenames make reports easy to find later
-- Matches existing naming convention (ISSUE-64-Day4-run2-test-report.md)
-- User maintains control (can override if Claude guesses wrong)
+**Why This Format**:
+- **Chronological sorting**: Files naturally sort by date/time
+- **Unambiguous**: Timestamp prevents filename collisions
+- **Context-aware**: Slug provides human-readable context
+- **Future-proof**: Easy to parse programmatically if needed
 
 ---
 
